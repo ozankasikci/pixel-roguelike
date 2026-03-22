@@ -16,7 +16,8 @@ public:
     DitherPass& operator=(const DitherPass&) = delete;
 
     void apply(GLuint sceneColorTex, const glm::mat4& inverseView,
-               float thresholdBias, int displayW, int displayH);
+               float thresholdBias, int displayW, int displayH,
+               float patternScale = 256.0f);
 
 private:
     std::unique_ptr<Shader> shader_;

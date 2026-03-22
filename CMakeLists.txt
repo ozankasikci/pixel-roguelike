@@ -18,6 +18,29 @@ FetchContent_Declare(glad
 FetchContent_MakeAvailable(glad)
 glad_add_library(glad_gl STATIC REPRODUCIBLE LOADER API gl:core=4.1)
 
+# Dear ImGui v1.92.6 via FetchContent
+# Uses EXCLUDE_FROM_ALL to avoid adding ImGui demo targets to the default build
+FetchContent_Declare(imgui
+    GIT_REPOSITORY https://github.com/ocornut/imgui.git
+    GIT_TAG        v1.92.6
+    GIT_PROGRESS   TRUE
+    EXCLUDE_FROM_ALL
+)
+FetchContent_MakeAvailable(imgui)
+# imgui_SOURCE_DIR is set after MakeAvailable
+
+add_library(imgui STATIC
+    ${imgui_SOURCE_DIR}/imgui.cpp
+    ${imgui_SOURCE_DIR}/imgui_demo.cpp
+    ${imgui_SOURCE_DIR}/imgui_draw.cpp
+    ${imgui_SOURCE_DIR}/imgui_tables.cpp
+    ${imgui_SOURCE_DIR}/imgui_widgets.cpp
+    ${imgui_SOURCE_DIR}/backends/imgui_impl_glfw.cpp
+    ${imgui_SOURCE_DIR}/backends/imgui_impl_opengl3.cpp
+)
+target_include_directories(imgui PUBLIC ${imgui_SOURCE_DIR} ${imgui_SOURCE_DIR}/backends)
+target_link_libraries(imgui PRIVATE glfw)
+
 # System packages via Homebrew
 find_package(glfw3 3.4 REQUIRED)
 find_package(glm REQUIRED)
@@ -32,6 +55,7 @@ add_executable(roguelike
     src/renderer/Mesh.cpp
     src/renderer/Renderer.cpp
     src/game/CathedralScene.cpp
+    src/engine/ImGuiLayer.cpp
 )
 
 target_include_directories(roguelike PRIVATE ${CMAKE_SOURCE_DIR}/src)
@@ -41,6 +65,7 @@ target_link_libraries(roguelike PRIVATE
     glfw
     glm::glm
     spdlog::spdlog
+    imgui
 )
 
 if(APPLE)

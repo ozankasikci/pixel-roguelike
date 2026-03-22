@@ -4,6 +4,8 @@
 #include <glm/gtc/matrix_transform.hpp>
 
 #include "engine/Window.h"
+#include "engine/ImGuiLayer.h"
+#include <imgui.h>
 #include "renderer/Shader.h"
 #include "renderer/Framebuffer.h"
 #include "renderer/DitherPass.h"
@@ -16,19 +18,26 @@
 #include <vector>
 #include <cmath>
 
+// Internal resolution presets (D-02)
+static const int RES_W[] = {854, 960, 1280};
+static const int RES_H[] = {480, 540,  720};
+
 int main() {
     spdlog::set_level(spdlog::level::info);
 
     // Create window with OpenGL 4.1 Core Profile context
     Window window(1280, 720, "3D Roguelike");
 
-    // Internal render resolution: 480p 16:9 (D-02)
-    constexpr int INTERNAL_W = 854;
-    constexpr int INTERNAL_H = 480;
+    // Dear ImGui layer
+    ImGuiLayer imguiLayer;
+    imguiLayer.init(window.handle());
 
-    // Create offscreen FBO at internal resolution
+    // Allow normal cursor so ImGui is usable
+    glfwSetInputMode(window.handle(), GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+
+    // Internal render resolution: 480p 16:9 (D-02) -- index 0
     Framebuffer sceneFBO;
-    sceneFBO.create(INTERNAL_W, INTERNAL_H);
+    sceneFBO.create(RES_W[0], RES_H[0]);
 
     // Create shaders
     Shader sceneShader("assets/shaders/scene.vert", "assets/shaders/scene.frag");
@@ -45,20 +54,22 @@ int main() {
     scene.cameraPos() = glm::vec3(0.0f, 2.0f, 5.0f);
     float yaw   = -90.0f;  // looking toward -Z
     float pitch =   0.0f;
-    float fovDeg = 70.0f;
-    float cameraSpeed = 3.0f;
+
+    // Debug params (drives ImGui overlay values back into the pipeline)
+    DebugParams debugParams;
 
     // Track time for delta
     float lastTime = static_cast<float>(glfwGetTime());
 
     spdlog::info("Starting render loop at {}x{} (internal: {}x{})",
-                 window.width(), window.height(), INTERNAL_W, INTERNAL_H);
+                 window.width(), window.height(), RES_W[0], RES_H[0]);
 
     while (!window.shouldClose()) {
         window.pollEvents();
 
         float currentTime = static_cast<float>(glfwGetTime());
         float deltaTime   = currentTime - lastTime;
+        if (deltaTime < 0.0001f) deltaTime = 0.0001f;  // guard against zero
         lastTime = currentTime;
 
         // ------------------------------------------------------------------
@@ -72,29 +83,41 @@ int main() {
 
         glm::vec3 right = glm::normalize(glm::cross(forward, glm::vec3(0.0f, 1.0f, 0.0f)));
 
-        // WASD movement
-        GLFWwindow* win = window.handle();
-        float moveSpeed = cameraSpeed * deltaTime;
+        // Only move camera when ImGui doesn't own the mouse
+        ImGuiIO& io = ImGui::GetIO();
+        if (!io.WantCaptureMouse) {
+            float moveSpeed = debugParams.cameraSpeed * deltaTime;
+            GLFWwindow* win = window.handle();
 
-        if (glfwGetKey(win, GLFW_KEY_W) == GLFW_PRESS)
-            scene.cameraPos() += forward * moveSpeed;
-        if (glfwGetKey(win, GLFW_KEY_S) == GLFW_PRESS)
-            scene.cameraPos() -= forward * moveSpeed;
-        if (glfwGetKey(win, GLFW_KEY_A) == GLFW_PRESS)
-            scene.cameraPos() -= right * moveSpeed;
-        if (glfwGetKey(win, GLFW_KEY_D) == GLFW_PRESS)
-            scene.cameraPos() += right * moveSpeed;
+            if (glfwGetKey(win, GLFW_KEY_W) == GLFW_PRESS)
+                scene.cameraPos() += forward * moveSpeed;
+            if (glfwGetKey(win, GLFW_KEY_S) == GLFW_PRESS)
+                scene.cameraPos() -= forward * moveSpeed;
+            if (glfwGetKey(win, GLFW_KEY_A) == GLFW_PRESS)
+                scene.cameraPos() -= right * moveSpeed;
+            if (glfwGetKey(win, GLFW_KEY_D) == GLFW_PRESS)
+                scene.cameraPos() += right * moveSpeed;
+        }
 
-        // Arrow key look
-        float lookSpeed = 60.0f * deltaTime;
-        if (glfwGetKey(win, GLFW_KEY_LEFT)  == GLFW_PRESS) yaw   -= lookSpeed;
-        if (glfwGetKey(win, GLFW_KEY_RIGHT) == GLFW_PRESS) yaw   += lookSpeed;
-        if (glfwGetKey(win, GLFW_KEY_UP)    == GLFW_PRESS) pitch += lookSpeed;
-        if (glfwGetKey(win, GLFW_KEY_DOWN)  == GLFW_PRESS) pitch -= lookSpeed;
+        // Arrow key look (always active for easy navigation)
+        {
+            float lookSpeed = 60.0f * deltaTime;
+            GLFWwindow* win = window.handle();
+            if (glfwGetKey(win, GLFW_KEY_LEFT)  == GLFW_PRESS) yaw   -= lookSpeed;
+            if (glfwGetKey(win, GLFW_KEY_RIGHT) == GLFW_PRESS) yaw   += lookSpeed;
+            if (glfwGetKey(win, GLFW_KEY_UP)    == GLFW_PRESS) pitch += lookSpeed;
+            if (glfwGetKey(win, GLFW_KEY_DOWN)  == GLFW_PRESS) pitch -= lookSpeed;
+        }
 
         // Clamp pitch
         if (pitch >  89.0f) pitch =  89.0f;
         if (pitch < -89.0f) pitch = -89.0f;
+
+        // Recompute forward after potential yaw/pitch change
+        forward.x = std::cos(glm::radians(yaw)) * std::cos(glm::radians(pitch));
+        forward.y = std::sin(glm::radians(pitch));
+        forward.z = std::sin(glm::radians(yaw)) * std::cos(glm::radians(pitch));
+        forward = glm::normalize(forward);
 
         // View and projection matrices
         glm::mat4 viewMatrix = glm::lookAt(
@@ -103,7 +126,8 @@ int main() {
             glm::vec3(0.0f, 1.0f, 0.0f)
         );
         float aspect = static_cast<float>(sceneFBO.width()) / static_cast<float>(sceneFBO.height());
-        glm::mat4 projection = glm::perspective(glm::radians(fovDeg), aspect, 0.1f, 100.0f);
+        glm::mat4 projection = glm::perspective(
+            glm::radians(debugParams.cameraFov), aspect, 0.1f, 100.0f);
 
         // ------------------------------------------------------------------
         // Scene pass: render to FBO at internal resolution
@@ -128,10 +152,38 @@ int main() {
         glClear(GL_COLOR_BUFFER_BIT);
 
         glm::mat4 inverseView = glm::inverse(viewMatrix);
-        ditherPass.apply(sceneFBO.colorTexture(), inverseView, 0.0f, displayW, displayH);
+        ditherPass.apply(sceneFBO.colorTexture(), inverseView,
+                         debugParams.thresholdBias, displayW, displayH,
+                         debugParams.patternScale);
+
+        // ------------------------------------------------------------------
+        // ImGui overlay: AFTER dither pass, BEFORE swapBuffers (Pitfall 5)
+        // ------------------------------------------------------------------
+        imguiLayer.beginFrame();
+
+        // Update debug params from current state
+        debugParams.cameraPos     = scene.cameraPos();
+        debugParams.cameraDir     = forward;
+        debugParams.fps           = (deltaTime > 0.0f) ? (1.0f / deltaTime) : 0.0f;
+        debugParams.frameTimeMs   = deltaTime * 1000.0f;
+        debugParams.drawCalls     = static_cast<int>(scene.objects().size());
+
+        ImGuiLayer::renderOverlay(debugParams, scene.lights());
+
+        imguiLayer.endFrame();
+
+        // Handle resolution change from ImGui combo
+        if (debugParams.resolutionChanged) {
+            int idx = debugParams.internalResIndex;
+            sceneFBO.resize(RES_W[idx], RES_H[idx]);
+            spdlog::info("Internal resolution changed to {}x{}", RES_W[idx], RES_H[idx]);
+            debugParams.resolutionChanged = false;
+        }
 
         window.swapBuffers();
     }
+
+    imguiLayer.shutdown();
 
     spdlog::info("Shutting down");
     return 0;

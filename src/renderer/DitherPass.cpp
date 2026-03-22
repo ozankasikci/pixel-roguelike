@@ -50,7 +50,8 @@ DitherPass::~DitherPass() {
 }
 
 void DitherPass::apply(GLuint sceneColorTex, const glm::mat4& inverseView,
-                       float thresholdBias, int displayW, int displayH) {
+                       float thresholdBias, int displayW, int displayH,
+                       float patternScale) {
     shader_->use();
 
     // Bind scene color texture to unit 0
@@ -61,7 +62,7 @@ void DitherPass::apply(GLuint sceneColorTex, const glm::mat4& inverseView,
     // Set world-space anchoring uniform
     shader_->setMat4("uInverseView", inverseView);
     shader_->setFloat("uThresholdBias", thresholdBias);
-    shader_->setFloat("uPatternScale", 256.0f);
+    shader_->setFloat("uPatternScale", patternScale);
 
     // Render fullscreen quad at display resolution
     glViewport(0, 0, displayW, displayH);
