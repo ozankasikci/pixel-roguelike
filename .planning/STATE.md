@@ -2,14 +2,14 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: Ready to execute
-stopped_at: Completed 01-engine-and-dithering-pipeline/01-01-PLAN.md
-last_updated: "2026-03-22T23:28:11.644Z"
+status: Phase complete — ready for verification
+stopped_at: Completed 01-engine-and-dithering-pipeline/01-02-PLAN.md
+last_updated: "2026-03-22T23:38:22.832Z"
 progress:
   total_phases: 4
-  completed_phases: 0
+  completed_phases: 1
   total_plans: 2
-  completed_plans: 1
+  completed_plans: 2
 ---
 
 # Project State
@@ -47,6 +47,7 @@ Plan: 2 of 2
 
 *Updated after each plan completion*
 | Phase 01-engine-and-dithering-pipeline P01 | 5 | 2 tasks | 17 files |
+| Phase 01-engine-and-dithering-pipeline P02 | 15 | 3 tasks | 11 files |
 
 ## Accumulated Context
 
@@ -60,6 +61,9 @@ Recent decisions affecting current work:
 - [Phase 01-engine-and-dithering-pipeline]: GLAD 2 requires LANGUAGES C CXX in CMakeLists.txt project() and jinja2 Python package in venv for code generation
 - [Phase 01-engine-and-dithering-pipeline]: uInverseView (pure rotation inverse-view) passed per frame to dither.frag for sphere-map world-space anchoring
 - [Phase 01-engine-and-dithering-pipeline]: GL_NEAREST filter on FBO color texture critical to prevent interpolation in dither pass input
+- [Phase 01-engine-and-dithering-pipeline]: DitherPass::apply() updated to accept patternScale float parameter so ImGui slider can tune it at runtime
+- [Phase 01-engine-and-dithering-pipeline]: Dear ImGui v1.92.6 integrated via CMake FetchContent (GLFW + OpenGL3 backends); ImGui::GetIO().WantCaptureMouse gates camera mouse-look vs UI interaction
+- [Phase 01-engine-and-dithering-pipeline]: Quartic attenuation (Pitfall 6 from RESEARCH.md): clamp(1 - pow(dist/radius,4))^2 eliminates hard ring artifacts in Bayer dither output
 
 ### Pending Todos
 
@@ -71,6 +75,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-22T23:28:11.640Z
-Stopped at: Completed 01-engine-and-dithering-pipeline/01-01-PLAN.md
+Last session: 2026-03-22T23:38:22.829Z
+Stopped at: Completed 01-engine-and-dithering-pipeline/01-02-PLAN.md
 Resume file: None

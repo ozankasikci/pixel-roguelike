@@ -13,7 +13,7 @@ Requirements for initial playable tech demo. Each maps to roadmap phases.
 - [x] **RNDR-02**: Post-process 1-bit dithering shader converts scene to pure black and white using Bayer matrix
 - [x] **RNDR-03**: Dither pattern uses world-space anchoring to prevent swimming during camera movement
 - [x] **RNDR-04**: Scene renders at low internal resolution and nearest-neighbor upscales to display
-- [ ] **RNDR-05**: Point light sources (torches) affect dither density in their radius
+- [x] **RNDR-05**: Point light sources (torches) affect dither density in their radius
 
 ### Player
 
@@ -100,7 +100,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | RNDR-02 | Phase 1 | Complete |
 | RNDR-03 | Phase 1 | Complete |
 | RNDR-04 | Phase 1 | Complete |
-| RNDR-05 | Phase 1 | Pending |
+| RNDR-05 | Phase 1 | Complete |
 | PLYR-01 | Phase 2 | Pending |
 | PLYR-02 | Phase 2 | Pending |
 | PLYR-03 | Phase 2 | Pending |

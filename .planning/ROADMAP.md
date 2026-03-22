@@ -33,7 +33,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 
 Plans:
 - [x] 01-01-PLAN.md — CMake build system, OpenGL 4.1 engine bootstrap, FBO + dither post-process with world-space anchoring
-- [ ] 01-02-PLAN.md — Blinn-Phong point lighting, cathedral test scene, ImGui debug overlay
+- [x] 01-02-PLAN.md — Blinn-Phong point lighting, cathedral test scene, ImGui debug overlay
 
 ### Phase 2: Player, Environment, and Lighting
 **Goal**: The player can walk through a dithered gothic cathedral room, collide with walls, and see torch lighting that responds correctly through the dither pass
