@@ -29,7 +29,11 @@ Decimal phases appear between their surrounding integers in numeric order.
   3. The scene renders at a reduced internal resolution (480-720p) and upscales with nearest-neighbor, producing chunky visible dither cells rather than sub-pixel noise
   4. A torch-equivalent point light source visibly increases dither density (brighter region) in its radius compared to unlit geometry
   5. A Dear ImGui debug overlay lets the developer tune dither threshold and internal resolution at runtime without recompiling
-**Plans**: TBD
+**Plans**: 2 plans
+
+Plans:
+- [ ] 01-01-PLAN.md — CMake build system, OpenGL 4.1 engine bootstrap, FBO + dither post-process with world-space anchoring
+- [ ] 01-02-PLAN.md — Blinn-Phong point lighting, cathedral test scene, ImGui debug overlay
 
 ### Phase 2: Player, Environment, and Lighting
 **Goal**: The player can walk through a dithered gothic cathedral room, collide with walls, and see torch lighting that responds correctly through the dither pass
@@ -74,7 +78,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Engine and Dithering Pipeline | 0/? | Not started | - |
+| 1. Engine and Dithering Pipeline | 0/2 | Planned | - |
 | 2. Player, Environment, and Lighting | 0/? | Not started | - |
 | 3. Combat and Enemies | 0/? | Not started | - |
 | 4. Game Systems | 0/? | Not started | - |
