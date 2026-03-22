@@ -32,7 +32,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 **Plans**: 2 plans
 
 Plans:
-- [ ] 01-01-PLAN.md — CMake build system, OpenGL 4.1 engine bootstrap, FBO + dither post-process with world-space anchoring
+- [x] 01-01-PLAN.md — CMake build system, OpenGL 4.1 engine bootstrap, FBO + dither post-process with world-space anchoring
 - [ ] 01-02-PLAN.md — Blinn-Phong point lighting, cathedral test scene, ImGui debug overlay
 
 ### Phase 2: Player, Environment, and Lighting
@@ -78,7 +78,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Engine and Dithering Pipeline | 0/2 | Planned | - |
+| 1. Engine and Dithering Pipeline | 1/2 | In Progress|  |
 | 2. Player, Environment, and Lighting | 0/? | Not started | - |
 | 3. Combat and Enemies | 0/? | Not started | - |
 | 4. Game Systems | 0/? | Not started | - |
