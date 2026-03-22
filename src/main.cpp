@@ -8,10 +8,13 @@
 #include "renderer/Framebuffer.h"
 #include "renderer/DitherPass.h"
 #include "renderer/Mesh.h"
+#include "renderer/Renderer.h"
+#include "game/CathedralScene.h"
 
 #include <spdlog/spdlog.h>
 #include <memory>
 #include <vector>
+#include <cmath>
 
 int main() {
     spdlog::set_level(spdlog::level::info);
@@ -30,20 +33,23 @@ int main() {
     // Create shaders
     Shader sceneShader("assets/shaders/scene.vert", "assets/shaders/scene.frag");
 
-    // Create dither post-process pass
+    // Create renderer and dither pass
+    Renderer renderer(&sceneShader);
     DitherPass ditherPass;
 
-    // Create test geometry: floor + 3 cubes
-    Mesh floor = Mesh::createPlane(10.0f);
-    Mesh cube1 = Mesh::createCube(1.0f);
-    Mesh cube2 = Mesh::createCube(0.8f);
-    Mesh cube3 = Mesh::createCube(1.2f);
+    // Build cathedral scene
+    CathedralScene scene;
+    scene.build();
 
-    // Camera setup
-    glm::vec3 cameraTarget(0.0f, 0.0f, 0.0f);
-    float cameraRadius = 5.0f;
-    float cameraHeight = 2.0f;
+    // Camera state: position + yaw/pitch (degrees)
+    scene.cameraPos() = glm::vec3(0.0f, 2.0f, 5.0f);
+    float yaw   = -90.0f;  // looking toward -Z
+    float pitch =   0.0f;
     float fovDeg = 70.0f;
+    float cameraSpeed = 3.0f;
+
+    // Track time for delta
+    float lastTime = static_cast<float>(glfwGetTime());
 
     spdlog::info("Starting render loop at {}x{} (internal: {}x{})",
                  window.width(), window.height(), INTERNAL_W, INTERNAL_H);
@@ -51,62 +57,76 @@ int main() {
     while (!window.shouldClose()) {
         window.pollEvents();
 
-        // Orbit camera around Y axis based on time (demonstrates dither stability)
-        float time = static_cast<float>(glfwGetTime());
-        float orbitAngle = time * 0.3f;  // slow orbit
+        float currentTime = static_cast<float>(glfwGetTime());
+        float deltaTime   = currentTime - lastTime;
+        lastTime = currentTime;
 
-        glm::vec3 cameraPos(
-            cameraRadius * std::cos(orbitAngle),
-            cameraHeight,
-            cameraRadius * std::sin(orbitAngle)
-        );
+        // ------------------------------------------------------------------
+        // Camera: compute forward and right vectors from yaw/pitch
+        // ------------------------------------------------------------------
+        glm::vec3 forward;
+        forward.x = std::cos(glm::radians(yaw)) * std::cos(glm::radians(pitch));
+        forward.y = std::sin(glm::radians(pitch));
+        forward.z = std::sin(glm::radians(yaw)) * std::cos(glm::radians(pitch));
+        forward = glm::normalize(forward);
+
+        glm::vec3 right = glm::normalize(glm::cross(forward, glm::vec3(0.0f, 1.0f, 0.0f)));
+
+        // WASD movement
+        GLFWwindow* win = window.handle();
+        float moveSpeed = cameraSpeed * deltaTime;
+
+        if (glfwGetKey(win, GLFW_KEY_W) == GLFW_PRESS)
+            scene.cameraPos() += forward * moveSpeed;
+        if (glfwGetKey(win, GLFW_KEY_S) == GLFW_PRESS)
+            scene.cameraPos() -= forward * moveSpeed;
+        if (glfwGetKey(win, GLFW_KEY_A) == GLFW_PRESS)
+            scene.cameraPos() -= right * moveSpeed;
+        if (glfwGetKey(win, GLFW_KEY_D) == GLFW_PRESS)
+            scene.cameraPos() += right * moveSpeed;
+
+        // Arrow key look
+        float lookSpeed = 60.0f * deltaTime;
+        if (glfwGetKey(win, GLFW_KEY_LEFT)  == GLFW_PRESS) yaw   -= lookSpeed;
+        if (glfwGetKey(win, GLFW_KEY_RIGHT) == GLFW_PRESS) yaw   += lookSpeed;
+        if (glfwGetKey(win, GLFW_KEY_UP)    == GLFW_PRESS) pitch += lookSpeed;
+        if (glfwGetKey(win, GLFW_KEY_DOWN)  == GLFW_PRESS) pitch -= lookSpeed;
+
+        // Clamp pitch
+        if (pitch >  89.0f) pitch =  89.0f;
+        if (pitch < -89.0f) pitch = -89.0f;
 
         // View and projection matrices
-        glm::mat4 viewMatrix = glm::lookAt(cameraPos, cameraTarget, glm::vec3(0.0f, 1.0f, 0.0f));
-        float aspect = static_cast<float>(INTERNAL_W) / static_cast<float>(INTERNAL_H);
+        glm::mat4 viewMatrix = glm::lookAt(
+            scene.cameraPos(),
+            scene.cameraPos() + forward,
+            glm::vec3(0.0f, 1.0f, 0.0f)
+        );
+        float aspect = static_cast<float>(sceneFBO.width()) / static_cast<float>(sceneFBO.height());
         glm::mat4 projection = glm::perspective(glm::radians(fovDeg), aspect, 0.1f, 100.0f);
 
-        // --- Scene pass: render to FBO at internal resolution ---
+        // ------------------------------------------------------------------
+        // Scene pass: render to FBO at internal resolution
+        // ------------------------------------------------------------------
         sceneFBO.bind();
         glViewport(0, 0, sceneFBO.width(), sceneFBO.height());
         glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         glEnable(GL_DEPTH_TEST);
 
-        sceneShader.use();
-        sceneShader.setMat4("uView", viewMatrix);
-        sceneShader.setMat4("uProjection", projection);
-
-        // Draw floor
-        glm::mat4 floorModel = glm::mat4(1.0f);
-        sceneShader.setMat4("uModel", floorModel);
-        floor.draw();
-
-        // Draw cube 1 at origin (above floor)
-        glm::mat4 cube1Model = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.5f, 0.0f));
-        sceneShader.setMat4("uModel", cube1Model);
-        cube1.draw();
-
-        // Draw cube 2 offset
-        glm::mat4 cube2Model = glm::translate(glm::mat4(1.0f), glm::vec3(2.5f, 0.4f, 1.0f));
-        sceneShader.setMat4("uModel", cube2Model);
-        cube2.draw();
-
-        // Draw cube 3 offset
-        glm::mat4 cube3Model = glm::translate(glm::mat4(1.0f), glm::vec3(-2.0f, 0.6f, -1.5f));
-        sceneShader.setMat4("uModel", cube3Model);
-        cube3.draw();
+        renderer.drawScene(scene.objects(), scene.lights(), viewMatrix, projection, scene.cameraPos());
 
         sceneFBO.unbind();
         glDisable(GL_DEPTH_TEST);
 
-        // --- Dither pass: apply Bayer dithering at display resolution ---
+        // ------------------------------------------------------------------
+        // Dither pass: apply Bayer dithering at display resolution
+        // ------------------------------------------------------------------
         int displayW = window.width();
         int displayH = window.height();
 
         glClear(GL_COLOR_BUFFER_BIT);
 
-        // Pass inverse view matrix for world-space dither anchoring (RNDR-03)
         glm::mat4 inverseView = glm::inverse(viewMatrix);
         ditherPass.apply(sceneFBO.colorTexture(), inverseView, 0.0f, displayW, displayH);
 

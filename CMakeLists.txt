@@ -30,6 +30,8 @@ add_executable(roguelike
     src/renderer/Framebuffer.cpp
     src/renderer/DitherPass.cpp
     src/renderer/Mesh.cpp
+    src/renderer/Renderer.cpp
+    src/game/CathedralScene.cpp
 )
 
 target_include_directories(roguelike PRIVATE ${CMAKE_SOURCE_DIR}/src)
