@@ -96,35 +96,35 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| RNDR-01 | — | Pending |
-| RNDR-02 | — | Pending |
-| RNDR-03 | — | Pending |
-| RNDR-04 | — | Pending |
-| RNDR-05 | — | Pending |
-| PLYR-01 | — | Pending |
-| PLYR-02 | — | Pending |
-| PLYR-03 | — | Pending |
-| CMBT-01 | — | Pending |
-| CMBT-02 | — | Pending |
-| CMBT-03 | — | Pending |
-| CMBT-04 | — | Pending |
-| ENMY-01 | — | Pending |
-| ENMY-02 | — | Pending |
-| ENMY-03 | — | Pending |
-| ENMY-04 | — | Pending |
-| ENVR-01 | — | Pending |
-| ENVR-02 | — | Pending |
-| ENVR-03 | — | Pending |
-| GSYS-01 | — | Pending |
-| GSYS-02 | — | Pending |
-| GSYS-03 | — | Pending |
-| GSYS-04 | — | Pending |
+| RNDR-01 | Phase 1 | Pending |
+| RNDR-02 | Phase 1 | Pending |
+| RNDR-03 | Phase 1 | Pending |
+| RNDR-04 | Phase 1 | Pending |
+| RNDR-05 | Phase 1 | Pending |
+| PLYR-01 | Phase 2 | Pending |
+| PLYR-02 | Phase 2 | Pending |
+| PLYR-03 | Phase 2 | Pending |
+| ENVR-01 | Phase 2 | Pending |
+| ENVR-02 | Phase 2 | Pending |
+| ENVR-03 | Phase 2 | Pending |
+| CMBT-01 | Phase 3 | Pending |
+| CMBT-02 | Phase 3 | Pending |
+| CMBT-03 | Phase 3 | Pending |
+| CMBT-04 | Phase 3 | Pending |
+| ENMY-01 | Phase 3 | Pending |
+| ENMY-02 | Phase 3 | Pending |
+| ENMY-03 | Phase 3 | Pending |
+| ENMY-04 | Phase 3 | Pending |
+| GSYS-01 | Phase 4 | Pending |
+| GSYS-02 | Phase 4 | Pending |
+| GSYS-03 | Phase 4 | Pending |
+| GSYS-04 | Phase 4 | Pending |
 
 **Coverage:**
 - v1 requirements: 23 total
-- Mapped to phases: 0
-- Unmapped: 23 ⚠️
+- Mapped to phases: 23
+- Unmapped: 0
 
 ---
 *Requirements defined: 2026-03-23*
-*Last updated: 2026-03-23 after initial definition*
+*Last updated: 2026-03-23 after roadmap creation*
