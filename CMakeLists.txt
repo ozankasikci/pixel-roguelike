@@ -26,6 +26,20 @@ FetchContent_Declare(entt
 )
 FetchContent_MakeAvailable(entt)
 
+# Jolt Physics v5.4.0 - Rigid body physics, collision, character controller
+set(TARGET_HELLO_WORLD OFF CACHE BOOL "" FORCE)
+set(TARGET_UNIT_TESTS OFF CACHE BOOL "" FORCE)
+set(TARGET_PERFORMANCE_TEST OFF CACHE BOOL "" FORCE)
+set(TARGET_SAMPLES OFF CACHE BOOL "" FORCE)
+set(TARGET_VIEWER OFF CACHE BOOL "" FORCE)
+FetchContent_Declare(JoltPhysics
+    GIT_REPOSITORY https://github.com/jrouwe/JoltPhysics.git
+    GIT_TAG        v5.4.0
+    GIT_PROGRESS   TRUE
+    SOURCE_SUBDIR  Build
+)
+FetchContent_MakeAvailable(JoltPhysics)
+
 # Dear ImGui v1.92.6 via FetchContent
 # Uses EXCLUDE_FROM_ALL to avoid adding ImGui demo targets to the default build
 FetchContent_Declare(imgui
@@ -97,13 +111,20 @@ add_library(engine_input STATIC
 target_include_directories(engine_input PUBLIC ${CMAKE_SOURCE_DIR}/src)
 target_link_libraries(engine_input PUBLIC engine_core imgui glm::glm)
 
+add_library(engine_physics STATIC
+    src/engine/physics/PhysicsSystem.cpp
+)
+target_include_directories(engine_physics PUBLIC ${CMAKE_SOURCE_DIR}/src)
+target_link_libraries(engine_physics PUBLIC engine_core glm::glm)
+target_link_libraries(engine_physics PRIVATE Jolt)
+
 add_library(game STATIC
     src/game/scenes/CathedralScene.cpp
     src/game/systems/CameraSystem.cpp
     src/game/systems/RenderSystem.cpp
 )
 target_include_directories(game PUBLIC ${CMAKE_SOURCE_DIR}/src)
-target_link_libraries(game PUBLIC engine_core engine_rendering engine_ui engine_input EnTT::EnTT)
+target_link_libraries(game PUBLIC engine_core engine_rendering engine_ui engine_input engine_physics EnTT::EnTT)
 
 add_executable(pixel-roguelike src/main.cpp)
 target_include_directories(pixel-roguelike PRIVATE ${CMAKE_SOURCE_DIR}/src ${CMAKE_SOURCE_DIR}/external)
@@ -113,6 +134,7 @@ target_link_libraries(pixel-roguelike PRIVATE
     engine_ui
     engine_scene
     engine_input
+    engine_physics
     game
     EnTT::EnTT
 )
