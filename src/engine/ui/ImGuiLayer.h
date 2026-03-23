@@ -2,7 +2,7 @@
 
 #include <glm/glm.hpp>
 #include <vector>
-#include "renderer/DitherPass.h"
+#include "engine/rendering/DitherPass.h"
 
 // Forward declarations
 struct GLFWwindow;

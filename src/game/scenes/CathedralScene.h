@@ -4,8 +4,8 @@
 #include <vector>
 #include <memory>
 
-#include "renderer/Renderer.h"
-#include "renderer/Mesh.h"
+#include "engine/rendering/Renderer.h"
+#include "engine/rendering/Mesh.h"
 
 class CathedralScene {
 public:

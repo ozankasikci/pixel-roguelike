@@ -3,17 +3,17 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
-#include "engine/Window.h"
-#include "engine/ImGuiLayer.h"
+#include "engine/core/Window.h"
+#include "engine/ui/ImGuiLayer.h"
 #include <imgui.h>
-#include "renderer/Shader.h"
-#include "renderer/Framebuffer.h"
-#include "renderer/DitherPass.h"
-#include "renderer/Mesh.h"
-#include "renderer/Renderer.h"
-#include "game/CathedralScene.h"
+#include "engine/rendering/Shader.h"
+#include "engine/rendering/Framebuffer.h"
+#include "engine/rendering/DitherPass.h"
+#include "engine/rendering/Mesh.h"
+#include "engine/rendering/Renderer.h"
+#include "game/scenes/CathedralScene.h"
 
-#include "engine/Screenshot.h"
+#include "engine/ui/Screenshot.h"
 
 #include <spdlog/spdlog.h>
 #include <memory>
@@ -37,7 +37,7 @@ int main(int argc, char* argv[]) {
         }
     }
 
-    Window window(1280, 720, "3D Roguelike");
+    Window window(1280, 720, "Pixel Roguelike");
 
     ImGuiLayer imguiLayer;
     imguiLayer.init(window.handle());
