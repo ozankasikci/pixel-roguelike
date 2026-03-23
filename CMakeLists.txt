@@ -168,3 +168,8 @@ add_executable(test_mesh_geometry tests/test_mesh_geometry.cpp)
 target_include_directories(test_mesh_geometry PRIVATE ${CMAKE_SOURCE_DIR}/src)
 target_link_libraries(test_mesh_geometry PRIVATE glm::glm)
 add_test(NAME mesh_geometry COMMAND test_mesh_geometry)
+
+# --- Mesh Generator Tool ---
+add_executable(mesh_generator tools/mesh_generator.cpp)
+target_include_directories(mesh_generator PRIVATE ${CMAKE_SOURCE_DIR}/src)
+target_link_libraries(mesh_generator PRIVATE glm::glm tinygltf)
