@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: Phase complete — ready for verification
-stopped_at: "Checkpoint: Task 3 visual verification of 01.1-04 -- awaiting user confirmation"
-last_updated: "2026-03-23T18:46:13.652Z"
+stopped_at: Completed 01.1-04-PLAN.md -- Phase 01.1 complete
+last_updated: "2026-03-23T18:56:33.279Z"
 progress:
   total_phases: 5
   completed_phases: 2
@@ -52,6 +52,7 @@ Plan: 4 of 4
 | Phase 01.1-project-restructure-ecs-application-class-modular-engine-game-split P02 | 2 | 2 tasks | 12 files |
 | Phase 01.1-project-restructure-ecs-application-class-modular-engine-game-split P03 | 3 | 2 tasks | 10 files |
 | Phase 01.1-project-restructure-ecs-application-class-modular-engine-game-split P04 | 10 | 2 tasks | 3 files |
+| Phase 01.1-project-restructure-ecs-application-class-modular-engine-game-split P04 | 15 | 3 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -79,6 +80,9 @@ Recent decisions affecting current work:
 - [Phase 01.1-project-restructure-ecs-application-class-modular-engine-game-split]: CathedralScene uses useModelOverride=true for all mesh entities -- geometry is pre-computed with arbitrary transforms that cannot be decomposed to euler angles
 - [Phase 01.1-project-restructure-ecs-application-class-modular-engine-game-split]: GLM vec3 scalar constructor is explicit -- must use glm::vec3(0.0f) not brace-init {} in aggregate TransformComponent initialization
 - [Phase 01.1-project-restructure-ecs-application-class-modular-engine-game-split]: SceneManager instantiated in main() rather than owned by Application -- keeps Application minimal for this restructure phase
+- [Phase 01.1-project-restructure-ecs-application-class-modular-engine-game-split]: CathedralScene uses useModelOverride=true for all mesh entities -- geometry is pre-computed with arbitrary transforms that cannot be decomposed to euler angles
+- [Phase 01.1-project-restructure-ecs-application-class-modular-engine-game-split]: GLM vec3 scalar constructor is explicit -- must use glm::vec3(0.0f) not brace-init {} in aggregate TransformComponent initialization
+- [Phase 01.1-project-restructure-ecs-application-class-modular-engine-game-split]: SceneManager instantiated in main() rather than owned by Application -- keeps Application minimal for this restructure phase
 
 ### Pending Todos
 
@@ -94,6 +98,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-23T18:46:13.649Z
-Stopped at: Checkpoint: Task 3 visual verification of 01.1-04 -- awaiting user confirmation
+Last session: 2026-03-23T18:56:33.275Z
+Stopped at: Completed 01.1-04-PLAN.md -- Phase 01.1 complete
 Resume file: None
