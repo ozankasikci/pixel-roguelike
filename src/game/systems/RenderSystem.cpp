@@ -5,6 +5,7 @@
 #include "game/components/MeshComponent.h"
 #include "game/components/LightComponent.h"
 #include "game/components/CameraComponent.h"
+#include "game/components/PlayerMovementComponent.h"
 
 #include <glad/gl.h>
 #include <GLFW/glfw3.h>
@@ -98,6 +99,15 @@ void RenderSystem::update(Application& app, float deltaTime) {
     debugParams_.drawCalls   = static_cast<int>(objects.size());
 
     ImGuiLayer::renderOverlay(debugParams_, lights);
+
+    // Movement debug panel
+    {
+        auto movView = registry.view<PlayerMovementComponent>();
+        for (auto [entity, movement] : movView.each()) {
+            ImGuiLayer::renderMovementOverlay(movement, movement.grounded);
+            break;
+        }
+    }
 
     imguiLayer_.endFrame();
 

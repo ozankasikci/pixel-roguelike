@@ -7,6 +7,7 @@
 // Forward declarations
 struct GLFWwindow;
 struct PointLight;
+struct PlayerMovementComponent;
 
 struct DebugParams {
     // Dither parameters
@@ -42,4 +43,5 @@ public:
     void endFrame();
 
     static void renderOverlay(DebugParams& params, std::vector<PointLight>& lights);
+    static void renderMovementOverlay(PlayerMovementComponent& movement, bool grounded);
 };

@@ -104,3 +104,40 @@ void ImGuiLayer::renderOverlay(DebugParams& params, std::vector<PointLight>& lig
 
     ImGui::End();
 }
+
+#include "game/components/PlayerMovementComponent.h"
+
+void ImGuiLayer::renderMovementOverlay(PlayerMovementComponent& movement, bool grounded) {
+    ImGui::Begin("Movement");
+
+    // Ground state
+    const char* stateStr = grounded ? "ON GROUND" : "IN AIR";
+    ImGui::Text("State: %s", stateStr);
+    ImGui::Text("Velocity: %.1f, %.1f, %.1f",
+        movement.velocity.x, movement.velocity.y, movement.velocity.z);
+    ImGui::Text("Speed: %.1f", glm::length(glm::vec2(movement.velocity.x, movement.velocity.z)));
+
+    ImGui::Separator();
+
+    // Ground movement
+    if (ImGui::CollapsingHeader("Ground Movement", ImGuiTreeNodeFlags_DefaultOpen)) {
+        ImGui::SliderFloat("Max Speed", &movement.maxGroundSpeed, 1.0f, 15.0f);
+        ImGui::SliderFloat("Acceleration", &movement.acceleration, 5.0f, 60.0f);
+        ImGui::SliderFloat("Deceleration", &movement.deceleration, 5.0f, 60.0f);
+    }
+
+    // Air movement
+    if (ImGui::CollapsingHeader("Air Movement")) {
+        ImGui::SliderFloat("Air Accel", &movement.airAcceleration, 1.0f, 30.0f);
+    }
+
+    // Gravity & jump
+    if (ImGui::CollapsingHeader("Jump & Gravity")) {
+        ImGui::SliderFloat("Gravity", &movement.gravity, -30.0f, -5.0f);
+        ImGui::SliderFloat("Jump Impulse", &movement.jumpImpulse, 2.0f, 12.0f);
+        ImGui::SliderFloat("Hold Gravity Scale", &movement.jumpHoldGravityScale, 0.1f, 1.0f);
+        ImGui::SliderFloat("Max Hold Time", &movement.maxJumpHoldTime, 0.1f, 0.6f);
+    }
+
+    ImGui::End();
+}
