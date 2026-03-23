@@ -2,14 +2,14 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: Phase complete — ready for verification
-stopped_at: Completed 01-engine-and-dithering-pipeline/01-02-PLAN.md
-last_updated: "2026-03-22T23:38:22.832Z"
+status: Ready to execute
+stopped_at: Completed 01.1-project-restructure-ecs-application-class-modular-engine-game-split/01.1-01-PLAN.md
+last_updated: "2026-03-23T18:30:19.482Z"
 progress:
-  total_phases: 4
+  total_phases: 5
   completed_phases: 1
-  total_plans: 2
-  completed_plans: 2
+  total_plans: 6
+  completed_plans: 3
 ---
 
 # Project State
@@ -19,12 +19,12 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-23)
 
 **Core value:** The 1-bit dithered 3D rendering — a visually striking, modern take on retro aesthetics that makes the game instantly recognizable
-**Current focus:** Phase 01 — engine-and-dithering-pipeline
+**Current focus:** Phase 01.1 — project-restructure
 
 ## Current Position
 
-Phase: 01 (engine-and-dithering-pipeline) — EXECUTING
-Plan: 2 of 2
+Phase: 01.1 (project-restructure) — EXECUTING
+Plan: 2 of 4
 
 ## Performance Metrics
 
@@ -48,6 +48,7 @@ Plan: 2 of 2
 *Updated after each plan completion*
 | Phase 01-engine-and-dithering-pipeline P01 | 5 | 2 tasks | 17 files |
 | Phase 01-engine-and-dithering-pipeline P02 | 15 | 3 tasks | 11 files |
+| Phase 01.1-project-restructure-ecs-application-class-modular-engine-game-split P01 | 7 | 2 tasks | 20 files |
 
 ## Accumulated Context
 
@@ -64,10 +65,16 @@ Recent decisions affecting current work:
 - [Phase 01-engine-and-dithering-pipeline]: DitherPass::apply() updated to accept patternScale float parameter so ImGui slider can tune it at runtime
 - [Phase 01-engine-and-dithering-pipeline]: Dear ImGui v1.92.6 integrated via CMake FetchContent (GLFW + OpenGL3 backends); ImGui::GetIO().WantCaptureMouse gates camera mouse-look vs UI interaction
 - [Phase 01-engine-and-dithering-pipeline]: Quartic attenuation (Pitfall 6 from RESEARCH.md): clamp(1 - pow(dist/radius,4))^2 eliminates hard ring artifacts in Bayer dither output
+- [Phase 01.1-project-restructure-ecs-application-class-modular-engine-game-split]: Per-module static library CMake pattern: each lib uses PUBLIC target_include_directories(${CMAKE_SOURCE_DIR}/src) so downstream consumers automatically get include paths
+- [Phase 01.1-project-restructure-ecs-application-class-modular-engine-game-split]: EnTT v3.16.0 added via FetchContent as EnTT::EnTT; linked to game lib and executable for plan 02 ECS work
 
 ### Pending Todos
 
 None yet.
+
+### Roadmap Evolution
+
+- Phase 01.1 inserted after Phase 1: Project Restructure — ECS, Application class, modular engine/game split (URGENT)
 
 ### Blockers/Concerns
 
@@ -75,6 +82,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-22T23:38:22.829Z
-Stopped at: Completed 01-engine-and-dithering-pipeline/01-02-PLAN.md
+Last session: 2026-03-23T18:30:19.479Z
+Stopped at: Completed 01.1-project-restructure-ecs-application-class-modular-engine-game-split/01.1-01-PLAN.md
 Resume file: None
