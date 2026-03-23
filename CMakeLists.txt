@@ -97,9 +97,11 @@ add_library(engine_rendering STATIC
     src/engine/rendering/Mesh.cpp
     src/engine/rendering/MeshLibrary.cpp
     src/engine/rendering/Renderer.cpp
+    src/engine/rendering/GltfLoader.cpp
 )
 target_include_directories(engine_rendering PUBLIC ${CMAKE_SOURCE_DIR}/src)
 target_link_libraries(engine_rendering PUBLIC engine_core glm::glm)
+target_link_libraries(engine_rendering PRIVATE tinygltf)
 
 add_library(engine_ui STATIC
     src/engine/ui/ImGuiLayer.cpp

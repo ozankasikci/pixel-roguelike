@@ -1,5 +1,6 @@
 #include "engine/rendering/MeshLibrary.h"
 #include "engine/rendering/Mesh.h"
+#include "engine/rendering/GltfLoader.h"
 
 #include <spdlog/spdlog.h>
 #include <stdexcept>
@@ -25,6 +26,15 @@ void MeshLibrary::registerDefaults() {
     registerMesh("cylinder_wide", std::make_unique<Mesh>(Mesh::createCylinder(1.5f, 1.0f, 12)));
     registerMesh("cylinder_cap", std::make_unique<Mesh>(Mesh::createCylinder(1.4f, 1.0f, 12)));
     spdlog::info("MeshLibrary: registered {} default meshes", meshes_.size());
+}
+
+void MeshLibrary::loadFromFile(const std::string& name, const std::string& filepath) {
+    auto mesh = GltfLoader::load(filepath);
+    if (mesh) {
+        registerMesh(name, std::move(mesh));
+    } else {
+        spdlog::error("MeshLibrary: failed to load mesh '{}' from '{}'", name, filepath);
+    }
 }
 
 void MeshLibrary::clear() {
