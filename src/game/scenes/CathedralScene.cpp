@@ -1,5 +1,11 @@
 #include "CathedralScene.h"
 
+#include "engine/core/Application.h"
+#include "game/components/TransformComponent.h"
+#include "game/components/MeshComponent.h"
+#include "game/components/LightComponent.h"
+#include "game/components/CameraComponent.h"
+
 #include <glm/gtc/matrix_transform.hpp>
 #include <cmath>
 
@@ -57,7 +63,8 @@ static Mesh createCylinder(float radius, float height, int segments) {
 
 // Helper: create an arch between two points
 static void addArch(std::vector<std::unique_ptr<Mesh>>& meshes,
-                    std::vector<RenderObject>& objects,
+                    entt::registry& registry,
+                    std::vector<entt::entity>& entities,
                     float x1, float x2, float baseY, float archHeight, float z, float thickness) {
     int segments = 12;
     float midX = (x1 + x2) * 0.5f;
@@ -86,15 +93,18 @@ static void addArch(std::vector<std::unique_ptr<Mesh>>& meshes,
         model = glm::rotate(model, angle, glm::vec3(0, 0, 1));
         model = glm::scale(model, glm::vec3(segLen, thickness, thickness));
 
-        objects.push_back({segMesh.get(), model});
+        auto entity = registry.create();
+        registry.emplace<MeshComponent>(entity, MeshComponent{segMesh.get(), model, true});
+        entities.push_back(entity);
         meshes.push_back(std::move(segMesh));
     }
 }
 
-void CathedralScene::build() {
+void CathedralScene::onEnter(Application& app) {
     meshes_.clear();
-    objects_.clear();
-    lights_.clear();
+    entities_.clear();
+
+    entt::registry& registry = app.registry();
 
     float corridorLength = 30.0f;
     float corridorWidth  = 8.0f;
@@ -106,7 +116,11 @@ void CathedralScene::build() {
     auto floorMesh = std::make_unique<Mesh>(Mesh::createPlane(corridorLength));
     glm::mat4 floorModel = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, -corridorLength * 0.5f));
     floorModel = glm::scale(floorModel, glm::vec3(corridorWidth / corridorLength, 1.0f, 1.0f));
-    objects_.push_back({floorMesh.get(), floorModel});
+    {
+        auto entity = registry.create();
+        registry.emplace<MeshComponent>(entity, MeshComponent{floorMesh.get(), floorModel, true});
+        entities_.push_back(entity);
+    }
     meshes_.push_back(std::move(floorMesh));
 
     // ------------------------------------------------------------------
@@ -115,7 +129,11 @@ void CathedralScene::build() {
     auto ceilMesh = std::make_unique<Mesh>(Mesh::createPlane(corridorLength));
     glm::mat4 ceilModel = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, wallHeight, -corridorLength * 0.5f));
     ceilModel = glm::scale(ceilModel, glm::vec3(corridorWidth / corridorLength, -1.0f, 1.0f));
-    objects_.push_back({ceilMesh.get(), ceilModel});
+    {
+        auto entity = registry.create();
+        registry.emplace<MeshComponent>(entity, MeshComponent{ceilMesh.get(), ceilModel, true});
+        entities_.push_back(entity);
+    }
     meshes_.push_back(std::move(ceilMesh));
 
     // ------------------------------------------------------------------
@@ -127,7 +145,9 @@ void CathedralScene::build() {
         glm::mat4 wallModel = glm::translate(glm::mat4(1.0f),
             glm::vec3(side * halfW, wallHeight * 0.5f, -corridorLength * 0.5f));
         wallModel = glm::scale(wallModel, glm::vec3(0.3f, wallHeight, corridorLength));
-        objects_.push_back({wallMesh.get(), wallModel});
+        auto entity = registry.create();
+        registry.emplace<MeshComponent>(entity, MeshComponent{wallMesh.get(), wallModel, true});
+        entities_.push_back(entity);
         meshes_.push_back(std::move(wallMesh));
     }
 
@@ -139,7 +159,9 @@ void CathedralScene::build() {
         glm::mat4 wallModel = glm::translate(glm::mat4(1.0f),
             glm::vec3(0.0f, wallHeight * 0.5f, -corridorLength));
         wallModel = glm::scale(wallModel, glm::vec3(corridorWidth, wallHeight, 0.3f));
-        objects_.push_back({wallMesh.get(), wallModel});
+        auto entity = registry.create();
+        registry.emplace<MeshComponent>(entity, MeshComponent{wallMesh.get(), wallModel, true});
+        entities_.push_back(entity);
         meshes_.push_back(std::move(wallMesh));
     }
 
@@ -158,26 +180,38 @@ void CathedralScene::build() {
 
             auto pillar = std::make_unique<Mesh>(createCylinder(pillarRadius, wallHeight, 12));
             glm::mat4 pillarModel = glm::translate(glm::mat4(1.0f), glm::vec3(x, 0.0f, z));
-            objects_.push_back({pillar.get(), pillarModel});
+            {
+                auto entity = registry.create();
+                registry.emplace<MeshComponent>(entity, MeshComponent{pillar.get(), pillarModel, true});
+                entities_.push_back(entity);
+            }
             meshes_.push_back(std::move(pillar));
 
             // Pillar base (wider)
             auto base = std::make_unique<Mesh>(createCylinder(pillarRadius * 1.5f, 0.3f, 12));
             glm::mat4 baseModel = glm::translate(glm::mat4(1.0f), glm::vec3(x, 0.0f, z));
-            objects_.push_back({base.get(), baseModel});
+            {
+                auto entity = registry.create();
+                registry.emplace<MeshComponent>(entity, MeshComponent{base.get(), baseModel, true});
+                entities_.push_back(entity);
+            }
             meshes_.push_back(std::move(base));
 
             // Pillar capital (wider, at top)
             auto cap = std::make_unique<Mesh>(createCylinder(pillarRadius * 1.4f, 0.25f, 12));
             glm::mat4 capModel = glm::translate(glm::mat4(1.0f), glm::vec3(x, wallHeight - 0.25f, z));
-            objects_.push_back({cap.get(), capModel});
+            {
+                auto entity = registry.create();
+                registry.emplace<MeshComponent>(entity, MeshComponent{cap.get(), capModel, true});
+                entities_.push_back(entity);
+            }
             meshes_.push_back(std::move(cap));
         }
 
         // Arches connecting pillar pairs
         float archX1 = -(halfW - 1.2f);
         float archX2 =  (halfW - 1.2f);
-        addArch(meshes_, objects_, archX1, archX2, wallHeight - 0.5f, 0.8f, z, 0.25f);
+        addArch(meshes_, registry, entities_, archX1, archX2, wallHeight - 0.5f, 0.8f, z, 0.25f);
     }
 
     // ------------------------------------------------------------------
@@ -188,7 +222,9 @@ void CathedralScene::build() {
         auto tileLine = std::make_unique<Mesh>(Mesh::createCube(1.0f));
         glm::mat4 tileModel = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.01f, tz));
         tileModel = glm::scale(tileModel, glm::vec3(corridorWidth, 0.02f, 0.05f));
-        objects_.push_back({tileLine.get(), tileModel});
+        auto entity = registry.create();
+        registry.emplace<MeshComponent>(entity, MeshComponent{tileLine.get(), tileModel, true});
+        entities_.push_back(entity);
         meshes_.push_back(std::move(tileLine));
     }
 
@@ -201,7 +237,9 @@ void CathedralScene::build() {
         float sy = s * 0.15f;
         glm::mat4 stepModel = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, sy + 0.075f, sz));
         stepModel = glm::scale(stepModel, glm::vec3(corridorWidth * 0.6f, 0.15f, 0.6f));
-        objects_.push_back({step.get(), stepModel});
+        auto entity = registry.create();
+        registry.emplace<MeshComponent>(entity, MeshComponent{step.get(), stepModel, true});
+        entities_.push_back(entity);
         meshes_.push_back(std::move(step));
     }
 
@@ -212,20 +250,40 @@ void CathedralScene::build() {
         float z = -2.0f - i * pillarSpacing;
 
         for (float side : {-1.0f, 1.0f}) {
-            PointLight light;
-            light.position  = glm::vec3(side * (halfW - 1.0f), wallHeight * 0.65f, z);
-            light.color     = glm::vec3(1.0f, 1.0f, 1.0f);
-            light.radius    = 12.0f;
-            light.intensity = 1.2f;
-            lights_.push_back(light);
+            auto lightEntity = registry.create();
+            glm::vec3 lightPos = glm::vec3(side * (halfW - 1.0f), wallHeight * 0.65f, z);
+            registry.emplace<TransformComponent>(lightEntity, TransformComponent{lightPos, glm::vec3(0.0f), glm::vec3(1.0f)});
+            registry.emplace<LightComponent>(lightEntity, LightComponent{glm::vec3(1.0f), 12.0f, 1.2f});
+            entities_.push_back(lightEntity);
         }
     }
 
     // Bright light near entrance
-    PointLight entrance;
-    entrance.position  = glm::vec3(0.0f, wallHeight * 0.7f, 2.0f);
-    entrance.color     = glm::vec3(1.0f, 1.0f, 1.0f);
-    entrance.radius    = 12.0f;
-    entrance.intensity = 0.8f;
-    lights_.push_back(entrance);
+    {
+        auto lightEntity = registry.create();
+        glm::vec3 lightPos = glm::vec3(0.0f, wallHeight * 0.7f, 2.0f);
+        registry.emplace<TransformComponent>(lightEntity, TransformComponent{lightPos, glm::vec3(0.0f), glm::vec3(1.0f)});
+        registry.emplace<LightComponent>(lightEntity, LightComponent{glm::vec3(1.0f), 12.0f, 0.8f});
+        entities_.push_back(lightEntity);
+    }
+
+    // ------------------------------------------------------------------
+    // Camera entity
+    // ------------------------------------------------------------------
+    {
+        auto cameraEntity = registry.create();
+        registry.emplace<TransformComponent>(cameraEntity, TransformComponent{glm::vec3(0.0f, 2.0f, 5.0f), glm::vec3(0.0f), glm::vec3(1.0f)});
+        registry.emplace<CameraComponent>(cameraEntity);  // defaults: yaw=-90, pitch=0, fov=70
+        entities_.push_back(cameraEntity);
+    }
+}
+
+void CathedralScene::onExit(Application& app) {
+    for (auto e : entities_) {
+        if (app.registry().valid(e)) {
+            app.registry().destroy(e);
+        }
+    }
+    entities_.clear();
+    meshes_.clear();
 }
