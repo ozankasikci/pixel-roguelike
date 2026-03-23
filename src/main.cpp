@@ -13,52 +13,65 @@
 #include "renderer/Renderer.h"
 #include "game/CathedralScene.h"
 
+#include "engine/Screenshot.h"
+
 #include <spdlog/spdlog.h>
 #include <memory>
 #include <vector>
 #include <cmath>
+#include <string>
 
-// Internal resolution presets (D-02)
+// Internal resolution presets
 static const int RES_W[] = {854, 960, 1280};
 static const int RES_H[] = {480, 540,  720};
 
-int main() {
+int main(int argc, char* argv[]) {
     spdlog::set_level(spdlog::level::info);
 
-    // Create window with OpenGL 4.1 Core Profile context
+    // Parse --screenshot <path> for automated capture
+    std::string autoScreenshotPath;
+    for (int i = 1; i < argc; ++i) {
+        if (std::string(argv[i]) == "--screenshot" && i + 1 < argc) {
+            autoScreenshotPath = argv[i + 1];
+            ++i;
+        }
+    }
+
     Window window(1280, 720, "3D Roguelike");
 
-    // Dear ImGui layer
     ImGuiLayer imguiLayer;
     imguiLayer.init(window.handle());
 
-    // Allow normal cursor so ImGui is usable
     glfwSetInputMode(window.handle(), GLFW_CURSOR, GLFW_CURSOR_NORMAL);
 
-    // Internal render resolution: 480p 16:9 (D-02) -- index 0
+    // FBO with color + normals + depth (all as textures for post-process)
     Framebuffer sceneFBO;
-    sceneFBO.create(RES_W[0], RES_H[0]);
+    sceneFBO.create(RES_W[2], RES_H[2]);  // default 720p
 
-    // Create shaders
     Shader sceneShader("assets/shaders/scene.vert", "assets/shaders/scene.frag");
 
-    // Create renderer and dither pass
     Renderer renderer(&sceneShader);
     DitherPass ditherPass;
 
-    // Build cathedral scene
     CathedralScene scene;
     scene.build();
 
-    // Camera state: position + yaw/pitch (degrees)
     scene.cameraPos() = glm::vec3(0.0f, 2.0f, 5.0f);
-    float yaw   = -90.0f;  // looking toward -Z
+    float yaw   = -90.0f;
     float pitch =   0.0f;
 
-    // Debug params (drives ImGui overlay values back into the pipeline)
     DebugParams debugParams;
 
-    // Track time for delta
+    // Auto-screenshot for automated testing
+    AutoScreenshot autoCapture;
+    if (!autoScreenshotPath.empty()) {
+        // Use default dither params for screenshot
+        autoCapture.enable(autoScreenshotPath, 10);
+        spdlog::info("Auto-screenshot enabled: {}", autoScreenshotPath);
+    }
+
+    bool f12Pressed = false;
+
     float lastTime = static_cast<float>(glfwGetTime());
 
     spdlog::info("Starting render loop at {}x{} (internal: {}x{})",
@@ -69,12 +82,10 @@ int main() {
 
         float currentTime = static_cast<float>(glfwGetTime());
         float deltaTime   = currentTime - lastTime;
-        if (deltaTime < 0.0001f) deltaTime = 0.0001f;  // guard against zero
+        if (deltaTime < 0.0001f) deltaTime = 0.0001f;
         lastTime = currentTime;
 
-        // ------------------------------------------------------------------
-        // Camera: compute forward and right vectors from yaw/pitch
-        // ------------------------------------------------------------------
+        // Camera direction from yaw/pitch
         glm::vec3 forward;
         forward.x = std::cos(glm::radians(yaw)) * std::cos(glm::radians(pitch));
         forward.y = std::sin(glm::radians(pitch));
@@ -83,7 +94,7 @@ int main() {
 
         glm::vec3 right = glm::normalize(glm::cross(forward, glm::vec3(0.0f, 1.0f, 0.0f)));
 
-        // Only move camera when ImGui doesn't own the mouse
+        // Movement (only when ImGui doesn't own mouse)
         ImGuiIO& io = ImGui::GetIO();
         if (!io.WantCaptureMouse) {
             float moveSpeed = debugParams.cameraSpeed * deltaTime;
@@ -99,7 +110,7 @@ int main() {
                 scene.cameraPos() += right * moveSpeed;
         }
 
-        // Arrow key look (always active for easy navigation)
+        // Arrow key look
         {
             float lookSpeed = 60.0f * deltaTime;
             GLFWwindow* win = window.handle();
@@ -109,17 +120,15 @@ int main() {
             if (glfwGetKey(win, GLFW_KEY_DOWN)  == GLFW_PRESS) pitch -= lookSpeed;
         }
 
-        // Clamp pitch
         if (pitch >  89.0f) pitch =  89.0f;
         if (pitch < -89.0f) pitch = -89.0f;
 
-        // Recompute forward after potential yaw/pitch change
+        // Recompute forward after yaw/pitch change
         forward.x = std::cos(glm::radians(yaw)) * std::cos(glm::radians(pitch));
         forward.y = std::sin(glm::radians(pitch));
         forward.z = std::sin(glm::radians(yaw)) * std::cos(glm::radians(pitch));
         forward = glm::normalize(forward);
 
-        // View and projection matrices
         glm::mat4 viewMatrix = glm::lookAt(
             scene.cameraPos(),
             scene.cameraPos() + forward,
@@ -129,9 +138,7 @@ int main() {
         glm::mat4 projection = glm::perspective(
             glm::radians(debugParams.cameraFov), aspect, 0.1f, 100.0f);
 
-        // ------------------------------------------------------------------
-        // Scene pass: render to FBO at internal resolution
-        // ------------------------------------------------------------------
+        // ---- Scene pass: render to FBO (color + normals + depth) ----
         sceneFBO.bind();
         glViewport(0, 0, sceneFBO.width(), sceneFBO.height());
         glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
@@ -143,25 +150,24 @@ int main() {
         sceneFBO.unbind();
         glDisable(GL_DEPTH_TEST);
 
-        // ------------------------------------------------------------------
-        // Dither pass: apply Bayer dithering at display resolution
-        // ------------------------------------------------------------------
+        // ---- Dither pass: edges + fog + Bayer dithering ----
         int displayW = window.width();
         int displayH = window.height();
-
         glClear(GL_COLOR_BUFFER_BIT);
 
-        glm::mat4 inverseView = glm::inverse(viewMatrix);
-        ditherPass.apply(sceneFBO.colorTexture(), inverseView,
-                         debugParams.thresholdBias, displayW, displayH,
-                         debugParams.patternScale);
+        // Sync near/far with projection
+        debugParams.dither.nearPlane = 0.1f;
+        debugParams.dither.farPlane  = 100.0f;
 
-        // ------------------------------------------------------------------
-        // ImGui overlay: AFTER dither pass, BEFORE swapBuffers (Pitfall 5)
-        // ------------------------------------------------------------------
+        ditherPass.apply(sceneFBO.colorTexture(),
+                         sceneFBO.depthTexture(),
+                         sceneFBO.normalTexture(),
+                         debugParams.dither,
+                         displayW, displayH);
+
+        // ---- ImGui overlay ----
         imguiLayer.beginFrame();
 
-        // Update debug params from current state
         debugParams.cameraPos     = scene.cameraPos();
         debugParams.cameraDir     = forward;
         debugParams.fps           = (deltaTime > 0.0f) ? (1.0f / deltaTime) : 0.0f;
@@ -172,12 +178,27 @@ int main() {
 
         imguiLayer.endFrame();
 
-        // Handle resolution change from ImGui combo
+        // Handle resolution change
         if (debugParams.resolutionChanged) {
             int idx = debugParams.internalResIndex;
             sceneFBO.resize(RES_W[idx], RES_H[idx]);
             spdlog::info("Internal resolution changed to {}x{}", RES_W[idx], RES_H[idx]);
             debugParams.resolutionChanged = false;
+        }
+
+        // F12: manual screenshot
+        if (glfwGetKey(window.handle(), GLFW_KEY_F12) == GLFW_PRESS && !f12Pressed) {
+            f12Pressed = true;
+            saveScreenshot(displayW, displayH);
+        }
+        if (glfwGetKey(window.handle(), GLFW_KEY_F12) == GLFW_RELEASE) {
+            f12Pressed = false;
+        }
+
+        // Auto-screenshot: capture and exit
+        if (autoCapture.tick(displayW, displayH)) {
+            spdlog::info("Auto-screenshot captured, exiting");
+            break;
         }
 
         window.swapBuffers();

@@ -17,6 +17,8 @@ public:
     void resize(int w, int h);
 
     GLuint colorTexture() const { return colorTex_; }
+    GLuint depthTexture() const { return depthTex_; }
+    GLuint normalTexture() const { return normalTex_; }
     int width() const { return width_; }
     int height() const { return height_; }
 
@@ -25,7 +27,8 @@ private:
 
     GLuint fbo_ = 0;
     GLuint colorTex_ = 0;
-    GLuint depthRbo_ = 0;
+    GLuint depthTex_ = 0;
+    GLuint normalTex_ = 0;
     int width_ = 0;
     int height_ = 0;
 };

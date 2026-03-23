@@ -26,45 +26,49 @@ DitherPass::DitherPass() {
     glBindBuffer(GL_ARRAY_BUFFER, quadVBO_);
     glBufferData(GL_ARRAY_BUFFER, sizeof(quadVerts), quadVerts, GL_STATIC_DRAW);
 
-    // location 0: position (vec2)
     glEnableVertexAttribArray(0);
     glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)0);
 
-    // location 1: texcoord (vec2)
     glEnableVertexAttribArray(1);
     glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)(2 * sizeof(float)));
 
     glBindVertexArray(0);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 
-    spdlog::info("DitherPass initialized");
+    spdlog::info("DitherPass initialized (edge detection + fog)");
 }
 
 DitherPass::~DitherPass() {
-    if (quadVAO_) {
-        glDeleteVertexArrays(1, &quadVAO_);
-    }
-    if (quadVBO_) {
-        glDeleteBuffers(1, &quadVBO_);
-    }
+    if (quadVAO_) glDeleteVertexArrays(1, &quadVAO_);
+    if (quadVBO_) glDeleteBuffers(1, &quadVBO_);
 }
 
-void DitherPass::apply(GLuint sceneColorTex, const glm::mat4& inverseView,
-                       float thresholdBias, int displayW, int displayH,
-                       float patternScale) {
+void DitherPass::apply(GLuint sceneColorTex, GLuint sceneDepthTex, GLuint sceneNormalTex,
+                       const DitherParams& params,
+                       int displayW, int displayH) {
     shader_->use();
 
-    // Bind scene color texture to unit 0
+    // Bind textures
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, sceneColorTex);
     shader_->setInt("sceneColor", 0);
 
-    // Set world-space anchoring uniform
-    shader_->setMat4("uInverseView", inverseView);
-    shader_->setFloat("uThresholdBias", thresholdBias);
-    shader_->setFloat("uPatternScale", patternScale);
+    glActiveTexture(GL_TEXTURE1);
+    glBindTexture(GL_TEXTURE_2D, sceneDepthTex);
+    shader_->setInt("sceneDepth", 1);
 
-    // Render fullscreen quad at display resolution
+    glActiveTexture(GL_TEXTURE2);
+    glBindTexture(GL_TEXTURE_2D, sceneNormalTex);
+    shader_->setInt("sceneNormal", 2);
+
+    // Set uniforms
+    shader_->setFloat("uThresholdBias", params.thresholdBias);
+    shader_->setFloat("uEdgeThreshold", params.edgeThreshold);
+    shader_->setFloat("uFogDensity", params.fogDensity);
+    shader_->setFloat("uFogStart", params.fogStart);
+    shader_->setFloat("uNearPlane", params.nearPlane);
+    shader_->setFloat("uFarPlane", params.farPlane);
+
     glViewport(0, 0, displayW, displayH);
     glBindVertexArray(quadVAO_);
     glDrawArrays(GL_TRIANGLES, 0, 6);

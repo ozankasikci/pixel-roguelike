@@ -49,6 +49,7 @@ find_package(spdlog REQUIRED)
 add_executable(roguelike
     src/main.cpp
     src/engine/Window.cpp
+    src/engine/Screenshot.cpp
     src/renderer/Shader.cpp
     src/renderer/Framebuffer.cpp
     src/renderer/DitherPass.cpp
@@ -58,7 +59,10 @@ add_executable(roguelike
     src/engine/ImGuiLayer.cpp
 )
 
-target_include_directories(roguelike PRIVATE ${CMAKE_SOURCE_DIR}/src)
+target_include_directories(roguelike PRIVATE
+    ${CMAKE_SOURCE_DIR}/src
+    ${CMAKE_SOURCE_DIR}/external
+)
 
 target_link_libraries(roguelike PRIVATE
     glad_gl

@@ -45,9 +45,9 @@ void ImGuiLayer::renderOverlay(DebugParams& params, std::vector<PointLight>& lig
     // ------------------------------------------------------------------
     // Dither section
     // ------------------------------------------------------------------
-    if (ImGui::CollapsingHeader("Dither")) {
-        ImGui::SliderFloat("Threshold Bias", &params.thresholdBias, -0.5f, 0.5f);
-        ImGui::SliderFloat("Pattern Scale", &params.patternScale, 64.0f, 512.0f);
+    if (ImGui::CollapsingHeader("Dither", ImGuiTreeNodeFlags_DefaultOpen)) {
+        ImGui::SliderFloat("Threshold Bias", &params.dither.thresholdBias, -0.5f, 0.5f);
+        ImGui::SliderFloat("Pattern Scale", &params.dither.patternScale, 64.0f, 512.0f);
 
         const char* resOptions[] = {"480p (854x480)", "540p (960x540)", "720p (1280x720)"};
         int prevIndex = params.internalResIndex;
@@ -55,6 +55,15 @@ void ImGuiLayer::renderOverlay(DebugParams& params, std::vector<PointLight>& lig
         if (params.internalResIndex != prevIndex) {
             params.resolutionChanged = true;
         }
+    }
+
+    // ------------------------------------------------------------------
+    // Post-Process section (edges + fog)
+    // ------------------------------------------------------------------
+    if (ImGui::CollapsingHeader("Post-Process", ImGuiTreeNodeFlags_DefaultOpen)) {
+        ImGui::SliderFloat("Edge Threshold", &params.dither.edgeThreshold, 0.0f, 1.0f, "%.2f");
+        ImGui::SliderFloat("Fog Density", &params.dither.fogDensity, 0.0f, 0.5f, "%.3f");
+        ImGui::SliderFloat("Fog Start", &params.dither.fogStart, 0.0f, 20.0f, "%.1f");
     }
 
     // ------------------------------------------------------------------

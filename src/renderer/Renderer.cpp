@@ -20,7 +20,7 @@ void Renderer::drawScene(const std::vector<RenderObject>& objects,
     shader_->setMat4("uProjection", projection);
     shader_->setVec3("uCameraPos", cameraPos);
 
-    int numLights = static_cast<int>(std::min(lights.size(), static_cast<size_t>(8)));
+    int numLights = static_cast<int>(std::min(lights.size(), static_cast<size_t>(32)));
     shader_->setInt("uNumLights", numLights);
 
     for (int i = 0; i < numLights; ++i) {
