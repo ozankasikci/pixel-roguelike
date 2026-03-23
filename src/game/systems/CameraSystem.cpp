@@ -45,20 +45,6 @@ void CameraSystem::update(Application& app, float deltaTime) {
         glm::vec3 up{0.0f, 1.0f, 0.0f};
         glm::vec3 right = glm::normalize(glm::cross(forward, up));
 
-        // WASD movement
-        if (!input_.wantsCaptureMouse()) {
-            float moveSpeed = cam.moveSpeed * deltaTime;
-
-            if (input_.isKeyPressed(GLFW_KEY_W))
-                transform.position += forward * moveSpeed;
-            if (input_.isKeyPressed(GLFW_KEY_S))
-                transform.position -= forward * moveSpeed;
-            if (input_.isKeyPressed(GLFW_KEY_A))
-                transform.position -= right * moveSpeed;
-            if (input_.isKeyPressed(GLFW_KEY_D))
-                transform.position += right * moveSpeed;
-        }
-
         // Store computed vectors
         cam.forward = forward;
         cam.right   = right;
