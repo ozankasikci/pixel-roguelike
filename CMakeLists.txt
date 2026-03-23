@@ -68,6 +68,18 @@ find_package(glfw3 3.4 REQUIRED)
 find_package(glm REQUIRED)
 find_package(spdlog REQUIRED)
 
+# tinygltf - header-only glTF 2.0 loader/writer
+set(TINYGLTF_BUILD_LOADER_EXAMPLE OFF CACHE BOOL "" FORCE)
+set(TINYGLTF_BUILD_GL_EXAMPLES OFF CACHE BOOL "" FORCE)
+set(TINYGLTF_BUILD_VALIDATOR_EXAMPLE OFF CACHE BOOL "" FORCE)
+set(TINYGLTF_INSTALL OFF CACHE BOOL "" FORCE)
+FetchContent_Declare(tinygltf
+    GIT_REPOSITORY https://github.com/syoyo/tinygltf.git
+    GIT_TAG        v2.9.3
+    GIT_PROGRESS   TRUE
+)
+FetchContent_MakeAvailable(tinygltf)
+
 # --- Per-module static libraries ---
 
 add_library(engine_core STATIC
