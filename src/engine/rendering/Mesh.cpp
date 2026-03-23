@@ -1,4 +1,5 @@
 #include "Mesh.h"
+#include "MeshGeometry.h"
 
 #include <utility>
 
@@ -94,71 +95,16 @@ void Mesh::draw() const {
 }
 
 Mesh Mesh::createCube(float size) {
-    float h = size * 0.5f;
-
-    // 8 unique positions, 6 faces * 4 verts with normals
-    std::vector<glm::vec3> positions = {
-        // Front face (+Z)
-        {-h, -h,  h}, { h, -h,  h}, { h,  h,  h}, {-h,  h,  h},
-        // Back face (-Z)
-        { h, -h, -h}, {-h, -h, -h}, {-h,  h, -h}, { h,  h, -h},
-        // Left face (-X)
-        {-h, -h, -h}, {-h, -h,  h}, {-h,  h,  h}, {-h,  h, -h},
-        // Right face (+X)
-        { h, -h,  h}, { h, -h, -h}, { h,  h, -h}, { h,  h,  h},
-        // Top face (+Y)
-        {-h,  h,  h}, { h,  h,  h}, { h,  h, -h}, {-h,  h, -h},
-        // Bottom face (-Y)
-        {-h, -h, -h}, { h, -h, -h}, { h, -h,  h}, {-h, -h,  h},
-    };
-
-    std::vector<glm::vec3> normals = {
-        // Front
-        {0, 0, 1}, {0, 0, 1}, {0, 0, 1}, {0, 0, 1},
-        // Back
-        {0, 0, -1}, {0, 0, -1}, {0, 0, -1}, {0, 0, -1},
-        // Left
-        {-1, 0, 0}, {-1, 0, 0}, {-1, 0, 0}, {-1, 0, 0},
-        // Right
-        {1, 0, 0}, {1, 0, 0}, {1, 0, 0}, {1, 0, 0},
-        // Top
-        {0, 1, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0},
-        // Bottom
-        {0, -1, 0}, {0, -1, 0}, {0, -1, 0}, {0, -1, 0},
-    };
-
-    std::vector<uint32_t> indices;
-    for (uint32_t face = 0; face < 6; ++face) {
-        uint32_t base = face * 4;
-        indices.push_back(base + 0);
-        indices.push_back(base + 1);
-        indices.push_back(base + 2);
-        indices.push_back(base + 0);
-        indices.push_back(base + 2);
-        indices.push_back(base + 3);
-    }
-
-    return Mesh(positions, normals, indices);
+    auto data = generateCube(size);
+    return Mesh(data.positions, data.normals, data.indices);
 }
 
 Mesh Mesh::createPlane(float size) {
-    float h = size * 0.5f;
+    auto data = generatePlane(size);
+    return Mesh(data.positions, data.normals, data.indices);
+}
 
-    std::vector<glm::vec3> positions = {
-        {-h, 0.0f, -h},
-        { h, 0.0f, -h},
-        { h, 0.0f,  h},
-        {-h, 0.0f,  h},
-    };
-
-    std::vector<glm::vec3> normals = {
-        {0, 1, 0},
-        {0, 1, 0},
-        {0, 1, 0},
-        {0, 1, 0},
-    };
-
-    std::vector<uint32_t> indices = {0, 1, 2, 0, 2, 3};
-
-    return Mesh(positions, normals, indices);
+Mesh Mesh::createCylinder(float radius, float height, int segments) {
+    auto data = generateCylinder(radius, height, segments);
+    return Mesh(data.positions, data.normals, data.indices);
 }
