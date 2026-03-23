@@ -58,9 +58,11 @@ find_package(spdlog REQUIRED)
 
 add_library(engine_core STATIC
     src/engine/core/Window.cpp
+    src/engine/core/Application.cpp
+    src/engine/core/Time.cpp
 )
 target_include_directories(engine_core PUBLIC ${CMAKE_SOURCE_DIR}/src)
-target_link_libraries(engine_core PUBLIC glad_gl glfw spdlog::spdlog)
+target_link_libraries(engine_core PUBLIC glad_gl glfw spdlog::spdlog EnTT::EnTT)
 
 add_library(engine_rendering STATIC
     src/engine/rendering/Shader.cpp
