@@ -94,6 +94,7 @@ static void addArch(std::vector<std::unique_ptr<Mesh>>& meshes,
         model = glm::scale(model, glm::vec3(segLen, thickness, thickness));
 
         auto entity = registry.create();
+        registry.emplace<TransformComponent>(entity);
         registry.emplace<MeshComponent>(entity, MeshComponent{segMesh.get(), model, true});
         entities.push_back(entity);
         meshes.push_back(std::move(segMesh));
@@ -118,6 +119,7 @@ void CathedralScene::onEnter(Application& app) {
     floorModel = glm::scale(floorModel, glm::vec3(corridorWidth / corridorLength, 1.0f, 1.0f));
     {
         auto entity = registry.create();
+        registry.emplace<TransformComponent>(entity);
         registry.emplace<MeshComponent>(entity, MeshComponent{floorMesh.get(), floorModel, true});
         entities_.push_back(entity);
     }
@@ -131,6 +133,7 @@ void CathedralScene::onEnter(Application& app) {
     ceilModel = glm::scale(ceilModel, glm::vec3(corridorWidth / corridorLength, -1.0f, 1.0f));
     {
         auto entity = registry.create();
+        registry.emplace<TransformComponent>(entity);
         registry.emplace<MeshComponent>(entity, MeshComponent{ceilMesh.get(), ceilModel, true});
         entities_.push_back(entity);
     }
@@ -146,6 +149,7 @@ void CathedralScene::onEnter(Application& app) {
             glm::vec3(side * halfW, wallHeight * 0.5f, -corridorLength * 0.5f));
         wallModel = glm::scale(wallModel, glm::vec3(0.3f, wallHeight, corridorLength));
         auto entity = registry.create();
+        registry.emplace<TransformComponent>(entity);
         registry.emplace<MeshComponent>(entity, MeshComponent{wallMesh.get(), wallModel, true});
         entities_.push_back(entity);
         meshes_.push_back(std::move(wallMesh));
@@ -160,6 +164,7 @@ void CathedralScene::onEnter(Application& app) {
             glm::vec3(0.0f, wallHeight * 0.5f, -corridorLength));
         wallModel = glm::scale(wallModel, glm::vec3(corridorWidth, wallHeight, 0.3f));
         auto entity = registry.create();
+        registry.emplace<TransformComponent>(entity);
         registry.emplace<MeshComponent>(entity, MeshComponent{wallMesh.get(), wallModel, true});
         entities_.push_back(entity);
         meshes_.push_back(std::move(wallMesh));
@@ -182,6 +187,7 @@ void CathedralScene::onEnter(Application& app) {
             glm::mat4 pillarModel = glm::translate(glm::mat4(1.0f), glm::vec3(x, 0.0f, z));
             {
                 auto entity = registry.create();
+                registry.emplace<TransformComponent>(entity);
                 registry.emplace<MeshComponent>(entity, MeshComponent{pillar.get(), pillarModel, true});
                 entities_.push_back(entity);
             }
@@ -192,6 +198,7 @@ void CathedralScene::onEnter(Application& app) {
             glm::mat4 baseModel = glm::translate(glm::mat4(1.0f), glm::vec3(x, 0.0f, z));
             {
                 auto entity = registry.create();
+                registry.emplace<TransformComponent>(entity);
                 registry.emplace<MeshComponent>(entity, MeshComponent{base.get(), baseModel, true});
                 entities_.push_back(entity);
             }
@@ -202,6 +209,7 @@ void CathedralScene::onEnter(Application& app) {
             glm::mat4 capModel = glm::translate(glm::mat4(1.0f), glm::vec3(x, wallHeight - 0.25f, z));
             {
                 auto entity = registry.create();
+                registry.emplace<TransformComponent>(entity);
                 registry.emplace<MeshComponent>(entity, MeshComponent{cap.get(), capModel, true});
                 entities_.push_back(entity);
             }
@@ -223,6 +231,7 @@ void CathedralScene::onEnter(Application& app) {
         glm::mat4 tileModel = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.01f, tz));
         tileModel = glm::scale(tileModel, glm::vec3(corridorWidth, 0.02f, 0.05f));
         auto entity = registry.create();
+        registry.emplace<TransformComponent>(entity);
         registry.emplace<MeshComponent>(entity, MeshComponent{tileLine.get(), tileModel, true});
         entities_.push_back(entity);
         meshes_.push_back(std::move(tileLine));
@@ -238,6 +247,7 @@ void CathedralScene::onEnter(Application& app) {
         glm::mat4 stepModel = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, sy + 0.075f, sz));
         stepModel = glm::scale(stepModel, glm::vec3(corridorWidth * 0.6f, 0.15f, 0.6f));
         auto entity = registry.create();
+        registry.emplace<TransformComponent>(entity);
         registry.emplace<MeshComponent>(entity, MeshComponent{step.get(), stepModel, true});
         entities_.push_back(entity);
         meshes_.push_back(std::move(step));
