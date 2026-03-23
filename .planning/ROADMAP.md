@@ -13,6 +13,7 @@ Build a first-person 3D roguelike with a custom C++ engine, starting with the de
 Decimal phases appear between their surrounding integers in numeric order.
 
 - [ ] **Phase 1: Engine and Dithering Pipeline** - Custom C++ engine with OpenGL 4.1, the 1-bit Bayer dither post-process validated with world-space anchoring
+- [ ] **Phase 1.1: Project Restructure** - ECS, Application class, modular engine/game split (INSERTED)
 - [ ] **Phase 2: Player, Environment, and Lighting** - Player moves through a lit gothic level with collision; torches affect dither density
 - [ ] **Phase 3: Combat and Enemies** - Full melee combat loop against patrolling enemies with health and death
 - [ ] **Phase 4: Game Systems** - Save, options menu, and game state transitions that make the experience shippable
@@ -35,9 +36,27 @@ Plans:
 - [x] 01-01-PLAN.md — CMake build system, OpenGL 4.1 engine bootstrap, FBO + dither post-process with world-space anchoring
 - [x] 01-02-PLAN.md — Blinn-Phong point lighting, cathedral test scene, ImGui debug overlay
 
+### Phase 01.1: Project Restructure — ECS, Application class, modular engine/game split (INSERTED)
+
+**Goal:** Transform the flat project structure into a modular engine/game architecture with ECS (EnTT), Application class owning the game loop, event bus, and SceneManager — all existing rendering functionality continues working identically
+**Requirements**: None (structural refactoring, not mapped to feature requirements)
+**Depends on:** Phase 1
+**Success Criteria** (what must be TRUE):
+  1. main.cpp is under 50 lines — creates Application, registers systems, pushes scene, calls run()
+  2. All game objects (meshes, lights, camera) are ECS entities with components, processed by systems
+  3. CMake builds per-module static libraries (engine_core, engine_rendering, engine_ui, engine_input, engine_scene, game)
+  4. Visual output is identical to pre-restructure: dithering, edge detection, fog, ImGui overlay, screenshots, camera all work
+**Plans**: 4 plans
+
+Plans:
+- [ ] 01.1-01-PLAN.md — Directory restructure, CMake modular build, EnTT FetchContent
+- [ ] 01.1-02-PLAN.md — Engine core (Application, System, EventBus, Time) + ECS components
+- [ ] 01.1-03-PLAN.md — SceneManager, InputSystem, CameraSystem, RenderSystem
+- [ ] 01.1-04-PLAN.md — CathedralScene ECS refactor, new main.cpp, visual verification
+
 ### Phase 2: Player, Environment, and Lighting
 **Goal**: The player can walk through a dithered gothic cathedral room, collide with walls, and see torch lighting that responds correctly through the dither pass
-**Depends on**: Phase 1
+**Depends on**: Phase 1.1
 **Requirements**: PLYR-01, PLYR-02, PLYR-03, ENVR-01, ENVR-02, ENVR-03
 **Success Criteria** (what must be TRUE):
   1. The player can move through a gothic cathedral room using WASD and look around with the mouse — movement is smooth with no stutter
@@ -74,11 +93,12 @@ Plans:
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order: 1 → 2 → 3 → 4
+Phases execute in numeric order: 1 → 1.1 → 2 → 3 → 4
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Engine and Dithering Pipeline | 1/2 | In Progress|  |
+| 1. Engine and Dithering Pipeline | 2/2 | Complete |  |
+| 1.1. Project Restructure | 0/4 | Not started | - |
 | 2. Player, Environment, and Lighting | 0/? | Not started | - |
 | 3. Combat and Enemies | 0/? | Not started | - |
 | 4. Game Systems | 0/? | Not started | - |
