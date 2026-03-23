@@ -95,7 +95,7 @@ add_library(engine_input STATIC
     src/engine/input/InputSystem.cpp
 )
 target_include_directories(engine_input PUBLIC ${CMAKE_SOURCE_DIR}/src)
-target_link_libraries(engine_input PUBLIC engine_core imgui)
+target_link_libraries(engine_input PUBLIC engine_core imgui glm::glm)
 
 add_library(game STATIC
     src/game/scenes/CathedralScene.cpp

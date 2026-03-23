@@ -14,17 +14,28 @@ CameraSystem::CameraSystem(InputSystem& input)
 {}
 
 void CameraSystem::init(Application& app) {
-    // Nothing to initialize -- camera entity is created by the scene
     (void)app;
 }
 
 void CameraSystem::update(Application& app, float deltaTime) {
     auto& registry = app.registry();
 
-    // Query for the camera entity (exactly one expected)
     auto view = registry.view<TransformComponent, CameraComponent>();
     for (auto [entity, transform, cam] : view.each()) {
-        // Compute initial forward direction from current yaw/pitch
+
+        // Mouse look (only when cursor is locked)
+        if (input_.isCursorLocked()) {
+            constexpr float sensitivity = 0.1f;
+            glm::vec2 delta = input_.mouseDelta();
+            cam.yaw   += delta.x * sensitivity;
+            cam.pitch -= delta.y * sensitivity;  // inverted: moving mouse up = look up
+        }
+
+        // Clamp pitch
+        if (cam.pitch >  89.0f) cam.pitch =  89.0f;
+        if (cam.pitch < -89.0f) cam.pitch = -89.0f;
+
+        // Compute direction vectors from yaw/pitch
         glm::vec3 forward;
         forward.x = std::cos(glm::radians(cam.yaw)) * std::cos(glm::radians(cam.pitch));
         forward.y = std::sin(glm::radians(cam.pitch));
@@ -34,7 +45,7 @@ void CameraSystem::update(Application& app, float deltaTime) {
         glm::vec3 up{0.0f, 1.0f, 0.0f};
         glm::vec3 right = glm::normalize(glm::cross(forward, up));
 
-        // Movement (only when ImGui doesn't own mouse) -- mirrors main.cpp lines 98-111
+        // WASD movement
         if (!input_.wantsCaptureMouse()) {
             float moveSpeed = cam.moveSpeed * deltaTime;
 
@@ -48,39 +59,18 @@ void CameraSystem::update(Application& app, float deltaTime) {
                 transform.position += right * moveSpeed;
         }
 
-        // Arrow key look -- mirrors main.cpp lines 113-121
-        {
-            float lookSpeed = 60.0f * deltaTime;
-            if (input_.isKeyPressed(GLFW_KEY_LEFT))  cam.yaw   -= lookSpeed;
-            if (input_.isKeyPressed(GLFW_KEY_RIGHT)) cam.yaw   += lookSpeed;
-            if (input_.isKeyPressed(GLFW_KEY_UP))    cam.pitch += lookSpeed;
-            if (input_.isKeyPressed(GLFW_KEY_DOWN))  cam.pitch -= lookSpeed;
-        }
-
-        // Clamp pitch -- mirrors main.cpp lines 123-124
-        if (cam.pitch >  89.0f) cam.pitch =  89.0f;
-        if (cam.pitch < -89.0f) cam.pitch = -89.0f;
-
-        // Recompute forward after yaw/pitch change -- mirrors main.cpp lines 126-130
-        forward.x = std::cos(glm::radians(cam.yaw)) * std::cos(glm::radians(cam.pitch));
-        forward.y = std::sin(glm::radians(cam.pitch));
-        forward.z = std::sin(glm::radians(cam.yaw)) * std::cos(glm::radians(cam.pitch));
-        forward = glm::normalize(forward);
-
-        right = glm::normalize(glm::cross(forward, up));
-
-        // Store computed vectors into CameraComponent
+        // Store computed vectors
         cam.forward = forward;
         cam.right   = right;
 
-        // Compute view matrix -- mirrors main.cpp lines 132-136
+        // View matrix
         cam.viewMatrix = glm::lookAt(
             transform.position,
             transform.position + forward,
             up
         );
 
-        // Compute projection matrix -- mirrors main.cpp lines 137-139
+        // Projection matrix
         float aspect = static_cast<float>(app.window().width()) /
                        static_cast<float>(app.window().height());
         cam.projectionMatrix = glm::perspective(
@@ -92,5 +82,4 @@ void CameraSystem::update(Application& app, float deltaTime) {
 }
 
 void CameraSystem::shutdown() {
-    // no-op
 }
