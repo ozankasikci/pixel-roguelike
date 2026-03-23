@@ -22,6 +22,7 @@ public:
     void setCharacterVelocity(const glm::vec3& velocity);
     void updateCharacter(float deltaTime, const glm::vec3& gravity);
     glm::vec3 getCharacterPosition() const;
+    void setCharacterPosition(const glm::vec3& position);
     GroundState getCharacterGroundState() const;
 
 private:

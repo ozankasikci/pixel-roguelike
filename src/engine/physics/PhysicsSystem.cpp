@@ -302,6 +302,12 @@ glm::vec3 PhysicsSystem::getCharacterPosition() const {
     return glm::vec3(0.0f);
 }
 
+void PhysicsSystem::setCharacterPosition(const glm::vec3& position) {
+    if (impl_ && impl_->character) {
+        impl_->character->SetPosition(toJoltR(position));
+    }
+}
+
 GroundState PhysicsSystem::getCharacterGroundState() const {
     if (!impl_ || !impl_->character) return GroundState::InAir;
 

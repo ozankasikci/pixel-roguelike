@@ -264,7 +264,7 @@ void CathedralScene::onEnter(Application& app) {
     {
         auto e = registry.create();
         // Spawn at eye height — PhysicsSystem derives capsule center from this
-        registry.emplace<TransformComponent>(e, TransformComponent{glm::vec3(0.0f, 1.6f, 4.0f)});
+        registry.emplace<TransformComponent>(e, TransformComponent{glm::vec3(0.0f, 1.6f, -2.0f)});
         registry.emplace<CameraComponent>(e);
         registry.emplace<CharacterControllerComponent>(e);
         registry.emplace<PlayerMovementComponent>(e);
