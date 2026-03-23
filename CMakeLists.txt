@@ -148,3 +148,11 @@ if(APPLE)
     )
     target_compile_definitions(pixel-roguelike PRIVATE GL_SILENCE_DEPRECATION)
 endif()
+
+# --- Tests ---
+enable_testing()
+
+add_executable(test_mesh_geometry tests/test_mesh_geometry.cpp)
+target_include_directories(test_mesh_geometry PRIVATE ${CMAKE_SOURCE_DIR}/src)
+target_link_libraries(test_mesh_geometry PRIVATE glm::glm)
+add_test(NAME mesh_geometry COMMAND test_mesh_geometry)
