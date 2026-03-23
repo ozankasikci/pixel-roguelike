@@ -69,6 +69,7 @@ add_library(engine_rendering STATIC
     src/engine/rendering/Framebuffer.cpp
     src/engine/rendering/DitherPass.cpp
     src/engine/rendering/Mesh.cpp
+    src/engine/rendering/MeshLibrary.cpp
     src/engine/rendering/Renderer.cpp
 )
 target_include_directories(engine_rendering PUBLIC ${CMAKE_SOURCE_DIR}/src)
