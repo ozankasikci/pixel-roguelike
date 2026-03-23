@@ -5,6 +5,9 @@
 #include "game/components/MeshComponent.h"
 #include "game/components/LightComponent.h"
 #include "game/components/CameraComponent.h"
+#include "game/components/StaticColliderComponent.h"
+#include "game/components/CharacterControllerComponent.h"
+#include "game/components/PlayerMovementComponent.h"
 
 #include <glm/gtc/matrix_transform.hpp>
 #include <cmath>
@@ -49,6 +52,33 @@ static void addArch(entt::registry& registry,
 
         entities.push_back(spawnMesh(registry, cubeMesh, model));
     }
+}
+
+static entt::entity addColliderBox(entt::registry& registry,
+                                   std::vector<entt::entity>& entities,
+                                   glm::vec3 position, glm::vec3 halfExtents) {
+    auto e = registry.create();
+    StaticColliderComponent sc;
+    sc.shape = ColliderShape::Box;
+    sc.position = position;
+    sc.halfExtents = halfExtents;
+    registry.emplace<StaticColliderComponent>(e, sc);
+    entities.push_back(e);
+    return e;
+}
+
+static entt::entity addColliderCylinder(entt::registry& registry,
+                                        std::vector<entt::entity>& entities,
+                                        glm::vec3 position, float radius, float halfHeight) {
+    auto e = registry.create();
+    StaticColliderComponent sc;
+    sc.shape = ColliderShape::Cylinder;
+    sc.position = position;
+    sc.radius = radius;
+    sc.halfHeight = halfHeight;
+    registry.emplace<StaticColliderComponent>(e, sc);
+    entities.push_back(e);
+    return e;
 }
 
 void CathedralScene::onEnter(Application& app) {
@@ -178,11 +208,66 @@ void CathedralScene::onEnter(Application& app) {
         entities_.push_back(e);
     }
 
-    // Camera
+    // ===== Collision geometry =====
+
+    // Floor collider
+    addColliderBox(registry, entities_,
+        glm::vec3(0.0f, -0.05f, -corridorLength * 0.5f),
+        glm::vec3(halfW, 0.05f, corridorLength * 0.5f));
+
+    // Ceiling collider
+    addColliderBox(registry, entities_,
+        glm::vec3(0.0f, wallHeight + 0.05f, -corridorLength * 0.5f),
+        glm::vec3(halfW, 0.05f, corridorLength * 0.5f));
+
+    // Left wall collider
+    addColliderBox(registry, entities_,
+        glm::vec3(-halfW, wallHeight * 0.5f, -corridorLength * 0.5f),
+        glm::vec3(0.15f, wallHeight * 0.5f, corridorLength * 0.5f));
+
+    // Right wall collider
+    addColliderBox(registry, entities_,
+        glm::vec3(halfW, wallHeight * 0.5f, -corridorLength * 0.5f),
+        glm::vec3(0.15f, wallHeight * 0.5f, corridorLength * 0.5f));
+
+    // Back wall collider
+    addColliderBox(registry, entities_,
+        glm::vec3(0.0f, wallHeight * 0.5f, -corridorLength),
+        glm::vec3(halfW, wallHeight * 0.5f, 0.15f));
+
+    // Front wall (invisible, prevents walking out the entrance)
+    addColliderBox(registry, entities_,
+        glm::vec3(0.0f, wallHeight * 0.5f, 1.0f),
+        glm::vec3(halfW, wallHeight * 0.5f, 0.15f));
+
+    // Pillar colliders
+    for (int i = 0; i < pillarCount; ++i) {
+        float z = -2.0f - i * pillarSpacing;
+        for (float side : {-1.0f, 1.0f}) {
+            float x = side * (halfW - 1.2f);
+            addColliderCylinder(registry, entities_,
+                glm::vec3(x, wallHeight * 0.5f, z),
+                pillarRadius, wallHeight * 0.5f);
+        }
+    }
+
+    // Step colliders
+    for (int s = 0; s < 4; ++s) {
+        float sz = -corridorLength + 2.0f + s * 0.6f;
+        float sy = s * 0.15f;
+        addColliderBox(registry, entities_,
+            glm::vec3(0.0f, sy + 0.075f, sz),
+            glm::vec3(corridorWidth * 0.3f, 0.075f, 0.3f));
+    }
+
+    // Camera / Player
     {
         auto e = registry.create();
-        registry.emplace<TransformComponent>(e, TransformComponent{glm::vec3(0.0f, 2.0f, 5.0f)});
+        // Spawn at eye height — PhysicsSystem derives capsule center from this
+        registry.emplace<TransformComponent>(e, TransformComponent{glm::vec3(0.0f, 1.6f, 4.0f)});
         registry.emplace<CameraComponent>(e);
+        registry.emplace<CharacterControllerComponent>(e);
+        registry.emplace<PlayerMovementComponent>(e);
         entities_.push_back(e);
     }
 }
