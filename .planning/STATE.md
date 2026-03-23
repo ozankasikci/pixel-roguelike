@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: Ready to execute
-stopped_at: Completed 01.1-project-restructure-ecs-application-class-modular-engine-game-split/01.1-02-PLAN.md
-last_updated: "2026-03-23T18:34:54.048Z"
+stopped_at: Completed 01.1-project-restructure-ecs-application-class-modular-engine-game-split/01.1-03-PLAN.md
+last_updated: "2026-03-23T18:40:18.106Z"
 progress:
   total_phases: 5
   completed_phases: 1
   total_plans: 6
-  completed_plans: 4
+  completed_plans: 5
 ---
 
 # Project State
@@ -24,7 +24,7 @@ See: .planning/PROJECT.md (updated 2026-03-23)
 ## Current Position
 
 Phase: 01.1 (project-restructure) — EXECUTING
-Plan: 3 of 4
+Plan: 4 of 4
 
 ## Performance Metrics
 
@@ -50,6 +50,7 @@ Plan: 3 of 4
 | Phase 01-engine-and-dithering-pipeline P02 | 15 | 3 tasks | 11 files |
 | Phase 01.1-project-restructure-ecs-application-class-modular-engine-game-split P01 | 7 | 2 tasks | 20 files |
 | Phase 01.1-project-restructure-ecs-application-class-modular-engine-game-split P02 | 2 | 2 tasks | 12 files |
+| Phase 01.1-project-restructure-ecs-application-class-modular-engine-game-split P03 | 3 | 2 tasks | 10 files |
 
 ## Accumulated Context
 
@@ -71,6 +72,9 @@ Recent decisions affecting current work:
 - [Phase 01.1-project-restructure-ecs-application-class-modular-engine-game-split]: Application::run() game loop: init all systems, loop poll/time/update/swap while not closed, shutdown in reverse order
 - [Phase 01.1-project-restructure-ecs-application-class-modular-engine-game-split]: MeshComponent includes modelOverride field for CathedralScene arch segments using non-euler rotation
 - [Phase 01.1-project-restructure-ecs-application-class-modular-engine-game-split]: CameraComponent initial values match main.cpp hardcoded values (yaw=-90, pitch=0, fov=70, moveSpeed=3.0, near=0.1, far=100)
+- [Phase 01.1-project-restructure-ecs-application-class-modular-engine-game-split]: CameraSystem uses identical yaw/pitch/forward math as main.cpp: cos(radians(yaw))*cos(radians(pitch)) for x, sin(radians(pitch)) for y, sin(radians(yaw))*cos(radians(pitch)) for z
+- [Phase 01.1-project-restructure-ecs-application-class-modular-engine-game-split]: RenderSystem builds render and light lists from ECS each frame; orchestrates full FBO scene pass + dither post-process + ImGui overlay identical to main.cpp
+- [Phase 01.1-project-restructure-ecs-application-class-modular-engine-game-split]: CameraSystem receives InputSystem& by constructor injection -- avoids application-level coupling, makes dependency explicit
 
 ### Pending Todos
 
@@ -86,6 +90,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-23T18:34:54.044Z
-Stopped at: Completed 01.1-project-restructure-ecs-application-class-modular-engine-game-split/01.1-02-PLAN.md
+Last session: 2026-03-23T18:40:18.102Z
+Stopped at: Completed 01.1-project-restructure-ecs-application-class-modular-engine-game-split/01.1-03-PLAN.md
 Resume file: None

@@ -51,7 +51,7 @@ Plans:
 Plans:
 - [x] 01.1-01-PLAN.md — Directory restructure, CMake modular build, EnTT FetchContent
 - [x] 01.1-02-PLAN.md — Engine core (Application, System, EventBus, Time) + ECS components
-- [ ] 01.1-03-PLAN.md — SceneManager, InputSystem, CameraSystem, RenderSystem
+- [x] 01.1-03-PLAN.md — SceneManager, InputSystem, CameraSystem, RenderSystem
 - [ ] 01.1-04-PLAN.md — CathedralScene ECS refactor, new main.cpp, visual verification
 
 ### Phase 2: Player, Environment, and Lighting
