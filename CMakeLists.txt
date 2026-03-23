@@ -121,6 +121,7 @@ target_link_libraries(engine_physics PRIVATE Jolt)
 add_library(game STATIC
     src/game/scenes/CathedralScene.cpp
     src/game/systems/CameraSystem.cpp
+    src/game/systems/PlayerMovementSystem.cpp
     src/game/systems/RenderSystem.cpp
 )
 target_include_directories(game PUBLIC ${CMAKE_SOURCE_DIR}/src)
