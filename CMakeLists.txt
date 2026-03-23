@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.28)
-project(roguelike LANGUAGES C CXX)
+project(pixel-roguelike LANGUAGES C CXX)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -17,6 +17,14 @@ FetchContent_Declare(glad
 )
 FetchContent_MakeAvailable(glad)
 glad_add_library(glad_gl STATIC REPRODUCIBLE LOADER API gl:core=4.1)
+
+# EnTT v3.16.0 - Entity Component System
+FetchContent_Declare(entt
+    GIT_REPOSITORY https://github.com/skypjack/entt.git
+    GIT_TAG        v3.16.0
+    GIT_PROGRESS   TRUE
+)
+FetchContent_MakeAvailable(entt)
 
 # Dear ImGui v1.92.6 via FetchContent
 # Uses EXCLUDE_FROM_ALL to avoid adding ImGui demo targets to the default build
@@ -46,37 +54,55 @@ find_package(glfw3 3.4 REQUIRED)
 find_package(glm REQUIRED)
 find_package(spdlog REQUIRED)
 
-add_executable(roguelike
-    src/main.cpp
-    src/engine/Window.cpp
-    src/engine/Screenshot.cpp
-    src/renderer/Shader.cpp
-    src/renderer/Framebuffer.cpp
-    src/renderer/DitherPass.cpp
-    src/renderer/Mesh.cpp
-    src/renderer/Renderer.cpp
-    src/game/CathedralScene.cpp
-    src/engine/ImGuiLayer.cpp
-)
+# --- Per-module static libraries ---
 
-target_include_directories(roguelike PRIVATE
+add_library(engine_core STATIC
+    src/engine/core/Window.cpp
+)
+target_include_directories(engine_core PUBLIC ${CMAKE_SOURCE_DIR}/src)
+target_link_libraries(engine_core PUBLIC glad_gl glfw spdlog::spdlog)
+
+add_library(engine_rendering STATIC
+    src/engine/rendering/Shader.cpp
+    src/engine/rendering/Framebuffer.cpp
+    src/engine/rendering/DitherPass.cpp
+    src/engine/rendering/Mesh.cpp
+    src/engine/rendering/Renderer.cpp
+)
+target_include_directories(engine_rendering PUBLIC ${CMAKE_SOURCE_DIR}/src)
+target_link_libraries(engine_rendering PUBLIC engine_core glm::glm)
+
+add_library(engine_ui STATIC
+    src/engine/ui/ImGuiLayer.cpp
+    src/engine/ui/Screenshot.cpp
+)
+target_include_directories(engine_ui PUBLIC
     ${CMAKE_SOURCE_DIR}/src
     ${CMAKE_SOURCE_DIR}/external
 )
+target_link_libraries(engine_ui PUBLIC engine_rendering imgui)
 
-target_link_libraries(roguelike PRIVATE
-    glad_gl
-    glfw
-    glm::glm
-    spdlog::spdlog
-    imgui
+add_library(game STATIC
+    src/game/scenes/CathedralScene.cpp
+)
+target_include_directories(game PUBLIC ${CMAKE_SOURCE_DIR}/src)
+target_link_libraries(game PUBLIC engine_rendering EnTT::EnTT)
+
+add_executable(pixel-roguelike src/main.cpp)
+target_include_directories(pixel-roguelike PRIVATE ${CMAKE_SOURCE_DIR}/src ${CMAKE_SOURCE_DIR}/external)
+target_link_libraries(pixel-roguelike PRIVATE
+    engine_core
+    engine_rendering
+    engine_ui
+    game
+    EnTT::EnTT
 )
 
 if(APPLE)
-    target_link_libraries(roguelike PRIVATE
+    target_link_libraries(pixel-roguelike PRIVATE
         "-framework Cocoa"
         "-framework OpenGL"
         "-framework IOKit"
     )
-    target_compile_definitions(roguelike PRIVATE GL_SILENCE_DEPRECATION)
+    target_compile_definitions(pixel-roguelike PRIVATE GL_SILENCE_DEPRECATION)
 endif()
