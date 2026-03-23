@@ -114,7 +114,7 @@ struct PhysicsSystem::Impl {
     std::unique_ptr<JPH::PhysicsSystem> physicsSystem;
 
     // Character controller
-    JPH::CharacterVirtual* character = nullptr;
+    JPH::Ref<JPH::CharacterVirtual> character;
     float characterEyeOffset = 0.7f;
 
     // Tracked bodies for cleanup
@@ -228,6 +228,12 @@ void PhysicsSystem::update(Application& /*app*/, float deltaTime) {
 
     // Fixed timestep stepping (for future dynamic bodies)
     impl_->accumulator += deltaTime;
+
+    // Cap accumulator to prevent spiral of death on hitches
+    if (impl_->accumulator > Impl::fixedTimeStep * 5.0f) {
+        impl_->accumulator = Impl::fixedTimeStep * 5.0f;
+    }
+
     while (impl_->accumulator >= Impl::fixedTimeStep) {
         impl_->physicsSystem->Update(
             Impl::fixedTimeStep,
@@ -241,12 +247,6 @@ void PhysicsSystem::update(Application& /*app*/, float deltaTime) {
 
 void PhysicsSystem::shutdown() {
     if (!impl_) return;
-
-    // Destroy character
-    if (impl_->character) {
-        delete impl_->character;
-        impl_->character = nullptr;
-    }
 
     // Remove static bodies
     if (impl_->physicsSystem) {

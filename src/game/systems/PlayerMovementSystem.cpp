@@ -35,36 +35,41 @@ void PlayerMovementSystem::init(Application& app) {
 }
 
 void PlayerMovementSystem::update(Application& app, float deltaTime) {
-    if (input_.wantsCaptureMouse()) return;
-
     auto& registry = app.registry();
 
     // Find the player entity (has all three components)
     auto view = registry.view<TransformComponent, CameraComponent, PlayerMovementComponent, CharacterControllerComponent>();
     for (auto [entity, transform, cam, movement, cc] : view.each()) {
 
-        // --- 1. Compute movement direction from camera yaw (horizontal only) ---
-        float yawRad = glm::radians(cam.yaw);
-        glm::vec3 forward(std::cos(yawRad), 0.0f, std::sin(yawRad));
-        forward = glm::normalize(forward);
-        glm::vec3 right = glm::normalize(glm::cross(forward, glm::vec3(0.0f, 1.0f, 0.0f)));
+        bool captured = input_.wantsCaptureMouse();
 
-        // --- 2. Read WASD input ---
+        // --- 1. Compute movement direction and read input ---
         glm::vec3 inputDir(0.0f);
-        if (input_.isKeyPressed(GLFW_KEY_W)) inputDir += forward;
-        if (input_.isKeyPressed(GLFW_KEY_S)) inputDir -= forward;
-        if (input_.isKeyPressed(GLFW_KEY_D)) inputDir += right;
-        if (input_.isKeyPressed(GLFW_KEY_A)) inputDir -= right;
 
-        // Normalize input direction (prevent diagonal speed boost)
-        if (glm::length(inputDir) > 0.001f) {
-            inputDir = glm::normalize(inputDir);
+        if (!captured) {
+            // Compute movement direction from camera yaw (horizontal only)
+            float yawRad = glm::radians(cam.yaw);
+            glm::vec3 forward(std::cos(yawRad), 0.0f, std::sin(yawRad));
+            forward = glm::normalize(forward);
+            glm::vec3 right = glm::normalize(glm::cross(forward, glm::vec3(0.0f, 1.0f, 0.0f)));
+
+            // Read WASD input
+            if (input_.isKeyPressed(GLFW_KEY_W)) inputDir += forward;
+            if (input_.isKeyPressed(GLFW_KEY_S)) inputDir -= forward;
+            if (input_.isKeyPressed(GLFW_KEY_D)) inputDir += right;
+            if (input_.isKeyPressed(GLFW_KEY_A)) inputDir -= right;
+
+            // Normalize input direction (prevent diagonal speed boost)
+            if (glm::length(inputDir) > 0.001f) {
+                inputDir = glm::normalize(inputDir);
+            }
         }
+        // When captured, inputDir stays zero — no movement input
 
-        // --- 3. Compute desired velocity ---
+        // --- 2. Compute desired velocity ---
         glm::vec3 desiredVelocity = inputDir * movement.maxGroundSpeed;
 
-        // --- 4. Apply acceleration/deceleration ---
+        // --- 3. Apply acceleration/deceleration ---
         bool hasInput = glm::length(inputDir) > 0.001f;
         GroundState groundState = physics_.getCharacterGroundState();
         movement.grounded = (groundState == GroundState::OnGround);
@@ -78,8 +83,8 @@ void PlayerMovementSystem::update(Application& app, float deltaTime) {
 
         movement.velocity = moveTowardXZ(movement.velocity, desiredVelocity, accel * deltaTime);
 
-        // --- 5. Handle jumping ---
-        if (movement.grounded && input_.isKeyJustPressed(GLFW_KEY_SPACE)) {
+        // --- 4. Handle jumping (only allow new jumps when not captured) ---
+        if (!captured && movement.grounded && input_.isKeyJustPressed(GLFW_KEY_SPACE)) {
             // Start jump
             movement.velocity.y = movement.jumpImpulse;
             movement.jumpHeld = true;
@@ -88,7 +93,7 @@ void PlayerMovementSystem::update(Application& app, float deltaTime) {
 
         // Apply gravity (with variable jump hold)
         float effectiveGravity = movement.gravity;
-        if (movement.jumpHeld && input_.isKeyPressed(GLFW_KEY_SPACE)
+        if (movement.jumpHeld && !captured && input_.isKeyPressed(GLFW_KEY_SPACE)
             && movement.velocity.y > 0.0f
             && movement.jumpHoldTimer < movement.maxJumpHoldTime) {
             // Reduced gravity while holding jump and rising
@@ -105,11 +110,11 @@ void PlayerMovementSystem::update(Application& app, float deltaTime) {
             movement.velocity.y = 0.0f;
         }
 
-        // --- 6. Update physics character ---
+        // --- 5. Update physics character ---
         physics_.setCharacterVelocity(movement.velocity);
         physics_.updateCharacter(deltaTime, glm::vec3(0.0f, movement.gravity, 0.0f));
 
-        // --- 7. Sync transform from physics ---
+        // --- 6. Sync transform from physics ---
         glm::vec3 charPos = physics_.getCharacterPosition();
         transform.position = charPos + glm::vec3(0.0f, cc.eyeOffset(), 0.0f);
 
