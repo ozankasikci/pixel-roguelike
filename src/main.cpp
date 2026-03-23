@@ -1,6 +1,8 @@
 #include "engine/core/Application.h"
 #include "engine/scene/SceneManager.h"
 #include "engine/input/InputSystem.h"
+#include "engine/physics/PhysicsSystem.h"
+#include "game/systems/PlayerMovementSystem.h"
 #include "game/systems/CameraSystem.h"
 #include "game/systems/RenderSystem.h"
 #include "game/scenes/CathedralScene.h"
@@ -23,10 +25,12 @@ int main(int argc, char* argv[]) {
 
     Application app(1280, 720, "Pixel Roguelike");
 
-    // Register systems (per D-05: app.addSystem pattern)
-    auto& input = app.addSystem<InputSystem>();
-    auto& camera = app.addSystem<CameraSystem>(input);
-    auto& render = app.addSystem<RenderSystem>();
+    // Register systems (execution order: Input → Physics → Movement → Camera → Render)
+    auto& input    = app.addSystem<InputSystem>();
+    auto& physics  = app.addSystem<PhysicsSystem>();
+    auto& movement = app.addSystem<PlayerMovementSystem>(input, physics);
+    auto& camera   = app.addSystem<CameraSystem>(input);
+    auto& render   = app.addSystem<RenderSystem>();
 
     if (!autoScreenshotPath.empty()) {
         render.enableAutoScreenshot(autoScreenshotPath, 10);
