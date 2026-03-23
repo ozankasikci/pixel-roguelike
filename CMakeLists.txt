@@ -98,9 +98,11 @@ target_link_libraries(engine_input PUBLIC engine_core imgui)
 
 add_library(game STATIC
     src/game/scenes/CathedralScene.cpp
+    src/game/systems/CameraSystem.cpp
+    src/game/systems/RenderSystem.cpp
 )
 target_include_directories(game PUBLIC ${CMAKE_SOURCE_DIR}/src)
-target_link_libraries(game PUBLIC engine_rendering EnTT::EnTT)
+target_link_libraries(game PUBLIC engine_core engine_rendering engine_ui engine_input EnTT::EnTT)
 
 add_executable(pixel-roguelike src/main.cpp)
 target_include_directories(pixel-roguelike PRIVATE ${CMAKE_SOURCE_DIR}/src ${CMAKE_SOURCE_DIR}/external)
