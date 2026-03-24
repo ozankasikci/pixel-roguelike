@@ -7,11 +7,11 @@
 class Shader;
 
 struct DitherParams {
-    float thresholdBias = -0.199f;
-    float patternScale  = 232.0f;
-    float edgeThreshold = 0.29f;
-    float fogDensity    = 0.07f;
-    float fogStart      = 3.9f;
+    float thresholdBias = 0.028f;
+    float patternScale  = 246.519f;
+    float edgeThreshold = 0.17f;
+    float fogDensity    = 0.206f;
+    float fogStart      = 6.5f;
     float nearPlane     = 0.1f;
     float farPlane      = 100.0f;
 };

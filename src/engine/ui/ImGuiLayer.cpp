@@ -141,3 +141,23 @@ void ImGuiLayer::renderMovementOverlay(PlayerMovementComponent& movement, bool g
 
     ImGui::End();
 }
+
+#include "game/components/ViewmodelComponent.h"
+
+void ImGuiLayer::renderViewmodelOverlay(ViewmodelComponent& vm) {
+    ImGui::Begin("Viewmodel");
+
+    ImGui::DragFloat3("Position", &vm.viewOffset.x, 0.005f, -1.0f, 1.0f, "%.3f");
+    ImGui::DragFloat3("Rotation", &vm.rotation.x, 0.5f, -360.0f, 360.0f, "%.1f");
+    ImGui::DragFloat("Scale", &vm.scale, 0.0001f, 0.0001f, 0.1f, "%.4f");
+
+    ImGui::Separator();
+    ImGui::DragFloat3("Mesh Center", &vm.meshCenter.x, 0.5f, -500.0f, 500.0f, "%.1f");
+
+    if (ImGui::CollapsingHeader("Bob Animation", ImGuiTreeNodeFlags_DefaultOpen)) {
+        ImGui::DragFloat("Bob Speed", &vm.bobSpeed, 0.1f, 0.0f, 10.0f, "%.1f");
+        ImGui::DragFloat("Bob Amplitude", &vm.bobAmplitude, 0.001f, 0.0f, 0.1f, "%.3f");
+    }
+
+    ImGui::End();
+}

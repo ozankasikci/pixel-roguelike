@@ -42,6 +42,15 @@ void InputSystem::update(Application& app, float deltaTime) {
     // Transfer accumulated scroll delta from callbacks
     scrollDelta_ = scrollAccum_;
     scrollAccum_ = 0.0f;
+
+    // Toggle cursor lock with Escape (for debug tools)
+    if (isKeyJustPressed(GLFW_KEY_ESCAPE)) {
+        if (cursorLocked_) {
+            unlockCursor();
+        } else {
+            lockCursor();
+        }
+    }
 }
 
 void InputSystem::shutdown() {
