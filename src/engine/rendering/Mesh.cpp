@@ -108,3 +108,13 @@ Mesh Mesh::createCylinder(float radius, float height, int segments) {
     auto data = generateCylinder(radius, height, segments);
     return Mesh(data.positions, data.normals, data.indices);
 }
+
+Mesh Mesh::createHand() {
+    auto data = generateHand();
+    return Mesh(data.positions, data.normals, data.indices);
+}
+
+Mesh Mesh::createDagger() {
+    auto data = generateDagger();
+    return Mesh(data.positions, data.normals, data.indices);
+}

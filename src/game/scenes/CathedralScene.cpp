@@ -8,6 +8,7 @@
 #include "game/components/StaticColliderComponent.h"
 #include "game/components/CharacterControllerComponent.h"
 #include "game/components/PlayerMovementComponent.h"
+#include "game/components/ViewmodelComponent.h"
 
 #include <glm/gtc/matrix_transform.hpp>
 
@@ -52,6 +53,7 @@ void CathedralScene::onEnter(Application& app) {
     meshLibrary_.registerDefaults();
     meshLibrary_.loadFromFile("pillar", "assets/meshes/pillar.glb");
     meshLibrary_.loadFromFile("arch", "assets/meshes/arch.glb");
+    meshLibrary_.loadFromFile("hand", "assets/meshes/hand_low_poly.glb");
 
     entt::registry& registry = app.registry();
 
@@ -212,6 +214,14 @@ void CathedralScene::onEnter(Application& app) {
         registry.emplace<CameraComponent>(e);
         registry.emplace<CharacterControllerComponent>(e);
         registry.emplace<PlayerMovementComponent>(e);
+        entities_.push_back(e);
+    }
+
+    // Viewmodel hand (first-person)
+    {
+        auto e = registry.create();
+        registry.emplace<MeshComponent>(e, MeshComponent{meshLibrary_.get("hand"), glm::mat4(1.0f), false});
+        registry.emplace<ViewmodelComponent>(e);
         entities_.push_back(e);
     }
 }

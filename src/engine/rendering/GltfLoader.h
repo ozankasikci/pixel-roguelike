@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Mesh.h"
+#include "MeshGeometry.h"
 #include <memory>
 #include <string>
 
@@ -9,4 +10,9 @@ public:
     // Load a .glb/.gltf file and return a Mesh with the first primitive's
     // POSITION and NORMAL attributes. Returns nullptr on failure.
     static std::unique_ptr<Mesh> load(const std::string& filepath);
+
+    // Load a .glb/.gltf file and return raw CPU-side mesh data (positions,
+    // normals, indices) for merging with other geometry before GPU upload.
+    // Returns empty RawMeshData on failure.
+    static RawMeshData loadRaw(const std::string& filepath);
 };

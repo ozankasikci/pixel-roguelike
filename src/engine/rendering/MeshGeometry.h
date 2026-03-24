@@ -134,3 +134,124 @@ inline RawMeshData mergeMeshes(const std::vector<std::pair<RawMeshData, glm::mat
 
     return result;
 }
+
+// Bend finger vertices of a hand mesh into a gripping pose.
+// Vertices above the knuckle threshold (knuckleFrac of the Y range) are
+// progressively rotated around the X axis, curling them toward +Z and
+// downward.  bendAngleDeg controls how far the fingertips curl (90-120
+// produces a tight fist).
+inline RawMeshData bendFingers(const RawMeshData& hand, float bendAngleDeg,
+                               float knuckleFrac = 0.75f) {
+    RawMeshData result = hand;
+
+    // Bounding box of the original hand
+    glm::vec3 bMin = hand.positions[0], bMax = hand.positions[0];
+    for (const auto& p : hand.positions) {
+        bMin = glm::min(bMin, p);
+        bMax = glm::max(bMax, p);
+    }
+
+    float knuckleY   = bMin.y + (bMax.y - bMin.y) * knuckleFrac;
+    float fingerRange = bMax.y - knuckleY;
+    if (fingerRange < 1e-6f) return result;   // degenerate
+
+    float centerZ  = (bMin.z + bMax.z) * 0.5f;
+    float maxAngle = glm::radians(bendAngleDeg);
+
+    for (size_t i = 0; i < result.positions.size(); ++i) {
+        glm::vec3& pos  = result.positions[i];
+        glm::vec3& norm = result.normals[i];
+
+        if (pos.y <= knuckleY) continue;
+
+        float frac  = glm::clamp((pos.y - knuckleY) / fingerRange, 0.0f, 1.0f);
+        float angle = frac * maxAngle;
+        float cosA  = std::cos(angle);
+        float sinA  = std::sin(angle);
+
+        // Rotate (Y, Z) around the knuckle pivot line
+        float relY = pos.y - knuckleY;
+        float relZ = pos.z - centerZ;
+        pos.y = knuckleY + relY * cosA - relZ * sinA;
+        pos.z = centerZ  + relY * sinA + relZ * cosA;
+
+        // Rotate normal's Y/Z components the same way
+        float nY = norm.y, nZ = norm.z;
+        norm.y = nY * cosA - nZ * sinA;
+        norm.z = nY * sinA + nZ * cosA;
+    }
+
+    return result;
+}
+
+inline RawMeshData generateDagger() {
+    auto unitCube = generateCube(1.0f);
+
+    std::vector<std::pair<RawMeshData, glm::mat4>> parts;
+
+    auto box = [&](glm::vec3 pos, glm::vec3 size) {
+        glm::mat4 t = glm::translate(glm::mat4(1.0f), pos);
+        t = glm::scale(t, size);
+        parts.push_back({unitCube, t});
+    };
+
+    // Guard at y=0, blade extends in +Y, handle in -Y
+
+    // Blade body
+    box({0.0f, 0.17f, 0.0f}, {0.035f, 0.30f, 0.014f});
+
+    // Blade tip — narrower for tapered look
+    box({0.0f, 0.335f, 0.0f}, {0.020f, 0.04f, 0.008f});
+
+    // Cross-guard
+    box({0.0f, 0.0f, 0.0f}, {0.065f, 0.015f, 0.015f});
+
+    // Handle/grip
+    box({0.0f, -0.045f, 0.0f}, {0.016f, 0.075f, 0.016f});
+
+    // Pommel
+    box({0.0f, -0.093f, 0.0f}, {0.022f, 0.020f, 0.022f});
+
+    return mergeMeshes(parts);
+}
+
+inline RawMeshData generateHand() {
+    auto unitCube = generateCube(1.0f);
+
+    std::vector<std::pair<RawMeshData, glm::mat4>> parts;
+
+    auto box = [&](glm::vec3 pos, glm::vec3 size, float rotZ = 0.0f) {
+        glm::mat4 t = glm::translate(glm::mat4(1.0f), pos);
+        if (rotZ != 0.0f)
+            t = glm::rotate(t, glm::radians(rotZ), glm::vec3(0.0f, 0.0f, 1.0f));
+        t = glm::scale(t, size);
+        parts.push_back({unitCube, t});
+    };
+
+    // Palm
+    box({0.0f, 0.0f, 0.0f}, {0.10f, 0.11f, 0.035f});
+
+    // Forearm
+    box({0.005f, -0.16f, 0.005f}, {0.07f, 0.22f, 0.05f});
+
+    // Knuckle ridge
+    box({0.0f, 0.048f, -0.002f}, {0.105f, 0.02f, 0.038f});
+
+    // Index finger
+    box({-0.030f, 0.095f, 0.0f}, {0.020f, 0.080f, 0.020f});
+
+    // Middle finger (tallest)
+    box({-0.007f, 0.102f, 0.0f}, {0.022f, 0.093f, 0.022f});
+
+    // Ring finger
+    box({0.017f, 0.093f, 0.0f}, {0.020f, 0.076f, 0.020f});
+
+    // Pinky finger
+    box({0.039f, 0.083f, 0.0f}, {0.017f, 0.058f, 0.017f});
+
+    // Thumb (angled outward)
+    box({-0.058f, 0.000f, 0.010f}, {0.024f, 0.055f, 0.024f}, -40.0f);
+
+    return mergeMeshes(parts);
+}
+

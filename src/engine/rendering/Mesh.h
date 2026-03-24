@@ -25,6 +25,8 @@ public:
     static Mesh createCube(float size);
     static Mesh createPlane(float size);
     static Mesh createCylinder(float radius, float height, int segments);
+    static Mesh createHand();
+    static Mesh createDagger();
 
 private:
     GLuint vao_ = 0;
