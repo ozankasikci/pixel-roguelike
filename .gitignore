@@ -1,6 +1,8 @@
 build/
+build-test/
 .venv/
 .DS_Store
 *.o
 *.a
 imgui.ini
+tools/__pycache__/

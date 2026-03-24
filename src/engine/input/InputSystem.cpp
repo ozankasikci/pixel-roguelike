@@ -116,8 +116,15 @@ void InputSystem::lockCursor() {
     if (glfwRawMouseMotionSupported()) {
         glfwSetInputMode(window_, GLFW_RAW_MOUSE_MOTION, GLFW_TRUE);
     }
+
+    double cursorX = 0.0;
+    double cursorY = 0.0;
+    glfwGetCursorPos(window_, &cursorX, &cursorY);
+    mousePos_ = glm::vec2(static_cast<float>(cursorX), static_cast<float>(cursorY));
+    mouseDelta_ = glm::vec2(0.0f);
+    mouseDeltaAccum_ = glm::vec2(0.0f);
     cursorLocked_ = true;
-    firstMouse_ = true;
+    firstMouse_ = false;
 }
 
 void InputSystem::unlockCursor() {
@@ -125,6 +132,10 @@ void InputSystem::unlockCursor() {
     if (glfwRawMouseMotionSupported()) {
         glfwSetInputMode(window_, GLFW_RAW_MOUSE_MOTION, GLFW_FALSE);
     }
+
+    mouseDelta_ = glm::vec2(0.0f);
+    mouseDeltaAccum_ = glm::vec2(0.0f);
+    firstMouse_ = true;
     cursorLocked_ = false;
 }
 

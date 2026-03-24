@@ -29,6 +29,8 @@ private:
     ImGuiLayer imguiLayer_;
     DebugParams debugParams_;
     AutoScreenshot autoCapture_;
+    bool overlaysVisible_ = false;
+    bool f1Pressed_ = false;
     bool f12Pressed_ = false;
 
     // Internal resolution presets (same as current main.cpp)

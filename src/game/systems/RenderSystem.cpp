@@ -131,8 +131,14 @@ void RenderSystem::update(Application& app, float deltaTime) {
                       debugParams_.dither,
                       displayW, displayH);
 
-    // ---- ImGui overlay ---- mirrors main.cpp lines 168-179
-    imguiLayer_.beginFrame();
+    GLFWwindow* win = app.window().handle();
+    if (glfwGetKey(win, GLFW_KEY_F1) == GLFW_PRESS && !f1Pressed_) {
+        f1Pressed_ = true;
+        overlaysVisible_ = !overlaysVisible_;
+    }
+    if (glfwGetKey(win, GLFW_KEY_F1) == GLFW_RELEASE) {
+        f1Pressed_ = false;
+    }
 
     debugParams_.cameraPos   = cameraPos;
     debugParams_.cameraDir   = cameraDir;
@@ -140,27 +146,30 @@ void RenderSystem::update(Application& app, float deltaTime) {
     debugParams_.frameTimeMs = deltaTime * 1000.0f;
     debugParams_.drawCalls   = static_cast<int>(objects.size());
 
-    ImGuiLayer::renderOverlay(debugParams_, lights);
+    if (overlaysVisible_) {
+        imguiLayer_.beginFrame();
+        ImGuiLayer::renderOverlay(debugParams_, lights);
 
-    // Movement debug panel
-    {
-        auto movView = registry.view<PlayerMovementComponent>();
-        for (auto [entity, movement] : movView.each()) {
-            ImGuiLayer::renderMovementOverlay(movement, movement.grounded);
-            break;
+        // Movement debug panel
+        {
+            auto movView = registry.view<PlayerMovementComponent>();
+            for (auto [entity, movement] : movView.each()) {
+                ImGuiLayer::renderMovementOverlay(movement, movement.grounded);
+                break;
+            }
         }
-    }
 
-    // Viewmodel debug panel
-    {
-        auto vmView = registry.view<MeshComponent, ViewmodelComponent>();
-        for (auto [entity, mesh, vm] : vmView.each()) {
-            ImGuiLayer::renderViewmodelOverlay(vm);
-            break;
+        // Viewmodel debug panel
+        {
+            auto vmView = registry.view<MeshComponent, ViewmodelComponent>();
+            for (auto [entity, mesh, vm] : vmView.each()) {
+                ImGuiLayer::renderViewmodelOverlay(vm);
+                break;
+            }
         }
-    }
 
-    imguiLayer_.endFrame();
+        imguiLayer_.endFrame();
+    }
 
     // Handle resolution change -- mirrors main.cpp lines 182-187
     if (debugParams_.resolutionChanged) {
@@ -171,7 +180,6 @@ void RenderSystem::update(Application& app, float deltaTime) {
     }
 
     // F12: manual screenshot -- mirrors main.cpp lines 189-195
-    GLFWwindow* win = app.window().handle();
     if (glfwGetKey(win, GLFW_KEY_F12) == GLFW_PRESS && !f12Pressed_) {
         f12Pressed_ = true;
         saveScreenshot(displayW, displayH);
