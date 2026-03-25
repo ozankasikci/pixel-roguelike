@@ -15,7 +15,6 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [ ] **Phase 1: Engine and Dithering Pipeline** - Custom C++ engine with OpenGL 4.1, the 1-bit Bayer dither post-process validated with world-space anchoring
 - [ ] **Phase 1.1: Project Restructure** - ECS, Application class, modular engine/game split (INSERTED)
 - [ ] **Phase 2: Player, Environment, and Lighting** - Player moves through a lit gothic level with collision; torches affect dither density
-- [ ] **Phase 3: Game Systems** - Save, options menu, and game state transitions that make the experience shippable
 
 ## Phase Details
 
@@ -82,26 +81,3 @@ Plans:
 Plans:
 - [x] 02.1-01-PLAN.md — Define authored weapon metadata, owned-vs-equipped session state, and burden/equipment helper tests
 - [x] 02.1-02-PLAN.md — Integrate the paused inventory system, list-based ImGui screen, and in-game verification
-
-### Phase 3: Game Systems
-**Goal**: The game is a complete, shippable loop — the player can quit and resume progress, configure controls and display settings, and the game correctly transitions through menu, play, death, and level complete states
-**Depends on**: Phase 3
-**Requirements**: GSYS-01, GSYS-02, GSYS-03, GSYS-04
-**Success Criteria** (what must be TRUE):
-  1. The player can quit mid-run and resume from the last level boundary — progress is not lost on quit
-  2. An options menu lets the player adjust FOV (03-120°), mouse sensitivity, and toggle fullscreen/windowed mode — changes take effect immediately
-  3. The game correctly transitions between main menu, playing, paused, dead, and level complete states without getting stuck or crashing
-**Plans**: TBD
-**UI hint**: yes
-
-## Progress
-
-**Execution Order:**
-Phases execute in numeric order: 1 → 1.1 → 2 → 3 → 4
-
-| Phase | Plans Complete | Status | Completed |
-|-------|----------------|--------|-----------|
-| 1. Engine and Dithering Pipeline | 2/2 | Complete |  |
-| 1.1. Project Restructure | 0/4 | Not started | - |
-| 2. Player, Environment, and Lighting | 0/? | Not started | - |
-| 3. Game Systems | 0/? | Not started | - |
