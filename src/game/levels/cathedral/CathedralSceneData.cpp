@@ -1,6 +1,8 @@
 #include "game/levels/cathedral/CathedralSceneData.h"
+#include "game/prefabs/GameplayPrefabAssets.h"
 
 #include <cctype>
+#include <filesystem>
 #include <fstream>
 #include <sstream>
 #include <stdexcept>
@@ -24,36 +26,9 @@ bool isCommentOrEmpty(const std::string& line) {
     return true;
 }
 
-GameplayPrefabInstance parseCheckpointPrefab(std::istringstream& stream,
-                                             const std::string& path,
-                                             int lineNumber) {
-    GameplayPrefabInstance instance;
-    instance.type = GameplayPrefabType::Checkpoint;
-    if (!(stream >> instance.checkpoint.position.x >> instance.checkpoint.position.y >> instance.checkpoint.position.z
-                 >> instance.checkpoint.respawnPosition.x >> instance.checkpoint.respawnPosition.y >> instance.checkpoint.respawnPosition.z
-                 >> instance.checkpoint.interactDistance >> instance.checkpoint.interactDotThreshold
-                 >> instance.checkpoint.lightPosition.x >> instance.checkpoint.lightPosition.y >> instance.checkpoint.lightPosition.z
-                 >> instance.checkpoint.lightColor.r >> instance.checkpoint.lightColor.g >> instance.checkpoint.lightColor.b
-                 >> instance.checkpoint.lightRadius >> instance.checkpoint.lightIntensity)) {
-        throwParseError(path, lineNumber, "invalid prefab checkpoint record");
-    }
-    return instance;
-}
-
-GameplayPrefabInstance parseDoubleDoorPrefab(std::istringstream& stream,
-                                             const std::string& path,
-                                             int lineNumber) {
-    GameplayPrefabInstance instance;
-    instance.type = GameplayPrefabType::DoubleDoor;
-    if (!(stream >> instance.doubleDoor.rootPosition.x >> instance.doubleDoor.rootPosition.y >> instance.doubleDoor.rootPosition.z
-                 >> instance.doubleDoor.leftHingePosition.x >> instance.doubleDoor.leftHingePosition.y >> instance.doubleDoor.leftHingePosition.z
-                 >> instance.doubleDoor.rightHingePosition.x >> instance.doubleDoor.rightHingePosition.y >> instance.doubleDoor.rightHingePosition.z
-                 >> instance.doubleDoor.leafScale.x >> instance.doubleDoor.leafScale.y >> instance.doubleDoor.leafScale.z
-                 >> instance.doubleDoor.closedYaw >> instance.doubleDoor.openAngle
-                 >> instance.doubleDoor.interactDistance >> instance.doubleDoor.interactDotThreshold >> instance.doubleDoor.openDuration)) {
-        throwParseError(path, lineNumber, "invalid prefab double_door record");
-    }
-    return instance;
+std::string resolveRelativePath(const std::string& basePath, const std::string& relativePath) {
+    const std::filesystem::path scenePath(basePath);
+    return (scenePath.parent_path() / relativePath).lexically_normal().string();
 }
 
 } // namespace
@@ -135,24 +110,18 @@ CathedralSceneData loadCathedralSceneData(const std::string& path) {
         if (kind == "prefab") {
             std::string prefabType;
             stream >> prefabType;
-            if (prefabType == "checkpoint") {
-                data.prefabs.push_back(parseCheckpointPrefab(stream, path, lineNumber));
-                continue;
-            }
-            if (prefabType == "double_door") {
-                data.prefabs.push_back(parseDoubleDoorPrefab(stream, path, lineNumber));
-                continue;
-            }
-            throwParseError(path, lineNumber, "unknown prefab type '" + prefabType + "'");
+            throwParseError(path, lineNumber, "inline prefab records are no longer supported; use prefab_instance files");
         }
 
-        if (kind == "checkpoint") {
-            data.prefabs.push_back(parseCheckpointPrefab(stream, path, lineNumber));
-            continue;
-        }
-
-        if (kind == "double_door") {
-            data.prefabs.push_back(parseDoubleDoorPrefab(stream, path, lineNumber));
+        if (kind == "prefab_instance") {
+            std::string prefabPath;
+            glm::vec3 position(0.0f);
+            float yawDegrees = 0.0f;
+            if (!(stream >> prefabPath >> position.x >> position.y >> position.z >> yawDegrees)) {
+                throwParseError(path, lineNumber, "invalid prefab_instance record");
+            }
+            const auto asset = loadGameplayPrefabAsset(resolveRelativePath(path, prefabPath));
+            data.prefabs.push_back(instantiateGameplayPrefab(asset, position, yawDegrees));
             continue;
         }
 

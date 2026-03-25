@@ -6,6 +6,7 @@ add_library(game STATIC
     systems/PlayerMovementSystem.cpp
     systems/RenderSystem.cpp
     level/LevelBuilder.cpp
+    prefabs/GameplayPrefabAssets.cpp
     prefabs/GameplayPrefabs.cpp
     levels/cathedral/CathedralAssets.cpp
     levels/cathedral/CathedralPrefabs.cpp
