@@ -2,7 +2,11 @@
 id old_dagger
 display_name Old_Dagger
 slot melee
+handedness one_handed
 mesh hand
+equip_weight 2.0
+category dagger
+description A_worn_blade_for_close_quarters
 damage 12.0
 range 1.4
 cooldown 0.55

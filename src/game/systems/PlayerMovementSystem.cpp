@@ -11,6 +11,7 @@
 #include "game/components/PlayerSpawnComponent.h"
 #include "game/components/PrimaryCameraTag.h"
 #include "game/components/TransformComponent.h"
+#include "game/ui/InventoryMenuState.h"
 
 #include <GLFW/glfw3.h>
 #include <glm/glm.hpp>
@@ -41,14 +42,17 @@ void PlayerMovementSystem::init(Application& app) {
 
 void PlayerMovementSystem::update(Application& app, float deltaTime) {
     auto& registry = app.registry();
+    const bool inventoryOpen = registry.ctx().contains<InventoryMenuState>()
+        && registry.ctx().get<InventoryMenuState>().open;
 
     // Find the player entity (has all three components)
     auto view = registry.view<TransformComponent, CameraComponent, PlayerMovementComponent, CharacterControllerComponent,
                               PlayerInteractionLockComponent, PlayerSpawnComponent, PlayerTag, ControllableTag, PrimaryCameraTag>();
     for (auto [entity, transform, cam, movement, cc, lock, spawn] : view.each()) {
 
-        bool captured = input_.wantsCaptureMouse();
+        const bool cursorLocked = input_.isCursorLocked();
         const bool locked = lock.active;
+        const bool gameplayInputEnabled = cursorLocked && !locked && !inventoryOpen;
 
         if (transform.position.y < spawn.fallRespawnY) {
             physics_.setCharacterVelocity(entity, glm::vec3(0.0f));
@@ -62,7 +66,7 @@ void PlayerMovementSystem::update(Application& app, float deltaTime) {
         // --- 1. Compute movement direction and read input ---
         glm::vec3 inputDir(0.0f);
 
-        if (!captured && !locked) {
+        if (gameplayInputEnabled) {
             // Compute movement direction from camera yaw (horizontal only)
             float yawRad = glm::radians(cam.yaw);
             glm::vec3 forward(std::cos(yawRad), 0.0f, std::sin(yawRad));
@@ -80,7 +84,7 @@ void PlayerMovementSystem::update(Application& app, float deltaTime) {
                 inputDir = glm::normalize(inputDir);
             }
         }
-        // When captured, inputDir stays zero — no movement input
+        // When gameplay input is disabled, inputDir stays zero.
 
         // --- 2. Compute desired velocity ---
         glm::vec3 desiredVelocity = inputDir * movement.maxGroundSpeed;
@@ -100,7 +104,7 @@ void PlayerMovementSystem::update(Application& app, float deltaTime) {
         movement.velocity = moveTowardXZ(movement.velocity, desiredVelocity, accel * deltaTime);
 
         // --- 4. Handle jumping (only allow new jumps when not captured) ---
-        if (!captured && !locked && movement.grounded && input_.isKeyJustPressed(GLFW_KEY_SPACE)) {
+        if (gameplayInputEnabled && movement.grounded && input_.isKeyJustPressed(GLFW_KEY_SPACE)) {
             // Start jump
             movement.velocity.y = movement.jumpImpulse;
             movement.jumpHeld = true;
@@ -109,7 +113,7 @@ void PlayerMovementSystem::update(Application& app, float deltaTime) {
 
         // Apply gravity (with variable jump hold)
         float effectiveGravity = movement.gravity;
-        if (movement.jumpHeld && !captured && !locked && input_.isKeyPressed(GLFW_KEY_SPACE)
+        if (movement.jumpHeld && gameplayInputEnabled && input_.isKeyPressed(GLFW_KEY_SPACE)
             && movement.velocity.y > 0.0f
             && movement.jumpHoldTimer < movement.maxJumpHoldTime) {
             // Reduced gravity while holding jump and rising
@@ -119,7 +123,7 @@ void PlayerMovementSystem::update(Application& app, float deltaTime) {
             movement.jumpHeld = false;
         }
 
-        if (locked) {
+        if (locked || inventoryOpen) {
             movement.jumpHeld = false;
             movement.velocity.x = 0.0f;
             movement.velocity.z = 0.0f;

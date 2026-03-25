@@ -8,14 +8,25 @@
 #include <unordered_map>
 
 struct WeaponDefinition {
+    enum class Handedness {
+        OneHanded,
+        TwoHanded,
+    };
+
     std::string id;
     std::string displayName;
     std::string slot;
+    Handedness handedness = Handedness::OneHanded;
     std::string meshId;
+    float equipWeight = 0.0f;
+    std::string category;
+    std::string description;
     float damage = 0.0f;
     float range = 0.0f;
     float cooldown = 0.0f;
 };
+
+using WeaponHandedness = WeaponDefinition::Handedness;
 
 struct EnemyDefinition {
     std::string id;

@@ -9,6 +9,10 @@ struct GLFWwindow;
 struct PointLight;
 struct PlayerMovementComponent;
 struct ViewmodelComponent;
+class ContentRegistry;
+struct EffectiveEquipmentView;
+struct InventoryMenuState;
+struct RunSession;
 
 struct DebugParams {
     // Dither parameters
@@ -47,4 +51,8 @@ public:
     static void renderMovementOverlay(PlayerMovementComponent& movement, bool grounded);
     static void renderViewmodelOverlay(ViewmodelComponent& vm);
     static void renderInteractionPrompt(const char* text, bool busy);
+    static void renderInventory(InventoryMenuState& menu,
+                                const RunSession& session,
+                                const ContentRegistry& content,
+                                const EffectiveEquipmentView& equipment);
 };

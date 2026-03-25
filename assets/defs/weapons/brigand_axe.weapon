@@ -1,0 +1,12 @@
+# weapon definition
+id brigand_axe
+display_name Brigand_Axe
+slot melee
+handedness two_handed
+mesh hand
+equip_weight 6.5
+category greataxe
+description A_heavy_raider_axe_built_for_committed_swings
+damage 28.0
+range 1.9
+cooldown 1.15

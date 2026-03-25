@@ -1,6 +1,8 @@
 #pragma once
 #include "engine/core/System.h"
 #include <glm/glm.hpp>
+#include <string_view>
+#include <vector>
 
 struct GLFWwindow;
 
@@ -14,6 +16,8 @@ public:
     bool isKeyPressed(int key) const;
     bool isKeyJustPressed(int key) const;
     bool isKeyJustReleased(int key) const;
+    bool isKeyJustPressedByName(std::string_view keyName) const;
+    bool wasCharacterTyped(unsigned int codepoint) const;
 
     // Mouse buttons
     bool isMouseButtonPressed(int button) const;
@@ -34,6 +38,11 @@ public:
     bool wantsCaptureMouse() const;
 
 private:
+    struct KeyPressEvent {
+        int key = -1;
+        int scancode = -1;
+    };
+
     GLFWwindow* window_ = nullptr;
 
     // Key state arrays (polled each frame via glfwGetKey)
@@ -56,6 +65,12 @@ private:
     float scrollDelta_ = 0.0f;
     float scrollAccum_ = 0.0f;
 
+    // Printable characters typed this frame, independent of keyboard layout.
+    std::vector<unsigned int> typedCharacters_;
+    std::vector<unsigned int> typedCharactersAccum_;
+    std::vector<KeyPressEvent> keyPressEvents_;
+    std::vector<KeyPressEvent> keyPressEventsAccum_;
+
     // Cursor lock state
     bool cursorLocked_ = false;
 
@@ -63,4 +78,6 @@ private:
     static InputSystem* instance_;
     static void cursorPosCallback(GLFWwindow* window, double xpos, double ypos);
     static void scrollCallback(GLFWwindow* window, double xoffset, double yoffset);
+    static void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods);
+    static void charCallback(GLFWwindow* window, unsigned int codepoint);
 };

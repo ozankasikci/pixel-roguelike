@@ -20,8 +20,20 @@ bool nearlyEqualVec3(const glm::vec3& a, const glm::vec3& b, float epsilon = 0.0
 int main() {
     const auto weapon = loadWeaponDefinitionAsset(WEAPON_DEF_FILE);
     assert(weapon.id == "old_dagger");
+    assert(weapon.displayName == "Old_Dagger");
     assert(weapon.slot == "melee");
+    assert(weapon.handedness == WeaponHandedness::OneHanded);
+    assert(nearlyEqual(weapon.equipWeight, 2.0f));
+    assert(weapon.category == "dagger");
+    assert(weapon.description == "A_worn_blade_for_close_quarters");
     assert(nearlyEqual(weapon.damage, 12.0f));
+
+    const auto twoHandedWeapon = loadWeaponDefinitionAsset(TWO_HANDED_WEAPON_DEF_FILE);
+    assert(twoHandedWeapon.id == "brigand_axe");
+    assert(twoHandedWeapon.handedness == WeaponHandedness::TwoHanded);
+    assert(nearlyEqual(twoHandedWeapon.equipWeight, 6.5f));
+    assert(twoHandedWeapon.category == "greataxe");
+    assert(twoHandedWeapon.description == "A_heavy_raider_axe_built_for_committed_swings");
 
     const auto enemy = loadEnemyDefinitionAsset(ENEMY_DEF_FILE);
     assert(enemy.id == "sentinel");
@@ -57,7 +69,12 @@ int main() {
 
     ContentRegistry registry;
     registry.loadDefaults();
-    assert(registry.findWeapon("old_dagger") != nullptr);
+    const auto* oldDagger = registry.findWeapon("old_dagger");
+    assert(oldDagger != nullptr);
+    assert(oldDagger->handedness == WeaponHandedness::OneHanded);
+    const auto* brigandAxe = registry.findWeapon("brigand_axe");
+    assert(brigandAxe != nullptr);
+    assert(brigandAxe->handedness == WeaponHandedness::TwoHanded);
     assert(registry.findEnemy("sentinel") != nullptr);
     assert(registry.findItem("kindling_shard") != nullptr);
     assert(registry.findSkill("cathedral_attunement") != nullptr);

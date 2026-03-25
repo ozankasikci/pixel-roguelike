@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: Phase complete — ready for verification
-stopped_at: Completed 01.1-04-PLAN.md -- Phase 01.1 complete
-last_updated: "2026-03-23T18:56:33.279Z"
+stopped_at: Completed 02.1-02-PLAN.md -- inventory open/close flow verified
+last_updated: "2026-03-25T16:21:00.000Z"
 progress:
-  total_phases: 5
-  completed_phases: 2
-  total_plans: 6
-  completed_plans: 6
+  total_phases: 6
+  completed_phases: 3
+  total_plans: 8
+  completed_plans: 8
 ---
 
 # Project State
@@ -19,12 +19,12 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-23)
 
 **Core value:** The 1-bit dithered 3D rendering — a visually striking, modern take on retro aesthetics that makes the game instantly recognizable
-**Current focus:** Phase 01.1 — project-restructure
+**Current focus:** Phase 3 — combat-and-enemies
 
 ## Current Position
 
-Phase: 01.1 (project-restructure) — EXECUTING
-Plan: 4 of 4
+Phase: 02.1 (equipment-inventory-and-carry-weight-weapons-are-inventory-items-no-slot-grid-inventory-dark-souls-style-carry-weight) — COMPLETE
+Plan: 2 of 2
 
 ## Performance Metrics
 
@@ -91,6 +91,7 @@ None yet.
 ### Roadmap Evolution
 
 - Phase 01.1 inserted after Phase 1: Project Restructure — ECS, Application class, modular engine/game split (URGENT)
+- Phase 02.1 inserted after Phase 2: Equipment Inventory and Carry Weight — weapons are inventory items, no slot-grid inventory, Dark Souls-style carry weight (URGENT)
 
 ### Blockers/Concerns
 
@@ -98,6 +99,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-23T18:56:33.275Z
-Stopped at: Completed 01.1-04-PLAN.md -- Phase 01.1 complete
+Last session: 2026-03-25T16:21:00.000Z
+Stopped at: Completed 02.1-02-PLAN.md -- inventory open/close flow verified
 Resume file: None

@@ -2,6 +2,7 @@
 #include "engine/scene/SceneManager.h"
 #include "engine/input/InputSystem.h"
 #include "engine/physics/PhysicsSystem.h"
+#include "game/systems/InventorySystem.h"
 #include "game/systems/PlayerMovementSystem.h"
 #include "game/systems/CameraSystem.h"
 #include "game/systems/CheckpointSystem.h"
@@ -38,12 +39,14 @@ int main(int argc, char* argv[]) {
     auto& doors = app.addSystem<DoorSystem>(Application::UpdatePhase::Interaction, input);
     auto& checkpoints = app.addSystem<CheckpointSystem>(Application::UpdatePhase::Interaction, input);
     auto& physics = app.addSystem<PhysicsSystem>(Application::UpdatePhase::Physics);
+    auto& inventory = app.addSystem<InventorySystem>(Application::UpdatePhase::Gameplay, input);
     auto& movement = app.addSystem<PlayerMovementSystem>(Application::UpdatePhase::Gameplay, input, physics);
     auto& camera = app.addSystem<CameraSystem>(Application::UpdatePhase::Camera, input);
     auto& render = app.addSystem<RenderSystem>(Application::UpdatePhase::Render);
     (void)doors;
     (void)checkpoints;
     (void)interaction;
+    (void)inventory;
     (void)movement;
     (void)camera;
 

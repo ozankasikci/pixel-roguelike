@@ -67,6 +67,23 @@ Plans:
 **Plans**: TBD
 **UI hint**: yes
 
+### Phase 02.1: Equipment Inventory and Carry Weight — weapons are inventory items, no slot-grid inventory, Dark Souls-style carry weight (INSERTED)
+
+**Goal:** The player can open a paused, Dark Souls-style weapon inventory, equip owned weapons into explicit left-hand and right-hand slots, and see burden derived only from currently equipped weapons
+**Requirements**: None (inserted gameplay-state phase; not mapped to `REQUIREMENTS.md` IDs)
+**Depends on:** Phase 2
+**Success Criteria** (what must be TRUE):
+  1. Pressing `I` opens a dedicated paused inventory screen and closing it restores normal first-person control
+  2. The inventory presents a category list, item list, detail pane, and visible burden/equip-load meter in a list-based layout
+  3. Weapons are owned independently of being equipped, and only equipped weapons contribute to burden
+  4. The player has explicit right-hand and left-hand weapon equipment, and equipping a two-handed weapon occupies both hands while clearing conflicts
+  5. The phase does not add quick weapon cycling, non-weapon inventory, or a slot-grid/bag inventory model
+**Plans:** 2/2 plans executed
+
+Plans:
+- [x] 02.1-01-PLAN.md — Define authored weapon metadata, owned-vs-equipped session state, and burden/equipment helper tests
+- [x] 02.1-02-PLAN.md — Integrate the paused inventory system, list-based ImGui screen, and in-game verification
+
 ### Phase 3: Combat and Enemies
 **Goal**: The player can engage patrolling enemies in melee combat — enemies detect the player, give chase, attack, react to hits, and die; the player can also die
 **Depends on**: Phase 2

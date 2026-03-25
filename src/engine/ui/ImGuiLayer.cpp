@@ -1,5 +1,8 @@
 #include "ImGuiLayer.h"
 #include "engine/rendering/Renderer.h"
+#include "game/content/ContentRegistry.h"
+#include "game/session/RunSession.h"
+#include "game/ui/InventoryMenuState.h"
 
 #include <imgui.h>
 #include <imgui_impl_glfw.h>
@@ -188,6 +191,128 @@ void ImGuiLayer::renderInteractionPrompt(const char* text, bool busy) {
     ImGui::SetWindowFontScale(busy ? 1.18f : 1.1f);
     ImGui::TextUnformatted(text);
     ImGui::SetWindowFontScale(1.0f);
+    ImGui::End();
+    ImGui::PopStyleVar(2);
+}
+
+void ImGuiLayer::renderInventory(InventoryMenuState& menu,
+                                 const RunSession& session,
+                                 const ContentRegistry& content,
+                                 const EffectiveEquipmentView& equipment) {
+    ImGuiViewport* viewport = ImGui::GetMainViewport();
+    ImGui::SetNextWindowPos(ImVec2(viewport->Pos.x + 52.0f, viewport->Pos.y + 48.0f), ImGuiCond_Always);
+    ImGui::SetNextWindowSize(ImVec2(viewport->Size.x - 104.0f, viewport->Size.y - 96.0f), ImGuiCond_Always);
+    ImGui::SetNextWindowBgAlpha(0.88f);
+
+    ImGuiWindowFlags flags = ImGuiWindowFlags_NoDecoration
+        | ImGuiWindowFlags_NoMove
+        | ImGuiWindowFlags_NoSavedSettings;
+
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(18.0f, 18.0f));
+    ImGui::Begin("Inventory", nullptr, flags);
+    ImGui::TextUnformatted("EQUIPMENT INVENTORY");
+    ImGui::Separator();
+
+    const char* categories[] = {"Right Hand", "Left Hand", "Owned Weapons"};
+    const float currentBurden = equipment.burden;
+    const float maxBurden = session.maxEquipLoad <= 0.0f ? 1.0f : session.maxEquipLoad;
+    const float burdenRatio = currentBurden / maxBurden;
+
+    ImGui::BeginChild("InventoryCategories", ImVec2(180.0f, 0.0f), true);
+    for (int i = 0; i < 3; ++i) {
+        if (ImGui::Selectable(categories[i], menu.selectedCategory == i)) {
+            menu.selectedCategory = i;
+            if (i == 0) {
+                menu.targetedHand = EquipmentHand::Right;
+            } else if (i == 1) {
+                menu.targetedHand = EquipmentHand::Left;
+            }
+        }
+    }
+    ImGui::Separator();
+    ImGui::Text("BURDEN %.1f / %.1f", currentBurden, maxBurden);
+    ImGui::ProgressBar(burdenRatio, ImVec2(-1.0f, 10.0f), "");
+    ImGui::EndChild();
+
+    ImGui::SameLine();
+    ImGui::BeginChild("InventoryList", ImVec2(260.0f, 0.0f), true);
+    for (int index = 0; index < static_cast<int>(session.ownedWeapons.size()); ++index) {
+        const auto& entry = session.ownedWeapons[static_cast<std::size_t>(index)];
+        const auto* weapon = content.findWeapon(entry.definitionId);
+        std::string label = weapon != nullptr ? weapon->displayName : entry.definitionId;
+        if (equipment.twoHanded && equipment.rightHandWeaponId == entry.definitionId) {
+            label += "  [2H]";
+        } else {
+            if (equipment.rightHandWeaponId == entry.definitionId) {
+                label += "  [R]";
+            }
+            if (equipment.leftHandWeaponId == entry.definitionId) {
+                label += "  [L]";
+            }
+        }
+
+        if (ImGui::Selectable(label.c_str(), menu.selectedItem == index)) {
+            menu.selectedItem = index;
+        }
+    }
+    ImGui::EndChild();
+
+    ImGui::SameLine();
+    ImGui::BeginChild("InventoryDetails", ImVec2(0.0f, 0.0f), true);
+    if (!session.ownedWeapons.empty() && menu.selectedItem >= 0 && menu.selectedItem < static_cast<int>(session.ownedWeapons.size())) {
+        const auto& entry = session.ownedWeapons[static_cast<std::size_t>(menu.selectedItem)];
+        const auto* weapon = content.findWeapon(entry.definitionId);
+        if (weapon != nullptr) {
+            ImGui::Text("%s", weapon->displayName.c_str());
+            ImGui::Separator();
+            ImGui::Text("Slot: %s", weapon->slot.c_str());
+            ImGui::Text("Handedness: %s", weapon->handedness == WeaponHandedness::TwoHanded ? "Two-Handed" : "One-Handed");
+            ImGui::Text("Weight: %.1f", weapon->equipWeight);
+            ImGui::Text("Category: %s", weapon->category.c_str());
+            ImGui::Spacing();
+            ImGui::TextWrapped("%s", weapon->description.c_str());
+            ImGui::Spacing();
+
+            const bool categoryTargetsHand = menu.selectedCategory == 0 || menu.selectedCategory == 1;
+            if (categoryTargetsHand) {
+                const bool isEquippedInTargetHand = (menu.targetedHand == EquipmentHand::Right)
+                    ? equipment.rightHandWeaponId == entry.definitionId
+                    : equipment.leftHandWeaponId == entry.definitionId;
+
+                if (ImGui::Button(menu.targetedHand == EquipmentHand::Right ? "Equip To Right Hand" : "Equip To Left Hand", ImVec2(-1.0f, 0.0f))) {
+                    menu.pendingAction = InventoryMenuState::PendingActionType::Equip;
+                    menu.pendingHand = menu.targetedHand;
+                    menu.pendingWeaponId = entry.definitionId;
+                }
+
+                if (isEquippedInTargetHand && ImGui::Button(menu.targetedHand == EquipmentHand::Right ? "Unequip Right Hand" : "Unequip Left Hand", ImVec2(-1.0f, 0.0f))) {
+                    menu.pendingAction = InventoryMenuState::PendingActionType::Unequip;
+                    menu.pendingHand = menu.targetedHand;
+                    menu.pendingWeaponId.clear();
+                }
+            } else {
+                if (ImGui::Button("Equip To Right Hand", ImVec2(-1.0f, 0.0f))) {
+                    menu.pendingAction = InventoryMenuState::PendingActionType::Equip;
+                    menu.pendingHand = EquipmentHand::Right;
+                    menu.pendingWeaponId = entry.definitionId;
+                }
+                if (ImGui::Button("Equip To Left Hand", ImVec2(-1.0f, 0.0f))) {
+                    menu.pendingAction = InventoryMenuState::PendingActionType::Equip;
+                    menu.pendingHand = EquipmentHand::Left;
+                    menu.pendingWeaponId = entry.definitionId;
+                }
+            }
+        }
+    }
+
+    ImGui::Spacing();
+    ImGui::Separator();
+    ImGui::Text("Right Hand: %s", equipment.rightHandWeaponId.empty() ? "Empty" : equipment.rightHandWeaponId.c_str());
+    ImGui::Text("Left Hand: %s", equipment.leftHandWeaponId.empty() ? "Empty" : equipment.leftHandWeaponId.c_str());
+    ImGui::Text("Press I or Escape to close");
+    ImGui::EndChild();
+
     ImGui::End();
     ImGui::PopStyleVar(2);
 }

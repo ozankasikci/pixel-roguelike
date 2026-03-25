@@ -93,8 +93,31 @@ WeaponDefinition loadWeaponDefinitionAsset(const std::string& path) {
             definition.slot = tokens[1];
             return;
         }
+        if (key == "handedness" && tokens.size() == 2) {
+            if (tokens[1] == "one_handed") {
+                definition.handedness = WeaponDefinition::Handedness::OneHanded;
+                return;
+            }
+            if (tokens[1] == "two_handed") {
+                definition.handedness = WeaponDefinition::Handedness::TwoHanded;
+                return;
+            }
+            throwParseError(path, lineNumber, "unknown weapon handedness");
+        }
         if (key == "mesh" && tokens.size() == 2) {
             definition.meshId = tokens[1];
+            return;
+        }
+        if (key == "equip_weight" && tokens.size() == 2) {
+            definition.equipWeight = std::stof(tokens[1]);
+            return;
+        }
+        if (key == "category" && tokens.size() == 2) {
+            definition.category = tokens[1];
+            return;
+        }
+        if (key == "description" && tokens.size() == 2) {
+            definition.description = tokens[1];
             return;
         }
         if (key == "damage" && tokens.size() == 2) {
@@ -363,8 +386,11 @@ void ContentRegistry::loadDefaults() {
     skills_.clear();
     archetypes_.clear();
 
-    auto weapon = loadWeaponDefinitionAsset(resolveProjectPath("assets/defs/weapons/old_dagger.weapon"));
-    weapons_.emplace(weapon.id, weapon);
+    auto oldDagger = loadWeaponDefinitionAsset(resolveProjectPath("assets/defs/weapons/old_dagger.weapon"));
+    weapons_.emplace(oldDagger.id, oldDagger);
+
+    auto brigandAxe = loadWeaponDefinitionAsset(resolveProjectPath("assets/defs/weapons/brigand_axe.weapon"));
+    weapons_.emplace(brigandAxe.id, brigandAxe);
 
     auto enemy = loadEnemyDefinitionAsset(resolveProjectPath("assets/defs/enemies/sentinel.enemy"));
     enemies_.emplace(enemy.id, enemy);

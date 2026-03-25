@@ -1,7 +1,9 @@
 add_library(game STATIC
     content/ContentRegistry.cpp
+    session/EquipmentState.cpp
     scenes/CathedralScene.cpp
     systems/InteractionSystem.cpp
+    systems/InventorySystem.cpp
     systems/CameraSystem.cpp
     systems/CheckpointSystem.cpp
     systems/DoorSystem.cpp

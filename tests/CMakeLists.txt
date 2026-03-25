@@ -23,6 +23,7 @@ target_include_directories(test_content_registry PRIVATE ${CMAKE_SOURCE_DIR}/src
 target_link_libraries(test_content_registry PRIVATE glm::glm)
 target_compile_definitions(test_content_registry PRIVATE
     WEAPON_DEF_FILE="${CMAKE_SOURCE_DIR}/assets/defs/weapons/old_dagger.weapon"
+    TWO_HANDED_WEAPON_DEF_FILE="${CMAKE_SOURCE_DIR}/assets/defs/weapons/brigand_axe.weapon"
     ENEMY_DEF_FILE="${CMAKE_SOURCE_DIR}/assets/defs/enemies/sentinel.enemy"
     ITEM_DEF_FILE="${CMAKE_SOURCE_DIR}/assets/defs/items/kindling_shard.item"
     SKILL_DEF_FILE="${CMAKE_SOURCE_DIR}/assets/defs/skills/cathedral_attunement.skill"
@@ -30,6 +31,16 @@ target_compile_definitions(test_content_registry PRIVATE
     DOOR_ARCHETYPE_FILE="${CMAKE_SOURCE_DIR}/assets/prefabs/gameplay/double_door.prefab"
 )
 add_test(NAME content_registry COMMAND test_content_registry)
+
+add_executable(test_equipment_state
+    test_equipment_state.cpp
+    ${CMAKE_SOURCE_DIR}/src/engine/core/PathUtils.cpp
+    ${CMAKE_SOURCE_DIR}/src/game/content/ContentRegistry.cpp
+    ${CMAKE_SOURCE_DIR}/src/game/session/EquipmentState.cpp
+)
+target_include_directories(test_equipment_state PRIVATE ${CMAKE_SOURCE_DIR}/src)
+target_link_libraries(test_equipment_state PRIVATE glm::glm)
+add_test(NAME equipment_state COMMAND test_equipment_state)
 
 add_executable(test_cathedral_prefabs
     test_cathedral_prefabs.cpp

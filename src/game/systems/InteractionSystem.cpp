@@ -8,6 +8,7 @@
 #include "game/components/PlayerInteractionLockComponent.h"
 #include "game/components/PrimaryCameraTag.h"
 #include "game/components/TransformComponent.h"
+#include "game/ui/InventoryMenuState.h"
 #include "game/ui/InteractionFocusState.h"
 #include "game/ui/InteractionPromptState.h"
 
@@ -59,6 +60,12 @@ void InteractionSystem::update(Application& app, float deltaTime) {
     prompt.busy = false;
     prompt.text.clear();
     focus = InteractionFocusState{};
+
+    const bool inventoryOpen = ctx.contains<InventoryMenuState>()
+        && ctx.get<InventoryMenuState>().open;
+    if (inventoryOpen) {
+        return;
+    }
 
     entt::entity actor = entt::null;
     TransformComponent* actorTransform = nullptr;

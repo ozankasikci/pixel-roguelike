@@ -10,6 +10,10 @@
 #include "game/components/PrimaryCameraTag.h"
 #include "game/components/PlayerMovementComponent.h"
 #include "game/components/ViewmodelComponent.h"
+#include "game/content/ContentRegistry.h"
+#include "game/session/EquipmentState.h"
+#include "game/session/RunSession.h"
+#include "game/ui/InventoryMenuState.h"
 #include "game/ui/InteractionPromptState.h"
 
 #include <glad/gl.h>
@@ -164,14 +168,26 @@ void RenderSystem::updateDebugParams(const CameraState& camera, float deltaTime,
     debugParams_.drawCalls   = static_cast<int>(drawCalls);
 }
 
-void RenderSystem::renderOverlays(entt::registry& registry,
+void RenderSystem::renderOverlays(Application& app,
+                                  entt::registry& registry,
                                   std::vector<PointLight>& lights,
                                   InteractionPromptState& prompt) {
-    if (!overlaysVisible_ && !prompt.visible) {
+    const bool inventoryOpen = registry.ctx().contains<InventoryMenuState>()
+        && registry.ctx().get<InventoryMenuState>().open;
+
+    if (!overlaysVisible_ && !prompt.visible && !inventoryOpen) {
         return;
     }
 
     imguiLayer_.beginFrame();
+
+    if (inventoryOpen) {
+        auto& menu = registry.ctx().get<InventoryMenuState>();
+        const auto& session = app.getService<RunSession>();
+        const auto& content = app.getService<ContentRegistry>();
+        const auto equipment = resolveEffectiveEquipment(session, content);
+        ImGuiLayer::renderInventory(menu, session, content, equipment);
+    }
 
     if (overlaysVisible_) {
         ImGuiLayer::renderOverlay(debugParams_, lights);
@@ -189,7 +205,7 @@ void RenderSystem::renderOverlays(entt::registry& registry,
         }
     }
 
-    if (prompt.visible) {
+    if (prompt.visible && !inventoryOpen) {
         ImGuiLayer::renderInteractionPrompt(prompt.text.c_str(), prompt.busy);
     }
 
@@ -244,7 +260,7 @@ void RenderSystem::update(Application& app, float deltaTime) {
 
     updateDebugParams(camera, deltaTime, objects.size());
     auto& prompt = ensurePromptState(registry);
-    renderOverlays(registry, lights, prompt);
+    renderOverlays(app, registry, lights, prompt);
     handleResolutionChange();
     handleCapture(app, app.window().width(), app.window().height());
 }

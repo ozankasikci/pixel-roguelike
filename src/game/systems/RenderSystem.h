@@ -45,7 +45,8 @@ private:
     void renderDitherPass(Application& app, const CameraState& camera);
     InteractionPromptState& ensurePromptState(entt::registry& registry) const;
     void updateDebugParams(const CameraState& camera, float deltaTime, std::size_t drawCalls);
-    void renderOverlays(entt::registry& registry,
+    void renderOverlays(Application& app,
+                        entt::registry& registry,
                         std::vector<PointLight>& lights,
                         InteractionPromptState& prompt);
     void handleResolutionChange();

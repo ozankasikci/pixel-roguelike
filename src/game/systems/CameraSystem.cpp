@@ -6,6 +6,7 @@
 #include "game/components/PlayerInteractionLockComponent.h"
 #include "game/components/PrimaryCameraTag.h"
 #include "game/components/TransformComponent.h"
+#include "game/ui/InventoryMenuState.h"
 
 #include <GLFW/glfw3.h>
 #include <glm/glm.hpp>
@@ -22,12 +23,14 @@ void CameraSystem::init(Application& app) {
 
 void CameraSystem::update(Application& app, float deltaTime) {
     auto& registry = app.registry();
+    const bool inventoryOpen = registry.ctx().contains<InventoryMenuState>()
+        && registry.ctx().get<InventoryMenuState>().open;
 
     auto view = registry.view<TransformComponent, CameraComponent, PlayerInteractionLockComponent, ControllableTag, PrimaryCameraTag>();
     for (auto [entity, transform, cam, lock] : view.each()) {
 
         // Mouse look (only when cursor is locked)
-        if (input_.isCursorLocked() && !lock.active) {
+        if (input_.isCursorLocked() && !lock.active && !inventoryOpen) {
             constexpr float sensitivity = 0.1f;
             glm::vec2 delta = input_.mouseDelta();
             cam.yaw   += delta.x * sensitivity;

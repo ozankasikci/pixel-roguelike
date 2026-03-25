@@ -14,6 +14,8 @@ void InputSystem::init(Application& app) {
     // Only mouse position and scroll need callbacks (can't poll deltas)
     glfwSetCursorPosCallback(window_, cursorPosCallback);
     glfwSetScrollCallback(window_, scrollCallback);
+    glfwSetKeyCallback(window_, keyCallback);
+    glfwSetCharCallback(window_, charCallback);
 
     // Lock cursor for FPS mode
     lockCursor();
@@ -43,6 +45,11 @@ void InputSystem::update(Application& app, float deltaTime) {
     scrollDelta_ = scrollAccum_;
     scrollAccum_ = 0.0f;
 
+    keyPressEvents_.swap(keyPressEventsAccum_);
+    keyPressEventsAccum_.clear();
+    typedCharacters_.swap(typedCharactersAccum_);
+    typedCharactersAccum_.clear();
+
     // Toggle cursor lock with Escape (for debug tools)
     if (isKeyJustPressed(GLFW_KEY_ESCAPE)) {
         if (cursorLocked_) {
@@ -57,6 +64,8 @@ void InputSystem::shutdown() {
     if (window_) {
         glfwSetCursorPosCallback(window_, nullptr);
         glfwSetScrollCallback(window_, nullptr);
+        glfwSetKeyCallback(window_, nullptr);
+        glfwSetCharCallback(window_, nullptr);
     }
     instance_ = nullptr;
 }
@@ -70,12 +79,57 @@ bool InputSystem::isKeyPressed(int key) const {
 
 bool InputSystem::isKeyJustPressed(int key) const {
     if (key < 0 || key >= MAX_KEYS) return false;
-    return currentKeys_[key] && !previousKeys_[key];
+    if (currentKeys_[key] && !previousKeys_[key]) {
+        return true;
+    }
+
+    for (const KeyPressEvent& event : keyPressEvents_) {
+        if (event.key == key) {
+            return true;
+        }
+    }
+
+    return false;
 }
 
 bool InputSystem::isKeyJustReleased(int key) const {
     if (key < 0 || key >= MAX_KEYS) return false;
     return !currentKeys_[key] && previousKeys_[key];
+}
+
+bool InputSystem::isKeyJustPressedByName(std::string_view keyName) const {
+    if (window_ == nullptr) {
+        return false;
+    }
+
+    for (const KeyPressEvent& event : keyPressEvents_) {
+        const char* localizedName = glfwGetKeyName(event.key, event.scancode);
+        if (localizedName != nullptr && keyName == localizedName) {
+            return true;
+        }
+    }
+
+    for (int key = 0; key < MAX_KEYS; ++key) {
+        if (!(currentKeys_[key] && !previousKeys_[key])) {
+            continue;
+        }
+
+        const char* localizedName = glfwGetKeyName(key, glfwGetKeyScancode(key));
+        if (localizedName != nullptr && keyName == localizedName) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+bool InputSystem::wasCharacterTyped(unsigned int codepoint) const {
+    for (unsigned int typed : typedCharacters_) {
+        if (typed == codepoint) {
+            return true;
+        }
+    }
+    return false;
 }
 
 // --- Mouse buttons ---
@@ -170,4 +224,19 @@ void InputSystem::scrollCallback(GLFWwindow* window, double xoffset, double yoff
     if (!instance_) return;
 
     instance_->scrollAccum_ += static_cast<float>(yoffset);
+}
+
+void InputSystem::keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods) {
+    (void)window;
+    (void)mods;
+    if (!instance_ || action != GLFW_PRESS) return;
+
+    instance_->keyPressEventsAccum_.push_back({key, scancode});
+}
+
+void InputSystem::charCallback(GLFWwindow* window, unsigned int codepoint) {
+    (void)window;
+    if (!instance_) return;
+
+    instance_->typedCharactersAccum_.push_back(codepoint);
 }
