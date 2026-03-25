@@ -19,7 +19,7 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-23)
 
 **Core value:** The 1-bit dithered 3D rendering — a visually striking, modern take on retro aesthetics that makes the game instantly recognizable
-**Current focus:** Phase 3 — combat-and-enemies
+**Current focus:** Phase 02.1 — equipment-inventory-and-carry-weight-weapons-are-inventory-items-no-slot-grid-inventory-dark-souls-style-carry-weight
 
 ## Current Position
 
