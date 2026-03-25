@@ -1,5 +1,7 @@
 #include "game/levels/cathedral/CathedralLayout.h"
 
+#include "game/levels/cathedral/CathedralBuilder.h"
+#include "game/levels/cathedral/CathedralPrefabs.h"
 #include "engine/rendering/MeshGeometry.h"
 #include "game/levels/cathedral/CathedralSceneData.h"
 #include "game/components/CameraComponent.h"
@@ -89,6 +91,7 @@ void buildCathedralLayout(CathedralContext& context) {
     auto& registry = context.registry;
     auto& meshLibrary = context.meshLibrary;
     auto& entities = context.entities;
+    CathedralBuilder builder(context);
 
     Mesh* cube = meshLibrary.get("cube");
     Mesh* leftDoorMesh = meshLibrary.get("door_leaf_left");
@@ -183,6 +186,8 @@ void buildCathedralLayout(CathedralContext& context) {
         addMesh(cube, glm::vec3(side * (chamberWidth * 0.5f - 1.4f), 0.3f, chamberCenterZ - 2.1f), glm::vec3(0.9f, 0.35f, 1.4f), glm::vec3(0.0f, side * 12.0f, 0.0f));
     }
 
+    spawnCathedralCheckpointShrineGeometry(builder, chamberCenterZ);
+
     auto createDoorLeaf = [&](Mesh* mesh,
                               const glm::vec3& closedCenter,
                               const glm::vec3& hingePosition,
@@ -219,21 +224,8 @@ void buildCathedralLayout(CathedralContext& context) {
 
     const std::array<float, 3> shrineRows = {2.0f, -6.1f, -14.0f};
     for (float side : {-1.0f, 1.0f}) {
-        const float wallX = side * (halfW - 0.25f);
-        const float frameX = side * (halfW - 1.1f);
-
         for (float z : shrineRows) {
-            addMesh(cube, glm::vec3(wallX, 2.45f, z), glm::vec3(0.12f, 2.6f, 1.8f));
-            addMesh(cube, glm::vec3(frameX, 4.3f, z), glm::vec3(0.35f, 0.35f, 2.2f));
-            addMesh(cube, glm::vec3(frameX, 0.95f, z), glm::vec3(0.35f, 0.2f, 2.2f));
-            addMesh(cube, glm::vec3(frameX, 2.55f, z - 1.0f), glm::vec3(0.35f, 2.2f, 0.18f));
-            addMesh(cube, glm::vec3(frameX, 2.55f, z + 1.0f), glm::vec3(0.35f, 2.2f, 0.18f));
-
-            for (float barOffset : {-0.7f, 0.0f, 0.7f}) {
-                addMesh(cube, glm::vec3(side * (halfW - 1.45f), 2.55f, z + barOffset), glm::vec3(0.1f, 1.9f, 0.08f));
-            }
-
-            addMesh(cube, glm::vec3(side * (halfW - 1.85f), 0.35f, z), glm::vec3(0.8f, 0.45f, 1.1f), glm::vec3(0.0f, 0.0f, side * 6.0f));
+            spawnCathedralSideShrineBay(builder, side, halfW, z);
         }
     }
 
@@ -248,8 +240,7 @@ void buildCathedralLayout(CathedralContext& context) {
         StepSpec{glm::vec3(0.0f, 0.67f, backZ + 0.4f), glm::vec3(5.0f, 0.24f, 1.4f)},
     };
     for (const StepSpec& step : steps) {
-        addMesh(cube, step.center, step.scale);
-        addColliderBox(registry, entities, step.center, step.scale * 0.5f);
+        spawnCathedralDaisStep(builder, step.center, step.scale);
     }
 
     for (const auto& placement : sceneData.meshes) {
@@ -273,9 +264,7 @@ void buildCathedralLayout(CathedralContext& context) {
     }
 
     for (const auto& placement : sceneData.checkpoints) {
-        auto checkpointLight = addLightEntity(
-            registry,
-            entities,
+        auto checkpointLight = builder.addLight(
             placement.lightPosition,
             placement.lightColor,
             placement.lightRadius,
@@ -294,7 +283,7 @@ void buildCathedralLayout(CathedralContext& context) {
                 checkpointLight
             }
         );
-        entities.push_back(checkpoint);
+        builder.track(checkpoint);
     }
 
     for (const auto& placement : sceneData.doors) {
@@ -333,7 +322,7 @@ void buildCathedralLayout(CathedralContext& context) {
                 false
             }
         );
-        entities.push_back(doorRoot);
+        builder.track(doorRoot);
     }
 
     auto player = registry.create();
@@ -349,10 +338,10 @@ void buildCathedralLayout(CathedralContext& context) {
     registry.emplace<PlayerMovementComponent>(player);
     registry.emplace<PlayerInteractionLockComponent>(player);
     registry.emplace<PlayerSpawnComponent>(player, PlayerSpawnComponent{playerSpawnPosition, playerFallRespawnY});
-    entities.push_back(player);
+    builder.track(player);
 
     auto viewmodel = registry.create();
     registry.emplace<MeshComponent>(viewmodel, MeshComponent{meshLibrary.get("hand"), glm::mat4(1.0f), false});
     registry.emplace<ViewmodelComponent>(viewmodel);
-    entities.push_back(viewmodel);
+    builder.track(viewmodel);
 }
