@@ -80,100 +80,10 @@ FetchContent_Declare(tinygltf
 )
 FetchContent_MakeAvailable(tinygltf)
 
-# --- Per-module static libraries ---
-
-add_library(engine_core STATIC
-    src/engine/core/Window.cpp
-    src/engine/core/Application.cpp
-    src/engine/core/Time.cpp
-)
-target_include_directories(engine_core PUBLIC ${CMAKE_SOURCE_DIR}/src)
-target_link_libraries(engine_core PUBLIC glad_gl glfw spdlog::spdlog EnTT::EnTT)
-
-add_library(engine_rendering STATIC
-    src/engine/rendering/Shader.cpp
-    src/engine/rendering/Framebuffer.cpp
-    src/engine/rendering/DitherPass.cpp
-    src/engine/rendering/Mesh.cpp
-    src/engine/rendering/MeshLibrary.cpp
-    src/engine/rendering/Renderer.cpp
-    src/engine/rendering/GltfLoader.cpp
-)
-target_include_directories(engine_rendering PUBLIC ${CMAKE_SOURCE_DIR}/src)
-target_link_libraries(engine_rendering PUBLIC engine_core glm::glm)
-target_link_libraries(engine_rendering PRIVATE tinygltf)
-
-add_library(engine_ui STATIC
-    src/engine/ui/ImGuiLayer.cpp
-    src/engine/ui/Screenshot.cpp
-)
-target_include_directories(engine_ui PUBLIC
-    ${CMAKE_SOURCE_DIR}/src
-    ${CMAKE_SOURCE_DIR}/external
-)
-target_link_libraries(engine_ui PUBLIC engine_rendering imgui)
-
-add_library(engine_scene STATIC
-    src/engine/scene/SceneManager.cpp
-)
-target_include_directories(engine_scene PUBLIC ${CMAKE_SOURCE_DIR}/src)
-target_link_libraries(engine_scene PUBLIC engine_core)
-
-add_library(engine_input STATIC
-    src/engine/input/InputSystem.cpp
-)
-target_include_directories(engine_input PUBLIC ${CMAKE_SOURCE_DIR}/src)
-target_link_libraries(engine_input PUBLIC engine_core imgui glm::glm)
-
-add_library(engine_physics STATIC
-    src/engine/physics/PhysicsSystem.cpp
-)
-target_include_directories(engine_physics PUBLIC ${CMAKE_SOURCE_DIR}/src)
-target_link_libraries(engine_physics PUBLIC engine_core glm::glm)
-target_link_libraries(engine_physics PRIVATE Jolt)
-
-add_library(game STATIC
-    src/game/scenes/CathedralScene.cpp
-    src/game/systems/CameraSystem.cpp
-    src/game/systems/CheckpointSystem.cpp
-    src/game/systems/DoorSystem.cpp
-    src/game/systems/PlayerMovementSystem.cpp
-    src/game/systems/RenderSystem.cpp
-)
-target_include_directories(game PUBLIC ${CMAKE_SOURCE_DIR}/src)
-target_link_libraries(game PUBLIC engine_core engine_rendering engine_ui engine_input engine_physics EnTT::EnTT)
-
-add_executable(pixel-roguelike src/main.cpp)
-target_include_directories(pixel-roguelike PRIVATE ${CMAKE_SOURCE_DIR}/src ${CMAKE_SOURCE_DIR}/external)
-target_link_libraries(pixel-roguelike PRIVATE
-    engine_core
-    engine_rendering
-    engine_ui
-    engine_scene
-    engine_input
-    engine_physics
-    game
-    EnTT::EnTT
-)
-
-if(APPLE)
-    target_link_libraries(pixel-roguelike PRIVATE
-        "-framework Cocoa"
-        "-framework OpenGL"
-        "-framework IOKit"
-    )
-    target_compile_definitions(pixel-roguelike PRIVATE GL_SILENCE_DEPRECATION)
-endif()
-
-# --- Tests ---
 enable_testing()
 
-add_executable(test_mesh_geometry tests/test_mesh_geometry.cpp)
-target_include_directories(test_mesh_geometry PRIVATE ${CMAKE_SOURCE_DIR}/src)
-target_link_libraries(test_mesh_geometry PRIVATE glm::glm)
-add_test(NAME mesh_geometry COMMAND test_mesh_geometry)
-
-# --- Mesh Generator Tool ---
-add_executable(mesh_generator tools/mesh_generator.cpp)
-target_include_directories(mesh_generator PRIVATE ${CMAKE_SOURCE_DIR}/src)
-target_link_libraries(mesh_generator PRIVATE glm::glm tinygltf)
+add_subdirectory(src/engine)
+add_subdirectory(src/game)
+add_subdirectory(apps/runtime)
+add_subdirectory(tests)
+add_subdirectory(tools)

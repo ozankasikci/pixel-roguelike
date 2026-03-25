@@ -8,6 +8,9 @@
 #include "engine/ui/Screenshot.h"
 #include <memory>
 #include <string>
+#include <vector>
+
+struct InteractionPromptState;
 
 class RenderSystem : public System {
 public:
@@ -22,6 +25,32 @@ public:
     void enableAutoScreenshot(const std::string& path, int delayFrames = 10);
 
 private:
+    struct CameraState {
+        glm::vec3 position{0.0f};
+        glm::mat4 viewMatrix{1.0f};
+        glm::mat4 projectionMatrix{1.0f};
+        glm::vec3 direction{0.0f, 0.0f, -1.0f};
+    };
+
+    CameraState captureCamera(entt::registry& registry) const;
+    std::vector<RenderObject> collectSceneObjects(entt::registry& registry) const;
+    std::vector<RenderObject> collectViewmodelObjects(entt::registry& registry,
+                                                      const CameraState& camera,
+                                                      float deltaTime) const;
+    std::vector<PointLight> collectLights(entt::registry& registry) const;
+    void renderScenePass(const CameraState& camera,
+                         const std::vector<RenderObject>& objects,
+                         const std::vector<RenderObject>& viewmodelObjects,
+                         const std::vector<PointLight>& lights);
+    void renderDitherPass(Application& app, const CameraState& camera);
+    InteractionPromptState& ensurePromptState(entt::registry& registry) const;
+    void updateDebugParams(const CameraState& camera, float deltaTime, std::size_t drawCalls);
+    void renderOverlays(entt::registry& registry,
+                        std::vector<PointLight>& lights,
+                        InteractionPromptState& prompt);
+    void handleResolutionChange();
+    void handleCapture(Application& app, int displayW, int displayH);
+
     Framebuffer sceneFBO_;
     std::unique_ptr<Shader> sceneShader_;
     std::unique_ptr<Renderer> renderer_;

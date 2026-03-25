@@ -27,16 +27,18 @@ int main(int argc, char* argv[]) {
 
     Application app(1280, 720, "Pixel Roguelike");
 
-    // Register systems (execution order: Input → Doors → Checkpoints → Physics → Movement → Camera → Render)
-    auto& input    = app.addSystem<InputSystem>();
-    auto& doors    = app.addSystem<DoorSystem>(input);
-    auto& checkpoints = app.addSystem<CheckpointSystem>(input);
-    auto& physics  = app.addSystem<PhysicsSystem>();
-    auto& movement = app.addSystem<PlayerMovementSystem>(input, physics);
-    auto& camera   = app.addSystem<CameraSystem>(input);
-    auto& render   = app.addSystem<RenderSystem>();
+    // Register systems by phase so scheduling policy lives in the engine instead of boot order.
+    auto& input = app.addSystem<InputSystem>(Application::UpdatePhase::Input);
+    auto& doors = app.addSystem<DoorSystem>(Application::UpdatePhase::Interaction, input);
+    auto& checkpoints = app.addSystem<CheckpointSystem>(Application::UpdatePhase::Interaction, input);
+    auto& physics = app.addSystem<PhysicsSystem>(Application::UpdatePhase::Physics);
+    auto& movement = app.addSystem<PlayerMovementSystem>(Application::UpdatePhase::Gameplay, input, physics);
+    auto& camera = app.addSystem<CameraSystem>(Application::UpdatePhase::Camera, input);
+    auto& render = app.addSystem<RenderSystem>(Application::UpdatePhase::Render);
     (void)doors;
     (void)checkpoints;
+    (void)movement;
+    (void)camera;
 
     if (!autoScreenshotPath.empty()) {
         render.enableAutoScreenshot(autoScreenshotPath, 10);
@@ -44,6 +46,7 @@ int main(int argc, char* argv[]) {
 
     // Push the cathedral scene (per D-14, D-15)
     SceneManager sceneManager;
+    app.setSceneManager(&sceneManager);
     sceneManager.pushScene(std::make_unique<CathedralScene>(), app);
 
     // Run the game loop (per D-04)

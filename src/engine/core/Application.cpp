@@ -1,5 +1,6 @@
 #include "engine/core/Application.h"
 #include "engine/core/System.h"
+#include "engine/scene/SceneManager.h"
 
 Application::Application(int width, int height, const char* title)
     : window_(width, height, title)
@@ -9,9 +10,10 @@ Application::Application(int width, int height, const char* title)
 Application::~Application() = default;
 
 void Application::run() {
-    // Init all systems
-    for (auto& system : systems_) {
-        system->init(*this);
+    for (auto& systems : systemsByPhase_) {
+        for (auto& system : systems) {
+            system->init(*this);
+        }
     }
 
     running_ = true;
@@ -20,15 +22,21 @@ void Application::run() {
         time_.update();
 
         float dt = time_.deltaTime();
-        for (auto& system : systems_) {
-            system->update(*this, dt);
+        if (sceneManager_ != nullptr) {
+            sceneManager_->updateActive(*this, dt);
+        }
+        for (auto& systems : systemsByPhase_) {
+            for (auto& system : systems) {
+                system->update(*this, dt);
+            }
         }
 
         window_.swapBuffers();
     }
 
-    // Shutdown in reverse order
-    for (int i = static_cast<int>(systems_.size()) - 1; i >= 0; --i) {
-        systems_[i]->shutdown();
+    for (auto phaseIt = systemsByPhase_.rbegin(); phaseIt != systemsByPhase_.rend(); ++phaseIt) {
+        for (auto systemIt = phaseIt->rbegin(); systemIt != phaseIt->rend(); ++systemIt) {
+            (*systemIt)->shutdown();
+        }
     }
 }
