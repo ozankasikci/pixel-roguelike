@@ -1,5 +1,7 @@
 #pragma once
 
+#include "game/prefabs/GameplayPrefabData.h"
+
 #include <glm/glm.hpp>
 
 #include <string>
@@ -35,29 +37,6 @@ struct CathedralPlayerSpawnPlacement {
     float fallRespawnY = -6.0f;
 };
 
-struct CathedralCheckpointPlacement {
-    glm::vec3 position{0.0f};
-    glm::vec3 respawnPosition{0.0f};
-    float interactDistance = 2.4f;
-    float interactDotThreshold = 0.55f;
-    glm::vec3 lightPosition{0.0f};
-    glm::vec3 lightColor{1.0f};
-    float lightRadius = 1.0f;
-    float lightIntensity = 1.0f;
-};
-
-struct CathedralDoubleDoorPlacement {
-    glm::vec3 rootPosition{0.0f};
-    glm::vec3 leftHingePosition{0.0f};
-    glm::vec3 rightHingePosition{0.0f};
-    glm::vec3 leafScale{1.0f};
-    float closedYaw = 0.0f;
-    float openAngle = 90.0f;
-    float interactDistance = 3.0f;
-    float interactDotThreshold = 0.72f;
-    float openDuration = 2.4f;
-};
-
 struct CathedralSceneData {
     std::vector<CathedralMeshPlacement> meshes;
     std::vector<CathedralLightPlacement> lights;
@@ -65,8 +44,7 @@ struct CathedralSceneData {
     std::vector<CathedralCylinderColliderPlacement> cylinderColliders;
     CathedralPlayerSpawnPlacement playerSpawn;
     bool hasPlayerSpawn = false;
-    std::vector<CathedralCheckpointPlacement> checkpoints;
-    std::vector<CathedralDoubleDoorPlacement> doors;
+    std::vector<GameplayPrefabInstance> prefabs;
 };
 
 CathedralSceneData loadCathedralSceneData(const std::string& path);

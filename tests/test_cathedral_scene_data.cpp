@@ -11,8 +11,7 @@ int main() {
     assert(data.boxColliders.size() == 18);
     assert(data.cylinderColliders.size() == 14);
     assert(data.hasPlayerSpawn);
-    assert(data.checkpoints.size() == 1);
-    assert(data.doors.size() == 1);
+    assert(data.prefabs.size() == 2);
 
     assert(data.meshes.front().meshName == "cube");
     assert(data.meshes.front().position == glm::vec3(-5.8f, 0.07f, 2.8f));
@@ -31,10 +30,12 @@ int main() {
     assert(data.cylinderColliders.front().radius == 0.42f);
     assert(data.playerSpawn.position == glm::vec3(0.0f, 1.6f, 5.4f));
     assert(data.playerSpawn.fallRespawnY == -8.0f);
-    assert(data.checkpoints.front().position == glm::vec3(0.0f, 1.3f, -35.3f));
-    assert(data.checkpoints.front().respawnPosition == glm::vec3(0.0f, 1.6f, -32.8f));
-    assert(data.doors.front().rootPosition == glm::vec3(0.0f, 3.13f, -19.4f));
-    assert(data.doors.front().leafScale == glm::vec3(2.315f, 6.26f, 0.30f));
+    assert(data.prefabs.front().type == GameplayPrefabType::Checkpoint);
+    assert(data.prefabs.front().checkpoint.position == glm::vec3(0.0f, 1.3f, -35.3f));
+    assert(data.prefabs.front().checkpoint.respawnPosition == glm::vec3(0.0f, 1.6f, -32.8f));
+    assert(data.prefabs.back().type == GameplayPrefabType::DoubleDoor);
+    assert(data.prefabs.back().doubleDoor.rootPosition == glm::vec3(0.0f, 3.13f, -19.4f));
+    assert(data.prefabs.back().doubleDoor.leafScale == glm::vec3(2.315f, 6.26f, 0.30f));
 
     return 0;
 }

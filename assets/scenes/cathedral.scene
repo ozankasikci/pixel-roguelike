@@ -3,8 +3,8 @@
 # collider_box px py pz hx hy hz
 # collider_cylinder px py pz radius half_height
 # player_spawn px py pz fall_respawn_y
-# checkpoint px py pz respawn_x respawn_y respawn_z interact_distance interact_dot_threshold light_px light_py light_pz light_r light_g light_b light_radius light_intensity
-# double_door root_px root_py root_pz left_hinge_px left_hinge_py left_hinge_pz right_hinge_px right_hinge_py right_hinge_pz leaf_sx leaf_sy leaf_sz closed_yaw open_angle interact_distance interact_dot_threshold open_duration
+# prefab checkpoint px py pz respawn_x respawn_y respawn_z interact_distance interact_dot_threshold light_px light_py light_pz light_r light_g light_b light_radius light_intensity
+# prefab double_door root_px root_py root_pz left_hinge_px left_hinge_py left_hinge_pz right_hinge_px right_hinge_py right_hinge_pz leaf_sx leaf_sy leaf_sz closed_yaw open_angle interact_distance interact_dot_threshold open_duration
 
 mesh cube -5.8 0.07 2.8 2.0 0.12 1.5 0.0 0.0 0.0
 mesh cube -2.1 0.05 -1.4 1.6 0.10 1.2 0.0 12.0 0.0
@@ -100,5 +100,5 @@ collider_cylinder -2.95 4.5 -19.7 0.42 4.5
 collider_cylinder 2.95 4.5 -19.7 0.42 4.5
 
 player_spawn 0.0 1.6 5.4 -8.0
-checkpoint 0.0 1.3 -35.3 0.0 1.6 -32.8 2.8 0.45 0.0 1.95 -36.3 1.0 0.7 0.42 7.0 1.15
-double_door 0.0 3.13 -19.4 -2.35 3.13 -20.28 2.35 3.13 -20.28 2.315 6.26 0.30 0.0 102.0 3.4 0.74 2.6
+prefab checkpoint 0.0 1.3 -35.3 0.0 1.6 -32.8 2.8 0.45 0.0 1.95 -36.3 1.0 0.7 0.42 7.0 1.15
+prefab double_door 0.0 3.13 -19.4 -2.35 3.13 -20.28 2.35 3.13 -20.28 2.315 6.26 0.30 0.0 102.0 3.4 0.74 2.6

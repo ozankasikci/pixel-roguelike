@@ -20,8 +20,6 @@ void buildCathedralLayout(LevelBuildContext& context) {
     LevelBuilder builder(context);
 
     Mesh* cube = builder.mesh("cube");
-    Mesh* leftDoorMesh = builder.mesh("door_leaf_left");
-    Mesh* rightDoorMesh = builder.mesh("door_leaf_right");
     Mesh* plane = builder.mesh("plane");
 
     constexpr float roomWidth = 18.0f;
@@ -133,39 +131,8 @@ void buildCathedralLayout(LevelBuildContext& context) {
         builder.addCylinderCollider(placement.position, placement.radius, placement.halfHeight);
     }
 
-    for (const auto& placement : sceneData.checkpoints) {
-        (void)spawnCheckpoint(
-            builder,
-            CheckpointSpawnSpec{
-                placement.position,
-                placement.respawnPosition,
-                placement.interactDistance,
-                placement.interactDotThreshold,
-                placement.lightPosition,
-                placement.lightColor,
-                placement.lightRadius,
-                placement.lightIntensity
-            }
-        );
-    }
-
-    for (const auto& placement : sceneData.doors) {
-        (void)spawnDoubleDoor(
-            builder,
-            leftDoorMesh,
-            rightDoorMesh,
-            DoubleDoorSpawnSpec{
-                placement.rootPosition,
-                placement.leftHingePosition,
-                placement.rightHingePosition,
-                placement.leafScale,
-                placement.closedYaw,
-                placement.openAngle,
-                placement.interactDistance,
-                placement.interactDotThreshold,
-                placement.openDuration
-            }
-        );
+    for (const auto& prefab : sceneData.prefabs) {
+        (void)spawnGameplayPrefab(builder, prefab);
     }
 
     auto player = builder.createTransformEntity(

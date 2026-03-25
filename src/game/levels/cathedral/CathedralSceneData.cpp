@@ -24,6 +24,38 @@ bool isCommentOrEmpty(const std::string& line) {
     return true;
 }
 
+GameplayPrefabInstance parseCheckpointPrefab(std::istringstream& stream,
+                                             const std::string& path,
+                                             int lineNumber) {
+    GameplayPrefabInstance instance;
+    instance.type = GameplayPrefabType::Checkpoint;
+    if (!(stream >> instance.checkpoint.position.x >> instance.checkpoint.position.y >> instance.checkpoint.position.z
+                 >> instance.checkpoint.respawnPosition.x >> instance.checkpoint.respawnPosition.y >> instance.checkpoint.respawnPosition.z
+                 >> instance.checkpoint.interactDistance >> instance.checkpoint.interactDotThreshold
+                 >> instance.checkpoint.lightPosition.x >> instance.checkpoint.lightPosition.y >> instance.checkpoint.lightPosition.z
+                 >> instance.checkpoint.lightColor.r >> instance.checkpoint.lightColor.g >> instance.checkpoint.lightColor.b
+                 >> instance.checkpoint.lightRadius >> instance.checkpoint.lightIntensity)) {
+        throwParseError(path, lineNumber, "invalid prefab checkpoint record");
+    }
+    return instance;
+}
+
+GameplayPrefabInstance parseDoubleDoorPrefab(std::istringstream& stream,
+                                             const std::string& path,
+                                             int lineNumber) {
+    GameplayPrefabInstance instance;
+    instance.type = GameplayPrefabType::DoubleDoor;
+    if (!(stream >> instance.doubleDoor.rootPosition.x >> instance.doubleDoor.rootPosition.y >> instance.doubleDoor.rootPosition.z
+                 >> instance.doubleDoor.leftHingePosition.x >> instance.doubleDoor.leftHingePosition.y >> instance.doubleDoor.leftHingePosition.z
+                 >> instance.doubleDoor.rightHingePosition.x >> instance.doubleDoor.rightHingePosition.y >> instance.doubleDoor.rightHingePosition.z
+                 >> instance.doubleDoor.leafScale.x >> instance.doubleDoor.leafScale.y >> instance.doubleDoor.leafScale.z
+                 >> instance.doubleDoor.closedYaw >> instance.doubleDoor.openAngle
+                 >> instance.doubleDoor.interactDistance >> instance.doubleDoor.interactDotThreshold >> instance.doubleDoor.openDuration)) {
+        throwParseError(path, lineNumber, "invalid prefab double_door record");
+    }
+    return instance;
+}
+
 } // namespace
 
 CathedralSceneData loadCathedralSceneData(const std::string& path) {
@@ -100,31 +132,27 @@ CathedralSceneData loadCathedralSceneData(const std::string& path) {
             continue;
         }
 
-        if (kind == "checkpoint") {
-            CathedralCheckpointPlacement placement;
-            if (!(stream >> placement.position.x >> placement.position.y >> placement.position.z
-                         >> placement.respawnPosition.x >> placement.respawnPosition.y >> placement.respawnPosition.z
-                         >> placement.interactDistance >> placement.interactDotThreshold
-                         >> placement.lightPosition.x >> placement.lightPosition.y >> placement.lightPosition.z
-                         >> placement.lightColor.r >> placement.lightColor.g >> placement.lightColor.b
-                         >> placement.lightRadius >> placement.lightIntensity)) {
-                throwParseError(path, lineNumber, "invalid checkpoint record");
+        if (kind == "prefab") {
+            std::string prefabType;
+            stream >> prefabType;
+            if (prefabType == "checkpoint") {
+                data.prefabs.push_back(parseCheckpointPrefab(stream, path, lineNumber));
+                continue;
             }
-            data.checkpoints.push_back(placement);
+            if (prefabType == "double_door") {
+                data.prefabs.push_back(parseDoubleDoorPrefab(stream, path, lineNumber));
+                continue;
+            }
+            throwParseError(path, lineNumber, "unknown prefab type '" + prefabType + "'");
+        }
+
+        if (kind == "checkpoint") {
+            data.prefabs.push_back(parseCheckpointPrefab(stream, path, lineNumber));
             continue;
         }
 
         if (kind == "double_door") {
-            CathedralDoubleDoorPlacement placement;
-            if (!(stream >> placement.rootPosition.x >> placement.rootPosition.y >> placement.rootPosition.z
-                         >> placement.leftHingePosition.x >> placement.leftHingePosition.y >> placement.leftHingePosition.z
-                         >> placement.rightHingePosition.x >> placement.rightHingePosition.y >> placement.rightHingePosition.z
-                         >> placement.leafScale.x >> placement.leafScale.y >> placement.leafScale.z
-                         >> placement.closedYaw >> placement.openAngle
-                         >> placement.interactDistance >> placement.interactDotThreshold >> placement.openDuration)) {
-                throwParseError(path, lineNumber, "invalid double_door record");
-            }
-            data.doors.push_back(placement);
+            data.prefabs.push_back(parseDoubleDoorPrefab(stream, path, lineNumber));
             continue;
         }
 

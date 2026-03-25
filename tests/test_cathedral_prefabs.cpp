@@ -48,17 +48,16 @@ int main() {
 
     const auto* leftDoorMesh = reinterpret_cast<Mesh*>(static_cast<uintptr_t>(0x1));
     const auto* rightDoorMesh = reinterpret_cast<Mesh*>(static_cast<uintptr_t>(0x2));
-    const DoubleDoorSpawnSpec doorPlacement{
-        glm::vec3(0.0f, 3.13f, -19.4f),
-        glm::vec3(-2.315f, 3.13f, -19.4f),
-        glm::vec3(2.315f, 3.13f, -19.4f),
-        glm::vec3(2.315f, 6.26f, 0.30f),
-        0.0f,
-        92.0f,
-        3.2f,
-        0.72f,
-        2.4f
-    };
+    DoubleDoorSpawnSpec doorPlacement;
+    doorPlacement.rootPosition = glm::vec3(0.0f, 3.13f, -19.4f);
+    doorPlacement.leftHingePosition = glm::vec3(-2.315f, 3.13f, -19.4f);
+    doorPlacement.rightHingePosition = glm::vec3(2.315f, 3.13f, -19.4f);
+    doorPlacement.leafScale = glm::vec3(2.315f, 6.26f, 0.30f);
+    doorPlacement.closedYaw = 0.0f;
+    doorPlacement.openAngle = 92.0f;
+    doorPlacement.interactDistance = 3.2f;
+    doorPlacement.interactDotThreshold = 0.72f;
+    doorPlacement.openDuration = 2.4f;
 
     const entt::entity doorRoot = spawnDoubleDoor(
         builder,

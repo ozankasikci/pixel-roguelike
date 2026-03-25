@@ -110,3 +110,23 @@ entt::entity spawnDoubleDoor(LevelBuilder& builder,
     );
     return doorRoot;
 }
+
+entt::entity spawnDoubleDoor(LevelBuilder& builder, const DoubleDoorSpawnSpec& spec) {
+    return spawnDoubleDoor(
+        builder,
+        builder.mesh(spec.leftLeafMeshName),
+        builder.mesh(spec.rightLeafMeshName),
+        spec
+    );
+}
+
+entt::entity spawnGameplayPrefab(LevelBuilder& builder, const GameplayPrefabInstance& instance) {
+    switch (instance.type) {
+    case GameplayPrefabType::Checkpoint:
+        return spawnCheckpoint(builder, instance.checkpoint);
+    case GameplayPrefabType::DoubleDoor:
+        return spawnDoubleDoor(builder, instance.doubleDoor);
+    }
+
+    return entt::null;
+}
