@@ -26,6 +26,20 @@ glm::mat4 makeModel(const glm::vec3& position,
 CathedralBuilder::CathedralBuilder(CathedralContext& context)
     : context_(context) {}
 
+entt::entity CathedralBuilder::createEntity() {
+    auto entity = context_.registry.create();
+    track(entity);
+    return entity;
+}
+
+entt::entity CathedralBuilder::createTransformEntity(const glm::vec3& position,
+                                                     const glm::vec3& rotation,
+                                                     const glm::vec3& scale) {
+    auto entity = createEntity();
+    context_.registry.emplace<TransformComponent>(entity, TransformComponent{position, rotation, scale});
+    return entity;
+}
+
 void CathedralBuilder::track(entt::entity entity) {
     context_.entities.push_back(entity);
 }
@@ -43,10 +57,9 @@ entt::entity CathedralBuilder::addMesh(Mesh* mesh,
         return entt::null;
     }
 
-    auto entity = context_.registry.create();
+    auto entity = createEntity();
     context_.registry.emplace<TransformComponent>(entity);
     context_.registry.emplace<MeshComponent>(entity, MeshComponent{mesh, makeModel(position, scale, rotation), true});
-    track(entity);
     return entity;
 }
 
@@ -66,32 +79,28 @@ entt::entity CathedralBuilder::addLight(const glm::vec3& position,
                                         const glm::vec3& color,
                                         float radius,
                                         float intensity) {
-    auto entity = context_.registry.create();
-    context_.registry.emplace<TransformComponent>(entity, TransformComponent{position});
+    auto entity = createTransformEntity(position);
     context_.registry.emplace<LightComponent>(entity, LightComponent{color, radius, intensity});
-    track(entity);
     return entity;
 }
 
 entt::entity CathedralBuilder::addBoxCollider(const glm::vec3& position, const glm::vec3& halfExtents) {
-    auto entity = context_.registry.create();
+    auto entity = createEntity();
     StaticColliderComponent collider;
     collider.shape = ColliderShape::Box;
     collider.position = position;
     collider.halfExtents = halfExtents;
     context_.registry.emplace<StaticColliderComponent>(entity, collider);
-    track(entity);
     return entity;
 }
 
 entt::entity CathedralBuilder::addCylinderCollider(const glm::vec3& position, float radius, float halfHeight) {
-    auto entity = context_.registry.create();
+    auto entity = createEntity();
     StaticColliderComponent collider;
     collider.shape = ColliderShape::Cylinder;
     collider.position = position;
     collider.radius = radius;
     collider.halfHeight = halfHeight;
     context_.registry.emplace<StaticColliderComponent>(entity, collider);
-    track(entity);
     return entity;
 }

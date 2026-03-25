@@ -13,6 +13,10 @@ public:
     explicit CathedralBuilder(CathedralContext& context);
 
     entt::registry& registry() const { return context_.registry; }
+    entt::entity createEntity();
+    entt::entity createTransformEntity(const glm::vec3& position,
+                                       const glm::vec3& rotation = glm::vec3(0.0f),
+                                       const glm::vec3& scale = glm::vec3(1.0f));
     void track(entt::entity entity);
 
     Mesh* mesh(const std::string& name) const;
