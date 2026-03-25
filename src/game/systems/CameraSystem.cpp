@@ -2,6 +2,7 @@
 #include "engine/core/Application.h"
 #include "engine/input/InputSystem.h"
 #include "game/components/CameraComponent.h"
+#include "game/components/PlayerInteractionLockComponent.h"
 #include "game/components/TransformComponent.h"
 
 #include <GLFW/glfw3.h>
@@ -20,11 +21,11 @@ void CameraSystem::init(Application& app) {
 void CameraSystem::update(Application& app, float deltaTime) {
     auto& registry = app.registry();
 
-    auto view = registry.view<TransformComponent, CameraComponent>();
-    for (auto [entity, transform, cam] : view.each()) {
+    auto view = registry.view<TransformComponent, CameraComponent, PlayerInteractionLockComponent>();
+    for (auto [entity, transform, cam, lock] : view.each()) {
 
         // Mouse look (only when cursor is locked)
-        if (input_.isCursorLocked()) {
+        if (input_.isCursorLocked() && !lock.active) {
             constexpr float sensitivity = 0.1f;
             glm::vec2 delta = input_.mouseDelta();
             cam.yaw   += delta.x * sensitivity;

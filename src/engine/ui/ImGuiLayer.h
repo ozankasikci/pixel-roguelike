@@ -46,4 +46,5 @@ public:
     static void renderOverlay(DebugParams& params, std::vector<PointLight>& lights);
     static void renderMovementOverlay(PlayerMovementComponent& movement, bool grounded);
     static void renderViewmodelOverlay(ViewmodelComponent& vm);
+    static void renderInteractionPrompt(const char* text, bool busy);
 };

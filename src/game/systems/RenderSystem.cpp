@@ -7,6 +7,7 @@
 #include "game/components/CameraComponent.h"
 #include "game/components/PlayerMovementComponent.h"
 #include "game/components/ViewmodelComponent.h"
+#include "game/ui/InteractionPromptState.h"
 
 #include <glad/gl.h>
 #include <cmath>
@@ -146,26 +147,39 @@ void RenderSystem::update(Application& app, float deltaTime) {
     debugParams_.frameTimeMs = deltaTime * 1000.0f;
     debugParams_.drawCalls   = static_cast<int>(objects.size());
 
-    if (overlaysVisible_) {
-        imguiLayer_.beginFrame();
-        ImGuiLayer::renderOverlay(debugParams_, lights);
+    auto& ctx = registry.ctx();
+    if (!ctx.contains<InteractionPromptState>()) {
+        ctx.emplace<InteractionPromptState>();
+    }
+    auto& prompt = ctx.get<InteractionPromptState>();
 
-        // Movement debug panel
-        {
-            auto movView = registry.view<PlayerMovementComponent>();
-            for (auto [entity, movement] : movView.each()) {
-                ImGuiLayer::renderMovementOverlay(movement, movement.grounded);
-                break;
+    if (overlaysVisible_ || prompt.visible) {
+        imguiLayer_.beginFrame();
+
+        if (overlaysVisible_) {
+            ImGuiLayer::renderOverlay(debugParams_, lights);
+
+            // Movement debug panel
+            {
+                auto movView = registry.view<PlayerMovementComponent>();
+                for (auto [entity, movement] : movView.each()) {
+                    ImGuiLayer::renderMovementOverlay(movement, movement.grounded);
+                    break;
+                }
+            }
+
+            // Viewmodel debug panel
+            {
+                auto vmView = registry.view<MeshComponent, ViewmodelComponent>();
+                for (auto [entity, mesh, vm] : vmView.each()) {
+                    ImGuiLayer::renderViewmodelOverlay(vm);
+                    break;
+                }
             }
         }
 
-        // Viewmodel debug panel
-        {
-            auto vmView = registry.view<MeshComponent, ViewmodelComponent>();
-            for (auto [entity, mesh, vm] : vmView.each()) {
-                ImGuiLayer::renderViewmodelOverlay(vm);
-                break;
-            }
+        if (prompt.visible) {
+            ImGuiLayer::renderInteractionPrompt(prompt.text.c_str(), prompt.busy);
         }
 
         imguiLayer_.endFrame();

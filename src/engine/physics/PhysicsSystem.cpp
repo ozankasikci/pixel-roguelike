@@ -21,7 +21,10 @@
 #include <Jolt/Physics/Body/BodyActivationListener.h>
 #include <Jolt/Physics/Character/CharacterVirtual.h>
 
+#include <glm/trigonometric.hpp>
 #include <spdlog/spdlog.h>
+#include <entt/entt.hpp>
+#include <utility>
 #include <vector>
 
 // --- Jolt type conversions ---
@@ -34,6 +37,10 @@ static inline glm::vec3 toGlm(const JPH::RVec3& v) { return glm::vec3(float(v.Ge
 #else
 static inline JPH::RVec3 toJoltR(const glm::vec3& v) { return toJolt(v); }
 #endif
+
+static inline JPH::Quat toJoltQuat(const glm::vec3& eulerDegrees) {
+    return JPH::Quat::sEulerAngles(toJolt(glm::radians(eulerDegrees)));
+}
 
 // --- Jolt layer definitions ---
 namespace Layers {
@@ -117,8 +124,13 @@ struct PhysicsSystem::Impl {
     JPH::Ref<JPH::CharacterVirtual> character;
     float characterEyeOffset = 0.7f;
 
-    // Tracked bodies for cleanup
-    std::vector<JPH::BodyID> staticBodies;
+    struct StaticBodyBinding {
+        entt::entity entity = entt::null;
+        JPH::BodyID bodyId;
+    };
+
+    // Tracked bodies for syncing and cleanup
+    std::vector<StaticBodyBinding> staticBodies;
 
     // Fixed timestep accumulator
     float accumulator = 0.0f;
@@ -172,13 +184,13 @@ void PhysicsSystem::init(Application& app) {
             JPH::BodyCreationSettings bodySettings(
                 shape,
                 toJoltR(collider.position),
-                JPH::Quat::sIdentity(),
+                toJoltQuat(collider.rotation),
                 JPH::EMotionType::Static,
                 Layers::NON_MOVING
             );
 
             JPH::BodyID bodyId = bodyInterface.CreateAndAddBody(bodySettings, JPH::EActivation::DontActivate);
-            impl_->staticBodies.push_back(bodyId);
+            impl_->staticBodies.push_back({entity, bodyId});
         }
     }
 
@@ -223,8 +235,23 @@ void PhysicsSystem::init(Application& app) {
     spdlog::info("PhysicsSystem initialized");
 }
 
-void PhysicsSystem::update(Application& /*app*/, float deltaTime) {
+void PhysicsSystem::update(Application& app, float deltaTime) {
     if (!impl_ || !impl_->physicsSystem) return;
+
+    auto& bodyInterface = impl_->physicsSystem->GetBodyInterface();
+    auto& registry = app.registry();
+    for (const auto& binding : impl_->staticBodies) {
+        if (!registry.valid(binding.entity)) continue;
+        const auto* collider = registry.try_get<StaticColliderComponent>(binding.entity);
+        if (!collider) continue;
+
+        bodyInterface.SetPositionAndRotation(
+            binding.bodyId,
+            toJoltR(collider->position),
+            toJoltQuat(collider->rotation),
+            JPH::EActivation::DontActivate
+        );
+    }
 
     // Fixed timestep stepping (for future dynamic bodies)
     impl_->accumulator += deltaTime;
@@ -251,9 +278,9 @@ void PhysicsSystem::shutdown() {
     // Remove static bodies
     if (impl_->physicsSystem) {
         auto& bodyInterface = impl_->physicsSystem->GetBodyInterface();
-        for (auto& bodyId : impl_->staticBodies) {
-            bodyInterface.RemoveBody(bodyId);
-            bodyInterface.DestroyBody(bodyId);
+        for (const auto& binding : impl_->staticBodies) {
+            bodyInterface.RemoveBody(binding.bodyId);
+            bodyInterface.DestroyBody(binding.bodyId);
         }
         impl_->staticBodies.clear();
     }

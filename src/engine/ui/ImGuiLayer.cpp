@@ -161,3 +161,33 @@ void ImGuiLayer::renderViewmodelOverlay(ViewmodelComponent& vm) {
 
     ImGui::End();
 }
+
+void ImGuiLayer::renderInteractionPrompt(const char* text, bool busy) {
+    if (text == nullptr || text[0] == '\0') return;
+
+    ImGuiViewport* viewport = ImGui::GetMainViewport();
+    const ImVec2 promptSize(360.0f, 54.0f);
+    const ImVec2 promptPos(
+        viewport->Pos.x + (viewport->Size.x - promptSize.x) * 0.5f,
+        viewport->Pos.y + viewport->Size.y - 118.0f
+    );
+
+    ImGui::SetNextWindowPos(promptPos, ImGuiCond_Always);
+    ImGui::SetNextWindowSize(promptSize, ImGuiCond_Always);
+    ImGui::SetNextWindowBgAlpha(busy ? 0.62f : 0.48f);
+
+    ImGuiWindowFlags flags = ImGuiWindowFlags_NoDecoration
+        | ImGuiWindowFlags_NoMove
+        | ImGuiWindowFlags_NoSavedSettings
+        | ImGuiWindowFlags_NoNav
+        | ImGuiWindowFlags_NoInputs;
+
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 4.0f);
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(18.0f, 14.0f));
+    ImGui::Begin("Interaction Prompt", nullptr, flags);
+    ImGui::SetWindowFontScale(busy ? 1.18f : 1.1f);
+    ImGui::TextUnformatted(text);
+    ImGui::SetWindowFontScale(1.0f);
+    ImGui::End();
+    ImGui::PopStyleVar(2);
+}

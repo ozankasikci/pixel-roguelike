@@ -1,13 +1,19 @@
 #include "CathedralScene.h"
 
 #include "engine/core/Application.h"
+#include "engine/rendering/MeshGeometry.h"
 #include "game/components/TransformComponent.h"
 #include "game/components/MeshComponent.h"
 #include "game/components/LightComponent.h"
 #include "game/components/CameraComponent.h"
+#include "game/components/CheckpointComponent.h"
+#include "game/components/DoorComponent.h"
+#include "game/components/DoorLeafComponent.h"
 #include "game/components/StaticColliderComponent.h"
 #include "game/components/CharacterControllerComponent.h"
+#include "game/components/PlayerInteractionLockComponent.h"
 #include "game/components/PlayerMovementComponent.h"
+#include "game/components/PlayerSpawnComponent.h"
 #include "game/components/ViewmodelComponent.h"
 
 #include <array>
@@ -22,6 +28,55 @@ static glm::mat4 makeModel(const glm::vec3& position,
     model = glm::rotate(model, glm::radians(rotation.z), glm::vec3(0.0f, 0.0f, 1.0f));
     model = glm::scale(model, scale);
     return model;
+}
+
+static std::unique_ptr<Mesh> createWoodDoorLeafMesh(bool leftLeaf) {
+    auto cube = generateCube(1.0f);
+    std::vector<std::pair<RawMeshData, glm::mat4>> parts;
+    const float hand = leftLeaf ? 1.0f : -1.0f;
+
+    auto addBox = [&](const glm::vec3& position,
+                      const glm::vec3& scale,
+                      const glm::vec3& rotation = glm::vec3(0.0f)) {
+        parts.push_back({cube, makeModel(position, scale, rotation)});
+    };
+
+    // Core slab.
+    addBox(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(1.0f, 1.0f, 0.74f));
+
+    // Raised perimeter frame.
+    addBox(glm::vec3(0.0f, 0.44f, 0.08f), glm::vec3(0.94f, 0.08f, 0.18f));
+    addBox(glm::vec3(0.0f, -0.44f, 0.08f), glm::vec3(0.94f, 0.08f, 0.18f));
+    addBox(glm::vec3(-0.43f, 0.0f, 0.08f), glm::vec3(0.08f, 0.84f, 0.18f));
+    addBox(glm::vec3(0.43f, 0.0f, 0.08f), glm::vec3(0.08f, 0.84f, 0.18f));
+
+    // Vertical planks on the front face.
+    for (float x : {-0.25f, -0.02f, 0.22f}) {
+        addBox(glm::vec3(x, 0.0f, 0.12f), glm::vec3(0.18f, 0.82f, 0.10f));
+    }
+
+    // Back planks so the leaf still reads like wood when seen from behind.
+    for (float x : {-0.28f, -0.04f, 0.20f}) {
+        addBox(glm::vec3(x, 0.0f, -0.12f), glm::vec3(0.17f, 0.78f, 0.08f));
+    }
+
+    // Heavy iron/brace-like bars and diagonal timber braces.
+    addBox(glm::vec3(0.0f, 0.24f, 0.16f), glm::vec3(0.78f, 0.08f, 0.08f));
+    addBox(glm::vec3(0.0f, -0.18f, 0.16f), glm::vec3(0.78f, 0.08f, 0.08f));
+    addBox(glm::vec3(0.02f * hand, 0.05f, 0.18f), glm::vec3(0.92f, 0.08f, 0.08f), glm::vec3(0.0f, 0.0f, 31.0f * hand));
+    addBox(glm::vec3(-0.02f * hand, -0.03f, -0.18f), glm::vec3(0.92f, 0.08f, 0.08f), glm::vec3(0.0f, 0.0f, -31.0f * hand));
+
+    // Center meeting stile with a beveled shadow seam so the two leaves read separately.
+    const float meetingEdgeX = 0.46f * hand;
+    addBox(glm::vec3(meetingEdgeX, 0.0f, 0.16f), glm::vec3(0.05f, 0.90f, 0.12f));
+    addBox(glm::vec3(meetingEdgeX - 0.03f * hand, 0.0f, 0.22f), glm::vec3(0.018f, 0.90f, 0.08f));
+    addBox(glm::vec3(meetingEdgeX - 0.055f * hand, 0.0f, 0.10f), glm::vec3(0.012f, 0.86f, 0.06f));
+
+    // Outer hinge-side strap to break up the silhouette further.
+    addBox(glm::vec3(-0.39f * hand, 0.0f, 0.18f), glm::vec3(0.06f, 0.84f, 0.10f));
+
+    RawMeshData merged = mergeMeshes(parts);
+    return std::make_unique<Mesh>(merged.positions, merged.normals, merged.indices);
 }
 
 static entt::entity spawnMesh(entt::registry& registry, Mesh* mesh, const glm::mat4& model) {
@@ -62,13 +117,17 @@ void CathedralScene::onEnter(Application& app) {
     entities_.clear();
 
     meshLibrary_.registerDefaults();
+    meshLibrary_.registerMesh("door_leaf_left", createWoodDoorLeafMesh(true));
+    meshLibrary_.registerMesh("door_leaf_right", createWoodDoorLeafMesh(false));
     meshLibrary_.loadFromFile("pillar", "assets/meshes/pillar.glb");
     meshLibrary_.loadFromFile("arch", "assets/meshes/arch.glb");
     meshLibrary_.loadFromFile("hand", "assets/meshes/hand_with_old_dagger.glb");
 
     entt::registry& registry = app.registry();
 
-    Mesh* cube         = meshLibrary_.get("cube");
+    Mesh* cube          = meshLibrary_.get("cube");
+    Mesh* leftDoorMesh  = meshLibrary_.get("door_leaf_left");
+    Mesh* rightDoorMesh = meshLibrary_.get("door_leaf_right");
     Mesh* plane        = meshLibrary_.get("plane");
     Mesh* cylinder     = meshLibrary_.get("cylinder");
     Mesh* pillarMesh   = meshLibrary_.get("pillar");
@@ -85,6 +144,12 @@ void CathedralScene::onEnter(Application& app) {
     constexpr float portalHalfW = 2.35f;
     constexpr float portalHeight = 6.3f;
     constexpr float pillarRadius = 0.42f;
+    constexpr float corridorWidth = 4.8f;
+    constexpr float corridorLength = 8.0f;
+    constexpr float chamberWidth = 13.0f;
+    constexpr float chamberDepth = 15.0f;
+    const float corridorCenterZ = backZ - corridorLength * 0.5f;
+    const float chamberCenterZ = backZ - corridorLength - chamberDepth * 0.5f;
     const glm::vec3 torchColor{1.0f, 0.82f, 0.62f};
     const glm::vec3 moonColor{0.62f, 0.68f, 0.82f};
 
@@ -168,6 +233,72 @@ void CathedralScene::onEnter(Application& app) {
     addMesh(cube, glm::vec3(0.0f, portalHeight + 0.45f, backZ - 1.15f),
             glm::vec3(portalHalfW * 2.0f, 0.9f, 2.3f));
 
+    // Post-door corridor.
+    addMesh(plane, glm::vec3(0.0f, -0.18f, corridorCenterZ), glm::vec3(corridorWidth, 1.0f, corridorLength + 1.6f));
+    addMesh(plane, glm::vec3(0.0f, roomHeight - 0.35f, corridorCenterZ), glm::vec3(corridorWidth, -1.0f, corridorLength + 1.6f));
+    addMesh(cube, glm::vec3(-corridorWidth * 0.5f, roomHeight * 0.45f, corridorCenterZ),
+            glm::vec3(0.35f, roomHeight - 0.5f, corridorLength + 1.2f));
+    addMesh(cube, glm::vec3(corridorWidth * 0.5f, roomHeight * 0.45f, corridorCenterZ),
+            glm::vec3(0.35f, roomHeight - 0.5f, corridorLength + 1.2f));
+
+    // Descending threshold steps.
+    for (int i = 0; i < 3; ++i) {
+        const float y = -0.05f - 0.12f * static_cast<float>(i);
+        const float z = backZ - 1.8f - 1.05f * static_cast<float>(i);
+        const glm::vec3 center(0.0f, y, z);
+        const glm::vec3 scale(corridorWidth - 0.25f, 0.14f, 1.1f);
+        addMesh(cube, center, scale);
+        addColliderBox(registry, entities_, center, scale * 0.5f);
+    }
+
+    // Second sanctum beyond the door.
+    addMesh(plane, glm::vec3(0.0f, -0.38f, chamberCenterZ), glm::vec3(chamberWidth, 1.0f, chamberDepth));
+    addMesh(plane, glm::vec3(0.0f, roomHeight - 0.55f, chamberCenterZ), glm::vec3(chamberWidth, -1.0f, chamberDepth));
+    addMesh(cube, glm::vec3(-chamberWidth * 0.5f, roomHeight * 0.42f, chamberCenterZ),
+            glm::vec3(0.5f, roomHeight - 0.8f, chamberDepth));
+    addMesh(cube, glm::vec3(chamberWidth * 0.5f, roomHeight * 0.42f, chamberCenterZ),
+            glm::vec3(0.5f, roomHeight - 0.8f, chamberDepth));
+    addMesh(cube, glm::vec3(0.0f, roomHeight * 0.42f, chamberCenterZ - chamberDepth * 0.5f),
+            glm::vec3(chamberWidth, roomHeight - 0.8f, 0.5f));
+
+    // Chamber side alcoves.
+    for (float side : {-1.0f, 1.0f}) {
+        addMesh(cube, glm::vec3(side * (chamberWidth * 0.5f - 0.8f), 2.2f, chamberCenterZ - 2.0f),
+                glm::vec3(0.22f, 2.5f, 2.0f));
+        addMesh(cube, glm::vec3(side * (chamberWidth * 0.5f - 0.8f), 2.0f, chamberCenterZ + 3.0f),
+                glm::vec3(0.22f, 2.2f, 1.8f));
+        addMesh(cube, glm::vec3(side * (chamberWidth * 0.5f - 1.4f), 0.3f, chamberCenterZ - 2.1f),
+                glm::vec3(0.9f, 0.35f, 1.4f), glm::vec3(0.0f, side * 12.0f, 0.0f));
+    }
+
+    // Checkpoint shrine.
+    const glm::vec3 shrineBase(0.0f, -0.02f, chamberCenterZ - 1.7f);
+    addMesh(cube, shrineBase, glm::vec3(2.7f, 0.32f, 2.2f));
+    addMesh(cube, shrineBase + glm::vec3(0.0f, 0.32f, 0.0f), glm::vec3(2.1f, 0.12f, 1.7f));
+    addMesh(cube, glm::vec3(0.0f, 0.72f, chamberCenterZ - 1.7f), glm::vec3(0.45f, 1.1f, 0.45f));
+    addMesh(cube, glm::vec3(0.0f, 1.55f, chamberCenterZ - 1.7f), glm::vec3(0.8f, 0.12f, 0.8f));
+    addMesh(cylinder, glm::vec3(0.0f, 1.25f, chamberCenterZ - 1.7f), glm::vec3(0.26f, 0.5f, 0.26f));
+
+    auto checkpointLight = registry.create();
+    registry.emplace<TransformComponent>(checkpointLight, TransformComponent{
+        glm::vec3(0.0f, 1.95f, chamberCenterZ - 1.7f)
+    });
+    registry.emplace<LightComponent>(checkpointLight, LightComponent{glm::vec3(1.0f, 0.7f, 0.42f), 7.0f, 1.15f});
+    entities_.push_back(checkpointLight);
+
+    auto checkpoint = registry.create();
+    registry.emplace<TransformComponent>(checkpoint, TransformComponent{
+        glm::vec3(0.0f, 1.3f, chamberCenterZ - 0.7f)
+    });
+    registry.emplace<CheckpointComponent>(checkpoint, CheckpointComponent{
+        glm::vec3(0.0f, 1.6f, chamberCenterZ + 1.8f),
+        2.8f,
+        0.45f,
+        false,
+        checkpointLight
+    });
+    entities_.push_back(checkpoint);
+
     // Cross-room arches and clustered pillars.
     const std::array<float, 4> archRows = {4.4f, -2.9f, -10.2f, -16.8f};
     for (float z : archRows) {
@@ -202,6 +333,78 @@ void CathedralScene::onEnter(Application& app) {
         glm::vec3(-2.95f, roomHeight * 0.5f, backZ + 0.8f), pillarRadius, roomHeight * 0.5f);
     addColliderCylinder(registry, entities_,
         glm::vec3(2.95f, roomHeight * 0.5f, backZ + 0.8f), pillarRadius, roomHeight * 0.5f);
+
+    // Double door at the rear gate. The leaves are animated by DoorSystem.
+    const float doorLeafWidth = portalHalfW - 0.035f;
+    const float doorLeafHeight = portalHeight - 0.04f;
+    const float doorLeafThickness = 0.30f;
+    const float doorZ = backZ + 0.22f;
+    const float leftHingeX = -portalHalfW;
+    const float rightHingeX = portalHalfW;
+
+    auto createDoorLeaf = [&](Mesh* mesh,
+                              const glm::vec3& closedCenter,
+                              const glm::vec3& hingePosition,
+                              float closedYaw,
+                              float openYaw) {
+        auto leaf = registry.create();
+        registry.emplace<TransformComponent>(leaf);
+        registry.emplace<MeshComponent>(leaf, MeshComponent{
+            mesh,
+            makeModel(closedCenter, glm::vec3(doorLeafWidth, doorLeafHeight, doorLeafThickness)),
+            true
+        });
+
+        StaticColliderComponent collider;
+        collider.shape = ColliderShape::Box;
+        collider.position = closedCenter;
+        collider.rotation = glm::vec3(0.0f, closedYaw, 0.0f);
+        collider.halfExtents = glm::vec3(doorLeafWidth, doorLeafHeight, doorLeafThickness) * 0.5f;
+        registry.emplace<StaticColliderComponent>(leaf, collider);
+
+        DoorLeafComponent doorLeaf;
+        doorLeaf.hingePosition = hingePosition;
+        doorLeaf.centerOffsetFromHinge = closedCenter - hingePosition;
+        doorLeaf.closedScale = glm::vec3(doorLeafWidth, doorLeafHeight, doorLeafThickness);
+        doorLeaf.colliderHalfExtents = collider.halfExtents;
+        doorLeaf.closedYaw = closedYaw;
+        doorLeaf.openYaw = openYaw;
+        registry.emplace<DoorLeafComponent>(leaf, doorLeaf);
+
+        entities_.push_back(leaf);
+        return leaf;
+    };
+
+    auto leftLeaf = createDoorLeaf(
+        leftDoorMesh,
+        glm::vec3(leftHingeX + doorLeafWidth * 0.5f, doorLeafHeight * 0.5f, doorZ),
+        glm::vec3(leftHingeX, doorLeafHeight * 0.5f, doorZ),
+        0.0f,
+        -102.0f
+    );
+    auto rightLeaf = createDoorLeaf(
+        rightDoorMesh,
+        glm::vec3(rightHingeX - doorLeafWidth * 0.5f, doorLeafHeight * 0.5f, doorZ),
+        glm::vec3(rightHingeX, doorLeafHeight * 0.5f, doorZ),
+        0.0f,
+        102.0f
+    );
+
+    auto doorRoot = registry.create();
+    registry.emplace<TransformComponent>(doorRoot, TransformComponent{
+        glm::vec3(0.0f, doorLeafHeight * 0.5f, backZ + 1.1f)
+    });
+    registry.emplace<DoorComponent>(doorRoot, DoorComponent{
+        leftLeaf,
+        rightLeaf,
+        3.4f,
+        0.74f,
+        2.6f,
+        0.0f,
+        false,
+        false
+    });
+    entities_.push_back(doorRoot);
 
     // Side shrine bays with bars and shallow ornament.
     const std::array<float, 3> shrineRows = {2.0f, -6.1f, -14.0f};
@@ -308,6 +511,9 @@ void CathedralScene::onEnter(Application& app) {
     addLight(glm::vec3(4.2f, 3.6f, -13.0f), torchColor, 9.0f, 1.05f);
     addLight(glm::vec3(-2.2f, 4.8f, backZ + 2.2f), torchColor, 8.0f, 1.45f);
     addLight(glm::vec3(2.2f, 4.8f, backZ + 2.2f), torchColor, 8.0f, 1.45f);
+    addLight(glm::vec3(0.0f, 4.4f, corridorCenterZ - 0.5f), glm::vec3(0.72f, 0.74f, 0.92f), 8.5f, 0.55f);
+    addLight(glm::vec3(-3.4f, 3.2f, chamberCenterZ - 4.0f), torchColor, 8.5f, 1.1f);
+    addLight(glm::vec3(3.4f, 3.2f, chamberCenterZ + 2.6f), torchColor, 8.5f, 1.1f);
 
     // ===== Collision geometry =====
 
@@ -346,9 +552,39 @@ void CathedralScene::onEnter(Application& app) {
     addColliderBox(registry, entities_,
         glm::vec3(0.0f, portalHeight + (roomHeight - portalHeight) * 0.5f, backZ),
         glm::vec3(portalHalfW, (roomHeight - portalHeight) * 0.5f, wallThickness * 0.5f));
+
+    // Corridor and chamber collision.
     addColliderBox(registry, entities_,
-        glm::vec3(0.0f, portalHeight * 0.5f, backZ - 2.2f),
-        glm::vec3(portalHalfW, portalHeight * 0.5f, 0.15f));
+        glm::vec3(0.0f, -0.44f, corridorCenterZ),
+        glm::vec3(corridorWidth * 0.5f, 0.08f, (corridorLength + 1.6f) * 0.5f));
+    addColliderBox(registry, entities_,
+        glm::vec3(0.0f, roomHeight - 0.29f, corridorCenterZ),
+        glm::vec3(corridorWidth * 0.5f, 0.08f, (corridorLength + 1.6f) * 0.5f));
+    addColliderBox(registry, entities_,
+        glm::vec3(-corridorWidth * 0.5f, roomHeight * 0.45f, corridorCenterZ),
+        glm::vec3(0.18f, (roomHeight - 0.5f) * 0.5f, (corridorLength + 1.2f) * 0.5f));
+    addColliderBox(registry, entities_,
+        glm::vec3(corridorWidth * 0.5f, roomHeight * 0.45f, corridorCenterZ),
+        glm::vec3(0.18f, (roomHeight - 0.5f) * 0.5f, (corridorLength + 1.2f) * 0.5f));
+
+    addColliderBox(registry, entities_,
+        glm::vec3(0.0f, -0.64f, chamberCenterZ),
+        glm::vec3(chamberWidth * 0.5f, 0.08f, chamberDepth * 0.5f));
+    addColliderBox(registry, entities_,
+        glm::vec3(0.0f, roomHeight - 0.49f, chamberCenterZ),
+        glm::vec3(chamberWidth * 0.5f, 0.08f, chamberDepth * 0.5f));
+    addColliderBox(registry, entities_,
+        glm::vec3(-chamberWidth * 0.5f, roomHeight * 0.42f, chamberCenterZ),
+        glm::vec3(0.26f, (roomHeight - 0.8f) * 0.5f, chamberDepth * 0.5f));
+    addColliderBox(registry, entities_,
+        glm::vec3(chamberWidth * 0.5f, roomHeight * 0.42f, chamberCenterZ),
+        glm::vec3(0.26f, (roomHeight - 0.8f) * 0.5f, chamberDepth * 0.5f));
+    addColliderBox(registry, entities_,
+        glm::vec3(0.0f, roomHeight * 0.42f, chamberCenterZ - chamberDepth * 0.5f),
+        glm::vec3(chamberWidth * 0.5f, (roomHeight - 0.8f) * 0.5f, 0.26f));
+    addColliderBox(registry, entities_,
+        glm::vec3(0.0f, 0.16f, chamberCenterZ - chamberDepth * 0.5f - 0.2f),
+        glm::vec3(chamberWidth * 0.5f, 1.2f, 0.26f));
 
     // Camera / Player
     {
@@ -357,6 +593,8 @@ void CathedralScene::onEnter(Application& app) {
         registry.emplace<CameraComponent>(e);
         registry.emplace<CharacterControllerComponent>(e);
         registry.emplace<PlayerMovementComponent>(e);
+        registry.emplace<PlayerInteractionLockComponent>(e);
+        registry.emplace<PlayerSpawnComponent>(e, PlayerSpawnComponent{glm::vec3(0.0f, 1.6f, 5.4f), -8.0f});
         entities_.push_back(e);
     }
 

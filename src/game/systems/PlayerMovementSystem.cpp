@@ -5,6 +5,8 @@
 #include "game/components/CameraComponent.h"
 #include "game/components/PlayerMovementComponent.h"
 #include "game/components/CharacterControllerComponent.h"
+#include "game/components/PlayerInteractionLockComponent.h"
+#include "game/components/PlayerSpawnComponent.h"
 #include "game/components/TransformComponent.h"
 
 #include <GLFW/glfw3.h>
@@ -38,15 +40,25 @@ void PlayerMovementSystem::update(Application& app, float deltaTime) {
     auto& registry = app.registry();
 
     // Find the player entity (has all three components)
-    auto view = registry.view<TransformComponent, CameraComponent, PlayerMovementComponent, CharacterControllerComponent>();
-    for (auto [entity, transform, cam, movement, cc] : view.each()) {
+    auto view = registry.view<TransformComponent, CameraComponent, PlayerMovementComponent, CharacterControllerComponent, PlayerInteractionLockComponent, PlayerSpawnComponent>();
+    for (auto [entity, transform, cam, movement, cc, lock, spawn] : view.each()) {
 
         bool captured = input_.wantsCaptureMouse();
+        const bool locked = lock.active;
+
+        if (transform.position.y < spawn.fallRespawnY) {
+            physics_.setCharacterVelocity(glm::vec3(0.0f));
+            physics_.setCharacterPosition(spawn.respawnPosition - glm::vec3(0.0f, cc.eyeOffset(), 0.0f));
+            movement.velocity = glm::vec3(0.0f);
+            movement.jumpHeld = false;
+            transform.position = spawn.respawnPosition;
+            continue;
+        }
 
         // --- 1. Compute movement direction and read input ---
         glm::vec3 inputDir(0.0f);
 
-        if (!captured) {
+        if (!captured && !locked) {
             // Compute movement direction from camera yaw (horizontal only)
             float yawRad = glm::radians(cam.yaw);
             glm::vec3 forward(std::cos(yawRad), 0.0f, std::sin(yawRad));
@@ -84,7 +96,7 @@ void PlayerMovementSystem::update(Application& app, float deltaTime) {
         movement.velocity = moveTowardXZ(movement.velocity, desiredVelocity, accel * deltaTime);
 
         // --- 4. Handle jumping (only allow new jumps when not captured) ---
-        if (!captured && movement.grounded && input_.isKeyJustPressed(GLFW_KEY_SPACE)) {
+        if (!captured && !locked && movement.grounded && input_.isKeyJustPressed(GLFW_KEY_SPACE)) {
             // Start jump
             movement.velocity.y = movement.jumpImpulse;
             movement.jumpHeld = true;
@@ -93,7 +105,7 @@ void PlayerMovementSystem::update(Application& app, float deltaTime) {
 
         // Apply gravity (with variable jump hold)
         float effectiveGravity = movement.gravity;
-        if (movement.jumpHeld && !captured && input_.isKeyPressed(GLFW_KEY_SPACE)
+        if (movement.jumpHeld && !captured && !locked && input_.isKeyPressed(GLFW_KEY_SPACE)
             && movement.velocity.y > 0.0f
             && movement.jumpHoldTimer < movement.maxJumpHoldTime) {
             // Reduced gravity while holding jump and rising
@@ -101,6 +113,12 @@ void PlayerMovementSystem::update(Application& app, float deltaTime) {
             movement.jumpHoldTimer += deltaTime;
         } else {
             movement.jumpHeld = false;
+        }
+
+        if (locked) {
+            movement.jumpHeld = false;
+            movement.velocity.x = 0.0f;
+            movement.velocity.z = 0.0f;
         }
 
         movement.velocity.y += effectiveGravity * deltaTime;
