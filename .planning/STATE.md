@@ -4,9 +4,9 @@ milestone: v1.0
 milestone_name: milestone
 status: Phase complete — ready for verification
 stopped_at: Completed 02.1-02-PLAN.md -- inventory open/close flow verified
-last_updated: "2026-03-25T16:21:00.000Z"
+last_updated: "2026-03-25T16:29:25.549Z"
 progress:
-  total_phases: 6
+  total_phases: 5
   completed_phases: 3
   total_plans: 8
   completed_plans: 8
