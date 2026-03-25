@@ -6,10 +6,9 @@
 #include "game/components/MeshComponent.h"
 #include "game/components/StaticColliderComponent.h"
 #include "game/components/TransformComponent.h"
-#include "game/levels/cathedral/CathedralBuilder.h"
-#include "game/levels/cathedral/CathedralContext.h"
-#include "game/levels/cathedral/CathedralPrefabs.h"
-#include "game/levels/cathedral/CathedralSceneData.h"
+#include "game/level/LevelBuildContext.h"
+#include "game/level/LevelBuilder.h"
+#include "game/prefabs/GameplayPrefabs.h"
 
 #include <cassert>
 #include <cstdint>
@@ -19,10 +18,10 @@ int main() {
     entt::registry registry;
     MeshLibrary meshLibrary;
     std::vector<entt::entity> entities;
-    CathedralContext context{registry, meshLibrary, entities};
-    CathedralBuilder builder(context);
+    LevelBuildContext context{registry, meshLibrary, entities};
+    LevelBuilder builder(context);
 
-    const CathedralCheckpointPlacement checkpointPlacement{
+    const CheckpointSpawnSpec checkpointPlacement{
         glm::vec3(0.0f, 1.3f, -35.3f),
         glm::vec3(0.0f, 1.6f, -32.8f),
         2.4f,
@@ -33,7 +32,7 @@ int main() {
         4.0f
     };
 
-    const entt::entity checkpoint = spawnCathedralCheckpoint(builder, checkpointPlacement);
+    const entt::entity checkpoint = spawnCheckpoint(builder, checkpointPlacement);
     assert(registry.valid(checkpoint));
     assert(entities.size() == 2);
     assert((registry.all_of<TransformComponent, CheckpointComponent>(checkpoint)));
@@ -49,7 +48,7 @@ int main() {
 
     const auto* leftDoorMesh = reinterpret_cast<Mesh*>(static_cast<uintptr_t>(0x1));
     const auto* rightDoorMesh = reinterpret_cast<Mesh*>(static_cast<uintptr_t>(0x2));
-    const CathedralDoubleDoorPlacement doorPlacement{
+    const DoubleDoorSpawnSpec doorPlacement{
         glm::vec3(0.0f, 3.13f, -19.4f),
         glm::vec3(-2.315f, 3.13f, -19.4f),
         glm::vec3(2.315f, 3.13f, -19.4f),
@@ -61,7 +60,7 @@ int main() {
         2.4f
     };
 
-    const entt::entity doorRoot = spawnCathedralDoubleDoor(
+    const entt::entity doorRoot = spawnDoubleDoor(
         builder,
         const_cast<Mesh*>(leftDoorMesh),
         const_cast<Mesh*>(rightDoorMesh),

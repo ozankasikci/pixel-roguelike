@@ -5,7 +5,7 @@
 #include <entt/entt.hpp>
 #include <vector>
 
-struct CathedralContext {
+struct LevelBuildContext {
     entt::registry& registry;
     MeshLibrary& meshLibrary;
     std::vector<entt::entity>& entities;

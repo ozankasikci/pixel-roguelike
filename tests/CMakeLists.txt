@@ -16,8 +16,8 @@ add_test(NAME cathedral_scene_data COMMAND test_cathedral_scene_data)
 
 add_executable(test_cathedral_prefabs
     test_cathedral_prefabs.cpp
-    ${CMAKE_SOURCE_DIR}/src/game/levels/cathedral/CathedralBuilder.cpp
-    ${CMAKE_SOURCE_DIR}/src/game/levels/cathedral/CathedralPrefabs.cpp
+    ${CMAKE_SOURCE_DIR}/src/game/level/LevelBuilder.cpp
+    ${CMAKE_SOURCE_DIR}/src/game/prefabs/GameplayPrefabs.cpp
 )
 target_include_directories(test_cathedral_prefabs PRIVATE ${CMAKE_SOURCE_DIR}/src)
 target_link_libraries(test_cathedral_prefabs PRIVATE engine_rendering EnTT::EnTT glm::glm)

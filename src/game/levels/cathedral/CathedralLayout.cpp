@@ -1,8 +1,9 @@
 #include "game/levels/cathedral/CathedralLayout.h"
 
-#include "game/levels/cathedral/CathedralBuilder.h"
 #include "game/levels/cathedral/CathedralPrefabs.h"
 #include "game/levels/cathedral/CathedralSceneData.h"
+#include "game/level/LevelBuilder.h"
+#include "game/prefabs/GameplayPrefabs.h"
 #include "game/components/CameraComponent.h"
 #include "game/components/CharacterControllerComponent.h"
 #include "game/components/MeshComponent.h"
@@ -14,9 +15,9 @@
 
 #include <array>
 
-void buildCathedralLayout(CathedralContext& context) {
+void buildCathedralLayout(LevelBuildContext& context) {
     auto& registry = context.registry;
-    CathedralBuilder builder(context);
+    LevelBuilder builder(context);
 
     Mesh* cube = builder.mesh("cube");
     Mesh* leftDoorMesh = builder.mesh("door_leaf_left");
@@ -133,11 +134,38 @@ void buildCathedralLayout(CathedralContext& context) {
     }
 
     for (const auto& placement : sceneData.checkpoints) {
-        (void)spawnCathedralCheckpoint(builder, placement);
+        (void)spawnCheckpoint(
+            builder,
+            CheckpointSpawnSpec{
+                placement.position,
+                placement.respawnPosition,
+                placement.interactDistance,
+                placement.interactDotThreshold,
+                placement.lightPosition,
+                placement.lightColor,
+                placement.lightRadius,
+                placement.lightIntensity
+            }
+        );
     }
 
     for (const auto& placement : sceneData.doors) {
-        (void)spawnCathedralDoubleDoor(builder, leftDoorMesh, rightDoorMesh, placement);
+        (void)spawnDoubleDoor(
+            builder,
+            leftDoorMesh,
+            rightDoorMesh,
+            DoubleDoorSpawnSpec{
+                placement.rootPosition,
+                placement.leftHingePosition,
+                placement.rightHingePosition,
+                placement.leafScale,
+                placement.closedYaw,
+                placement.openAngle,
+                placement.interactDistance,
+                placement.interactDotThreshold,
+                placement.openDuration
+            }
+        );
     }
 
     auto player = builder.createTransformEntity(

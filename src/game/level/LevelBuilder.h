@@ -1,6 +1,6 @@
 #pragma once
 
-#include "game/levels/cathedral/CathedralContext.h"
+#include "game/level/LevelBuildContext.h"
 
 #include <glm/glm.hpp>
 
@@ -8,9 +8,9 @@
 
 class Mesh;
 
-class CathedralBuilder {
+class LevelBuilder {
 public:
-    explicit CathedralBuilder(CathedralContext& context);
+    explicit LevelBuilder(LevelBuildContext& context);
 
     entt::registry& registry() const { return context_.registry; }
     entt::entity createEntity();
@@ -36,5 +36,5 @@ public:
     entt::entity addCylinderCollider(const glm::vec3& position, float radius, float halfHeight);
 
 private:
-    CathedralContext& context_;
+    LevelBuildContext& context_;
 };

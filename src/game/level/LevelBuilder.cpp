@@ -1,4 +1,4 @@
-#include "game/levels/cathedral/CathedralBuilder.h"
+#include "game/level/LevelBuilder.h"
 
 #include "game/components/LightComponent.h"
 #include "game/components/MeshComponent.h"
@@ -23,37 +23,37 @@ glm::mat4 makeModel(const glm::vec3& position,
 
 } // namespace
 
-CathedralBuilder::CathedralBuilder(CathedralContext& context)
+LevelBuilder::LevelBuilder(LevelBuildContext& context)
     : context_(context) {}
 
-entt::entity CathedralBuilder::createEntity() {
+entt::entity LevelBuilder::createEntity() {
     auto entity = context_.registry.create();
     track(entity);
     return entity;
 }
 
-entt::entity CathedralBuilder::createTransformEntity(const glm::vec3& position,
-                                                     const glm::vec3& rotation,
-                                                     const glm::vec3& scale) {
+entt::entity LevelBuilder::createTransformEntity(const glm::vec3& position,
+                                                 const glm::vec3& rotation,
+                                                 const glm::vec3& scale) {
     auto entity = createEntity();
     context_.registry.emplace<TransformComponent>(entity, TransformComponent{position, rotation, scale});
     return entity;
 }
 
-void CathedralBuilder::track(entt::entity entity) {
+void LevelBuilder::track(entt::entity entity) {
     context_.entities.push_back(entity);
 }
 
-Mesh* CathedralBuilder::mesh(const std::string& name) const {
+Mesh* LevelBuilder::mesh(const std::string& name) const {
     return context_.meshLibrary.get(name);
 }
 
-entt::entity CathedralBuilder::addMesh(Mesh* mesh,
-                                       const glm::vec3& position,
-                                       const glm::vec3& scale,
-                                       const glm::vec3& rotation) {
+entt::entity LevelBuilder::addMesh(Mesh* mesh,
+                                   const glm::vec3& position,
+                                   const glm::vec3& scale,
+                                   const glm::vec3& rotation) {
     if (mesh == nullptr) {
-        spdlog::warn("Cathedral builder received null mesh");
+        spdlog::warn("Level builder received null mesh");
         return entt::null;
     }
 
@@ -63,28 +63,28 @@ entt::entity CathedralBuilder::addMesh(Mesh* mesh,
     return entity;
 }
 
-entt::entity CathedralBuilder::addMesh(const std::string& meshName,
-                                       const glm::vec3& position,
-                                       const glm::vec3& scale,
-                                       const glm::vec3& rotation) {
+entt::entity LevelBuilder::addMesh(const std::string& meshName,
+                                   const glm::vec3& position,
+                                   const glm::vec3& scale,
+                                   const glm::vec3& rotation) {
     Mesh* found = mesh(meshName);
     if (found == nullptr) {
-        spdlog::warn("Cathedral builder missing mesh '{}'", meshName);
+        spdlog::warn("Level builder missing mesh '{}'", meshName);
         return entt::null;
     }
     return addMesh(found, position, scale, rotation);
 }
 
-entt::entity CathedralBuilder::addLight(const glm::vec3& position,
-                                        const glm::vec3& color,
-                                        float radius,
-                                        float intensity) {
+entt::entity LevelBuilder::addLight(const glm::vec3& position,
+                                    const glm::vec3& color,
+                                    float radius,
+                                    float intensity) {
     auto entity = createTransformEntity(position);
     context_.registry.emplace<LightComponent>(entity, LightComponent{color, radius, intensity});
     return entity;
 }
 
-entt::entity CathedralBuilder::addBoxCollider(const glm::vec3& position, const glm::vec3& halfExtents) {
+entt::entity LevelBuilder::addBoxCollider(const glm::vec3& position, const glm::vec3& halfExtents) {
     auto entity = createEntity();
     StaticColliderComponent collider;
     collider.shape = ColliderShape::Box;
@@ -94,7 +94,7 @@ entt::entity CathedralBuilder::addBoxCollider(const glm::vec3& position, const g
     return entity;
 }
 
-entt::entity CathedralBuilder::addCylinderCollider(const glm::vec3& position, float radius, float halfHeight) {
+entt::entity LevelBuilder::addCylinderCollider(const glm::vec3& position, float radius, float halfHeight) {
     auto entity = createEntity();
     StaticColliderComponent collider;
     collider.shape = ColliderShape::Cylinder;

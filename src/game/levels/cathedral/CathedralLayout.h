@@ -1,5 +1,5 @@
 #pragma once
 
-#include "game/levels/cathedral/CathedralContext.h"
+#include "game/level/LevelBuildContext.h"
 
-void buildCathedralLayout(CathedralContext& context);
+void buildCathedralLayout(LevelBuildContext& context);

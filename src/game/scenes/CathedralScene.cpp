@@ -1,15 +1,15 @@
 #include "CathedralScene.h"
 
 #include "engine/core/Application.h"
+#include "game/level/LevelBuildContext.h"
 #include "game/levels/cathedral/CathedralAssets.h"
-#include "game/levels/cathedral/CathedralContext.h"
 #include "game/levels/cathedral/CathedralLayout.h"
 
 void CathedralScene::onEnter(Application& app) {
     entities_.clear();
     registerCathedralAssets(meshLibrary_);
 
-    CathedralContext context{
+    LevelBuildContext context{
         .registry = app.registry(),
         .meshLibrary = meshLibrary_,
         .entities = entities_,
