@@ -1,12 +1,9 @@
-#include "game/levels/cathedral/CathedralSceneData.h"
-#include "game/prefabs/GameplayPrefabAssets.h"
+#include "game/level/LevelDef.h"
 
 #include <cctype>
-#include <filesystem>
 #include <fstream>
 #include <sstream>
 #include <stdexcept>
-#include <string>
 
 namespace {
 
@@ -26,20 +23,15 @@ bool isCommentOrEmpty(const std::string& line) {
     return true;
 }
 
-std::string resolveRelativePath(const std::string& basePath, const std::string& relativePath) {
-    const std::filesystem::path scenePath(basePath);
-    return (scenePath.parent_path() / relativePath).lexically_normal().string();
-}
-
 } // namespace
 
-CathedralSceneData loadCathedralSceneData(const std::string& path) {
+LevelDef loadLevelDef(const std::string& path) {
     std::ifstream file(path);
     if (!file.is_open()) {
-        throw std::runtime_error("Failed to open cathedral scene data: " + path);
+        throw std::runtime_error("Failed to open level definition: " + path);
     }
 
-    CathedralSceneData data;
+    LevelDef data;
     std::string line;
     int lineNumber = 0;
 
@@ -54,8 +46,8 @@ CathedralSceneData loadCathedralSceneData(const std::string& path) {
         stream >> kind;
 
         if (kind == "mesh") {
-            CathedralMeshPlacement placement;
-            if (!(stream >> placement.meshName
+            LevelMeshPlacement placement;
+            if (!(stream >> placement.meshId
                          >> placement.position.x >> placement.position.y >> placement.position.z
                          >> placement.scale.x >> placement.scale.y >> placement.scale.z
                          >> placement.rotation.x >> placement.rotation.y >> placement.rotation.z)) {
@@ -66,7 +58,7 @@ CathedralSceneData loadCathedralSceneData(const std::string& path) {
         }
 
         if (kind == "light") {
-            CathedralLightPlacement placement;
+            LevelLightPlacement placement;
             if (!(stream >> placement.position.x >> placement.position.y >> placement.position.z
                          >> placement.color.r >> placement.color.g >> placement.color.b
                          >> placement.radius >> placement.intensity)) {
@@ -77,7 +69,7 @@ CathedralSceneData loadCathedralSceneData(const std::string& path) {
         }
 
         if (kind == "collider_box") {
-            CathedralBoxColliderPlacement placement;
+            LevelBoxColliderPlacement placement;
             if (!(stream >> placement.position.x >> placement.position.y >> placement.position.z
                          >> placement.halfExtents.x >> placement.halfExtents.y >> placement.halfExtents.z)) {
                 throwParseError(path, lineNumber, "invalid collider_box record");
@@ -87,7 +79,7 @@ CathedralSceneData loadCathedralSceneData(const std::string& path) {
         }
 
         if (kind == "collider_cylinder") {
-            CathedralCylinderColliderPlacement placement;
+            LevelCylinderColliderPlacement placement;
             if (!(stream >> placement.position.x >> placement.position.y >> placement.position.z
                          >> placement.radius >> placement.halfHeight)) {
                 throwParseError(path, lineNumber, "invalid collider_cylinder record");
@@ -97,7 +89,7 @@ CathedralSceneData loadCathedralSceneData(const std::string& path) {
         }
 
         if (kind == "player_spawn") {
-            CathedralPlayerSpawnPlacement placement;
+            LevelPlayerSpawn placement;
             if (!(stream >> placement.position.x >> placement.position.y >> placement.position.z
                          >> placement.fallRespawnY)) {
                 throwParseError(path, lineNumber, "invalid player_spawn record");
@@ -107,21 +99,14 @@ CathedralSceneData loadCathedralSceneData(const std::string& path) {
             continue;
         }
 
-        if (kind == "prefab") {
-            std::string prefabType;
-            stream >> prefabType;
-            throwParseError(path, lineNumber, "inline prefab records are no longer supported; use prefab_instance files");
-        }
-
-        if (kind == "prefab_instance") {
-            std::string prefabPath;
-            glm::vec3 position(0.0f);
-            float yawDegrees = 0.0f;
-            if (!(stream >> prefabPath >> position.x >> position.y >> position.z >> yawDegrees)) {
-                throwParseError(path, lineNumber, "invalid prefab_instance record");
+        if (kind == "archetype_instance") {
+            LevelArchetypePlacement placement;
+            if (!(stream >> placement.archetypeId
+                         >> placement.position.x >> placement.position.y >> placement.position.z
+                         >> placement.yawDegrees)) {
+                throwParseError(path, lineNumber, "invalid archetype_instance record");
             }
-            const auto asset = loadGameplayPrefabAsset(resolveRelativePath(path, prefabPath));
-            data.prefabs.push_back(instantiateGameplayPrefab(asset, position, yawDegrees));
+            data.archetypes.push_back(std::move(placement));
             continue;
         }
 

@@ -2,19 +2,23 @@
 
 #include "engine/core/Application.h"
 #include "game/level/LevelBuildContext.h"
+#include "game/level/LevelLoader.h"
 #include "game/levels/cathedral/CathedralAssets.h"
-#include "game/levels/cathedral/CathedralLayout.h"
+#include "game/rendering/MeshAssetProvider.h"
 
 void CathedralScene::onEnter(Application& app) {
     entities_.clear();
-    registerCathedralAssets(meshLibrary_);
-
     LevelBuildContext context{
         .registry = app.registry(),
         .meshLibrary = meshLibrary_,
         .entities = entities_,
     };
-    buildCathedralLayout(context);
+    request_.registerAssets = [](MeshLibrary& library) {
+        registerCathedralAssets(library);
+    };
+    request_.buildScriptedGeometry = {};
+    LevelLoader loader(context);
+    loader.load(app, request_);
 }
 
 void CathedralScene::onExit(Application& app) {
@@ -24,5 +28,9 @@ void CathedralScene::onExit(Application& app) {
         }
     }
     entities_.clear();
+    auto& ctx = app.registry().ctx();
+    if (ctx.contains<MeshAssetProvider>()) {
+        ctx.erase<MeshAssetProvider>();
+    }
     meshLibrary_.clear();
 }

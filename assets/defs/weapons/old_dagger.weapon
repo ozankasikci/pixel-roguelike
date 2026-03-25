@@ -1,0 +1,8 @@
+# weapon definition
+id old_dagger
+display_name Old_Dagger
+slot melee
+mesh hand
+damage 12.0
+range 1.4
+cooldown 0.55

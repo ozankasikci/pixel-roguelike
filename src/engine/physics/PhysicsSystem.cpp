@@ -24,6 +24,8 @@
 #include <glm/trigonometric.hpp>
 #include <spdlog/spdlog.h>
 #include <entt/entt.hpp>
+#include <cstdint>
+#include <unordered_map>
 #include <utility>
 #include <vector>
 
@@ -121,16 +123,23 @@ struct PhysicsSystem::Impl {
     std::unique_ptr<JPH::PhysicsSystem> physicsSystem;
 
     // Character controller
-    JPH::Ref<JPH::CharacterVirtual> character;
-    float characterEyeOffset = 0.7f;
+    struct EntityHash {
+        std::size_t operator()(entt::entity entity) const noexcept {
+            return static_cast<std::size_t>(static_cast<std::uint32_t>(entity));
+        }
+    };
 
     struct StaticBodyBinding {
-        entt::entity entity = entt::null;
         JPH::BodyID bodyId;
     };
 
-    // Tracked bodies for syncing and cleanup
-    std::vector<StaticBodyBinding> staticBodies;
+    struct CharacterBinding {
+        JPH::Ref<JPH::CharacterVirtual> character;
+        float eyeOffset = 0.7f;
+    };
+
+    std::unordered_map<entt::entity, StaticBodyBinding, EntityHash> staticBodies;
+    std::unordered_map<entt::entity, CharacterBinding, EntityHash> characters;
 
     // Fixed timestep accumulator
     float accumulator = 0.0f;
@@ -141,6 +150,20 @@ struct PhysicsSystem::Impl {
 
 PhysicsSystem::PhysicsSystem() = default;
 PhysicsSystem::~PhysicsSystem() = default;
+
+namespace {
+
+JPH::ShapeRefC makeColliderShape(const StaticColliderComponent& collider) {
+    if (collider.shape == ColliderShape::Box) {
+        return new JPH::BoxShape(toJolt(collider.halfExtents));
+    }
+    if (collider.shape == ColliderShape::Cylinder) {
+        return new JPH::CylinderShape(collider.halfHeight, collider.radius);
+    }
+    return nullptr;
+}
+
+} // namespace
 
 void PhysicsSystem::init(Application& app) {
     // 1. Initialize Jolt runtime
@@ -166,70 +189,9 @@ void PhysicsSystem::init(Application& app) {
         impl_->objectLayerPairFilter
     );
 
-    auto& bodyInterface = impl_->physicsSystem->GetBodyInterface();
-    auto& registry = app.registry();
+    update(app, 0.0f);
 
-    // 4. Create static bodies from StaticColliderComponent entities
-    auto colliderView = registry.view<StaticColliderComponent>();
-    for (auto [entity, collider] : colliderView.each()) {
-        JPH::ShapeRefC shape;
-
-        if (collider.shape == ColliderShape::Box) {
-            shape = new JPH::BoxShape(toJolt(collider.halfExtents));
-        } else if (collider.shape == ColliderShape::Cylinder) {
-            shape = new JPH::CylinderShape(collider.halfHeight, collider.radius);
-        }
-
-        if (shape) {
-            JPH::BodyCreationSettings bodySettings(
-                shape,
-                toJoltR(collider.position),
-                toJoltQuat(collider.rotation),
-                JPH::EMotionType::Static,
-                Layers::NON_MOVING
-            );
-
-            JPH::BodyID bodyId = bodyInterface.CreateAndAddBody(bodySettings, JPH::EActivation::DontActivate);
-            impl_->staticBodies.push_back({entity, bodyId});
-        }
-    }
-
-    spdlog::info("PhysicsSystem: created {} static bodies", impl_->staticBodies.size());
-
-    // 5. Create CharacterVirtual from CharacterControllerComponent
-    auto ccView = registry.view<CharacterControllerComponent, TransformComponent>();
-    for (auto [entity, cc, transform] : ccView.each()) {
-        // Derive capsule center from eye position
-        float eyeOff = cc.eyeOffset();
-        glm::vec3 capsuleCenter = transform.position - glm::vec3(0.0f, eyeOff, 0.0f);
-
-        // Create capsule shape (standing upright)
-        JPH::RefConst<JPH::Shape> capsuleShape = new JPH::CapsuleShape(cc.capsuleHalfHeight, cc.capsuleRadius);
-
-        JPH::CharacterVirtualSettings settings;
-        settings.mShape = capsuleShape;
-        settings.mMaxSlopeAngle = JPH::DegreesToRadians(45.0f);
-        settings.mMaxStrength = 100.0f;
-        settings.mMass = 80.0f;
-        settings.mUp = JPH::Vec3::sAxisY();
-        settings.mSupportingVolume = JPH::Plane(JPH::Vec3::sAxisY(), -cc.capsuleRadius);
-
-        impl_->character = new JPH::CharacterVirtual(
-            &settings,
-            toJoltR(capsuleCenter),
-            JPH::Quat::sIdentity(),
-            0,  // user data
-            impl_->physicsSystem.get()
-        );
-
-        impl_->characterEyeOffset = eyeOff;
-
-        spdlog::info("PhysicsSystem: created CharacterVirtual at ({:.1f}, {:.1f}, {:.1f})",
-            capsuleCenter.x, capsuleCenter.y, capsuleCenter.z);
-        break; // only one player
-    }
-
-    // 6. Optimize broad phase after all bodies added
+    // 4. Optimize broad phase after all bodies added
     impl_->physicsSystem->OptimizeBroadPhase();
 
     spdlog::info("PhysicsSystem initialized");
@@ -240,17 +202,83 @@ void PhysicsSystem::update(Application& app, float deltaTime) {
 
     auto& bodyInterface = impl_->physicsSystem->GetBodyInterface();
     auto& registry = app.registry();
-    for (const auto& binding : impl_->staticBodies) {
-        if (!registry.valid(binding.entity)) continue;
-        const auto* collider = registry.try_get<StaticColliderComponent>(binding.entity);
-        if (!collider) continue;
+
+    auto staticIt = impl_->staticBodies.begin();
+    while (staticIt != impl_->staticBodies.end()) {
+        if (!registry.valid(staticIt->first) || !registry.all_of<StaticColliderComponent>(staticIt->first)) {
+            bodyInterface.RemoveBody(staticIt->second.bodyId);
+            bodyInterface.DestroyBody(staticIt->second.bodyId);
+            staticIt = impl_->staticBodies.erase(staticIt);
+            continue;
+        }
+        ++staticIt;
+    }
+
+    auto colliderView = registry.view<StaticColliderComponent>();
+    for (auto [entity, collider] : colliderView.each()) {
+        auto found = impl_->staticBodies.find(entity);
+        if (found == impl_->staticBodies.end()) {
+            JPH::ShapeRefC shape = makeColliderShape(collider);
+            if (!shape) {
+                continue;
+            }
+            JPH::BodyCreationSettings bodySettings(
+                shape,
+                toJoltR(collider.position),
+                toJoltQuat(collider.rotation),
+                JPH::EMotionType::Static,
+                Layers::NON_MOVING
+            );
+            JPH::BodyID bodyId = bodyInterface.CreateAndAddBody(bodySettings, JPH::EActivation::DontActivate);
+            impl_->staticBodies.emplace(entity, Impl::StaticBodyBinding{bodyId});
+            found = impl_->staticBodies.find(entity);
+        }
 
         bodyInterface.SetPositionAndRotation(
-            binding.bodyId,
-            toJoltR(collider->position),
-            toJoltQuat(collider->rotation),
+            found->second.bodyId,
+            toJoltR(collider.position),
+            toJoltQuat(collider.rotation),
             JPH::EActivation::DontActivate
         );
+    }
+
+    auto characterIt = impl_->characters.begin();
+    while (characterIt != impl_->characters.end()) {
+        if (!registry.valid(characterIt->first) || !registry.all_of<CharacterControllerComponent, TransformComponent>(characterIt->first)) {
+            characterIt = impl_->characters.erase(characterIt);
+            continue;
+        }
+        ++characterIt;
+    }
+
+    auto ccView = registry.view<CharacterControllerComponent, TransformComponent>();
+    for (auto [entity, cc, transform] : ccView.each()) {
+        if (impl_->characters.contains(entity)) {
+            continue;
+        }
+
+        const float eyeOff = cc.eyeOffset();
+        const glm::vec3 capsuleCenter = transform.position - glm::vec3(0.0f, eyeOff, 0.0f);
+        JPH::RefConst<JPH::Shape> capsuleShape = new JPH::CapsuleShape(cc.capsuleHalfHeight, cc.capsuleRadius);
+
+        JPH::CharacterVirtualSettings settings;
+        settings.mShape = capsuleShape;
+        settings.mMaxSlopeAngle = JPH::DegreesToRadians(45.0f);
+        settings.mMaxStrength = 100.0f;
+        settings.mMass = 80.0f;
+        settings.mUp = JPH::Vec3::sAxisY();
+        settings.mSupportingVolume = JPH::Plane(JPH::Vec3::sAxisY(), -cc.capsuleRadius);
+
+        Impl::CharacterBinding binding;
+        binding.character = new JPH::CharacterVirtual(
+            &settings,
+            toJoltR(capsuleCenter),
+            JPH::Quat::sIdentity(),
+            0,
+            impl_->physicsSystem.get()
+        );
+        binding.eyeOffset = eyeOff;
+        impl_->characters.emplace(entity, std::move(binding));
     }
 
     // Fixed timestep stepping (for future dynamic bodies)
@@ -278,11 +306,13 @@ void PhysicsSystem::shutdown() {
     // Remove static bodies
     if (impl_->physicsSystem) {
         auto& bodyInterface = impl_->physicsSystem->GetBodyInterface();
-        for (const auto& binding : impl_->staticBodies) {
+        for (const auto& [entity, binding] : impl_->staticBodies) {
+            (void)entity;
             bodyInterface.RemoveBody(binding.bodyId);
             bodyInterface.DestroyBody(binding.bodyId);
         }
         impl_->staticBodies.clear();
+        impl_->characters.clear();
     }
 
     impl_.reset();
@@ -297,20 +327,26 @@ void PhysicsSystem::shutdown() {
 
 // --- Character controller API ---
 
-void PhysicsSystem::setCharacterVelocity(const glm::vec3& velocity) {
-    if (impl_ && impl_->character) {
-        impl_->character->SetLinearVelocity(toJolt(velocity));
+void PhysicsSystem::setCharacterVelocity(entt::entity entity, const glm::vec3& velocity) {
+    if (impl_ == nullptr) {
+        return;
+    }
+    auto it = impl_->characters.find(entity);
+    if (it != impl_->characters.end()) {
+        it->second.character->SetLinearVelocity(toJolt(velocity));
     }
 }
 
-void PhysicsSystem::updateCharacter(float deltaTime, const glm::vec3& gravity) {
-    if (!impl_ || !impl_->character) return;
+void PhysicsSystem::updateCharacter(entt::entity entity, float deltaTime, const glm::vec3& gravity) {
+    if (!impl_) return;
+    auto it = impl_->characters.find(entity);
+    if (it == impl_->characters.end()) return;
 
     JPH::CharacterVirtual::ExtendedUpdateSettings updateSettings;
     updateSettings.mStickToFloorStepDown = JPH::Vec3(0, -0.5f, 0);
     updateSettings.mWalkStairsStepUp = JPH::Vec3(0, 0.3f, 0);
 
-    impl_->character->ExtendedUpdate(
+    it->second.character->ExtendedUpdate(
         deltaTime,
         toJolt(gravity),
         updateSettings,
@@ -322,23 +358,31 @@ void PhysicsSystem::updateCharacter(float deltaTime, const glm::vec3& gravity) {
     );
 }
 
-glm::vec3 PhysicsSystem::getCharacterPosition() const {
-    if (impl_ && impl_->character) {
-        return toGlm(impl_->character->GetPosition());
+glm::vec3 PhysicsSystem::getCharacterPosition(entt::entity entity) const {
+    if (impl_) {
+        auto it = impl_->characters.find(entity);
+        if (it != impl_->characters.end()) {
+            return toGlm(it->second.character->GetPosition());
+        }
     }
     return glm::vec3(0.0f);
 }
 
-void PhysicsSystem::setCharacterPosition(const glm::vec3& position) {
-    if (impl_ && impl_->character) {
-        impl_->character->SetPosition(toJoltR(position));
+void PhysicsSystem::setCharacterPosition(entt::entity entity, const glm::vec3& position) {
+    if (impl_) {
+        auto it = impl_->characters.find(entity);
+        if (it != impl_->characters.end()) {
+            it->second.character->SetPosition(toJoltR(position));
+        }
     }
 }
 
-GroundState PhysicsSystem::getCharacterGroundState() const {
-    if (!impl_ || !impl_->character) return GroundState::InAir;
+GroundState PhysicsSystem::getCharacterGroundState(entt::entity entity) const {
+    if (!impl_) return GroundState::InAir;
+    auto it = impl_->characters.find(entity);
+    if (it == impl_->characters.end()) return GroundState::InAir;
 
-    switch (impl_->character->GetGroundState()) {
+    switch (it->second.character->GetGroundState()) {
         case JPH::CharacterBase::EGroundState::OnGround:
             return GroundState::OnGround;
         case JPH::CharacterBase::EGroundState::OnSteepGround:

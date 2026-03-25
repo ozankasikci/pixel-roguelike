@@ -1,17 +1,18 @@
 add_library(game STATIC
+    content/ContentRegistry.cpp
     scenes/CathedralScene.cpp
+    systems/InteractionSystem.cpp
     systems/CameraSystem.cpp
     systems/CheckpointSystem.cpp
     systems/DoorSystem.cpp
     systems/PlayerMovementSystem.cpp
     systems/RenderSystem.cpp
     level/LevelBuilder.cpp
-    prefabs/GameplayPrefabAssets.cpp
+    level/LevelDef.cpp
+    level/LevelLoader.cpp
     prefabs/GameplayPrefabs.cpp
     levels/cathedral/CathedralAssets.cpp
     levels/cathedral/CathedralPrefabs.cpp
-    levels/cathedral/CathedralSceneData.cpp
-    levels/cathedral/CathedralLayout.cpp
 )
 target_include_directories(game PUBLIC ${CMAKE_SOURCE_DIR}/src)
 target_link_libraries(game PUBLIC

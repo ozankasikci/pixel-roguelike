@@ -4,6 +4,7 @@
 #include "game/components/CheckpointComponent.h"
 #include "game/components/DoorComponent.h"
 #include "game/components/DoorLeafComponent.h"
+#include "game/components/InteractableComponent.h"
 #include "game/components/StaticColliderComponent.h"
 
 namespace {
@@ -61,6 +62,17 @@ entt::entity spawnCheckpoint(LevelBuilder& builder, const CheckpointSpawnSpec& s
             checkpointLight
         }
     );
+    builder.registry().emplace<InteractableComponent>(
+        checkpoint,
+        InteractableComponent{
+            "E  KINDLE CHECKPOINT",
+            "CHECKPOINT KINDLED",
+            spec.interactDistance,
+            spec.interactDotThreshold,
+            true,
+            false
+        }
+    );
     return checkpoint;
 }
 
@@ -105,6 +117,17 @@ entt::entity spawnDoubleDoor(LevelBuilder& builder,
             spec.openDuration,
             0.0f,
             false,
+            false
+        }
+    );
+    builder.registry().emplace<InteractableComponent>(
+        doorRoot,
+        InteractableComponent{
+            "E  OPEN HEAVY DOOR",
+            "OPENING HEAVY DOOR",
+            spec.interactDistance,
+            spec.interactDotThreshold,
+            true,
             false
         }
     );

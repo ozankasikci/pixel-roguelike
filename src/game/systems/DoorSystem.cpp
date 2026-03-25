@@ -5,13 +5,13 @@
 #include "game/components/CameraComponent.h"
 #include "game/components/DoorComponent.h"
 #include "game/components/DoorLeafComponent.h"
+#include "game/components/InteractableComponent.h"
 #include "game/components/MeshComponent.h"
 #include "game/components/PlayerInteractionLockComponent.h"
 #include "game/components/StaticColliderComponent.h"
 #include "game/components/TransformComponent.h"
-#include "game/ui/InteractionPromptState.h"
+#include "game/ui/InteractionFocusState.h"
 
-#include <GLFW/glfw3.h>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <algorithm>
@@ -32,14 +32,6 @@ glm::mat4 makeDoorLeafModel(const DoorLeafComponent& leaf, float progress) {
     model = glm::translate(model, leaf.centerOffsetFromHinge);
     model = glm::scale(model, leaf.closedScale);
     return model;
-}
-
-glm::vec3 cameraForwardFromAngles(float yawDeg, float pitchDeg) {
-    glm::vec3 forward;
-    forward.x = std::cos(glm::radians(yawDeg)) * std::cos(glm::radians(pitchDeg));
-    forward.y = std::sin(glm::radians(pitchDeg));
-    forward.z = std::sin(glm::radians(yawDeg)) * std::cos(glm::radians(pitchDeg));
-    return glm::normalize(forward);
 }
 
 bool isPlayerLocked(entt::registry& registry, entt::entity player) {
@@ -74,13 +66,6 @@ DoorSystem::DoorSystem(InputSystem& input)
 {}
 
 void DoorSystem::init(Application& app) {
-    auto& ctx = app.registry().ctx();
-    if (ctx.contains<InteractionPromptState>()) {
-        ctx.insert_or_assign(InteractionPromptState{});
-    } else {
-        ctx.emplace<InteractionPromptState>();
-    }
-
     auto& registry = app.registry();
     auto lockView = registry.view<PlayerInteractionLockComponent>();
     for (auto [entity, lock] : lockView.each()) {
@@ -102,24 +87,17 @@ void DoorSystem::init(Application& app) {
 void DoorSystem::update(Application& app, float deltaTime) {
     auto& registry = app.registry();
     auto& ctx = registry.ctx();
-    if (!ctx.contains<InteractionPromptState>()) {
-        ctx.emplace<InteractionPromptState>();
+    if (!ctx.contains<InteractionFocusState>()) {
+        ctx.emplace<InteractionFocusState>();
     }
-    auto& prompt = ctx.get<InteractionPromptState>();
-    prompt.visible = false;
-    prompt.busy = false;
-    prompt.text.clear();
+    auto& focus = ctx.get<InteractionFocusState>();
 
     entt::entity playerEntity = entt::null;
-    TransformComponent* playerTransform = nullptr;
-    CameraComponent* playerCamera = nullptr;
     PlayerInteractionLockComponent* playerLock = nullptr;
 
-    auto playerView = registry.view<TransformComponent, CameraComponent, PlayerInteractionLockComponent>();
-    for (auto [entity, transform, camera, lock] : playerView.each()) {
+    auto playerView = registry.view<PlayerInteractionLockComponent>();
+    for (auto [entity, lock] : playerView.each()) {
         playerEntity = entity;
-        playerTransform = &transform;
-        playerCamera = &camera;
         playerLock = &lock;
         break;
     }
@@ -129,22 +107,9 @@ void DoorSystem::update(Application& app, float deltaTime) {
             playerLock->remainingTime = std::max(0.0f, playerLock->remainingTime - deltaTime);
             if (playerLock->remainingTime <= 0.0f) {
                 playerLock->active = false;
-            } else {
-                prompt.visible = true;
-                prompt.busy = true;
-                prompt.text = "OPENING HEAVY DOOR";
             }
         }
     }
-
-    if (!playerTransform || !playerCamera) {
-        return;
-    }
-
-    const glm::vec3 playerForward = cameraForwardFromAngles(playerCamera->yaw, playerCamera->pitch);
-
-    entt::entity focusedDoor = entt::null;
-    float bestScore = -1.0f;
 
     auto doorView = registry.view<TransformComponent, DoorComponent>();
     for (auto [entity, transform, door] : doorView.each()) {
@@ -153,62 +118,55 @@ void DoorSystem::update(Application& app, float deltaTime) {
             updateDoorLeaf(registry, door.leftLeaf, door.progress);
             updateDoorLeaf(registry, door.rightLeaf, door.progress);
 
+            if (auto* interactable = registry.try_get<InteractableComponent>(entity)) {
+                interactable->busy = door.opening;
+                interactable->enabled = !door.opened;
+            }
+
             if (door.progress >= 1.0f) {
                 door.progress = 1.0f;
                 door.opening = false;
                 door.opened = true;
+                if (auto* interactable = registry.try_get<InteractableComponent>(entity)) {
+                    interactable->busy = false;
+                    interactable->enabled = false;
+                }
             }
             continue;
         }
-
-        const glm::vec3 toDoor = transform.position - playerTransform->position;
-        const float distance = glm::length(toDoor);
-        if (distance > door.interactDistance || distance < 0.001f) {
-            continue;
-        }
-
-        const glm::vec3 dirToDoor = toDoor / distance;
-        const float facing = glm::dot(playerForward, dirToDoor);
-        if (facing < door.interactDotThreshold) {
-            continue;
-        }
-
-        const float score = facing - distance * 0.08f;
-        if (score > bestScore) {
-            bestScore = score;
-            focusedDoor = entity;
+        if (auto* interactable = registry.try_get<InteractableComponent>(entity)) {
+            interactable->busy = false;
+            interactable->enabled = !door.opened;
         }
     }
 
-    if (focusedDoor == entt::null) {
+    if (focus.focused == entt::null || !focus.activationRequested || focus.activationConsumed) {
         return;
     }
 
-    auto& door = registry.get<DoorComponent>(focusedDoor);
-    if (door.opened || door.opening) {
+    auto* door = registry.try_get<DoorComponent>(focus.focused);
+    if (door == nullptr) {
         return;
     }
 
-    prompt.visible = true;
-    prompt.busy = false;
-    prompt.text = "E  OPEN HEAVY DOOR";
+    auto& interactable = registry.get<InteractableComponent>(focus.focused);
+    auto& resolvedDoor = *door;
+    if (resolvedDoor.opened || resolvedDoor.opening) {
+        return;
+    }
 
     if (isPlayerLocked(registry, playerEntity)) {
         return;
     }
 
-    if (input_.isCursorLocked() && !input_.wantsCaptureMouse() && input_.isKeyJustPressed(GLFW_KEY_E)) {
-        door.opening = true;
-        door.progress = 0.0f;
+    resolvedDoor.opening = true;
+    resolvedDoor.progress = 0.0f;
+    interactable.busy = true;
+    focus.activationConsumed = true;
 
-        if (playerLock) {
-            playerLock->active = true;
-            playerLock->remainingTime = door.openDuration * 0.9f;
-        }
-
-        prompt.visible = true;
-        prompt.busy = true;
-        prompt.text = "OPENING HEAVY DOOR";
+    if (playerLock) {
+        playerLock->active = true;
+        playerLock->remainingTime = resolvedDoor.openDuration * 0.9f;
     }
 }
 

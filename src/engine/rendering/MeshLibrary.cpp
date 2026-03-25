@@ -1,4 +1,5 @@
 #include "engine/rendering/MeshLibrary.h"
+#include "engine/core/PathUtils.h"
 #include "engine/rendering/Mesh.h"
 #include "engine/rendering/GltfLoader.h"
 
@@ -29,7 +30,7 @@ void MeshLibrary::registerDefaults() {
 }
 
 void MeshLibrary::loadFromFile(const std::string& name, const std::string& filepath) {
-    auto mesh = GltfLoader::load(filepath);
+    auto mesh = GltfLoader::load(resolveProjectPath(filepath));
     if (mesh) {
         registerMesh(name, std::move(mesh));
     } else {

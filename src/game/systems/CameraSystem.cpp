@@ -2,7 +2,9 @@
 #include "engine/core/Application.h"
 #include "engine/input/InputSystem.h"
 #include "game/components/CameraComponent.h"
+#include "game/components/ControllableTag.h"
 #include "game/components/PlayerInteractionLockComponent.h"
+#include "game/components/PrimaryCameraTag.h"
 #include "game/components/TransformComponent.h"
 
 #include <GLFW/glfw3.h>
@@ -21,7 +23,7 @@ void CameraSystem::init(Application& app) {
 void CameraSystem::update(Application& app, float deltaTime) {
     auto& registry = app.registry();
 
-    auto view = registry.view<TransformComponent, CameraComponent, PlayerInteractionLockComponent>();
+    auto view = registry.view<TransformComponent, CameraComponent, PlayerInteractionLockComponent, ControllableTag, PrimaryCameraTag>();
     for (auto [entity, transform, cam, lock] : view.each()) {
 
         // Mouse look (only when cursor is locked)
@@ -64,7 +66,7 @@ void CameraSystem::update(Application& app, float deltaTime) {
             glm::radians(cam.fov), aspect, cam.nearPlane, cam.farPlane
         );
 
-        break;  // only process the first camera entity
+        break;
     }
 }
 

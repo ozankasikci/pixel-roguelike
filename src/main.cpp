@@ -6,8 +6,11 @@
 #include "game/systems/CameraSystem.h"
 #include "game/systems/CheckpointSystem.h"
 #include "game/systems/DoorSystem.h"
+#include "game/systems/InteractionSystem.h"
 #include "game/systems/RenderSystem.h"
 #include "game/scenes/CathedralScene.h"
+#include "game/content/ContentRegistry.h"
+#include "game/session/RunSession.h"
 
 #include <spdlog/spdlog.h>
 #include <memory>
@@ -26,9 +29,12 @@ int main(int argc, char* argv[]) {
     }
 
     Application app(1280, 720, "Pixel Roguelike");
+    app.emplaceService<RunSession>();
+    app.emplaceService<ContentRegistry>().loadDefaults();
 
     // Register systems by phase so scheduling policy lives in the engine instead of boot order.
     auto& input = app.addSystem<InputSystem>(Application::UpdatePhase::Input);
+    auto& interaction = app.addSystem<InteractionSystem>(Application::UpdatePhase::Interaction, input);
     auto& doors = app.addSystem<DoorSystem>(Application::UpdatePhase::Interaction, input);
     auto& checkpoints = app.addSystem<CheckpointSystem>(Application::UpdatePhase::Interaction, input);
     auto& physics = app.addSystem<PhysicsSystem>(Application::UpdatePhase::Physics);
@@ -37,6 +43,7 @@ int main(int argc, char* argv[]) {
     auto& render = app.addSystem<RenderSystem>(Application::UpdatePhase::Render);
     (void)doors;
     (void)checkpoints;
+    (void)interaction;
     (void)movement;
     (void)camera;
 

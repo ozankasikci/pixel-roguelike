@@ -1,0 +1,7 @@
+# enemy definition
+id sentinel
+display_name Cathedral_Sentinel
+mesh pillar
+max_health 40.0
+move_speed 2.8
+contact_damage 8.0

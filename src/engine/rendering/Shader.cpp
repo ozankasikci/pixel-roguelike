@@ -1,4 +1,5 @@
 #include "Shader.h"
+#include "engine/core/PathUtils.h"
 
 #include <spdlog/spdlog.h>
 #include <glm/gtc/type_ptr.hpp>
@@ -94,7 +95,7 @@ GLuint Shader::compileShader(GLenum type, const std::string& source, const std::
 }
 
 std::string Shader::readFile(const std::string& path) {
-    std::ifstream file(path);
+    std::ifstream file(resolveProjectPath(path));
     if (!file.is_open()) {
         throw std::runtime_error("Cannot open shader file: " + path);
     }

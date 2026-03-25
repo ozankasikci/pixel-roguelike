@@ -1,4 +1,5 @@
 # type double_door
+id cathedral_double_door
 type double_door
 left_leaf_mesh door_leaf_left
 right_leaf_mesh door_leaf_right

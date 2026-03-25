@@ -59,7 +59,7 @@ entt::entity LevelBuilder::addMesh(Mesh* mesh,
 
     auto entity = createEntity();
     context_.registry.emplace<TransformComponent>(entity);
-    context_.registry.emplace<MeshComponent>(entity, MeshComponent{mesh, makeModel(position, scale, rotation), true});
+    context_.registry.emplace<MeshComponent>(entity, MeshComponent{"", mesh, makeModel(position, scale, rotation), true});
     return entity;
 }
 
@@ -72,7 +72,11 @@ entt::entity LevelBuilder::addMesh(const std::string& meshName,
         spdlog::warn("Level builder missing mesh '{}'", meshName);
         return entt::null;
     }
-    return addMesh(found, position, scale, rotation);
+    auto entity = addMesh(found, position, scale, rotation);
+    if (entity != entt::null) {
+        context_.registry.get<MeshComponent>(entity).meshId = meshName;
+    }
+    return entity;
 }
 
 entt::entity LevelBuilder::addLight(const glm::vec3& position,

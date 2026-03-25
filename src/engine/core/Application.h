@@ -1,7 +1,11 @@
 #pragma once
+#include <any>
 #include <array>
 #include <cstddef>
 #include <memory>
+#include <stdexcept>
+#include <typeindex>
+#include <unordered_map>
 #include <vector>
 #include <entt/entt.hpp>
 #include "engine/core/Window.h"
@@ -50,11 +54,60 @@ public:
     const Time& time() const { return time_; }
     float deltaTime() const { return time_.deltaTime(); }
 
+    template<typename T, typename... Args>
+    T& emplaceService(Args&&... args) {
+        auto key = std::type_index(typeid(T));
+        services_[key] = T(std::forward<Args>(args)...);
+        return std::any_cast<T&>(services_.at(key));
+    }
+
+    template<typename T>
+    bool hasService() const {
+        return services_.contains(std::type_index(typeid(T)));
+    }
+
+    template<typename T>
+    T* tryGetService() {
+        auto it = services_.find(std::type_index(typeid(T)));
+        if (it == services_.end()) {
+            return nullptr;
+        }
+        return std::any_cast<T>(&it->second);
+    }
+
+    template<typename T>
+    const T* tryGetService() const {
+        auto it = services_.find(std::type_index(typeid(T)));
+        if (it == services_.end()) {
+            return nullptr;
+        }
+        return std::any_cast<T>(&it->second);
+    }
+
+    template<typename T>
+    T& getService() {
+        T* service = tryGetService<T>();
+        if (service == nullptr) {
+            throw std::runtime_error("Application service not found");
+        }
+        return *service;
+    }
+
+    template<typename T>
+    const T& getService() const {
+        const T* service = tryGetService<T>();
+        if (service == nullptr) {
+            throw std::runtime_error("Application service not found");
+        }
+        return *service;
+    }
+
 private:
     Window window_;
     entt::registry registry_;
     EventBus eventBus_;
     Time time_;
+    std::unordered_map<std::type_index, std::any> services_;
     std::array<std::vector<std::unique_ptr<System>>, static_cast<std::size_t>(UpdatePhase::Count)> systemsByPhase_;
     SceneManager* sceneManager_ = nullptr;
     bool running_ = false;

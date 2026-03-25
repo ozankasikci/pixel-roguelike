@@ -2,6 +2,7 @@
 #include "game/components/CheckpointComponent.h"
 #include "game/components/DoorComponent.h"
 #include "game/components/DoorLeafComponent.h"
+#include "game/components/InteractableComponent.h"
 #include "game/components/LightComponent.h"
 #include "game/components/MeshComponent.h"
 #include "game/components/StaticColliderComponent.h"
@@ -39,9 +40,11 @@ int main() {
     assert(registry.get<TransformComponent>(checkpoint).position == checkpointPlacement.position);
 
     const auto& checkpointComponent = registry.get<CheckpointComponent>(checkpoint);
+    const auto& checkpointInteractable = registry.get<InteractableComponent>(checkpoint);
     assert(checkpointComponent.respawnPosition == checkpointPlacement.respawnPosition);
     assert(checkpointComponent.interactDistance == checkpointPlacement.interactDistance);
     assert(checkpointComponent.interactDotThreshold == checkpointPlacement.interactDotThreshold);
+    assert(checkpointInteractable.promptText == "E  KINDLE CHECKPOINT");
     assert(registry.valid(checkpointComponent.lightEntity));
     assert((registry.all_of<TransformComponent, LightComponent>(checkpointComponent.lightEntity)));
     assert(registry.get<TransformComponent>(checkpointComponent.lightEntity).position == checkpointPlacement.lightPosition);
@@ -71,11 +74,13 @@ int main() {
     assert(registry.get<TransformComponent>(doorRoot).position == doorPlacement.rootPosition);
 
     const auto& door = registry.get<DoorComponent>(doorRoot);
+    const auto& doorInteractable = registry.get<InteractableComponent>(doorRoot);
     assert(registry.valid(door.leftLeaf));
     assert(registry.valid(door.rightLeaf));
     assert(door.interactDistance == doorPlacement.interactDistance);
     assert(door.interactDotThreshold == doorPlacement.interactDotThreshold);
     assert(door.openDuration == doorPlacement.openDuration);
+    assert(doorInteractable.promptText == "E  OPEN HEAVY DOOR");
 
     const auto& leftLeaf = registry.get<DoorLeafComponent>(door.leftLeaf);
     const auto& leftCollider = registry.get<StaticColliderComponent>(door.leftLeaf);

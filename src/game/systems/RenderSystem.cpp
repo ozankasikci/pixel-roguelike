@@ -1,10 +1,13 @@
 #include "game/systems/RenderSystem.h"
 #include "engine/core/Application.h"
 #include "engine/core/Window.h"
+#include "engine/rendering/MeshLibrary.h"
+#include "game/rendering/MeshAssetProvider.h"
 #include "game/components/TransformComponent.h"
 #include "game/components/MeshComponent.h"
 #include "game/components/LightComponent.h"
 #include "game/components/CameraComponent.h"
+#include "game/components/PrimaryCameraTag.h"
 #include "game/components/PlayerMovementComponent.h"
 #include "game/components/ViewmodelComponent.h"
 #include "game/ui/InteractionPromptState.h"
@@ -28,7 +31,7 @@ void RenderSystem::init(Application& app) {
 RenderSystem::CameraState RenderSystem::captureCamera(entt::registry& registry) const {
     CameraState camera;
 
-    auto camView = registry.view<TransformComponent, CameraComponent>();
+    auto camView = registry.view<TransformComponent, CameraComponent, PrimaryCameraTag>();
     for (auto [entity, transform, cam] : camView.each()) {
         camera.position = transform.position;
         camera.viewMatrix = cam.viewMatrix;
@@ -42,9 +45,15 @@ RenderSystem::CameraState RenderSystem::captureCamera(entt::registry& registry) 
 
 std::vector<RenderObject> RenderSystem::collectSceneObjects(entt::registry& registry) const {
     std::vector<RenderObject> objects;
+    MeshAssetProvider* provider = registry.ctx().contains<MeshAssetProvider>()
+        ? &registry.ctx().get<MeshAssetProvider>()
+        : nullptr;
 
     auto meshView = registry.view<TransformComponent, MeshComponent>();
     for (auto [entity, transform, mesh] : meshView.each()) {
+        if (mesh.mesh == nullptr && provider != nullptr && provider->library != nullptr && !mesh.meshId.empty()) {
+            mesh.mesh = provider->library->get(mesh.meshId);
+        }
         if (mesh.mesh == nullptr) continue;
         if (registry.any_of<ViewmodelComponent>(entity)) continue;
         glm::mat4 model = mesh.useModelOverride ? mesh.modelOverride : transform.modelMatrix();
@@ -58,9 +67,15 @@ std::vector<RenderObject> RenderSystem::collectViewmodelObjects(entt::registry& 
                                                                 const CameraState& camera,
                                                                 float deltaTime) const {
     std::vector<RenderObject> objects;
+    MeshAssetProvider* provider = registry.ctx().contains<MeshAssetProvider>()
+        ? &registry.ctx().get<MeshAssetProvider>()
+        : nullptr;
 
     auto vmView = registry.view<MeshComponent, ViewmodelComponent>();
     for (auto [entity, mesh, vm] : vmView.each()) {
+        if (mesh.mesh == nullptr && provider != nullptr && provider->library != nullptr && !mesh.meshId.empty()) {
+            mesh.mesh = provider->library->get(mesh.meshId);
+        }
         if (mesh.mesh == nullptr) continue;
 
         vm.bobTime += deltaTime;

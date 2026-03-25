@@ -1,5 +1,6 @@
 #pragma once
 #include "engine/core/System.h"
+#include <entt/entity/fwd.hpp>
 #include <glm/glm.hpp>
 #include <memory>
 
@@ -18,12 +19,12 @@ public:
     void update(Application& app, float deltaTime) override;
     void shutdown() override;
 
-    // Character controller API (used by PlayerMovementSystem)
-    void setCharacterVelocity(const glm::vec3& velocity);
-    void updateCharacter(float deltaTime, const glm::vec3& gravity);
-    glm::vec3 getCharacterPosition() const;
-    void setCharacterPosition(const glm::vec3& position);
-    GroundState getCharacterGroundState() const;
+    // Character controller API (used by gameplay systems)
+    void setCharacterVelocity(entt::entity entity, const glm::vec3& velocity);
+    void updateCharacter(entt::entity entity, float deltaTime, const glm::vec3& gravity);
+    glm::vec3 getCharacterPosition(entt::entity entity) const;
+    void setCharacterPosition(entt::entity entity, const glm::vec3& position);
+    GroundState getCharacterGroundState(entt::entity entity) const;
 
 private:
     struct Impl;

@@ -1,0 +1,81 @@
+#pragma once
+
+#include "game/prefabs/GameplayPrefabData.h"
+
+#include <glm/glm.hpp>
+
+#include <string>
+#include <unordered_map>
+
+struct WeaponDefinition {
+    std::string id;
+    std::string displayName;
+    std::string slot;
+    std::string meshId;
+    float damage = 0.0f;
+    float range = 0.0f;
+    float cooldown = 0.0f;
+};
+
+struct EnemyDefinition {
+    std::string id;
+    std::string displayName;
+    std::string meshId;
+    float maxHealth = 0.0f;
+    float moveSpeed = 0.0f;
+    float contactDamage = 0.0f;
+};
+
+struct ItemDefinition {
+    std::string id;
+    std::string displayName;
+    std::string meshId;
+    std::string pickupPrompt = "E  PICK UP";
+};
+
+struct SkillDefinition {
+    std::string id;
+    std::string displayName;
+    std::string category;
+    std::string description;
+    int maxRank = 1;
+};
+
+enum class GameplayArchetypeKind {
+    Checkpoint,
+    DoubleDoor,
+};
+
+struct GameplayArchetypeDefinition {
+    std::string id;
+    GameplayArchetypeKind kind = GameplayArchetypeKind::Checkpoint;
+    CheckpointSpawnSpec checkpoint;
+    DoubleDoorSpawnSpec doubleDoor;
+};
+
+WeaponDefinition loadWeaponDefinitionAsset(const std::string& path);
+EnemyDefinition loadEnemyDefinitionAsset(const std::string& path);
+ItemDefinition loadItemDefinitionAsset(const std::string& path);
+SkillDefinition loadSkillDefinitionAsset(const std::string& path);
+GameplayArchetypeDefinition loadGameplayArchetypeAsset(const std::string& path);
+GameplayPrefabInstance instantiateGameplayArchetype(const GameplayArchetypeDefinition& definition,
+                                                    const glm::vec3& position,
+                                                    float yawDegrees = 0.0f);
+
+class ContentRegistry {
+public:
+    void loadDefaults();
+
+    const WeaponDefinition* findWeapon(const std::string& id) const;
+    const EnemyDefinition* findEnemy(const std::string& id) const;
+    const ItemDefinition* findItem(const std::string& id) const;
+    const SkillDefinition* findSkill(const std::string& id) const;
+    const GameplayArchetypeDefinition* findArchetype(const std::string& id) const;
+
+private:
+    std::unordered_map<std::string, WeaponDefinition> weapons_;
+    std::unordered_map<std::string, EnemyDefinition> enemies_;
+    std::unordered_map<std::string, ItemDefinition> items_;
+    std::unordered_map<std::string, SkillDefinition> skills_;
+    std::unordered_map<std::string, GameplayArchetypeDefinition> archetypes_;
+};

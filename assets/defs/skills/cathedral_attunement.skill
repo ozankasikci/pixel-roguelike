@@ -1,0 +1,6 @@
+# skill definition
+id cathedral_attunement
+display_name Cathedral_Attunement
+category passive
+description checkpoint_focus
+max_rank 1

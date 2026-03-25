@@ -3,10 +3,13 @@
 #include "engine/input/InputSystem.h"
 #include "engine/physics/PhysicsSystem.h"
 #include "game/components/CameraComponent.h"
+#include "game/components/ControllableTag.h"
 #include "game/components/PlayerMovementComponent.h"
 #include "game/components/CharacterControllerComponent.h"
+#include "game/components/PlayerTag.h"
 #include "game/components/PlayerInteractionLockComponent.h"
 #include "game/components/PlayerSpawnComponent.h"
+#include "game/components/PrimaryCameraTag.h"
 #include "game/components/TransformComponent.h"
 
 #include <GLFW/glfw3.h>
@@ -40,15 +43,16 @@ void PlayerMovementSystem::update(Application& app, float deltaTime) {
     auto& registry = app.registry();
 
     // Find the player entity (has all three components)
-    auto view = registry.view<TransformComponent, CameraComponent, PlayerMovementComponent, CharacterControllerComponent, PlayerInteractionLockComponent, PlayerSpawnComponent>();
+    auto view = registry.view<TransformComponent, CameraComponent, PlayerMovementComponent, CharacterControllerComponent,
+                              PlayerInteractionLockComponent, PlayerSpawnComponent, PlayerTag, ControllableTag, PrimaryCameraTag>();
     for (auto [entity, transform, cam, movement, cc, lock, spawn] : view.each()) {
 
         bool captured = input_.wantsCaptureMouse();
         const bool locked = lock.active;
 
         if (transform.position.y < spawn.fallRespawnY) {
-            physics_.setCharacterVelocity(glm::vec3(0.0f));
-            physics_.setCharacterPosition(spawn.respawnPosition - glm::vec3(0.0f, cc.eyeOffset(), 0.0f));
+            physics_.setCharacterVelocity(entity, glm::vec3(0.0f));
+            physics_.setCharacterPosition(entity, spawn.respawnPosition - glm::vec3(0.0f, cc.eyeOffset(), 0.0f));
             movement.velocity = glm::vec3(0.0f);
             movement.jumpHeld = false;
             transform.position = spawn.respawnPosition;
@@ -83,7 +87,7 @@ void PlayerMovementSystem::update(Application& app, float deltaTime) {
 
         // --- 3. Apply acceleration/deceleration ---
         bool hasInput = glm::length(inputDir) > 0.001f;
-        GroundState groundState = physics_.getCharacterGroundState();
+        GroundState groundState = physics_.getCharacterGroundState(entity);
         movement.grounded = (groundState == GroundState::OnGround);
 
         float accel;
@@ -129,20 +133,20 @@ void PlayerMovementSystem::update(Application& app, float deltaTime) {
         }
 
         // --- 5. Update physics character ---
-        physics_.setCharacterVelocity(movement.velocity);
-        physics_.updateCharacter(deltaTime, glm::vec3(0.0f, movement.gravity, 0.0f));
+        physics_.setCharacterVelocity(entity, movement.velocity);
+        physics_.updateCharacter(entity, deltaTime, glm::vec3(0.0f, movement.gravity, 0.0f));
 
         // --- 6. Sync transform from physics ---
-        glm::vec3 charPos = physics_.getCharacterPosition();
+        glm::vec3 charPos = physics_.getCharacterPosition(entity);
         transform.position = charPos + glm::vec3(0.0f, cc.eyeOffset(), 0.0f);
 
         // Update velocity from character (physics may have modified it due to collisions)
         // Keep our velocity for next frame's acceleration math
 
         // Refresh ground state after physics update
-        movement.grounded = (physics_.getCharacterGroundState() == GroundState::OnGround);
+        movement.grounded = (physics_.getCharacterGroundState(entity) == GroundState::OnGround);
 
-        break; // only one player
+        break;
     }
 }
 
