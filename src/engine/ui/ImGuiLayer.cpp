@@ -152,7 +152,7 @@ void ImGuiLayer::renderViewmodelOverlay(ViewmodelComponent& vm) {
 
     ImGui::DragFloat3("Position", &vm.viewOffset.x, 0.005f, -1.0f, 1.0f, "%.3f");
     ImGui::DragFloat3("Rotation", &vm.rotation.x, 0.5f, -360.0f, 360.0f, "%.1f");
-    ImGui::DragFloat("Scale", &vm.scale, 0.0001f, 0.0001f, 0.1f, "%.4f");
+    ImGui::DragFloat3("Scale", &vm.scale.x, 0.0001f, 0.0001f, 0.5f, "%.4f");
 
     ImGui::Separator();
     ImGui::DragFloat3("Mesh Center", &vm.meshCenter.x, 0.5f, -500.0f, 500.0f, "%.1f");

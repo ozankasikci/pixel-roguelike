@@ -30,15 +30,15 @@ namespace {
 constexpr glm::vec3 kPlayerTorchColor{1.00f, 0.78f, 0.48f};
 constexpr float kPlayerTorchRadius = 5.6f;
 constexpr float kPlayerTorchIntensity = 0.52f;
-constexpr float kPlayerTorchForwardOffset = 0.62f;
-constexpr float kPlayerTorchRightOffset = 0.20f;
-constexpr float kPlayerTorchDownOffset = 0.06f;
+constexpr float kPlayerTorchForwardOffset = 0.36f;
+constexpr float kPlayerTorchRightOffset = -0.24f;
+constexpr float kPlayerTorchDownOffset = 0.02f;
 constexpr glm::vec3 kPlayerHandGlowColor{1.00f, 0.90f, 0.74f};
 constexpr float kPlayerHandGlowRadius = 1.9f;
 constexpr float kPlayerHandGlowIntensity = 0.34f;
-constexpr float kPlayerHandGlowForwardOffset = 0.34f;
-constexpr float kPlayerHandGlowRightOffset = 0.28f;
-constexpr float kPlayerHandGlowDownOffset = 0.24f;
+constexpr float kPlayerHandGlowForwardOffset = 0.30f;
+constexpr float kPlayerHandGlowRightOffset = -0.20f;
+constexpr float kPlayerHandGlowDownOffset = 0.12f;
 
 float playerTorchFlicker(float timeSeconds) {
     float pulseA = std::sin(timeSeconds * 5.7f) * 0.5f + 0.5f;
@@ -120,7 +120,7 @@ std::vector<RenderObject> RenderSystem::collectViewmodelObjects(entt::registry& 
         model = model * glm::rotate(glm::mat4(1.0f), glm::radians(vm.rotation.x), glm::vec3(1.0f, 0.0f, 0.0f));
         model = model * glm::rotate(glm::mat4(1.0f), glm::radians(vm.rotation.y), glm::vec3(0.0f, 1.0f, 0.0f));
         model = model * glm::rotate(glm::mat4(1.0f), glm::radians(vm.rotation.z), glm::vec3(0.0f, 0.0f, 1.0f));
-        model = model * glm::scale(glm::mat4(1.0f), glm::vec3(vm.scale));
+        model = model * glm::scale(glm::mat4(1.0f), vm.scale);
         model = model * glm::translate(glm::mat4(1.0f), -vm.meshCenter);
 
         objects.push_back({mesh.mesh, model, mesh.tint, mesh.material});
