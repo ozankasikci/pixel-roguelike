@@ -1,5 +1,5 @@
 #include "ImGuiLayer.h"
-#include "engine/rendering/Renderer.h"
+#include "engine/rendering/geometry/Renderer.h"
 #include "game/content/ContentRegistry.h"
 #include "game/session/RunSession.h"
 #include "game/ui/InventoryMenuState.h"
@@ -45,12 +45,34 @@ void ImGuiLayer::endFrame() {
 void ImGuiLayer::renderOverlay(DebugParams& params, std::vector<PointLight>& lights) {
     ImGui::Begin("Debug Overlay");
 
+    if (ImGui::CollapsingHeader("Render", ImGuiTreeNodeFlags_DefaultOpen)) {
+        const char* viewModes[] = {"Final", "Scene Color", "Normals", "Depth"};
+        const char* toneMapModes[] = {"Linear", "ACES Fitted"};
+        ImGui::Combo("View Mode", &params.post.debugViewMode, viewModes, 4);
+        ImGui::Checkbox("Enable Dither", &params.post.enableDither);
+        ImGui::Checkbox("Enable Edges", &params.post.enableEdges);
+        ImGui::Checkbox("Enable Fog", &params.post.enableFog);
+        ImGui::Checkbox("Enable Tone Map", &params.post.enableToneMap);
+        ImGui::Checkbox("Enable Bloom", &params.post.enableBloom);
+        ImGui::Checkbox("Enable Vignette", &params.post.enableVignette);
+        ImGui::Checkbox("Enable Grain", &params.post.enableGrain);
+        ImGui::Checkbox("Enable Scanlines", &params.post.enableScanlines);
+        ImGui::Checkbox("Enable Sharpen", &params.post.enableSharpen);
+        ImGui::Combo("Tone Mapper", &params.post.toneMapMode, toneMapModes, 2);
+    }
+
     // ------------------------------------------------------------------
     // Dither section
     // ------------------------------------------------------------------
     if (ImGui::CollapsingHeader("Dither", ImGuiTreeNodeFlags_DefaultOpen)) {
-        ImGui::SliderFloat("Threshold Bias", &params.dither.thresholdBias, -0.5f, 0.5f);
-        ImGui::SliderFloat("Pattern Scale", &params.dither.patternScale, 64.0f, 512.0f);
+        ImGui::SliderFloat("Threshold Bias", &params.post.thresholdBias, -0.5f, 0.5f);
+        ImGui::SliderFloat("Pattern Scale", &params.post.patternScale, 0.0f, 512.0f, "%.1f");
+        if (params.post.patternScale <= 1.0f) {
+            ImGui::TextUnformatted("Pattern Scale: Auto (matches internal resolution)");
+        }
+        if (params.post.debugViewMode == 3) {
+            ImGui::SliderFloat("Depth View Scale", &params.post.depthViewScale, 0.01f, 0.30f, "%.3f");
+        }
 
         const char* resOptions[] = {"480p (854x480)", "540p (960x540)", "720p (1280x720)"};
         int prevIndex = params.internalResIndex;
@@ -64,9 +86,55 @@ void ImGuiLayer::renderOverlay(DebugParams& params, std::vector<PointLight>& lig
     // Post-Process section (edges + fog)
     // ------------------------------------------------------------------
     if (ImGui::CollapsingHeader("Post-Process", ImGuiTreeNodeFlags_DefaultOpen)) {
-        ImGui::SliderFloat("Edge Threshold", &params.dither.edgeThreshold, 0.0f, 1.0f, "%.2f");
-        ImGui::SliderFloat("Fog Density", &params.dither.fogDensity, 0.0f, 0.5f, "%.3f");
-        ImGui::SliderFloat("Fog Start", &params.dither.fogStart, 0.0f, 20.0f, "%.1f");
+        ImGui::BeginDisabled(!params.post.enableEdges);
+        ImGui::SliderFloat("Edge Threshold", &params.post.edgeThreshold, 0.0f, 1.0f, "%.2f");
+        ImGui::EndDisabled();
+
+        ImGui::BeginDisabled(!params.post.enableFog);
+        ImGui::SliderFloat("Fog Density", &params.post.fogDensity, 0.0f, 0.5f, "%.3f");
+        ImGui::SliderFloat("Fog Start", &params.post.fogStart, 0.0f, 20.0f, "%.1f");
+        ImGui::EndDisabled();
+    }
+
+    if (ImGui::CollapsingHeader("Color Grading", ImGuiTreeNodeFlags_DefaultOpen)) {
+        ImGui::BeginDisabled(!params.post.enableToneMap);
+        ImGui::SliderFloat("Exposure", &params.post.exposure, 0.2f, 2.5f, "%.2f");
+        ImGui::SliderFloat("Gamma", &params.post.gamma, 0.6f, 1.8f, "%.2f");
+        ImGui::EndDisabled();
+        ImGui::SliderFloat("Contrast", &params.post.contrast, 0.5f, 1.8f, "%.2f");
+        ImGui::SliderFloat("Saturation", &params.post.saturation, 0.0f, 1.5f, "%.2f");
+        ImGui::SliderFloat("Split Strength", &params.post.splitToneStrength, 0.0f, 0.6f, "%.2f");
+        ImGui::SliderFloat("Split Balance", &params.post.splitToneBalance, 0.15f, 0.85f, "%.2f");
+        ImGui::ColorEdit3("Shadow Tint", &params.post.shadowTint.x, ImGuiColorEditFlags_Float | ImGuiColorEditFlags_NoInputs);
+        ImGui::ColorEdit3("Highlight Tint", &params.post.highlightTint.x, ImGuiColorEditFlags_Float | ImGuiColorEditFlags_NoInputs);
+    }
+
+    if (ImGui::CollapsingHeader("Glow", ImGuiTreeNodeFlags_DefaultOpen)) {
+        ImGui::BeginDisabled(!params.post.enableBloom);
+        ImGui::SliderFloat("Bloom Threshold", &params.post.bloomThreshold, 0.1f, 1.2f, "%.2f");
+        ImGui::SliderFloat("Bloom Intensity", &params.post.bloomIntensity, 0.0f, 1.0f, "%.2f");
+        ImGui::SliderFloat("Bloom Radius", &params.post.bloomRadius, 0.5f, 5.0f, "%.2f");
+        ImGui::EndDisabled();
+    }
+
+    if (ImGui::CollapsingHeader("Lens", ImGuiTreeNodeFlags_DefaultOpen)) {
+        ImGui::BeginDisabled(!params.post.enableVignette);
+        ImGui::SliderFloat("Vignette Strength", &params.post.vignetteStrength, 0.0f, 1.0f, "%.2f");
+        ImGui::SliderFloat("Vignette Softness", &params.post.vignetteSoftness, 0.1f, 1.2f, "%.2f");
+        ImGui::EndDisabled();
+
+        ImGui::BeginDisabled(!params.post.enableGrain);
+        ImGui::SliderFloat("Grain Amount", &params.post.grainAmount, 0.0f, 0.2f, "%.3f");
+        ImGui::EndDisabled();
+
+        ImGui::BeginDisabled(!params.post.enableScanlines);
+        ImGui::SliderFloat("Scanline Amount", &params.post.scanlineAmount, 0.0f, 0.35f, "%.2f");
+        ImGui::SliderFloat("Scanline Density", &params.post.scanlineDensity, 0.5f, 3.0f, "%.2f");
+        ImGui::EndDisabled();
+
+        ImGui::BeginDisabled(!params.post.enableSharpen);
+        ImGui::SliderFloat("Sharpen Amount", &params.post.sharpenAmount, 0.0f, 1.0f, "%.2f");
+        ImGui::EndDisabled();
     }
 
     // ------------------------------------------------------------------

@@ -1,4 +1,4 @@
-#include "Shader.h"
+#include "engine/rendering/core/Shader.h"
 #include "engine/core/PathUtils.h"
 
 #include <spdlog/spdlog.h>

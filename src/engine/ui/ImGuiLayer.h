@@ -2,7 +2,7 @@
 
 #include <glm/glm.hpp>
 #include <vector>
-#include "engine/rendering/DitherPass.h"
+#include "engine/rendering/post/PostProcessParams.h"
 
 // Forward declarations
 struct GLFWwindow;
@@ -15,8 +15,8 @@ struct InventoryMenuState;
 struct RunSession;
 
 struct DebugParams {
-    // Dither parameters
-    DitherParams dither;
+    // Post-processing parameters
+    PostProcessParams post;
 
     int   internalResIndex  = 2;      // 0=480p, 1=540p, 2=720p
     bool  resolutionChanged = false;

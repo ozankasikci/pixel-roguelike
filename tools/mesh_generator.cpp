@@ -6,7 +6,7 @@
 #define TINYGLTF_NO_STB_IMAGE_WRITE
 #include "tiny_gltf.h"
 
-#include "engine/rendering/MeshGeometry.h"
+#include "engine/rendering/geometry/MeshGeometry.h"
 #include <glm/gtc/matrix_transform.hpp>
 
 #include <cstdio>

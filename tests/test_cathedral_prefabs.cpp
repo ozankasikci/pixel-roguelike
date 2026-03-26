@@ -1,4 +1,4 @@
-#include "engine/rendering/MeshLibrary.h"
+#include "engine/rendering/geometry/MeshLibrary.h"
 #include "game/components/CheckpointComponent.h"
 #include "game/components/DoorComponent.h"
 #include "game/components/DoorLeafComponent.h"

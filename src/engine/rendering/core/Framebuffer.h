@@ -19,6 +19,7 @@ public:
     GLuint colorTexture() const { return colorTex_; }
     GLuint depthTexture() const { return depthTex_; }
     GLuint normalTexture() const { return normalTex_; }
+    GLuint framebuffer() const { return fbo_; }
     int width() const { return width_; }
     int height() const { return height_; }
 

@@ -4,7 +4,7 @@
 #include <memory>
 #include <unordered_map>
 
-#include "engine/rendering/Mesh.h"
+#include "engine/rendering/geometry/Mesh.h"
 
 class MeshLibrary {
 public:

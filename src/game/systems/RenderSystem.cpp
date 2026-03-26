@@ -1,7 +1,7 @@
 #include "game/systems/RenderSystem.h"
 #include "engine/core/Application.h"
 #include "engine/core/Window.h"
-#include "engine/rendering/MeshLibrary.h"
+#include "engine/rendering/geometry/MeshLibrary.h"
 #include "game/rendering/MeshAssetProvider.h"
 #include "game/components/TransformComponent.h"
 #include "game/components/MeshComponent.h"
@@ -27,13 +27,13 @@ constexpr int RenderSystem::RES_H[];
 
 namespace {
 
-constexpr glm::vec3 kPlayerTorchColor{1.00f, 0.78f, 0.48f};
+constexpr glm::vec3 kPlayerTorchColor{1.00f, 0.89f, 0.76f};
 constexpr float kPlayerTorchRadius = 5.6f;
 constexpr float kPlayerTorchIntensity = 0.52f;
 constexpr float kPlayerTorchForwardOffset = 0.36f;
 constexpr float kPlayerTorchRightOffset = -0.24f;
 constexpr float kPlayerTorchDownOffset = 0.02f;
-constexpr glm::vec3 kPlayerHandGlowColor{1.00f, 0.90f, 0.74f};
+constexpr glm::vec3 kPlayerHandGlowColor{0.98f, 0.92f, 0.84f};
 constexpr float kPlayerHandGlowRadius = 1.9f;
 constexpr float kPlayerHandGlowIntensity = 0.34f;
 constexpr float kPlayerHandGlowForwardOffset = 0.30f;
@@ -51,9 +51,10 @@ float playerTorchFlicker(float timeSeconds) {
 }
 
 void RenderSystem::init(Application& app) {
-    sceneShader_ = std::make_unique<Shader>("assets/shaders/scene.vert", "assets/shaders/scene.frag");
+    sceneShader_ = std::make_unique<Shader>("assets/shaders/game/scene.vert", "assets/shaders/game/scene.frag");
     renderer_    = std::make_unique<Renderer>(sceneShader_.get());
     sceneFBO_.create(RES_W[2], RES_H[2]);  // default 720p
+    compositeFBO_.create(RES_W[2], RES_H[2]);
     imguiLayer_.init(app.window().handle());
 }
 
@@ -185,19 +186,30 @@ void RenderSystem::renderScenePass(const CameraState& camera,
     glDisable(GL_DEPTH_TEST);
 }
 
-void RenderSystem::renderDitherPass(Application& app, const CameraState& camera) {
+void RenderSystem::renderPostProcess(Application& app, const CameraState& camera) {
     int displayW = app.window().width();
     int displayH = app.window().height();
     glClear(GL_COLOR_BUFFER_BIT);
 
-    debugParams_.dither.nearPlane = 0.1f;
-    debugParams_.dither.farPlane  = 100.0f;
+    (void)camera;
+    debugParams_.post.nearPlane = 0.1f;
+    debugParams_.post.farPlane  = 100.0f;
+    debugParams_.post.timeSeconds = static_cast<float>(glfwGetTime());
 
-    ditherPass_.apply(sceneFBO_.colorTexture(),
-                      sceneFBO_.depthTexture(),
-                      sceneFBO_.normalTexture(),
-                      debugParams_.dither,
-                      displayW, displayH);
+    compositePass_.apply(sceneFBO_.colorTexture(),
+                         sceneFBO_.depthTexture(),
+                         sceneFBO_.normalTexture(),
+                         compositeFBO_.framebuffer(),
+                         debugParams_.post,
+                         compositeFBO_.width(),
+                         compositeFBO_.height());
+
+    stylizePass_.apply(compositeFBO_.colorTexture(),
+                       sceneFBO_.colorTexture(),
+                       sceneFBO_.depthTexture(),
+                       sceneFBO_.normalTexture(),
+                       debugParams_.post,
+                       displayW, displayH);
 }
 
 InteractionPromptState& RenderSystem::ensurePromptState(entt::registry& registry) const {
@@ -267,6 +279,7 @@ void RenderSystem::handleResolutionChange() {
 
     int idx = debugParams_.internalResIndex;
     sceneFBO_.resize(RES_W[idx], RES_H[idx]);
+    compositeFBO_.resize(RES_W[idx], RES_H[idx]);
     spdlog::info("Internal resolution changed to {}x{}", RES_W[idx], RES_H[idx]);
     debugParams_.resolutionChanged = false;
 }
@@ -289,13 +302,14 @@ void RenderSystem::handleCapture(Application& app, int displayW, int displayH) {
 
 void RenderSystem::update(Application& app, float deltaTime) {
     auto& registry = app.registry();
+    const bool escapeOpenedCursor = input_.isKeyJustPressed(GLFW_KEY_ESCAPE) && !input_.isCursorLocked();
     CameraState camera = captureCamera(registry);
     std::vector<RenderObject> objects = collectSceneObjects(registry);
     std::vector<RenderObject> viewmodelObjects = collectViewmodelObjects(registry, camera, deltaTime);
     std::vector<PointLight> lights = collectLights(registry);
 
     renderScenePass(camera, objects, viewmodelObjects, lights);
-    renderDitherPass(app, camera);
+    renderPostProcess(app, camera);
 
     GLFWwindow* win = app.window().handle();
     if (glfwGetKey(win, GLFW_KEY_F1) == GLFW_PRESS && !f1Pressed_) {
@@ -304,6 +318,14 @@ void RenderSystem::update(Application& app, float deltaTime) {
     }
     if (glfwGetKey(win, GLFW_KEY_F1) == GLFW_RELEASE) {
         f1Pressed_ = false;
+    }
+
+    if (escapeOpenedCursor) {
+        const bool inventoryOpen = registry.ctx().contains<InventoryMenuState>()
+            && registry.ctx().get<InventoryMenuState>().open;
+        if (!inventoryOpen) {
+            overlaysVisible_ = true;
+        }
     }
 
     updateDebugParams(camera, deltaTime, objects.size());

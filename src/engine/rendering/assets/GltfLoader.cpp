@@ -2,7 +2,7 @@
 #define TINYGLTF_NO_STB_IMAGE_WRITE
 #include "tiny_gltf.h"
 
-#include "GltfLoader.h"
+#include "engine/rendering/assets/GltfLoader.h"
 
 #include <spdlog/spdlog.h>
 #include <glm/glm.hpp>

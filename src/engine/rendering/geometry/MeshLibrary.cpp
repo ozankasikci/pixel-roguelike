@@ -1,7 +1,7 @@
-#include "engine/rendering/MeshLibrary.h"
+#include "engine/rendering/geometry/MeshLibrary.h"
 #include "engine/core/PathUtils.h"
-#include "engine/rendering/Mesh.h"
-#include "engine/rendering/GltfLoader.h"
+#include "engine/rendering/assets/GltfLoader.h"
+#include "engine/rendering/geometry/Mesh.h"
 
 #include <spdlog/spdlog.h>
 #include <stdexcept>

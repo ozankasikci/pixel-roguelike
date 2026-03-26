@@ -7,4 +7,5 @@ enum class MaterialKind {
     Wax = 3,
     Moss = 4,
     Viewmodel = 5,
+    Floor = 6,
 };

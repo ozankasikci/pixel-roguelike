@@ -27,6 +27,7 @@ const int MATERIAL_METAL = 2;
 const int MATERIAL_WAX   = 3;
 const int MATERIAL_MOSS  = 4;
 const int MATERIAL_VIEWMODEL = 5;
+const int MATERIAL_FLOOR = 6;
 
 // Smooth quartic attenuation
 float attenuation(float dist, float radius) {
@@ -99,6 +100,21 @@ vec3 detailWood(vec3 baseColor) {
     return detail;
 }
 
+vec3 detailFloor(vec3 baseColor) {
+    vec2 p = vWorldPos.xz;
+    float brickBands = 0.5 + 0.5 * sin((p.y + 0.35) * 5.6);
+    float brickNoise = fbm(vec3(p.x * 0.85, 3.2, p.y * 1.65));
+    float jointNoise = fbm(vec3(p.x * 3.0, 8.4, p.y * 3.0));
+
+    vec3 darkBrick = baseColor * vec3(0.82, 0.82, 0.82);
+    vec3 lightBrick = baseColor * vec3(1.03, 1.03, 1.03);
+    vec3 detail = mix(darkBrick, lightBrick, brickNoise * 0.55 + brickBands * 0.20);
+
+    float mortarMask = smoothstep(0.74, 0.92, jointNoise) * 0.18;
+    detail = mix(detail, baseColor * vec3(0.56, 0.50, 0.48), mortarMask);
+    return detail;
+}
+
 vec3 detailMetal(vec3 baseColor, vec3 N) {
     float brushed = fbm(vec3(vLocalPos.y * 18.0, vLocalPos.x * 4.0, vLocalPos.z * 4.0));
     float tarnish = fbm(vWorldPos * 2.4 + vLocalPos * 6.0);
@@ -166,6 +182,9 @@ vec3 applyMaterialDetail(vec3 baseColor, vec3 N) {
     if (uMaterialKind == MATERIAL_METAL) {
         return detailMetal(baseColor, N);
     }
+    if (uMaterialKind == MATERIAL_FLOOR) {
+        return detailFloor(baseColor);
+    }
     if (uMaterialKind == MATERIAL_WAX) {
         return detailWax(baseColor, N);
     }
@@ -180,21 +199,93 @@ vec3 applyMaterialDetail(vec3 baseColor, vec3 N) {
 
 float materialSpecStrength() {
     if (uMaterialKind == MATERIAL_WOOD) {
-        return 0.07;
-    }
-    if (uMaterialKind == MATERIAL_METAL) {
-        return 0.36;
-    }
-    if (uMaterialKind == MATERIAL_WAX) {
-        return 0.18;
-    }
-    if (uMaterialKind == MATERIAL_MOSS) {
         return 0.03;
     }
-    if (uMaterialKind == MATERIAL_VIEWMODEL) {
-        return 0.22;
+    if (uMaterialKind == MATERIAL_METAL) {
+        return 0.18;
     }
-    return 0.10;
+    if (uMaterialKind == MATERIAL_FLOOR) {
+        return 0.0;
+    }
+    if (uMaterialKind == MATERIAL_WAX) {
+        return 0.08;
+    }
+    if (uMaterialKind == MATERIAL_MOSS) {
+        return 0.01;
+    }
+    if (uMaterialKind == MATERIAL_VIEWMODEL) {
+        return 0.12;
+    }
+    return 0.025;
+}
+
+float materialShininess() {
+    if (uMaterialKind == MATERIAL_WOOD) {
+        return 10.0;
+    }
+    if (uMaterialKind == MATERIAL_METAL) {
+        return 24.0;
+    }
+    if (uMaterialKind == MATERIAL_FLOOR) {
+        return 8.0;
+    }
+    if (uMaterialKind == MATERIAL_WAX) {
+        return 14.0;
+    }
+    if (uMaterialKind == MATERIAL_MOSS) {
+        return 8.0;
+    }
+    if (uMaterialKind == MATERIAL_VIEWMODEL) {
+        return 18.0;
+    }
+    return 12.0;
+}
+
+float materialFresnelStrength() {
+    if (uMaterialKind == MATERIAL_METAL) {
+        return 0.05;
+    }
+    if (uMaterialKind == MATERIAL_VIEWMODEL) {
+        return 0.03;
+    }
+    return 0.0;
+}
+
+float materialSpecTint() {
+    if (uMaterialKind == MATERIAL_METAL) {
+        return 0.16;
+    }
+    if (uMaterialKind == MATERIAL_VIEWMODEL) {
+        return 0.10;
+    }
+    return 0.0;
+}
+
+float materialLightTintResponse() {
+    if (uMaterialKind == MATERIAL_WOOD) {
+        return 0.14;
+    }
+    if (uMaterialKind == MATERIAL_METAL) {
+        return 0.28;
+    }
+    if (uMaterialKind == MATERIAL_FLOOR) {
+        return 0.02;
+    }
+    if (uMaterialKind == MATERIAL_WAX) {
+        return 0.20;
+    }
+    if (uMaterialKind == MATERIAL_MOSS) {
+        return 0.10;
+    }
+    if (uMaterialKind == MATERIAL_VIEWMODEL) {
+        return 0.24;
+    }
+    return 0.06;
+}
+
+vec3 normalizedColor(vec3 color) {
+    float maxChannel = max(max(color.r, color.g), color.b);
+    return color / max(maxChannel, 0.001);
 }
 
 void main() {
@@ -203,10 +294,15 @@ void main() {
     vec3 baseColor = clamp(uBaseColor, 0.0, 1.0);
     vec3 albedo = applyMaterialDetail(baseColor, N);
     float specStrength = materialSpecStrength();
+    float shininess = materialShininess();
+    float fresnelStrength = materialFresnelStrength();
+    float specTint = materialSpecTint();
+    float lightTintResponse = materialLightTintResponse();
+    vec3 specBaseTint = mix(vec3(1.0), normalizedColor(albedo), specTint);
 
-    vec3 ambientLight = vec3(0.054, 0.051, 0.047);
-    ambientLight += vec3(0.11, 0.10, 0.09) * max(N.y, 0.0);
-    ambientLight += vec3(0.028, 0.026, 0.024) * max(-N.y, 0.0);
+    vec3 ambientLight = vec3(0.050, 0.048, 0.045);
+    ambientLight += vec3(0.11, 0.11, 0.10) * max(N.y, 0.0);
+    ambientLight += vec3(0.026, 0.025, 0.023) * max(-N.y, 0.0);
     vec3 totalLight = albedo * ambientLight;
 
     for (int i = 0; i < uNumLights; i++) {
@@ -221,16 +317,20 @@ void main() {
 
         // Specular (Blinn-Phong)
         vec3 H = normalize(L + V);
-        float spec = pow(max(dot(N, H), 0.0), 32.0);
-        float fresnel = pow(1.0 - max(dot(N, V), 0.0), 5.0);
+        float spec = pow(max(dot(N, H), 0.0), shininess) * diff;
+        float fresnel = pow(1.0 - max(dot(N, V), 0.0), 5.0) * fresnelStrength;
 
         vec3 lightColor = uPointLights[i].color * atten * uPointLights[i].intensity;
-        totalLight += albedo * lightColor * (diff * 0.92);
-        totalLight += mix(albedo, lightColor, 0.55) * (spec * specStrength + fresnel * specStrength * 0.25);
+        float lightEnergy = dot(lightColor, vec3(0.2126, 0.7152, 0.0722));
+        vec3 diffuseLight = mix(vec3(lightEnergy), lightColor, lightTintResponse);
+        vec3 specularLight = vec3(lightEnergy) * specBaseTint;
+        totalLight += albedo * diffuseLight * (diff * 0.92);
+        totalLight += specularLight * (spec * specStrength + fresnel);
     }
 
-    fragColor = vec4(clamp(totalLight, 0.0, 1.0), 1.0);
+    fragColor = vec4(max(totalLight, vec3(0.0)), 1.0);
 
     // Output world-space normal (packed to 0..1 range for edge detection)
-    fragNormal = vec4(N * 0.5 + 0.5, 1.0);
+    float materialMarker = (float(uMaterialKind) + 0.5) / 8.0;
+    fragNormal = vec4(N * 0.5 + 0.5, materialMarker);
 }

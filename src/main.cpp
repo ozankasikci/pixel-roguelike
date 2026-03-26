@@ -42,7 +42,7 @@ int main(int argc, char* argv[]) {
     auto& inventory = app.addSystem<InventorySystem>(Application::UpdatePhase::Gameplay, input);
     auto& movement = app.addSystem<PlayerMovementSystem>(Application::UpdatePhase::Gameplay, input, physics);
     auto& camera = app.addSystem<CameraSystem>(Application::UpdatePhase::Camera, input);
-    auto& render = app.addSystem<RenderSystem>(Application::UpdatePhase::Render);
+    auto& render = app.addSystem<RenderSystem>(Application::UpdatePhase::Render, input);
     (void)doors;
     (void)checkpoints;
     (void)interaction;

@@ -1,4 +1,4 @@
-#include "engine/rendering/MeshGeometry.h"
+#include "engine/rendering/geometry/MeshGeometry.h"
 #include <glm/gtc/matrix_transform.hpp>
 #include <cassert>
 #include <cstdio>

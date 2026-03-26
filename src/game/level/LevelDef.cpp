@@ -54,6 +54,10 @@ bool tryParseMaterialKind(const std::string& token, MaterialKind& material) {
         material = MaterialKind::Moss;
         return true;
     }
+    if (token == "floor") {
+        material = MaterialKind::Floor;
+        return true;
+    }
     return false;
 }
 

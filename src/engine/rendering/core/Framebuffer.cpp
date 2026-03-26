@@ -1,4 +1,4 @@
-#include "Framebuffer.h"
+#include "engine/rendering/core/Framebuffer.h"
 
 #include <spdlog/spdlog.h>
 #include <stdexcept>
@@ -20,10 +20,10 @@ void Framebuffer::create(int width, int height) {
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 
-    // Color attachment 1: GL_RGB16F (world-space normals for edge detection)
+    // Color attachment 1: GL_RGBA16F (world-space normals + material marker for post-process palette decisions)
     glGenTextures(1, &normalTex_);
     glBindTexture(GL_TEXTURE_2D, normalTex_);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB16F, width, height, 0, GL_RGB, GL_FLOAT, nullptr);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, width, height, 0, GL_RGBA, GL_FLOAT, nullptr);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
@@ -57,7 +57,7 @@ void Framebuffer::create(int width, int height) {
     }
 
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
-    spdlog::info("Framebuffer created: {}x{} GL_RGB16F + normals + depth", width, height);
+    spdlog::info("Framebuffer created: {}x{} GL_RGB16F + RGBA normals/material + depth", width, height);
 }
 
 void Framebuffer::bind() {

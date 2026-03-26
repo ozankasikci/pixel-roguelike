@@ -1,6 +1,6 @@
-#include "Renderer.h"
-#include "Shader.h"
-#include "Mesh.h"
+#include "engine/rendering/geometry/Renderer.h"
+#include "engine/rendering/core/Shader.h"
+#include "engine/rendering/geometry/Mesh.h"
 
 #include <algorithm>
 

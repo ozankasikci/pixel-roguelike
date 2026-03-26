@@ -1,7 +1,7 @@
 #pragma once
 
-#include "Mesh.h"
-#include "MeshGeometry.h"
+#include "engine/rendering/geometry/Mesh.h"
+#include "engine/rendering/geometry/MeshGeometry.h"
 #include <memory>
 #include <string>
 

@@ -1,9 +1,11 @@
 #pragma once
 #include "engine/core/System.h"
-#include "engine/rendering/Framebuffer.h"
-#include "engine/rendering/DitherPass.h"
-#include "engine/rendering/Renderer.h"
-#include "engine/rendering/Shader.h"
+#include "engine/rendering/core/Framebuffer.h"
+#include "engine/rendering/core/Shader.h"
+#include "engine/rendering/geometry/Renderer.h"
+#include "engine/rendering/post/CompositePass.h"
+#include "engine/rendering/post/StylizePass.h"
+#include "engine/input/InputSystem.h"
 #include "engine/ui/ImGuiLayer.h"
 #include "engine/ui/Screenshot.h"
 #include <memory>
@@ -14,6 +16,8 @@ struct InteractionPromptState;
 
 class RenderSystem : public System {
 public:
+    explicit RenderSystem(InputSystem& input) : input_(input) {}
+
     void init(Application& app) override;
     void update(Application& app, float deltaTime) override;
     void shutdown() override;
@@ -42,7 +46,7 @@ private:
                          const std::vector<RenderObject>& objects,
                          const std::vector<RenderObject>& viewmodelObjects,
                          const std::vector<PointLight>& lights);
-    void renderDitherPass(Application& app, const CameraState& camera);
+    void renderPostProcess(Application& app, const CameraState& camera);
     InteractionPromptState& ensurePromptState(entt::registry& registry) const;
     void updateDebugParams(const CameraState& camera, float deltaTime, std::size_t drawCalls);
     void renderOverlays(Application& app,
@@ -53,12 +57,15 @@ private:
     void handleCapture(Application& app, int displayW, int displayH);
 
     Framebuffer sceneFBO_;
+    Framebuffer compositeFBO_;
     std::unique_ptr<Shader> sceneShader_;
     std::unique_ptr<Renderer> renderer_;
-    DitherPass ditherPass_;
+    CompositePass compositePass_;
+    StylizePass stylizePass_;
     ImGuiLayer imguiLayer_;
     DebugParams debugParams_;
     AutoScreenshot autoCapture_;
+    InputSystem& input_;
     bool overlaysVisible_ = false;
     bool f1Pressed_ = false;
     bool f12Pressed_ = false;

@@ -1,5 +1,5 @@
 #pragma once
 
-#include "engine/rendering/MeshLibrary.h"
+#include "engine/rendering/geometry/MeshLibrary.h"
 
 void registerCathedralAssets(MeshLibrary& meshLibrary);
