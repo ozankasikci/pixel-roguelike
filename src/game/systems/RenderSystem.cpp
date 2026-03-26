@@ -3,6 +3,7 @@
 #include "engine/core/Window.h"
 #include "engine/rendering/geometry/MeshLibrary.h"
 #include "game/rendering/MeshAssetProvider.h"
+#include "game/rendering/EnvironmentProfile.h"
 #include "game/components/TransformComponent.h"
 #include "game/components/MeshComponent.h"
 #include "game/components/LightComponent.h"
@@ -92,6 +93,7 @@ void RenderSystem::init(Application& app) {
         shadowMap.create(shadowResolution());
     }
     imguiLayer_.init(app.window().handle());
+    applyEnvironmentSettings(EnvironmentProfile::Neutral);
 }
 
 RenderSystem::CameraState RenderSystem::captureCamera(entt::registry& registry) const {
@@ -285,6 +287,75 @@ LightingEnvironment RenderSystem::lightingEnvironment() const {
     lighting.shadowBias = debugParams_.shadowBias;
     lighting.shadowNormalBias = debugParams_.shadowNormalBias;
     return lighting;
+}
+
+void RenderSystem::applyEnvironmentSettings(EnvironmentProfile profile) {
+    const EnvironmentRenderSettings settings = makeEnvironmentRenderSettings(profile);
+
+    const bool enableDither = debugParams_.post.enableDither;
+    const bool enableEdges = debugParams_.post.enableEdges;
+    const bool enableFog = debugParams_.post.enableFog;
+    const bool enableToneMap = debugParams_.post.enableToneMap;
+    const bool enableBloom = debugParams_.post.enableBloom;
+    const bool enableVignette = debugParams_.post.enableVignette;
+    const bool enableGrain = debugParams_.post.enableGrain;
+    const bool enableScanlines = debugParams_.post.enableScanlines;
+    const bool enableSharpen = debugParams_.post.enableSharpen;
+    const int debugViewMode = debugParams_.post.debugViewMode;
+    const int toneMapMode = debugParams_.post.toneMapMode;
+    const float patternScale = debugParams_.post.patternScale;
+    const float depthViewScale = debugParams_.post.depthViewScale;
+    const float nearPlane = debugParams_.post.nearPlane;
+    const float farPlane = debugParams_.post.farPlane;
+    const float timeSeconds = debugParams_.post.timeSeconds;
+
+    debugParams_.post = settings.post;
+    debugParams_.post.enableDither = enableDither;
+    debugParams_.post.enableEdges = enableEdges;
+    debugParams_.post.enableFog = enableFog;
+    debugParams_.post.enableToneMap = enableToneMap;
+    debugParams_.post.enableBloom = enableBloom;
+    debugParams_.post.enableVignette = enableVignette;
+    debugParams_.post.enableGrain = enableGrain;
+    debugParams_.post.enableScanlines = enableScanlines;
+    debugParams_.post.enableSharpen = enableSharpen;
+    debugParams_.post.debugViewMode = debugViewMode;
+    debugParams_.post.toneMapMode = toneMapMode;
+    debugParams_.post.patternScale = patternScale;
+    debugParams_.post.depthViewScale = depthViewScale;
+    debugParams_.post.nearPlane = nearPlane;
+    debugParams_.post.farPlane = farPlane;
+    debugParams_.post.timeSeconds = timeSeconds;
+
+    debugParams_.hemisphereSkyColor = settings.lighting.hemisphereSkyColor;
+    debugParams_.hemisphereGroundColor = settings.lighting.hemisphereGroundColor;
+    debugParams_.hemisphereStrength = settings.lighting.hemisphereStrength;
+    debugParams_.enableDirectionalLights = settings.lighting.enableDirectionalLights;
+    debugParams_.directionalLightIntensityScale = settings.lighting.directionalIntensityScale;
+}
+
+void RenderSystem::syncEnvironmentProfile(entt::registry& registry) {
+    if (!registry.ctx().contains<ActiveEnvironmentProfile>()) {
+        if (!hasAppliedEnvironmentProfile_) {
+            applyEnvironmentSettings(EnvironmentProfile::Neutral);
+            hasAppliedEnvironmentProfile_ = true;
+            appliedEnvironmentLevelId_.clear();
+            appliedEnvironmentProfile_ = EnvironmentProfile::Neutral;
+        }
+        return;
+    }
+
+    const auto& active = registry.ctx().get<ActiveEnvironmentProfile>();
+    if (hasAppliedEnvironmentProfile_
+        && active.levelId == appliedEnvironmentLevelId_
+        && active.profile == appliedEnvironmentProfile_) {
+        return;
+    }
+
+    applyEnvironmentSettings(active.profile);
+    hasAppliedEnvironmentProfile_ = true;
+    appliedEnvironmentLevelId_ = active.levelId;
+    appliedEnvironmentProfile_ = active.profile;
 }
 
 int RenderSystem::shadowResolution() const {
@@ -505,6 +576,7 @@ void RenderSystem::handleCapture(Application& app, int displayW, int displayH) {
 
 void RenderSystem::update(Application& app, float deltaTime) {
     auto& registry = app.registry();
+    syncEnvironmentProfile(registry);
     const bool escapeOpenedCursor = input_.isKeyJustPressed(GLFW_KEY_ESCAPE) && !input_.isCursorLocked();
     CameraState camera = captureCamera(registry);
     std::vector<RenderObject> objects = collectSceneObjects(registry);

@@ -1,5 +1,7 @@
 #include "game/level/LevelDef.h"
 
+#include "game/rendering/EnvironmentProfile.h"
+
 #include <cctype>
 #include <fstream>
 #include <sstream>
@@ -130,6 +132,17 @@ LevelDef loadLevelDef(const std::string& path) {
                 }
             }
             data.meshes.push_back(std::move(placement));
+            continue;
+        }
+
+        if (kind == "environment_profile") {
+            std::string token;
+            if (!(stream >> token)) {
+                throwParseError(path, lineNumber, "invalid environment_profile record");
+            }
+            if (!tryParseEnvironmentProfileToken(token, data.environmentProfile)) {
+                throwParseError(path, lineNumber, "unknown environment_profile '" + token + "'");
+            }
             continue;
         }
 

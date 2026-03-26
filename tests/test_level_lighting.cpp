@@ -5,6 +5,7 @@
 int main() {
     const auto data = loadLevelDef(LIGHT_RECORDS_SCENE_FILE);
 
+    assert(data.environmentProfile == EnvironmentProfile::SunlitMeadow);
     assert(data.lights.size() == 3);
 
     const auto& point = data.lights[0];

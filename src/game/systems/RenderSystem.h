@@ -9,6 +9,7 @@
 #include "engine/input/InputSystem.h"
 #include "engine/ui/ImGuiLayer.h"
 #include "engine/ui/Screenshot.h"
+#include "game/rendering/EnvironmentProfile.h"
 #include <array>
 #include <memory>
 #include <string>
@@ -46,6 +47,8 @@ private:
     std::vector<RenderLight> collectLights(entt::registry& registry) const;
     void assignShadowSlots(std::vector<RenderLight>& lights) const;
     LightingEnvironment lightingEnvironment() const;
+    void syncEnvironmentProfile(entt::registry& registry);
+    void applyEnvironmentSettings(EnvironmentProfile profile);
     int shadowResolution() const;
     glm::mat4 buildShadowMatrix(const RenderLight& light) const;
     void renderShadowPass(const std::vector<RenderObject>& objects,
@@ -80,6 +83,9 @@ private:
     bool overlaysVisible_ = false;
     bool f1Pressed_ = false;
     bool f12Pressed_ = false;
+    bool hasAppliedEnvironmentProfile_ = false;
+    std::string appliedEnvironmentLevelId_;
+    EnvironmentProfile appliedEnvironmentProfile_ = EnvironmentProfile::Neutral;
 
     // Internal resolution presets (same as current main.cpp)
     static constexpr int RES_W[] = {854, 960, 1280};

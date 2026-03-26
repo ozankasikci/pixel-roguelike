@@ -76,6 +76,7 @@ void StylizePass::apply(GLuint compositeColorTex,
     shader_->setInt("uEnableDither", params.enableDither ? 1 : 0);
     shader_->setInt("uEnableEdges", params.enableEdges ? 1 : 0);
     shader_->setInt("uDebugViewMode", params.debugViewMode);
+    shader_->setInt("uPaletteVariant", params.paletteVariant);
     shader_->setFloat("uThresholdBias", params.thresholdBias);
     shader_->setFloat("uPatternScale", params.patternScale);
     shader_->setFloat("uEdgeThreshold", params.edgeThreshold);

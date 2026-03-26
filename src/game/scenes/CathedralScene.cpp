@@ -5,6 +5,7 @@
 #include "game/level/LevelLoader.h"
 #include "game/levels/cathedral/CathedralAssets.h"
 #include "game/rendering/MeshAssetProvider.h"
+#include "game/rendering/EnvironmentProfile.h"
 
 void CathedralScene::onEnter(Application& app) {
     entities_.clear();
@@ -31,6 +32,9 @@ void CathedralScene::onExit(Application& app) {
     auto& ctx = app.registry().ctx();
     if (ctx.contains<MeshAssetProvider>()) {
         ctx.erase<MeshAssetProvider>();
+    }
+    if (ctx.contains<ActiveEnvironmentProfile>()) {
+        ctx.erase<ActiveEnvironmentProfile>();
     }
     meshLibrary_.clear();
 }

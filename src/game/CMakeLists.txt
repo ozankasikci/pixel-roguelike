@@ -1,5 +1,6 @@
 add_library(game STATIC
     content/ContentRegistry.cpp
+    rendering/EnvironmentProfile.cpp
     session/EquipmentState.cpp
     scenes/CathedralScene.cpp
     systems/InteractionSystem.cpp

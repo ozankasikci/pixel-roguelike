@@ -8,6 +8,7 @@ uniform sampler2D sceneNormal;
 uniform int uEnableDither;
 uniform int uEnableEdges;
 uniform int uDebugViewMode;
+uniform int uPaletteVariant;
 uniform float uThresholdBias;
 uniform float uPatternScale;
 uniform float uEdgeThreshold;
@@ -20,30 +21,130 @@ in vec2 vTexCoord;
 out vec4 fragColor;
 
 const vec3 lumaWeights = vec3(0.2126, 0.7152, 0.0722);
-const vec3 inkPalette[15] = vec3[15](
+const vec3 neutralInkPalette[15] = vec3[15](
     vec3(0.00, 0.00, 0.00),
-    vec3(0.06, 0.05, 0.05),
-    vec3(0.12, 0.11, 0.11),
-    vec3(0.20, 0.19, 0.19),
-    vec3(0.30, 0.29, 0.28),
-    vec3(0.42, 0.41, 0.40),
-    vec3(0.56, 0.55, 0.53),
-    vec3(0.70, 0.69, 0.66),
-    vec3(0.84, 0.83, 0.80),
-    vec3(0.96, 0.95, 0.90),
-    vec3(0.33, 0.13, 0.10),
-    vec3(0.49, 0.20, 0.15),
-    vec3(0.65, 0.28, 0.19),
-    vec3(0.64, 0.55, 0.30),
-    vec3(0.80, 0.71, 0.36)
+    vec3(0.03, 0.03, 0.04),
+    vec3(0.07, 0.07, 0.08),
+    vec3(0.12, 0.12, 0.13),
+    vec3(0.18, 0.17, 0.16),
+    vec3(0.25, 0.23, 0.21),
+    vec3(0.33, 0.30, 0.27),
+    vec3(0.42, 0.38, 0.33),
+    vec3(0.52, 0.47, 0.41),
+    vec3(0.63, 0.58, 0.51),
+    vec3(0.74, 0.69, 0.60),
+    vec3(0.84, 0.78, 0.68),
+    vec3(0.92, 0.87, 0.77),
+    vec3(0.62, 0.64, 0.69),
+    vec3(0.39, 0.36, 0.31)
 );
-const vec3 floorInkPalette[6] = vec3[6](
-    vec3(0.18, 0.06, 0.05),
-    vec3(0.29, 0.10, 0.08),
-    vec3(0.40, 0.15, 0.11),
-    vec3(0.52, 0.21, 0.15),
-    vec3(0.64, 0.29, 0.19),
-    vec3(0.78, 0.39, 0.24)
+const vec3 dungeonInkPalette[15] = vec3[15](
+    vec3(0.00, 0.00, 0.00),
+    vec3(0.02, 0.02, 0.01),
+    vec3(0.06, 0.04, 0.02),
+    vec3(0.11, 0.08, 0.04),
+    vec3(0.17, 0.12, 0.06),
+    vec3(0.24, 0.17, 0.09),
+    vec3(0.33, 0.23, 0.12),
+    vec3(0.43, 0.30, 0.16),
+    vec3(0.55, 0.39, 0.21),
+    vec3(0.67, 0.48, 0.27),
+    vec3(0.79, 0.58, 0.34),
+    vec3(0.92, 0.67, 0.28),
+    vec3(1.00, 0.82, 0.38),
+    vec3(0.84, 0.68, 0.43),
+    vec3(0.50, 0.39, 0.24)
+);
+const vec3 meadowInkPalette[15] = vec3[15](
+    vec3(0.00, 0.00, 0.00),
+    vec3(0.03, 0.05, 0.05),
+    vec3(0.06, 0.09, 0.08),
+    vec3(0.10, 0.14, 0.11),
+    vec3(0.15, 0.19, 0.13),
+    vec3(0.21, 0.26, 0.15),
+    vec3(0.29, 0.35, 0.19),
+    vec3(0.38, 0.46, 0.24),
+    vec3(0.50, 0.60, 0.31),
+    vec3(0.65, 0.73, 0.39),
+    vec3(0.82, 0.83, 0.50),
+    vec3(0.93, 0.80, 0.46),
+    vec3(0.66, 0.76, 0.92),
+    vec3(0.89, 0.67, 0.34),
+    vec3(0.37, 0.29, 0.19)
+);
+const vec3 duskInkPalette[15] = vec3[15](
+    vec3(0.00, 0.00, 0.00),
+    vec3(0.03, 0.03, 0.05),
+    vec3(0.06, 0.06, 0.10),
+    vec3(0.10, 0.10, 0.16),
+    vec3(0.15, 0.15, 0.22),
+    vec3(0.21, 0.22, 0.30),
+    vec3(0.30, 0.31, 0.41),
+    vec3(0.40, 0.41, 0.54),
+    vec3(0.52, 0.52, 0.66),
+    vec3(0.64, 0.62, 0.75),
+    vec3(0.77, 0.72, 0.78),
+    vec3(0.88, 0.82, 0.68),
+    vec3(0.59, 0.67, 0.81),
+    vec3(0.36, 0.28, 0.34),
+    vec3(0.22, 0.18, 0.18)
+);
+const vec3 arcaneInkPalette[15] = vec3[15](
+    vec3(0.00, 0.00, 0.00),
+    vec3(0.02, 0.04, 0.04),
+    vec3(0.05, 0.08, 0.08),
+    vec3(0.08, 0.13, 0.12),
+    vec3(0.12, 0.20, 0.18),
+    vec3(0.18, 0.29, 0.23),
+    vec3(0.26, 0.40, 0.27),
+    vec3(0.38, 0.55, 0.31),
+    vec3(0.55, 0.71, 0.35),
+    vec3(0.74, 0.78, 0.39),
+    vec3(0.90, 0.78, 0.34),
+    vec3(0.29, 0.62, 0.78),
+    vec3(0.53, 0.83, 0.90),
+    vec3(0.77, 0.32, 0.20),
+    vec3(0.40, 0.28, 0.12)
+);
+const vec3 neutralFloorPalette[6] = vec3[6](
+    vec3(0.08, 0.08, 0.08),
+    vec3(0.15, 0.14, 0.13),
+    vec3(0.24, 0.22, 0.19),
+    vec3(0.35, 0.31, 0.27),
+    vec3(0.49, 0.43, 0.37),
+    vec3(0.66, 0.59, 0.51)
+);
+const vec3 dungeonFloorPalette[6] = vec3[6](
+    vec3(0.07, 0.05, 0.03),
+    vec3(0.13, 0.09, 0.05),
+    vec3(0.21, 0.15, 0.08),
+    vec3(0.31, 0.22, 0.11),
+    vec3(0.44, 0.31, 0.16),
+    vec3(0.60, 0.43, 0.23)
+);
+const vec3 meadowFloorPalette[6] = vec3[6](
+    vec3(0.10, 0.08, 0.04),
+    vec3(0.19, 0.14, 0.06),
+    vec3(0.31, 0.23, 0.10),
+    vec3(0.46, 0.35, 0.16),
+    vec3(0.64, 0.50, 0.24),
+    vec3(0.82, 0.69, 0.39)
+);
+const vec3 duskFloorPalette[6] = vec3[6](
+    vec3(0.05, 0.05, 0.08),
+    vec3(0.11, 0.10, 0.15),
+    vec3(0.20, 0.18, 0.27),
+    vec3(0.31, 0.28, 0.39),
+    vec3(0.45, 0.41, 0.55),
+    vec3(0.63, 0.58, 0.70)
+);
+const vec3 arcaneFloorPalette[6] = vec3[6](
+    vec3(0.08, 0.10, 0.08),
+    vec3(0.14, 0.18, 0.12),
+    vec3(0.22, 0.29, 0.17),
+    vec3(0.34, 0.44, 0.22),
+    vec3(0.50, 0.62, 0.27),
+    vec3(0.72, 0.77, 0.34)
 );
 const float materialFloorMarker = (6.0 + 0.5) / 8.0;
 
@@ -69,17 +170,51 @@ float saturationOf(vec3 color) {
     return maxChannel - minChannel;
 }
 
+vec3 inkSwatch(int variant, int index) {
+    if (variant == 1) {
+        return dungeonInkPalette[index];
+    }
+    if (variant == 2) {
+        return meadowInkPalette[index];
+    }
+    if (variant == 3) {
+        return duskInkPalette[index];
+    }
+    if (variant == 4) {
+        return arcaneInkPalette[index];
+    }
+    return neutralInkPalette[index];
+}
+
+vec3 floorSwatch(int variant, int index) {
+    if (variant == 1) {
+        return dungeonFloorPalette[index];
+    }
+    if (variant == 2) {
+        return meadowFloorPalette[index];
+    }
+    if (variant == 3) {
+        return duskFloorPalette[index];
+    }
+    if (variant == 4) {
+        return arcaneFloorPalette[index];
+    }
+    return neutralFloorPalette[index];
+}
+
 vec3 pickInkColor(vec3 sourceColor) {
+    int variant = clamp(uPaletteVariant, 0, 4);
     float sourceLuma = dot(sourceColor, lumaWeights);
     float sourceSaturation = saturationOf(sourceColor);
     int bestIndex = 0;
     float bestScore = 1e9;
 
     for (int i = 0; i < 15; ++i) {
-        vec3 diff = sourceColor - inkPalette[i];
+        vec3 paletteColor = inkSwatch(variant, i);
+        vec3 diff = sourceColor - paletteColor;
         float rgbScore = dot(diff * diff, vec3(0.90, 1.10, 1.00));
-        float lumaDelta = abs(sourceLuma - dot(inkPalette[i], lumaWeights));
-        float satDelta = abs(sourceSaturation - saturationOf(inkPalette[i]));
+        float lumaDelta = abs(sourceLuma - dot(paletteColor, lumaWeights));
+        float satDelta = abs(sourceSaturation - saturationOf(paletteColor));
         float score = rgbScore + lumaDelta * 0.14 + satDelta * 0.10;
         if (score < bestScore) {
             bestScore = score;
@@ -87,15 +222,17 @@ vec3 pickInkColor(vec3 sourceColor) {
         }
     }
 
-    return inkPalette[bestIndex];
+    return inkSwatch(variant, bestIndex);
 }
 
 vec3 pickFloorInkColor(vec3 sourceColor) {
+    int variant = clamp(uPaletteVariant, 0, 4);
     int bestIndex = 0;
     float bestScore = 1e9;
 
     for (int i = 0; i < 6; ++i) {
-        vec3 diff = sourceColor - floorInkPalette[i];
+        vec3 paletteColor = floorSwatch(variant, i);
+        vec3 diff = sourceColor - paletteColor;
         float score = dot(diff * diff, vec3(1.00, 0.90, 0.85));
         if (score < bestScore) {
             bestScore = score;
@@ -103,7 +240,7 @@ vec3 pickFloorInkColor(vec3 sourceColor) {
         }
     }
 
-    return floorInkPalette[bestIndex];
+    return floorSwatch(variant, bestIndex);
 }
 
 float linearizeDepth(float d) {
@@ -177,10 +314,10 @@ void main() {
     }
 
     float luma = dot(gradedColor, lumaWeights);
-    float shapedLuma = clamp((luma - 0.010) * 1.10, 0.0, 1.0);
+    float shapedLuma = clamp((luma - 0.006) * 1.16, 0.0, 1.0);
     shapedLuma = shapedLuma * shapedLuma * (3.0 - 2.0 * shapedLuma);
     vec3 posterColor = gradedColor * (shapedLuma / max(luma, 0.001));
-    posterColor = mix(vec3(shapedLuma), posterColor, 0.92);
+    posterColor = mix(vec3(shapedLuma), posterColor, 0.96);
     posterColor = clamp(posterColor, 0.0, 1.0);
     vec3 inkColor = isFloor ? pickFloorInkColor(posterColor) : pickInkColor(posterColor);
 

@@ -5,6 +5,7 @@ add_test(NAME mesh_geometry COMMAND test_mesh_geometry)
 
 add_executable(test_level_def
     test_level_def.cpp
+    ${CMAKE_SOURCE_DIR}/src/game/rendering/EnvironmentProfile.cpp
     ${CMAKE_SOURCE_DIR}/src/game/level/LevelDef.cpp
 )
 target_include_directories(test_level_def PRIVATE ${CMAKE_SOURCE_DIR}/src)
@@ -16,6 +17,7 @@ add_test(NAME level_def COMMAND test_level_def)
 
 add_executable(test_level_lighting
     test_level_lighting.cpp
+    ${CMAKE_SOURCE_DIR}/src/game/rendering/EnvironmentProfile.cpp
     ${CMAKE_SOURCE_DIR}/src/game/level/LevelDef.cpp
 )
 target_include_directories(test_level_lighting PRIVATE ${CMAKE_SOURCE_DIR}/src)

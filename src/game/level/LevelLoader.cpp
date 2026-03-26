@@ -3,6 +3,7 @@
 #include "game/content/ContentRegistry.h"
 #include "game/level/LevelBuilder.h"
 #include "game/prefabs/GameplayPrefabs.h"
+#include "game/rendering/EnvironmentProfile.h"
 #include "game/rendering/MeshAssetProvider.h"
 #include "game/session/RunSession.h"
 #include "game/components/CameraComponent.h"
@@ -63,12 +64,13 @@ void LevelLoader::load(Application& app, const LevelLoadRequest& request) {
     }
     registry.ctx().insert_or_assign(MeshAssetProvider{&context_.meshLibrary});
 
+    const LevelDef level = loadLevelDef(resolveProjectPath(request.levelPath));
+    registry.ctx().insert_or_assign(ActiveEnvironmentProfile{request.levelId, level.environmentProfile});
+
     LevelBuilder builder(context_);
     if (request.buildScriptedGeometry) {
         request.buildScriptedGeometry(builder);
     }
-
-    const LevelDef level = loadLevelDef(resolveProjectPath(request.levelPath));
 
     for (const auto& placement : level.meshes) {
         builder.addMesh(placement.meshId, placement.position, placement.scale, placement.rotation, placement.tint, placement.material);
@@ -156,7 +158,7 @@ void LevelLoader::load(Application& app, const LevelLoadRequest& request) {
         registry,
         context_.meshLibrary,
         "cube",
-        RetroPalette::CandleWax,
+        glm::vec3(0.97f, 0.55f, 0.16f),
         MaterialKind::Wax,
         glm::vec3(-0.182f, -0.118f, -0.347f),
         glm::vec3(10.0f, -16.0f, -22.0f),
@@ -169,7 +171,7 @@ void LevelLoader::load(Application& app, const LevelLoadRequest& request) {
         registry,
         context_.meshLibrary,
         "cube",
-        glm::vec3(0.96f),
+        glm::vec3(1.00f, 0.83f, 0.40f),
         MaterialKind::Wax,
         glm::vec3(-0.174f, -0.050f, -0.338f),
         glm::vec3(4.0f, -10.0f, -18.0f),

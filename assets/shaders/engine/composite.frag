@@ -32,6 +32,8 @@ uniform float uSharpenAmount;
 uniform float uSplitToneStrength;
 uniform float uSplitToneBalance;
 uniform float uTimeSeconds;
+uniform vec3 uFogNearColor;
+uniform vec3 uFogFarColor;
 uniform vec3 uShadowTint;
 uniform vec3 uHighlightTint;
 uniform float uNearPlane;
@@ -141,18 +143,16 @@ void main() {
     float fogNoiseLarge = valueNoise2(fogUv * 0.010 + vec2(linDepth * 0.09, linDepth * 0.04));
     float fogNoiseMedium = valueNoise2(fogUv * 0.022 + vec2(-linDepth * 0.06, linDepth * 0.05));
     float fogNoise = mix(fogNoiseLarge, fogNoiseMedium, 0.45);
-    float fogShade = mix(0.88, 1.14, fogNoise);
+    float fogShade = mix(0.92, 1.10, fogNoise);
     float verticalMist = smoothstep(0.92, 0.18, vTexCoord.y);
     float depthMist = smoothstep(uFogStart + 1.0, uFogStart + 20.0, linDepth);
     float mistAmount = depthMist * mix(0.78, 1.22, fogNoise) * mix(0.92, 1.08, verticalMist);
     mistAmount = clamp(mistAmount, 0.0, 1.0);
 
-    vec3 nearFogColor = vec3(0.05, 0.05, 0.06);
-    vec3 farFogColor = vec3(0.13, 0.13, 0.14);
-    vec3 localFogColor = mix(nearFogColor, farFogColor, clamp(0.35 + fogNoise * 0.45 + verticalMist * 0.12, 0.0, 1.0));
+    vec3 localFogColor = mix(uFogNearColor, uFogFarColor, clamp(0.28 + fogNoise * 0.42 + verticalMist * 0.10, 0.0, 1.0));
     localFogColor = clamp(localFogColor * fogShade, 0.0, 1.0);
 
-    float fogContrastFade = 1.0 - fogFactor * 0.55;
+    float fogContrastFade = 1.0 - fogFactor * 0.22;
     color = mix(vec3(dot(color, lumaWeights)), color, fogContrastFade);
     color = mix(color, localFogColor, fogFactor * mistAmount);
 

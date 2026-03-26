@@ -5,6 +5,7 @@
 int main() {
     const auto data = loadLevelDef(CATHEDRAL_SCENE_FILE);
 
+    assert(data.environmentProfile == EnvironmentProfile::DungeonTorch);
     assert(data.meshes.size() == 156);
     assert(data.lights.size() == 10);
     assert(data.boxColliders.size() == 25);
@@ -25,6 +26,5 @@ int main() {
     assert(data.playerSpawn.fallRespawnY == -8.0f);
     assert(data.archetypes.front().archetypeId == "checkpoint_shrine");
     assert(data.archetypes.back().archetypeId == "cathedral_double_door");
-
     return 0;
 }

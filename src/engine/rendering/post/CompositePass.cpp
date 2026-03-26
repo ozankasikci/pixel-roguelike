@@ -97,6 +97,8 @@ void CompositePass::apply(GLuint sceneColorTex,
     shader_->setFloat("uSplitToneBalance", params.splitToneBalance);
     shader_->setFloat("uDepthViewScale", params.depthViewScale);
     shader_->setFloat("uTimeSeconds", params.timeSeconds);
+    shader_->setVec3("uFogNearColor", params.fogNearColor);
+    shader_->setVec3("uFogFarColor", params.fogFarColor);
     shader_->setVec3("uShadowTint", params.shadowTint);
     shader_->setVec3("uHighlightTint", params.highlightTint);
     shader_->setFloat("uNearPlane", params.nearPlane);

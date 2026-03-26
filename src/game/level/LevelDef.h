@@ -2,6 +2,7 @@
 
 #include "engine/rendering/lighting/RenderLight.h"
 #include "game/rendering/MaterialKind.h"
+#include "game/rendering/EnvironmentProfile.h"
 
 #include <glm/glm.hpp>
 
@@ -53,6 +54,7 @@ struct LevelArchetypePlacement {
 };
 
 struct LevelDef {
+    EnvironmentProfile environmentProfile = EnvironmentProfile::Neutral;
     std::vector<LevelMeshPlacement> meshes;
     std::vector<LevelLightPlacement> lights;
     std::vector<LevelBoxColliderPlacement> boxColliders;
