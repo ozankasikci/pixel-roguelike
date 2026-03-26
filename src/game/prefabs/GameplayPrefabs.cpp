@@ -16,13 +16,14 @@ entt::entity spawnDoorLeaf(LevelBuilder& builder,
                            const glm::vec3& hingePosition,
                            const glm::vec3& leafScale,
                            float closedYaw,
-                           float openYaw) {
+                           float openYaw,
+                           const glm::vec3& tint) {
     auto leaf = builder.addMesh(
         mesh,
         closedCenter,
         leafScale,
         glm::vec3(0.0f),
-        RetroPalette::OldWoodDark,
+        tint,
         MaterialKind::Wood
     );
     if (leaf == entt::null) {
@@ -98,7 +99,8 @@ entt::entity spawnDoubleDoor(LevelBuilder& builder,
         spec.leftHingePosition,
         spec.leafScale,
         spec.closedYaw,
-        spec.closedYaw - spec.openAngle
+        spec.closedYaw - spec.openAngle,
+        RetroPalette::OldWood
     );
     auto rightLeaf = spawnDoorLeaf(
         builder,
@@ -107,7 +109,8 @@ entt::entity spawnDoubleDoor(LevelBuilder& builder,
         spec.rightHingePosition,
         spec.leafScale,
         spec.closedYaw,
-        spec.closedYaw + spec.openAngle
+        spec.closedYaw + spec.openAngle,
+        RetroPalette::OldWoodDark
     );
 
     if (leftLeaf == entt::null || rightLeaf == entt::null) {

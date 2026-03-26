@@ -25,6 +25,31 @@
 constexpr int RenderSystem::RES_W[];
 constexpr int RenderSystem::RES_H[];
 
+namespace {
+
+constexpr glm::vec3 kPlayerTorchColor{1.00f, 0.78f, 0.48f};
+constexpr float kPlayerTorchRadius = 5.6f;
+constexpr float kPlayerTorchIntensity = 0.52f;
+constexpr float kPlayerTorchForwardOffset = 0.62f;
+constexpr float kPlayerTorchRightOffset = 0.20f;
+constexpr float kPlayerTorchDownOffset = 0.06f;
+constexpr glm::vec3 kPlayerHandGlowColor{1.00f, 0.90f, 0.74f};
+constexpr float kPlayerHandGlowRadius = 1.9f;
+constexpr float kPlayerHandGlowIntensity = 0.34f;
+constexpr float kPlayerHandGlowForwardOffset = 0.34f;
+constexpr float kPlayerHandGlowRightOffset = 0.28f;
+constexpr float kPlayerHandGlowDownOffset = 0.24f;
+
+float playerTorchFlicker(float timeSeconds) {
+    float pulseA = std::sin(timeSeconds * 5.7f) * 0.5f + 0.5f;
+    float pulseB = std::sin(timeSeconds * 11.9f + 1.7f) * 0.5f + 0.5f;
+    float pulseC = std::sin(timeSeconds * 18.3f + 0.4f) * 0.5f + 0.5f;
+    float shaped = pulseA * 0.50f + pulseB * 0.32f + pulseC * 0.18f;
+    return 0.90f + shaped * 0.24f;
+}
+
+}
+
 void RenderSystem::init(Application& app) {
     sceneShader_ = std::make_unique<Shader>("assets/shaders/scene.vert", "assets/shaders/scene.frag");
     renderer_    = std::make_unique<Renderer>(sceneShader_.get());
@@ -110,6 +135,29 @@ std::vector<PointLight> RenderSystem::collectLights(entt::registry& registry) co
     auto lightView = registry.view<TransformComponent, LightComponent>();
     for (auto [entity, transform, light] : lightView.each()) {
         lights.push_back({transform.position, light.color, light.radius, light.intensity});
+    }
+
+    auto cameraView = registry.view<TransformComponent, CameraComponent, PrimaryCameraTag>();
+    for (auto [entity, transform, camera] : cameraView.each()) {
+        float flicker = playerTorchFlicker(static_cast<float>(glfwGetTime()));
+        glm::vec3 torchPosition = transform.position
+            + camera.forward * kPlayerTorchForwardOffset
+            + camera.right * kPlayerTorchRightOffset
+            + glm::vec3(0.0f, -kPlayerTorchDownOffset, 0.0f);
+        glm::vec3 torchColor = kPlayerTorchColor * (0.96f + flicker * 0.06f);
+        float torchRadius = kPlayerTorchRadius * (0.97f + flicker * 0.06f);
+        float torchIntensity = kPlayerTorchIntensity * flicker;
+        lights.push_back({torchPosition, torchColor, torchRadius, torchIntensity});
+
+        glm::vec3 handGlowPosition = transform.position
+            + camera.forward * kPlayerHandGlowForwardOffset
+            + camera.right * kPlayerHandGlowRightOffset
+            + glm::vec3(0.0f, -kPlayerHandGlowDownOffset, 0.0f);
+        glm::vec3 handGlowColor = kPlayerHandGlowColor * (0.98f + flicker * 0.03f);
+        float handGlowRadius = kPlayerHandGlowRadius * (0.98f + flicker * 0.03f);
+        float handGlowIntensity = kPlayerHandGlowIntensity * (0.94f + flicker * 0.08f);
+        lights.push_back({handGlowPosition, handGlowColor, handGlowRadius, handGlowIntensity});
+        break;
     }
 
     return lights;
