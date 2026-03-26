@@ -15,6 +15,7 @@
 #include "game/components/PlayerTag.h"
 #include "game/components/PrimaryCameraTag.h"
 #include "game/components/ViewmodelComponent.h"
+#include "game/rendering/RetroPalette.h"
 
 #include "engine/core/Application.h"
 #include "engine/core/PathUtils.h"
@@ -40,7 +41,7 @@ void LevelLoader::load(Application& app, const LevelLoadRequest& request) {
     const LevelDef level = loadLevelDef(resolveProjectPath(request.levelPath));
 
     for (const auto& placement : level.meshes) {
-        builder.addMesh(placement.meshId, placement.position, placement.scale, placement.rotation);
+        builder.addMesh(placement.meshId, placement.position, placement.scale, placement.rotation, placement.tint, placement.material);
     }
 
     for (const auto& placement : level.lights) {
@@ -89,6 +90,9 @@ void LevelLoader::load(Application& app, const LevelLoadRequest& request) {
     registry.emplace<PlayerSpawnComponent>(player, PlayerSpawnComponent{session.respawnPosition, fallRespawnY});
 
     auto viewmodel = builder.createEntity();
-    registry.emplace<MeshComponent>(viewmodel, MeshComponent{"hand", context_.meshLibrary.get("hand"), glm::mat4(1.0f), false});
+    registry.emplace<MeshComponent>(
+        viewmodel,
+        MeshComponent{"hand", context_.meshLibrary.get("hand"), glm::mat4(1.0f), false, RetroPalette::Bone, MaterialKind::Viewmodel}
+    );
     registry.emplace<ViewmodelComponent>(viewmodel);
 }

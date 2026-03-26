@@ -2,11 +2,14 @@
 
 #include "game/components/LightComponent.h"
 #include "game/components/MeshComponent.h"
+#include "game/rendering/RetroPalette.h"
 #include "game/components/StaticColliderComponent.h"
 #include "game/components/TransformComponent.h"
 
 #include <glm/gtc/matrix_transform.hpp>
 #include <spdlog/spdlog.h>
+
+#include <string_view>
 
 namespace {
 
@@ -19,6 +22,52 @@ glm::mat4 makeModel(const glm::vec3& position,
     model = glm::rotate(model, glm::radians(rotation.z), glm::vec3(0.0f, 0.0f, 1.0f));
     model = glm::scale(model, scale);
     return model;
+}
+
+glm::vec3 defaultTintForMesh(std::string_view meshName,
+                             const glm::vec3& position,
+                             const glm::vec3& scale) {
+    if (meshName == "door_leaf_left" || meshName == "door_leaf_right") {
+        return RetroPalette::OldWood;
+    }
+    if (meshName == "hand") {
+        return RetroPalette::Bone;
+    }
+    if (meshName == "plane") {
+        if (scale.y < 0.0f) {
+            return RetroPalette::CarvedStone;
+        }
+        return RetroPalette::LimestoneLight;
+    }
+    if (meshName == "cube") {
+        if (scale.y <= 0.24f && (scale.x >= 1.0f || scale.z >= 1.0f)) {
+            return RetroPalette::Flagstone;
+        }
+        if ((scale.x <= 0.28f || scale.z <= 0.28f) && scale.y >= 1.5f) {
+            return RetroPalette::CarvedStone;
+        }
+        if (position.y >= 7.0f) {
+            return RetroPalette::CarvedStone;
+        }
+        return RetroPalette::Sandstone;
+    }
+    if (meshName == "pillar" || meshName == "arch") {
+        return RetroPalette::CarvedStone;
+    }
+    if (meshName == "cylinder" || meshName == "cylinder_wide" || meshName == "cylinder_cap") {
+        return RetroPalette::Stone;
+    }
+    return glm::vec3(1.0f);
+}
+
+MaterialKind defaultMaterialForMesh(std::string_view meshName) {
+    if (meshName == "door_leaf_left" || meshName == "door_leaf_right") {
+        return MaterialKind::Wood;
+    }
+    if (meshName == "hand") {
+        return MaterialKind::Viewmodel;
+    }
+    return MaterialKind::Stone;
 }
 
 } // namespace
@@ -51,7 +100,9 @@ Mesh* LevelBuilder::mesh(const std::string& name) const {
 entt::entity LevelBuilder::addMesh(Mesh* mesh,
                                    const glm::vec3& position,
                                    const glm::vec3& scale,
-                                   const glm::vec3& rotation) {
+                                   const glm::vec3& rotation,
+                                   std::optional<glm::vec3> tint,
+                                   std::optional<MaterialKind> material) {
     if (mesh == nullptr) {
         spdlog::warn("Level builder received null mesh");
         return entt::null;
@@ -59,20 +110,32 @@ entt::entity LevelBuilder::addMesh(Mesh* mesh,
 
     auto entity = createEntity();
     context_.registry.emplace<TransformComponent>(entity);
-    context_.registry.emplace<MeshComponent>(entity, MeshComponent{"", mesh, makeModel(position, scale, rotation), true});
+    context_.registry.emplace<MeshComponent>(
+        entity,
+        MeshComponent{"", mesh, makeModel(position, scale, rotation), true, tint.value_or(glm::vec3(1.0f)), material.value_or(MaterialKind::Stone)}
+    );
     return entity;
 }
 
 entt::entity LevelBuilder::addMesh(const std::string& meshName,
                                    const glm::vec3& position,
                                    const glm::vec3& scale,
-                                   const glm::vec3& rotation) {
+                                   const glm::vec3& rotation,
+                                   std::optional<glm::vec3> tint,
+                                   std::optional<MaterialKind> material) {
     Mesh* found = mesh(meshName);
     if (found == nullptr) {
         spdlog::warn("Level builder missing mesh '{}'", meshName);
         return entt::null;
     }
-    auto entity = addMesh(found, position, scale, rotation);
+    auto entity = addMesh(
+        found,
+        position,
+        scale,
+        rotation,
+        tint.value_or(defaultTintForMesh(meshName, position, scale)),
+        material.value_or(defaultMaterialForMesh(meshName))
+    );
     if (entity != entt::null) {
         context_.registry.get<MeshComponent>(entity).meshId = meshName;
     }

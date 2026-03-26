@@ -10,8 +10,8 @@ struct DitherParams {
     float thresholdBias = 0.028f;
     float patternScale  = 246.519f;
     float edgeThreshold = 0.17f;
-    float fogDensity    = 0.206f;
-    float fogStart      = 6.5f;
+    float fogDensity    = 0.145f;
+    float fogStart      = 8.5f;
     float nearPlane     = 0.1f;
     float farPlane      = 100.0f;
 };

@@ -61,7 +61,7 @@ std::vector<RenderObject> RenderSystem::collectSceneObjects(entt::registry& regi
         if (mesh.mesh == nullptr) continue;
         if (registry.any_of<ViewmodelComponent>(entity)) continue;
         glm::mat4 model = mesh.useModelOverride ? mesh.modelOverride : transform.modelMatrix();
-        objects.push_back({mesh.mesh, model});
+        objects.push_back({mesh.mesh, model, mesh.tint, mesh.material});
     }
 
     return objects;
@@ -98,7 +98,7 @@ std::vector<RenderObject> RenderSystem::collectViewmodelObjects(entt::registry& 
         model = model * glm::scale(glm::mat4(1.0f), glm::vec3(vm.scale));
         model = model * glm::translate(glm::mat4(1.0f), -vm.meshCenter);
 
-        objects.push_back({mesh.mesh, model});
+        objects.push_back({mesh.mesh, model, mesh.tint, mesh.material});
     }
 
     return objects;

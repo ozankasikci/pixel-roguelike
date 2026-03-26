@@ -33,6 +33,8 @@ void Renderer::drawScene(const std::vector<RenderObject>& objects,
 
     for (const auto& obj : objects) {
         shader_->setMat4("uModel", obj.modelMatrix);
+        shader_->setVec3("uBaseColor", obj.tint);
+        shader_->setInt("uMaterialKind", static_cast<int>(obj.material));
         obj.mesh->draw();
     }
 }

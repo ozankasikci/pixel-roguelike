@@ -5,6 +5,7 @@
 #include "game/components/DoorComponent.h"
 #include "game/components/DoorLeafComponent.h"
 #include "game/components/InteractableComponent.h"
+#include "game/rendering/RetroPalette.h"
 #include "game/components/StaticColliderComponent.h"
 
 namespace {
@@ -16,7 +17,14 @@ entt::entity spawnDoorLeaf(LevelBuilder& builder,
                            const glm::vec3& leafScale,
                            float closedYaw,
                            float openYaw) {
-    auto leaf = builder.addMesh(mesh, closedCenter, leafScale);
+    auto leaf = builder.addMesh(
+        mesh,
+        closedCenter,
+        leafScale,
+        glm::vec3(0.0f),
+        RetroPalette::OldWoodDark,
+        MaterialKind::Wood
+    );
     if (leaf == entt::null) {
         return entt::null;
     }

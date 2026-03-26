@@ -1,7 +1,10 @@
 #pragma once
 
+#include "game/rendering/MaterialKind.h"
+
 #include <glm/glm.hpp>
 
+#include <optional>
 #include <string>
 #include <vector>
 
@@ -10,6 +13,8 @@ struct LevelMeshPlacement {
     glm::vec3 position{0.0f};
     glm::vec3 scale{1.0f};
     glm::vec3 rotation{0.0f};
+    std::optional<MaterialKind> material;
+    std::optional<glm::vec3> tint;
 };
 
 struct LevelLightPlacement {

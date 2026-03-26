@@ -16,6 +16,10 @@ int main() {
     assert(data.meshes[2].position == glm::vec3(0.0f, 9.0f, -6.5f));
     assert(data.meshes[111].position == glm::vec3(0.0f, 0.67f, -20.1f));
     assert(data.meshes[112].meshId == "cube");
+    assert(data.meshes[112].material.has_value());
+    assert(*data.meshes[112].material == MaterialKind::Wood);
+    assert(data.meshes[112].tint.has_value());
+    assert(*data.meshes[112].tint == glm::vec3(0.60f, 0.45f, 0.29f));
     assert(data.meshes.back().meshId == "arch");
     assert(data.playerSpawn.position == glm::vec3(0.0f, 1.6f, 5.4f));
     assert(data.playerSpawn.fallRespawnY == -8.0f);

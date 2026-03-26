@@ -1,9 +1,11 @@
 #pragma once
 
 #include "game/level/LevelBuildContext.h"
+#include "game/rendering/MaterialKind.h"
 
 #include <glm/glm.hpp>
 
+#include <optional>
 #include <string>
 
 class Mesh;
@@ -23,11 +25,15 @@ public:
     entt::entity addMesh(Mesh* mesh,
                          const glm::vec3& position,
                          const glm::vec3& scale,
-                         const glm::vec3& rotation = glm::vec3(0.0f));
+                         const glm::vec3& rotation = glm::vec3(0.0f),
+                         std::optional<glm::vec3> tint = std::nullopt,
+                         std::optional<MaterialKind> material = std::nullopt);
     entt::entity addMesh(const std::string& meshName,
                          const glm::vec3& position,
                          const glm::vec3& scale,
-                         const glm::vec3& rotation = glm::vec3(0.0f));
+                         const glm::vec3& rotation = glm::vec3(0.0f),
+                         std::optional<glm::vec3> tint = std::nullopt,
+                         std::optional<MaterialKind> material = std::nullopt);
     entt::entity addLight(const glm::vec3& position,
                           const glm::vec3& color,
                           float radius,

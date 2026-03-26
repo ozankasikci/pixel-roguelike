@@ -4,6 +4,8 @@
 #include <glm/glm.hpp>
 #include <vector>
 
+#include "game/rendering/MaterialKind.h"
+
 class Mesh;
 class Shader;
 
@@ -17,6 +19,8 @@ struct PointLight {
 struct RenderObject {
     Mesh* mesh;
     glm::mat4 modelMatrix;
+    glm::vec3 tint{1.0f};
+    MaterialKind material = MaterialKind::Stone;
 };
 
 class Renderer {

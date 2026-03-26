@@ -17,6 +17,26 @@ uniform float uFarPlane;
 in vec2 vTexCoord;
 out vec4 fragColor;
 
+const vec3 lumaWeights = vec3(0.2126, 0.7152, 0.0722);
+const vec3 fogColor = vec3(0.10, 0.10, 0.10);
+const vec3 inkPalette[15] = vec3[15](
+    vec3(0.00, 0.00, 0.00),
+    vec3(0.02, 0.02, 0.02),
+    vec3(0.05, 0.05, 0.05),
+    vec3(0.09, 0.09, 0.09),
+    vec3(0.15, 0.15, 0.15),
+    vec3(0.23, 0.23, 0.23),
+    vec3(0.33, 0.33, 0.33),
+    vec3(0.45, 0.45, 0.45),
+    vec3(0.56, 0.56, 0.56),
+    vec3(0.66, 0.66, 0.66),
+    vec3(0.75, 0.75, 0.75),
+    vec3(0.83, 0.83, 0.83),
+    vec3(0.90, 0.90, 0.90),
+    vec3(0.96, 0.96, 0.96),
+    vec3(1.00, 1.00, 1.00)
+);
+
 // ---- 8x8 Bayer matrix ----
 const int bayer8[64] = int[64](
      0, 32,  8, 40,  2, 34, 10, 42,
@@ -32,6 +52,53 @@ const int bayer8[64] = int[64](
 float bayerValue(ivec2 p) {
     int idx = (p.x % 8) + (p.y % 8) * 8;
     return float(bayer8[idx]) / 64.0;
+}
+
+float hash12(vec2 p) {
+    return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453);
+}
+
+float valueNoise2(vec2 p) {
+    vec2 i = floor(p);
+    vec2 f = fract(p);
+    f = f * f * (3.0 - 2.0 * f);
+
+    float a = hash12(i);
+    float b = hash12(i + vec2(1.0, 0.0));
+    float c = hash12(i + vec2(0.0, 1.0));
+    float d = hash12(i + vec2(1.0, 1.0));
+
+    float x1 = mix(a, b, f.x);
+    float x2 = mix(c, d, f.x);
+    return mix(x1, x2, f.y);
+}
+
+float saturationOf(vec3 color) {
+    float maxChannel = max(max(color.r, color.g), color.b);
+    float minChannel = min(min(color.r, color.g), color.b);
+    return maxChannel - minChannel;
+}
+
+vec3 pickInkColor(vec3 sourceColor) {
+    float sourceLuma = dot(sourceColor, lumaWeights);
+    float sourceSaturation = saturationOf(sourceColor);
+
+    int bestIndex = 0;
+    float bestScore = 1e9;
+
+    for (int i = 0; i < 15; ++i) {
+        vec3 diff = sourceColor - inkPalette[i];
+        float rgbScore = dot(diff * diff, vec3(0.90, 1.10, 1.00));
+        float lumaDelta = abs(sourceLuma - dot(inkPalette[i], lumaWeights));
+        float satDelta = abs(sourceSaturation - saturationOf(inkPalette[i]));
+        float score = rgbScore + lumaDelta * 0.16 + satDelta * 0.18;
+        if (score < bestScore) {
+            bestScore = score;
+            bestIndex = i;
+        }
+    }
+
+    return inkPalette[bestIndex];
 }
 
 // Convert depth buffer value to linear depth
@@ -86,7 +153,6 @@ void main() {
 
     // ---- Sample scene luminance ----
     vec3 linearColor = texture(sceneColor, vTexCoord).rgb;
-    float luma = dot(linearColor, vec3(0.2126, 0.7152, 0.0722));
 
     // ---- Linearize depth (used by edges + fog) ----
     float rawDepth = texture(sceneDepth, vTexCoord).r;
@@ -106,18 +172,46 @@ void main() {
     float fogFactor = 0.0;
     if (uFogDensity > 0.0) {
         float fogDepth = max(linDepth - uFogStart, 0.0);
-        fogFactor = 1.0 - exp(-uFogDensity * fogDepth);
-        fogFactor = clamp(fogFactor, 0.0, 1.0);
+        float rawFog = 1.0 - exp(-uFogDensity * fogDepth);
+        rawFog = clamp(rawFog, 0.0, 1.0);
+        float distanceFog = smoothstep(uFogStart, uFogStart + 16.0, linDepth);
+        fogFactor = mix(rawFog, distanceFog, 0.35);
+        fogFactor = fogFactor * fogFactor * (3.0 - 2.0 * fogFactor);
     }
 
-    // Apply fog: darken distant geometry
-    luma = luma * (1.0 - fogFactor);
+    vec2 fogUv = vTexCoord * texSize;
+    float fogNoiseLarge = valueNoise2(fogUv * 0.010 + vec2(linDepth * 0.09, linDepth * 0.04));
+    float fogNoiseMedium = valueNoise2(fogUv * 0.022 + vec2(-linDepth * 0.06, linDepth * 0.05));
+    float fogNoise = mix(fogNoiseLarge, fogNoiseMedium, 0.45);
+    float fogShade = mix(0.88, 1.14, fogNoise);
+    float verticalMist = smoothstep(0.92, 0.18, vTexCoord.y);
+    float depthMist = smoothstep(uFogStart + 1.0, uFogStart + 20.0, linDepth);
+    float mistAmount = depthMist * mix(0.78, 1.22, fogNoise) * mix(0.92, 1.08, verticalMist);
+    mistAmount = clamp(mistAmount, 0.0, 1.0);
+
+    vec3 nearFogColor = vec3(0.08, 0.08, 0.08);
+    vec3 farFogColor = vec3(0.14, 0.14, 0.14);
+    vec3 localFogColor = mix(nearFogColor, farFogColor, clamp(0.35 + fogNoise * 0.45 + verticalMist * 0.12, 0.0, 1.0));
+    localFogColor = clamp(localFogColor * fogShade, 0.0, 1.0);
+
+    float fogContrastFade = 1.0 - fogFactor * 0.55;
+    linearColor = mix(vec3(dot(linearColor, lumaWeights)), linearColor, fogContrastFade);
+    linearColor = mix(linearColor, localFogColor, fogFactor * mistAmount);
+
+    float luma = dot(linearColor, lumaWeights);
+    float shapedLuma = clamp((luma - 0.015) * 1.08, 0.0, 1.0);
+    shapedLuma = shapedLuma * shapedLuma * (3.0 - 2.0 * shapedLuma);
+    float fogLuma = dot(localFogColor, lumaWeights);
+    shapedLuma = mix(shapedLuma, fogLuma, fogFactor * 0.34 * mistAmount);
+    vec3 inkColor = pickInkColor(vec3(shapedLuma));
 
     // ---- 1-bit dithering ----
-    float bit = step(threshold, luma);
+    float fogThreshold = mix(threshold, 0.46 + (fogNoise - 0.5) * 0.10, fogFactor * 0.30);
+    float bit = step(fogThreshold, shapedLuma);
 
     // Edges are always black (creates the architectural outline effect)
-    bit = bit * (1.0 - isEdge);
+    float edgeFade = 1.0 - fogFactor * 0.72;
+    bit = bit * (1.0 - isEdge * edgeFade);
 
-    fragColor = vec4(vec3(bit), 1.0);
+    fragColor = vec4(inkColor * bit, 1.0);
 }
