@@ -10,6 +10,7 @@ target_link_libraries(engine_core PUBLIC glad_gl glfw spdlog::spdlog EnTT::EnTT)
 add_library(engine_rendering STATIC
     rendering/core/Shader.cpp
     rendering/core/Framebuffer.cpp
+    rendering/lighting/ShadowMap.cpp
     rendering/post/CompositePass.cpp
     rendering/geometry/Mesh.cpp
     rendering/geometry/MeshLibrary.cpp

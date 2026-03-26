@@ -75,7 +75,15 @@ void LevelLoader::load(Application& app, const LevelLoadRequest& request) {
     }
 
     for (const auto& placement : level.lights) {
-        builder.addLight(placement.position, placement.color, placement.radius, placement.intensity);
+        builder.addLight(placement.position,
+                         placement.color,
+                         placement.radius,
+                         placement.intensity,
+                         placement.type,
+                         placement.direction,
+                         placement.innerConeDegrees,
+                         placement.outerConeDegrees,
+                         placement.castsShadows);
     }
 
     for (const auto& placement : level.boxColliders) {

@@ -42,7 +42,7 @@ void ImGuiLayer::endFrame() {
     ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 }
 
-void ImGuiLayer::renderOverlay(DebugParams& params, std::vector<PointLight>& lights) {
+void ImGuiLayer::renderOverlay(DebugParams& params, std::vector<RenderLight>& lights) {
     ImGui::Begin("Debug Overlay");
 
     if (ImGui::CollapsingHeader("Render", ImGuiTreeNodeFlags_DefaultOpen)) {
@@ -137,6 +137,21 @@ void ImGuiLayer::renderOverlay(DebugParams& params, std::vector<PointLight>& lig
         ImGui::EndDisabled();
     }
 
+    if (ImGui::CollapsingHeader("Lighting", ImGuiTreeNodeFlags_DefaultOpen)) {
+        const char* shadowSizeOptions[] = {"512", "1024", "2048"};
+        ImGui::Checkbox("Enable Shadows", &params.shadowsEnabled);
+        ImGui::Combo("Shadow Map Size", &params.shadowMapResolutionIndex, shadowSizeOptions, 3);
+        ImGui::SliderFloat("Shadow Bias", &params.shadowBias, 0.0001f, 0.02f, "%.4f", ImGuiSliderFlags_Logarithmic);
+        ImGui::SliderFloat("Shadow Normal Bias", &params.shadowNormalBias, 0.0f, 0.20f, "%.3f");
+        ImGui::ColorEdit3("Hemi Sky", &params.hemisphereSkyColor.x, ImGuiColorEditFlags_Float | ImGuiColorEditFlags_NoInputs);
+        ImGui::ColorEdit3("Hemi Ground", &params.hemisphereGroundColor.x, ImGuiColorEditFlags_Float | ImGuiColorEditFlags_NoInputs);
+        ImGui::SliderFloat("Hemi Strength", &params.hemisphereStrength, 0.0f, 1.2f, "%.2f");
+        ImGui::Checkbox("Directional Lights", &params.enableDirectionalLights);
+        ImGui::SliderFloat("Directional Scale", &params.directionalLightIntensityScale, 0.0f, 3.0f, "%.2f");
+        ImGui::SliderFloat("Torch Inner Cone", &params.playerTorchInnerConeDegrees, 5.0f, 50.0f, "%.1f");
+        ImGui::SliderFloat("Torch Outer Cone", &params.playerTorchOuterConeDegrees, 8.0f, 65.0f, "%.1f");
+    }
+
     // ------------------------------------------------------------------
     // Camera section
     // ------------------------------------------------------------------
@@ -165,9 +180,29 @@ void ImGuiLayer::renderOverlay(DebugParams& params, std::vector<PointLight>& lig
         for (int i = 0; i < static_cast<int>(lights.size()); ++i) {
             ImGui::PushID(i);
             ImGui::Text("Light %d", i);
-            ImGui::DragFloat3("Pos##", &lights[i].position.x, 0.1f);
-            ImGui::SliderFloat("Radius##", &lights[i].radius, 1.0f, 20.0f);
+            const char* typeLabel = "Point";
+            if (lights[i].type == LightType::Spot) {
+                typeLabel = "Spot";
+            } else if (lights[i].type == LightType::Directional) {
+                typeLabel = "Directional";
+            }
+            ImGui::Text("Type: %s", typeLabel);
+            if (lights[i].type != LightType::Directional) {
+                ImGui::DragFloat3("Pos##", &lights[i].position.x, 0.1f);
+            }
+            ImGui::ColorEdit3("Color##", &lights[i].color.x, ImGuiColorEditFlags_Float | ImGuiColorEditFlags_NoInputs);
             ImGui::SliderFloat("Intensity##", &lights[i].intensity, 0.0f, 2.0f);
+            if (lights[i].type != LightType::Directional) {
+                ImGui::SliderFloat("Radius##", &lights[i].radius, 1.0f, 20.0f);
+            }
+            if (lights[i].type != LightType::Point) {
+                ImGui::DragFloat3("Dir##", &lights[i].direction.x, 0.01f, -1.0f, 1.0f, "%.2f");
+            }
+            if (lights[i].type == LightType::Spot) {
+                ImGui::SliderFloat("Inner##", &lights[i].innerConeDegrees, 5.0f, 60.0f, "%.1f");
+                ImGui::SliderFloat("Outer##", &lights[i].outerConeDegrees, 8.0f, 75.0f, "%.1f");
+                ImGui::Text("Shadowed: %s", lights[i].shadowIndex >= 0 ? "Yes" : "No");
+            }
             ImGui::Separator();
             ImGui::PopID();
         }

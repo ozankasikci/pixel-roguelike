@@ -4,34 +4,55 @@ in vec3 vWorldPos;
 in vec3 vNormal;
 in vec3 vLocalPos;
 
-// MRT outputs: color + normals
 layout(location = 0) out vec4 fragColor;
 layout(location = 1) out vec4 fragNormal;
 
-struct PointLight {
+struct RenderLight {
+    int type;
     vec3 position;
+    vec3 direction;
     vec3 color;
     float radius;
     float intensity;
+    float innerConeCos;
+    float outerConeCos;
+    int castsShadows;
+    int shadowIndex;
 };
 
-uniform PointLight uPointLights[32];
+uniform RenderLight uLights[32];
 uniform int uNumLights;
+uniform sampler2D uShadowMaps[2];
+uniform mat4 uShadowMatrices[2];
+uniform int uShadowCount;
+uniform int uEnableShadows;
+uniform float uShadowBias;
+uniform float uShadowNormalBias;
+uniform vec3 uHemisphereSkyColor;
+uniform vec3 uHemisphereGroundColor;
+uniform float uHemisphereStrength;
+uniform int uEnableDirectionalLights;
+uniform float uDirectionalLightIntensityScale;
 uniform vec3 uCameraPos;
 uniform vec3 uBaseColor;
 uniform int uMaterialKind;
 
+const int LIGHT_POINT = 0;
+const int LIGHT_SPOT = 1;
+const int LIGHT_DIRECTIONAL = 2;
+
 const int MATERIAL_STONE = 0;
-const int MATERIAL_WOOD  = 1;
+const int MATERIAL_WOOD = 1;
 const int MATERIAL_METAL = 2;
-const int MATERIAL_WAX   = 3;
-const int MATERIAL_MOSS  = 4;
+const int MATERIAL_WAX = 3;
+const int MATERIAL_MOSS = 4;
 const int MATERIAL_VIEWMODEL = 5;
 const int MATERIAL_FLOOR = 6;
 
-// Smooth quartic attenuation
+const float PI = 3.14159265359;
+
 float attenuation(float dist, float radius) {
-    float x = clamp(1.0 - pow(dist / radius, 4.0), 0.0, 1.0);
+    float x = clamp(1.0 - pow(dist / max(radius, 0.001), 4.0), 0.0, 1.0);
     return x * x;
 }
 
@@ -197,95 +218,167 @@ vec3 applyMaterialDetail(vec3 baseColor, vec3 N) {
     return detailStone(baseColor, N);
 }
 
-float materialSpecStrength() {
+float materialRoughness() {
     if (uMaterialKind == MATERIAL_WOOD) {
-        return 0.03;
+        return 0.74;
     }
     if (uMaterialKind == MATERIAL_METAL) {
-        return 0.18;
-    }
-    if (uMaterialKind == MATERIAL_FLOOR) {
-        return 0.0;
+        return 0.34;
     }
     if (uMaterialKind == MATERIAL_WAX) {
-        return 0.08;
+        return 0.58;
     }
     if (uMaterialKind == MATERIAL_MOSS) {
-        return 0.01;
+        return 0.94;
     }
     if (uMaterialKind == MATERIAL_VIEWMODEL) {
-        return 0.12;
-    }
-    return 0.025;
-}
-
-float materialShininess() {
-    if (uMaterialKind == MATERIAL_WOOD) {
-        return 10.0;
-    }
-    if (uMaterialKind == MATERIAL_METAL) {
-        return 24.0;
+        return 0.48;
     }
     if (uMaterialKind == MATERIAL_FLOOR) {
-        return 8.0;
+        return 0.86;
     }
-    if (uMaterialKind == MATERIAL_WAX) {
-        return 14.0;
-    }
-    if (uMaterialKind == MATERIAL_MOSS) {
-        return 8.0;
-    }
-    if (uMaterialKind == MATERIAL_VIEWMODEL) {
-        return 18.0;
-    }
-    return 12.0;
+    return 0.82;
 }
 
-float materialFresnelStrength() {
+float materialMetalness() {
     if (uMaterialKind == MATERIAL_METAL) {
-        return 0.05;
-    }
-    if (uMaterialKind == MATERIAL_VIEWMODEL) {
-        return 0.03;
+        return 0.86;
     }
     return 0.0;
 }
 
-float materialSpecTint() {
-    if (uMaterialKind == MATERIAL_METAL) {
-        return 0.16;
+float materialSpecularLevel() {
+    if (uMaterialKind == MATERIAL_WOOD) {
+        return 0.24;
     }
-    if (uMaterialKind == MATERIAL_VIEWMODEL) {
+    if (uMaterialKind == MATERIAL_METAL) {
+        return 1.0;
+    }
+    if (uMaterialKind == MATERIAL_WAX) {
+        return 0.46;
+    }
+    if (uMaterialKind == MATERIAL_MOSS) {
         return 0.10;
     }
-    return 0.0;
+    if (uMaterialKind == MATERIAL_VIEWMODEL) {
+        return 0.55;
+    }
+    if (uMaterialKind == MATERIAL_FLOOR) {
+        return 0.10;
+    }
+    return 0.20;
 }
 
 float materialLightTintResponse() {
     if (uMaterialKind == MATERIAL_WOOD) {
-        return 0.14;
+        return 0.18;
     }
     if (uMaterialKind == MATERIAL_METAL) {
-        return 0.28;
-    }
-    if (uMaterialKind == MATERIAL_FLOOR) {
-        return 0.02;
+        return 0.30;
     }
     if (uMaterialKind == MATERIAL_WAX) {
-        return 0.20;
+        return 0.24;
     }
     if (uMaterialKind == MATERIAL_MOSS) {
-        return 0.10;
+        return 0.12;
     }
     if (uMaterialKind == MATERIAL_VIEWMODEL) {
         return 0.24;
     }
-    return 0.06;
+    if (uMaterialKind == MATERIAL_FLOOR) {
+        return 0.03;
+    }
+    return 0.08;
 }
 
-vec3 normalizedColor(vec3 color) {
-    float maxChannel = max(max(color.r, color.g), color.b);
-    return color / max(maxChannel, 0.001);
+float luminance(vec3 color) {
+    return dot(color, vec3(0.2126, 0.7152, 0.0722));
+}
+
+float distributionGGX(vec3 N, vec3 H, float roughness) {
+    float a = roughness * roughness;
+    float a2 = a * a;
+    float NdotH = max(dot(N, H), 0.0);
+    float NdotH2 = NdotH * NdotH;
+    float denom = NdotH2 * (a2 - 1.0) + 1.0;
+    return a2 / max(PI * denom * denom, 0.0001);
+}
+
+float geometrySchlickGGX(float NdotValue, float roughness) {
+    float r = roughness + 1.0;
+    float k = (r * r) / 8.0;
+    return NdotValue / (NdotValue * (1.0 - k) + k);
+}
+
+float geometrySmith(vec3 N, vec3 V, vec3 L, float roughness) {
+    float NdotV = max(dot(N, V), 0.0);
+    float NdotL = max(dot(N, L), 0.0);
+    return geometrySchlickGGX(NdotV, roughness) * geometrySchlickGGX(NdotL, roughness);
+}
+
+vec3 fresnelSchlick(float cosTheta, vec3 F0) {
+    return F0 + (1.0 - F0) * pow(clamp(1.0 - cosTheta, 0.0, 1.0), 5.0);
+}
+
+float spotConeFactor(RenderLight light, vec3 L) {
+    float theta = dot(-L, normalize(light.direction));
+    return smoothstep(light.outerConeCos, light.innerConeCos, theta);
+}
+
+vec2 shadowTexelSize(int shadowIndex) {
+    if (shadowIndex == 0) {
+        return 1.0 / vec2(textureSize(uShadowMaps[0], 0));
+    }
+    return 1.0 / vec2(textureSize(uShadowMaps[1], 0));
+}
+
+float shadowDepthAt(int shadowIndex, vec2 uv) {
+    if (shadowIndex == 0) {
+        return texture(uShadowMaps[0], uv).r;
+    }
+    return texture(uShadowMaps[1], uv).r;
+}
+
+vec4 shadowClipPosition(int shadowIndex) {
+    if (shadowIndex == 0) {
+        return uShadowMatrices[0] * vec4(vWorldPos, 1.0);
+    }
+    return uShadowMatrices[1] * vec4(vWorldPos, 1.0);
+}
+
+float sampleShadow(int shadowIndex, vec3 N, vec3 L) {
+    if (uEnableShadows == 0 || shadowIndex < 0 || shadowIndex >= uShadowCount) {
+        return 1.0;
+    }
+
+    vec4 clip = shadowClipPosition(shadowIndex);
+    if (clip.w <= 0.0) {
+        return 1.0;
+    }
+
+    vec3 proj = clip.xyz / clip.w;
+    proj = proj * 0.5 + 0.5;
+    if (proj.z <= 0.0 || proj.z >= 1.0) {
+        return 1.0;
+    }
+    if (proj.x <= 0.0 || proj.x >= 1.0 || proj.y <= 0.0 || proj.y >= 1.0) {
+        return 1.0;
+    }
+
+    float slopeBias = uShadowNormalBias * (1.0 - max(dot(N, L), 0.0));
+    float bias = max(uShadowBias, slopeBias);
+    vec2 texel = shadowTexelSize(shadowIndex);
+
+    float visibility = 0.0;
+    for (int y = -1; y <= 1; ++y) {
+        for (int x = -1; x <= 1; ++x) {
+            vec2 offset = vec2(float(x), float(y)) * texel;
+            float storedDepth = shadowDepthAt(shadowIndex, proj.xy + offset);
+            visibility += (proj.z - bias) <= storedDepth ? 1.0 : 0.0;
+        }
+    }
+
+    return visibility / 9.0;
 }
 
 void main() {
@@ -293,44 +386,72 @@ void main() {
     vec3 V = normalize(uCameraPos - vWorldPos);
     vec3 baseColor = clamp(uBaseColor, 0.0, 1.0);
     vec3 albedo = applyMaterialDetail(baseColor, N);
-    float specStrength = materialSpecStrength();
-    float shininess = materialShininess();
-    float fresnelStrength = materialFresnelStrength();
-    float specTint = materialSpecTint();
-    float lightTintResponse = materialLightTintResponse();
-    vec3 specBaseTint = mix(vec3(1.0), normalizedColor(albedo), specTint);
 
-    vec3 ambientLight = vec3(0.050, 0.048, 0.045);
-    ambientLight += vec3(0.11, 0.11, 0.10) * max(N.y, 0.0);
-    ambientLight += vec3(0.026, 0.025, 0.023) * max(-N.y, 0.0);
-    vec3 totalLight = albedo * ambientLight;
+    float roughness = clamp(materialRoughness(), 0.08, 0.98);
+    float metalness = clamp(materialMetalness(), 0.0, 1.0);
+    float specularLevel = materialSpecularLevel();
+    float tintResponse = materialLightTintResponse();
 
-    for (int i = 0; i < uNumLights; i++) {
-        vec3 L = uPointLights[i].position - vWorldPos;
-        float dist = length(L);
-        L = normalize(L);
+    vec3 ambient = mix(uHemisphereGroundColor, uHemisphereSkyColor, clamp(N.y * 0.5 + 0.5, 0.0, 1.0));
+    vec3 totalLight = albedo * ambient * uHemisphereStrength;
 
-        float atten = attenuation(dist, uPointLights[i].radius);
+    float NdotV = max(dot(N, V), 0.0);
+    vec3 dielectricF0 = vec3(0.02 + specularLevel * 0.10);
+    vec3 F0 = mix(dielectricF0, albedo, metalness);
 
-        // Diffuse (Lambertian)
-        float diff = max(dot(N, L), 0.0);
+    for (int i = 0; i < uNumLights; ++i) {
+        RenderLight light = uLights[i];
+        vec3 L = vec3(0.0);
+        float falloff = 1.0;
 
-        // Specular (Blinn-Phong)
-        vec3 H = normalize(L + V);
-        float spec = pow(max(dot(N, H), 0.0), shininess) * diff;
-        float fresnel = pow(1.0 - max(dot(N, V), 0.0), 5.0) * fresnelStrength;
+        if (light.type == LIGHT_DIRECTIONAL) {
+            if (uEnableDirectionalLights == 0) {
+                continue;
+            }
+            L = normalize(-light.direction);
+            falloff = uDirectionalLightIntensityScale;
+        } else {
+            vec3 toLight = light.position - vWorldPos;
+            float dist = length(toLight);
+            if (dist <= 0.0001 || dist >= light.radius) {
+                continue;
+            }
+            L = toLight / dist;
+            falloff = attenuation(dist, light.radius);
+            if (light.type == LIGHT_SPOT) {
+                float cone = spotConeFactor(light, L);
+                if (cone <= 0.0001) {
+                    continue;
+                }
+                falloff *= cone;
+            }
+        }
 
-        vec3 lightColor = uPointLights[i].color * atten * uPointLights[i].intensity;
-        float lightEnergy = dot(lightColor, vec3(0.2126, 0.7152, 0.0722));
-        vec3 diffuseLight = mix(vec3(lightEnergy), lightColor, lightTintResponse);
-        vec3 specularLight = vec3(lightEnergy) * specBaseTint;
-        totalLight += albedo * diffuseLight * (diff * 0.92);
-        totalLight += specularLight * (spec * specStrength + fresnel);
+        float NdotL = max(dot(N, L), 0.0);
+        if (NdotL <= 0.0) {
+            continue;
+        }
+
+        vec3 H = normalize(V + L);
+        vec3 F = fresnelSchlick(max(dot(H, V), 0.0), F0);
+        float D = distributionGGX(N, H, roughness);
+        float G = geometrySmith(N, V, L, roughness);
+        vec3 specular = (D * G * F) / max(4.0 * NdotV * NdotL, 0.001);
+        vec3 kD = (vec3(1.0) - F) * (1.0 - metalness);
+
+        vec3 radiance = light.color * light.intensity * falloff;
+        float neutralEnergy = luminance(radiance);
+        vec3 diffuseRadiance = mix(vec3(neutralEnergy), radiance, tintResponse);
+        vec3 specularRadiance = mix(vec3(neutralEnergy), radiance, 0.22 + metalness * 0.68);
+        float visibility = (light.castsShadows != 0 && light.shadowIndex >= 0)
+            ? sampleShadow(light.shadowIndex, N, L)
+            : 1.0;
+
+        totalLight += visibility * ((kD * albedo * diffuseRadiance) + (specular * specularRadiance)) * NdotL;
     }
 
     fragColor = vec4(max(totalLight, vec3(0.0)), 1.0);
 
-    // Output world-space normal (packed to 0..1 range for edge detection)
     float materialMarker = (float(uMaterialKind) + 0.5) / 8.0;
     fragNormal = vec4(N * 0.5 + 0.5, materialMarker);
 }

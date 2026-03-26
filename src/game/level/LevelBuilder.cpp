@@ -30,6 +30,12 @@ glm::vec3 defaultTintForMesh(std::string_view meshName,
     if (meshName == "door_leaf_left" || meshName == "door_leaf_right") {
         return RetroPalette::OldWood;
     }
+    if (meshName == "door_frame_romanesque") {
+        return glm::vec3(0.82f, 0.81f, 0.76f);
+    }
+    if (meshName == "gothic_door_static") {
+        return glm::vec3(0.10f, 0.10f, 0.11f);
+    }
     if (meshName == "hand") {
         return RetroPalette::Bone;
     }
@@ -62,6 +68,12 @@ glm::vec3 defaultTintForMesh(std::string_view meshName,
 
 MaterialKind defaultMaterialForMesh(std::string_view meshName) {
     if (meshName == "door_leaf_left" || meshName == "door_leaf_right") {
+        return MaterialKind::Wood;
+    }
+    if (meshName == "door_frame_romanesque") {
+        return MaterialKind::Stone;
+    }
+    if (meshName == "gothic_door_static") {
         return MaterialKind::Wood;
     }
     if (meshName == "hand") {
@@ -146,8 +158,37 @@ entt::entity LevelBuilder::addLight(const glm::vec3& position,
                                     const glm::vec3& color,
                                     float radius,
                                     float intensity) {
+    return addLight(position,
+                    color,
+                    radius,
+                    intensity,
+                    LightType::Point,
+                    glm::vec3(0.0f, -1.0f, 0.0f),
+                    20.0f,
+                    30.0f,
+                    false);
+}
+
+entt::entity LevelBuilder::addLight(const glm::vec3& position,
+                                    const glm::vec3& color,
+                                    float radius,
+                                    float intensity,
+                                    LightType type,
+                                    const glm::vec3& direction,
+                                    float innerConeDegrees,
+                                    float outerConeDegrees,
+                                    bool castsShadows) {
     auto entity = createTransformEntity(position);
-    context_.registry.emplace<LightComponent>(entity, LightComponent{color, radius, intensity});
+    LightComponent light;
+    light.type = type;
+    light.color = color;
+    light.radius = radius;
+    light.intensity = intensity;
+    light.direction = direction;
+    light.innerConeDegrees = innerConeDegrees;
+    light.outerConeDegrees = outerConeDegrees;
+    light.castsShadows = castsShadows;
+    context_.registry.emplace<LightComponent>(entity, light);
     return entity;
 }
 

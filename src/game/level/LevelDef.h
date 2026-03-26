@@ -1,5 +1,6 @@
 #pragma once
 
+#include "engine/rendering/lighting/RenderLight.h"
 #include "game/rendering/MaterialKind.h"
 
 #include <glm/glm.hpp>
@@ -18,10 +19,15 @@ struct LevelMeshPlacement {
 };
 
 struct LevelLightPlacement {
+    LightType type = LightType::Point;
     glm::vec3 position{0.0f};
+    glm::vec3 direction{0.0f, -1.0f, 0.0f};
     glm::vec3 color{1.0f};
     float radius = 1.0f;
     float intensity = 1.0f;
+    float innerConeDegrees = 20.0f;
+    float outerConeDegrees = 30.0f;
+    bool castsShadows = false;
 };
 
 struct LevelBoxColliderPlacement {

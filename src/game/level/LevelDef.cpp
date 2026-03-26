@@ -33,6 +33,18 @@ bool tryParseFloatToken(const std::string& token, float& value) {
     return parsed == token.size();
 }
 
+bool tryParseBoolToken(const std::string& token, bool& value) {
+    if (token == "1" || token == "true" || token == "TRUE") {
+        value = true;
+        return true;
+    }
+    if (token == "0" || token == "false" || token == "FALSE") {
+        value = false;
+        return true;
+    }
+    return false;
+}
+
 bool tryParseMaterialKind(const std::string& token, MaterialKind& material) {
     if (token == "stone") {
         material = MaterialKind::Stone;
@@ -128,6 +140,38 @@ LevelDef loadLevelDef(const std::string& path) {
                          >> placement.radius >> placement.intensity)) {
                 throwParseError(path, lineNumber, "invalid light record");
             }
+            data.lights.push_back(placement);
+            continue;
+        }
+
+        if (kind == "spot_light") {
+            LevelLightPlacement placement;
+            placement.type = LightType::Spot;
+            std::string shadowToken;
+            if (!(stream >> placement.position.x >> placement.position.y >> placement.position.z
+                         >> placement.direction.x >> placement.direction.y >> placement.direction.z
+                         >> placement.color.r >> placement.color.g >> placement.color.b
+                         >> placement.radius >> placement.intensity
+                         >> placement.innerConeDegrees >> placement.outerConeDegrees
+                         >> shadowToken)) {
+                throwParseError(path, lineNumber, "invalid spot_light record");
+            }
+            if (!tryParseBoolToken(shadowToken, placement.castsShadows)) {
+                throwParseError(path, lineNumber, "invalid spot_light shadow flag");
+            }
+            data.lights.push_back(placement);
+            continue;
+        }
+
+        if (kind == "dir_light") {
+            LevelLightPlacement placement;
+            placement.type = LightType::Directional;
+            if (!(stream >> placement.direction.x >> placement.direction.y >> placement.direction.z
+                         >> placement.color.r >> placement.color.g >> placement.color.b
+                         >> placement.intensity)) {
+                throwParseError(path, lineNumber, "invalid dir_light record");
+            }
+            placement.radius = 0.0f;
             data.lights.push_back(placement);
             continue;
         }

@@ -1,5 +1,6 @@
 #pragma once
 
+#include "engine/rendering/lighting/RenderLight.h"
 #include "game/level/LevelBuildContext.h"
 #include "game/rendering/MaterialKind.h"
 
@@ -38,6 +39,15 @@ public:
                           const glm::vec3& color,
                           float radius,
                           float intensity);
+    entt::entity addLight(const glm::vec3& position,
+                         const glm::vec3& color,
+                         float radius,
+                         float intensity,
+                         LightType type,
+                         const glm::vec3& direction,
+                         float innerConeDegrees,
+                         float outerConeDegrees,
+                         bool castsShadows);
     entt::entity addBoxCollider(const glm::vec3& position, const glm::vec3& halfExtents);
     entt::entity addCylinderCollider(const glm::vec3& position, float radius, float halfHeight);
 

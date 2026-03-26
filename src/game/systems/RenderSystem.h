@@ -3,11 +3,13 @@
 #include "engine/rendering/core/Framebuffer.h"
 #include "engine/rendering/core/Shader.h"
 #include "engine/rendering/geometry/Renderer.h"
+#include "engine/rendering/lighting/ShadowMap.h"
 #include "engine/rendering/post/CompositePass.h"
 #include "engine/rendering/post/StylizePass.h"
 #include "engine/input/InputSystem.h"
 #include "engine/ui/ImGuiLayer.h"
 #include "engine/ui/Screenshot.h"
+#include <array>
 #include <memory>
 #include <string>
 #include <vector>
@@ -41,17 +43,24 @@ private:
     std::vector<RenderObject> collectViewmodelObjects(entt::registry& registry,
                                                       const CameraState& camera,
                                                       float deltaTime) const;
-    std::vector<PointLight> collectLights(entt::registry& registry) const;
+    std::vector<RenderLight> collectLights(entt::registry& registry) const;
+    void assignShadowSlots(std::vector<RenderLight>& lights) const;
+    LightingEnvironment lightingEnvironment() const;
+    int shadowResolution() const;
+    glm::mat4 buildShadowMatrix(const RenderLight& light) const;
+    void renderShadowPass(const std::vector<RenderObject>& objects,
+                          const std::vector<RenderLight>& lights,
+                          ShadowRenderData& shadowData);
     void renderScenePass(const CameraState& camera,
                          const std::vector<RenderObject>& objects,
                          const std::vector<RenderObject>& viewmodelObjects,
-                         const std::vector<PointLight>& lights);
+                         const std::vector<RenderLight>& lights);
     void renderPostProcess(Application& app, const CameraState& camera);
     InteractionPromptState& ensurePromptState(entt::registry& registry) const;
     void updateDebugParams(const CameraState& camera, float deltaTime, std::size_t drawCalls);
     void renderOverlays(Application& app,
                         entt::registry& registry,
-                        std::vector<PointLight>& lights,
+                        std::vector<RenderLight>& lights,
                         InteractionPromptState& prompt);
     void handleResolutionChange();
     void handleCapture(Application& app, int displayW, int displayH);
@@ -59,6 +68,7 @@ private:
     Framebuffer sceneFBO_;
     Framebuffer compositeFBO_;
     std::unique_ptr<Shader> sceneShader_;
+    std::unique_ptr<Shader> shadowShader_;
     std::unique_ptr<Renderer> renderer_;
     CompositePass compositePass_;
     StylizePass stylizePass_;
@@ -66,6 +76,7 @@ private:
     DebugParams debugParams_;
     AutoScreenshot autoCapture_;
     InputSystem& input_;
+    std::array<ShadowMap, kMaxShadowedSpotLights> shadowMaps_;
     bool overlaysVisible_ = false;
     bool f1Pressed_ = false;
     bool f12Pressed_ = false;

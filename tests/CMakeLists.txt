@@ -14,6 +14,17 @@ target_compile_definitions(test_level_def PRIVATE
 )
 add_test(NAME level_def COMMAND test_level_def)
 
+add_executable(test_level_lighting
+    test_level_lighting.cpp
+    ${CMAKE_SOURCE_DIR}/src/game/level/LevelDef.cpp
+)
+target_include_directories(test_level_lighting PRIVATE ${CMAKE_SOURCE_DIR}/src)
+target_link_libraries(test_level_lighting PRIVATE glm::glm)
+target_compile_definitions(test_level_lighting PRIVATE
+    LIGHT_RECORDS_SCENE_FILE="${CMAKE_SOURCE_DIR}/tests/data/light_records.scene"
+)
+add_test(NAME level_lighting COMMAND test_level_lighting)
+
 add_executable(test_content_registry
     test_content_registry.cpp
     ${CMAKE_SOURCE_DIR}/src/engine/core/PathUtils.cpp
