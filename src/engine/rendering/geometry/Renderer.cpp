@@ -27,8 +27,6 @@ void Renderer::drawScene(const std::vector<RenderObject>& objects,
     shader_->setVec3("uHemisphereGroundColor", lighting.hemisphereGroundColor);
     shader_->setFloat("uHemisphereStrength", lighting.hemisphereStrength);
     shader_->setInt("uEnableDirectionalLights", lighting.enableDirectionalLights ? 1 : 0);
-    shader_->setFloat("uDirectionalLightIntensityScale", lighting.directionalIntensityScale);
-    shader_->setVec3("uDirectionalLightTint", lighting.directionalLightTint);
     shader_->setInt("uEnableShadows", lighting.enableShadows ? 1 : 0);
     shader_->setFloat("uShadowBias", lighting.shadowBias);
     shader_->setFloat("uShadowNormalBias", lighting.shadowNormalBias);

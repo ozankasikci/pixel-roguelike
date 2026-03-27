@@ -162,9 +162,25 @@ void ImGuiLayer::renderOverlay(DebugParams& params, std::vector<RenderLight>& li
         ImGui::ColorEdit3("Hemi Sky", &params.hemisphereSkyColor.x, ImGuiColorEditFlags_Float | ImGuiColorEditFlags_NoInputs);
         ImGui::ColorEdit3("Hemi Ground", &params.hemisphereGroundColor.x, ImGuiColorEditFlags_Float | ImGuiColorEditFlags_NoInputs);
         ImGui::SliderFloat("Hemi Strength", &params.hemisphereStrength, 0.0f, 1.2f, "%.2f");
-        ImGui::Checkbox("Directional Lights", &params.enableDirectionalLights);
-        ImGui::SliderFloat("Directional Scale", &params.directionalLightIntensityScale, 0.0f, 3.0f, "%.2f");
-        ImGui::ColorEdit3("Directional Tint", &params.directionalLightTint.x, ImGuiColorEditFlags_Float | ImGuiColorEditFlags_NoInputs);
+        ImGui::Checkbox("Enable Directional System", &params.enableDirectionalLights);
+        ImGui::BeginDisabled(!params.enableDirectionalLights);
+        if (ImGui::TreeNodeEx("Sun", ImGuiTreeNodeFlags_DefaultOpen)) {
+            ImGui::Checkbox("Sun Enabled", &params.sunDirectional.enabled);
+            ImGui::ColorEdit3("Sun Color", &params.sunDirectional.color.x, ImGuiColorEditFlags_Float | ImGuiColorEditFlags_NoInputs);
+            ImGui::SliderFloat("Sun Intensity", &params.sunDirectional.intensity, 0.0f, 3.0f, "%.2f");
+            ImGui::DragFloat3("Sun Direction", &params.sunDirectional.direction.x, 0.01f, -1.0f, 1.0f, "%.2f");
+            ImGui::TreePop();
+        }
+        if (ImGui::TreeNodeEx("Fill", ImGuiTreeNodeFlags_DefaultOpen)) {
+            ImGui::Checkbox("Fill Enabled", &params.fillDirectional.enabled);
+            ImGui::BeginDisabled(!params.fillDirectional.enabled);
+            ImGui::ColorEdit3("Fill Color", &params.fillDirectional.color.x, ImGuiColorEditFlags_Float | ImGuiColorEditFlags_NoInputs);
+            ImGui::SliderFloat("Fill Intensity", &params.fillDirectional.intensity, 0.0f, 2.0f, "%.2f");
+            ImGui::DragFloat3("Fill Direction", &params.fillDirectional.direction.x, 0.01f, -1.0f, 1.0f, "%.2f");
+            ImGui::EndDisabled();
+            ImGui::TreePop();
+        }
+        ImGui::EndDisabled();
         ImGui::SliderFloat("Torch Inner Cone", &params.playerTorchInnerConeDegrees, 5.0f, 50.0f, "%.1f");
         ImGui::SliderFloat("Torch Outer Cone", &params.playerTorchOuterConeDegrees, 8.0f, 65.0f, "%.1f");
     }

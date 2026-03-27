@@ -41,8 +41,18 @@ struct DebugParams {
     glm::vec3 hemisphereGroundColor{0.06f, 0.05f, 0.045f};
     float hemisphereStrength = 0.32f;
     bool enableDirectionalLights = true;
-    float directionalLightIntensityScale = 1.0f;
-    glm::vec3 directionalLightTint{1.0f, 1.0f, 1.0f};
+    DirectionalLightSlot sunDirectional{
+        true,
+        glm::vec3(0.24f, 0.88f, 0.26f),
+        glm::vec3(0.98f, 0.96f, 0.94f),
+        1.0f
+    };
+    DirectionalLightSlot fillDirectional{
+        false,
+        glm::vec3(-0.22f, 0.74f, -0.36f),
+        glm::vec3(0.72f, 0.80f, 0.92f),
+        0.18f
+    };
     float playerTorchInnerConeDegrees = 58.0f;
     float playerTorchOuterConeDegrees = 82.0f;
 };

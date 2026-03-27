@@ -35,8 +35,6 @@ uniform vec3 uHemisphereSkyColor;
 uniform vec3 uHemisphereGroundColor;
 uniform float uHemisphereStrength;
 uniform int uEnableDirectionalLights;
-uniform float uDirectionalLightIntensityScale;
-uniform vec3 uDirectionalLightTint;
 uniform vec3 uCameraPos;
 uniform vec3 uBaseColor;
 uniform int uMaterialKind;
@@ -692,7 +690,6 @@ void main() {
                 continue;
             }
             L = normalize(-light.direction);
-            falloff = uDirectionalLightIntensityScale;
         } else {
             vec3 toLight = light.position - vWorldPos;
             float dist = length(toLight);
@@ -722,11 +719,7 @@ void main() {
         vec3 specular = (D * G * F) / max(4.0 * NdotV * NdotL, 0.001);
         vec3 kD = (vec3(1.0) - F) * (1.0 - metalness);
 
-        vec3 effectiveLightColor = light.color;
-        if (light.type == LIGHT_DIRECTIONAL) {
-            effectiveLightColor *= uDirectionalLightTint;
-        }
-        vec3 radiance = effectiveLightColor * light.intensity * falloff;
+        vec3 radiance = light.color * light.intensity * falloff;
         float neutralEnergy = luminance(radiance);
         float chromaBoost = smoothstep(0.18, 0.72, saturationOf(light.color));
         float diffuseTintResponse = tintResponse;

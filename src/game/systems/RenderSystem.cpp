@@ -58,6 +58,26 @@ glm::vec3 safeNormalize(const glm::vec3& value, const glm::vec3& fallback) {
     return glm::normalize(value);
 }
 
+void appendDirectionalLight(std::vector<RenderLight>& lights,
+                            const DirectionalLightSlot& slot,
+                            const glm::vec3& fallbackDirection) {
+    if (!slot.enabled || slot.intensity <= 0.0001f) {
+        return;
+    }
+
+    RenderLight renderLight;
+    renderLight.type = LightType::Directional;
+    renderLight.direction = safeNormalize(slot.direction, fallbackDirection);
+    renderLight.color = glm::max(slot.color, glm::vec3(0.0f));
+    renderLight.intensity = slot.intensity;
+    lights.push_back(renderLight);
+}
+
+void syncSkySunFromDirectional(DebugParams& params) {
+    params.post.sky.sunDirection = safeNormalize(params.sunDirectional.direction, params.post.sky.sunDirection);
+    params.post.sky.sunColor = glm::max(params.sunDirectional.color, glm::vec3(0.0f));
+}
+
 float playerTorchVisualFlicker(float timeSeconds) {
     float pulseA = std::sin(timeSeconds * 5.7f) * 0.5f + 0.5f;
     float pulseB = std::sin(timeSeconds * 11.9f + 1.7f) * 0.5f + 0.5f;
@@ -248,6 +268,9 @@ std::vector<RenderLight> RenderSystem::collectLights(entt::registry& registry) c
         break;
     }
 
+    appendDirectionalLight(lights, debugParams_.sunDirectional, glm::vec3(0.0f, -1.0f, 0.0f));
+    appendDirectionalLight(lights, debugParams_.fillDirectional, glm::vec3(0.0f, -1.0f, 0.0f));
+
     auto lightView = registry.view<TransformComponent, LightComponent>();
     for (auto [entity, transform, light] : lightView.each()) {
         RenderLight renderLight;
@@ -293,8 +316,10 @@ LightingEnvironment RenderSystem::lightingEnvironment() const {
     lighting.hemisphereGroundColor = debugParams_.hemisphereGroundColor;
     lighting.hemisphereStrength = debugParams_.hemisphereStrength;
     lighting.enableDirectionalLights = debugParams_.enableDirectionalLights;
-    lighting.directionalIntensityScale = debugParams_.directionalLightIntensityScale;
-    lighting.directionalLightTint = debugParams_.directionalLightTint;
+    lighting.sun = debugParams_.sunDirectional;
+    lighting.sun.direction = safeNormalize(lighting.sun.direction, glm::vec3(0.0f, -1.0f, 0.0f));
+    lighting.fill = debugParams_.fillDirectional;
+    lighting.fill.direction = safeNormalize(lighting.fill.direction, glm::vec3(0.0f, -1.0f, 0.0f));
     lighting.enableShadows = debugParams_.shadowsEnabled;
     lighting.shadowBias = debugParams_.shadowBias;
     lighting.shadowNormalBias = debugParams_.shadowNormalBias;
@@ -346,8 +371,9 @@ void RenderSystem::applyEnvironmentSettings(EnvironmentProfile profile) {
     debugParams_.hemisphereGroundColor = settings.lighting.hemisphereGroundColor;
     debugParams_.hemisphereStrength = settings.lighting.hemisphereStrength;
     debugParams_.enableDirectionalLights = settings.lighting.enableDirectionalLights;
-    debugParams_.directionalLightIntensityScale = settings.lighting.directionalIntensityScale;
-    debugParams_.directionalLightTint = settings.lighting.directionalLightTint;
+    debugParams_.sunDirectional = settings.lighting.sun;
+    debugParams_.fillDirectional = settings.lighting.fill;
+    syncSkySunFromDirectional(debugParams_);
 }
 
 void RenderSystem::syncEnvironmentProfile(entt::registry& registry) {
@@ -490,6 +516,7 @@ void RenderSystem::renderPostProcess(Application& app, const CameraState& camera
     debugParams_.post.farPlane  = 100.0f;
     debugParams_.post.timeSeconds = static_cast<float>(glfwGetTime());
     debugParams_.post.inverseViewProjection = glm::inverse(camera.projectionMatrix * camera.viewMatrix);
+    syncSkySunFromDirectional(debugParams_);
 
     compositePass_.apply(sceneFBO_.colorTexture(),
                          sceneFBO_.depthTexture(),

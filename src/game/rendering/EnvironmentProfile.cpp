@@ -154,6 +154,31 @@ SkySettings makeCloisterSky() {
     return sky;
 }
 
+DirectionalLightSlot makeSunSlot(const SkySettings& sky, float intensity, bool enabled = true) {
+    DirectionalLightSlot slot;
+    slot.enabled = enabled && intensity > 0.001f;
+    if (glm::dot(sky.sunDirection, sky.sunDirection) > 0.0001f) {
+        slot.direction = glm::normalize(sky.sunDirection);
+    }
+    slot.color = sky.sunColor;
+    slot.intensity = intensity;
+    return slot;
+}
+
+DirectionalLightSlot makeFillSlot(const glm::vec3& direction,
+                                  const glm::vec3& color,
+                                  float intensity,
+                                  bool enabled = true) {
+    DirectionalLightSlot slot;
+    slot.enabled = enabled && intensity > 0.001f;
+    if (glm::dot(direction, direction) > 0.0001f) {
+        slot.direction = glm::normalize(direction);
+    }
+    slot.color = color;
+    slot.intensity = intensity;
+    return slot;
+}
+
 EnvironmentRenderSettings makeNeutralSettings() {
     EnvironmentRenderSettings settings;
     settings.profile = EnvironmentProfile::Neutral;
@@ -181,8 +206,11 @@ EnvironmentRenderSettings makeNeutralSettings() {
     settings.lighting.hemisphereGroundColor = glm::vec3(0.06f, 0.055f, 0.05f);
     settings.lighting.hemisphereStrength = 0.30f;
     settings.lighting.enableDirectionalLights = true;
-    settings.lighting.directionalIntensityScale = 1.0f;
-    settings.lighting.directionalLightTint = glm::vec3(0.98f, 0.96f, 0.94f);
+    settings.lighting.sun = makeSunSlot(settings.sky, 0.92f);
+    settings.lighting.fill = makeFillSlot(glm::vec3(-0.20f, 0.72f, -0.34f),
+                                          glm::vec3(0.76f, 0.82f, 0.92f),
+                                          0.10f,
+                                          false);
     return settings;
 }
 
@@ -213,8 +241,11 @@ EnvironmentRenderSettings makeDungeonTorchSettings() {
     settings.lighting.hemisphereGroundColor = glm::vec3(0.07f, 0.05f, 0.03f);
     settings.lighting.hemisphereStrength = 0.24f;
     settings.lighting.enableDirectionalLights = false;
-    settings.lighting.directionalIntensityScale = 0.0f;
-    settings.lighting.directionalLightTint = glm::vec3(1.0f);
+    settings.lighting.sun = makeSunSlot(settings.sky, 0.0f, false);
+    settings.lighting.fill = makeFillSlot(glm::vec3(-0.20f, 0.72f, -0.34f),
+                                          glm::vec3(1.0f),
+                                          0.0f,
+                                          false);
     return settings;
 }
 
@@ -245,8 +276,10 @@ EnvironmentRenderSettings makeSunlitMeadowSettings() {
     settings.lighting.hemisphereGroundColor = glm::vec3(0.26f, 0.31f, 0.15f);
     settings.lighting.hemisphereStrength = 0.52f;
     settings.lighting.enableDirectionalLights = true;
-    settings.lighting.directionalIntensityScale = 1.24f;
-    settings.lighting.directionalLightTint = glm::vec3(1.00f, 0.94f, 0.78f);
+    settings.lighting.sun = makeSunSlot(settings.sky, 1.24f);
+    settings.lighting.fill = makeFillSlot(glm::vec3(-0.18f, 0.64f, -0.44f),
+                                          glm::vec3(0.68f, 0.78f, 0.92f),
+                                          0.18f);
     return settings;
 }
 
@@ -277,8 +310,10 @@ EnvironmentRenderSettings makeMountainDuskSettings() {
     settings.lighting.hemisphereGroundColor = glm::vec3(0.10f, 0.12f, 0.16f);
     settings.lighting.hemisphereStrength = 0.38f;
     settings.lighting.enableDirectionalLights = true;
-    settings.lighting.directionalIntensityScale = 0.72f;
-    settings.lighting.directionalLightTint = glm::vec3(0.84f, 0.76f, 0.92f);
+    settings.lighting.sun = makeSunSlot(settings.sky, 0.72f);
+    settings.lighting.fill = makeFillSlot(glm::vec3(0.18f, 0.86f, 0.14f),
+                                          glm::vec3(0.52f, 0.56f, 0.80f),
+                                          0.16f);
     return settings;
 }
 
@@ -309,8 +344,10 @@ EnvironmentRenderSettings makeArcaneFieldSettings() {
     settings.lighting.hemisphereGroundColor = glm::vec3(0.30f, 0.24f, 0.08f);
     settings.lighting.hemisphereStrength = 0.46f;
     settings.lighting.enableDirectionalLights = true;
-    settings.lighting.directionalIntensityScale = 1.06f;
-    settings.lighting.directionalLightTint = glm::vec3(0.92f, 0.84f, 0.52f);
+    settings.lighting.sun = makeSunSlot(settings.sky, 1.06f);
+    settings.lighting.fill = makeFillSlot(glm::vec3(-0.34f, 0.78f, -0.14f),
+                                          glm::vec3(0.42f, 0.68f, 0.78f),
+                                          0.24f);
     return settings;
 }
 
@@ -341,9 +378,12 @@ EnvironmentRenderSettings makeCathedralArcadeSettings() {
     settings.lighting.hemisphereSkyColor = glm::vec3(0.18f, 0.21f, 0.18f);
     settings.lighting.hemisphereGroundColor = glm::vec3(0.05f, 0.06f, 0.04f);
     settings.lighting.hemisphereStrength = 0.40f;
-    settings.lighting.enableDirectionalLights = false;
-    settings.lighting.directionalIntensityScale = 0.0f;
-    settings.lighting.directionalLightTint = glm::vec3(0.90f, 0.94f, 0.90f);
+    settings.lighting.enableDirectionalLights = true;
+    settings.lighting.sun = makeSunSlot(settings.sky, 0.16f);
+    settings.lighting.fill = makeFillSlot(glm::vec3(-0.26f, 0.80f, -0.18f),
+                                          glm::vec3(0.82f, 0.88f, 0.86f),
+                                          0.06f,
+                                          false);
     return settings;
 }
 
@@ -374,8 +414,10 @@ EnvironmentRenderSettings makeCloisterDaylightSettings() {
     settings.lighting.hemisphereGroundColor = glm::vec3(0.10f, 0.09f, 0.08f);
     settings.lighting.hemisphereStrength = 0.32f;
     settings.lighting.enableDirectionalLights = true;
-    settings.lighting.directionalIntensityScale = 0.82f;
-    settings.lighting.directionalLightTint = glm::vec3(0.98f, 0.94f, 0.84f);
+    settings.lighting.sun = makeSunSlot(settings.sky, 0.82f);
+    settings.lighting.fill = makeFillSlot(glm::vec3(-0.16f, 0.78f, -0.42f),
+                                          glm::vec3(0.70f, 0.78f, 0.90f),
+                                          0.12f);
     return settings;
 }
 
