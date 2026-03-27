@@ -1,6 +1,7 @@
 #pragma once
 
 #include "engine/rendering/post/PostProcessParams.h"
+#include "engine/rendering/post/SkyTextureLibrary.h"
 
 #include <glad/gl.h>
 #include <memory>
@@ -25,6 +26,7 @@ public:
 
 private:
     std::unique_ptr<Shader> shader_;
+    SkyTextureLibrary skyTextures_;
     GLuint quadVAO_ = 0;
     GLuint quadVBO_ = 0;
 };

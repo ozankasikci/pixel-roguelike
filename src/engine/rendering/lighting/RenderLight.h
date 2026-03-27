@@ -30,6 +30,7 @@ struct LightingEnvironment {
     float hemisphereStrength = 0.32f;
     bool enableDirectionalLights = true;
     float directionalIntensityScale = 1.0f;
+    glm::vec3 directionalLightTint{1.0f, 1.0f, 1.0f};
     bool enableShadows = true;
     float shadowBias = 0.0018f;
     float shadowNormalBias = 0.03f;

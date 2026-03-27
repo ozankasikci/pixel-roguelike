@@ -46,9 +46,10 @@ void ImGuiLayer::renderOverlay(DebugParams& params, std::vector<RenderLight>& li
     ImGui::Begin("Debug Overlay");
 
     if (ImGui::CollapsingHeader("Render", ImGuiTreeNodeFlags_DefaultOpen)) {
-        const char* viewModes[] = {"Final", "Scene Color", "Normals", "Depth"};
+        const char* viewModes[] = {"Final", "Scene Color", "Normals", "Depth", "Sky"};
         const char* toneMapModes[] = {"Linear", "ACES Fitted"};
-        ImGui::Combo("View Mode", &params.post.debugViewMode, viewModes, 4);
+        ImGui::Combo("View Mode", &params.post.debugViewMode, viewModes, 5);
+        ImGui::Checkbox("Enable Sky", &params.post.enableSky);
         ImGui::Checkbox("Enable Dither", &params.post.enableDither);
         ImGui::Checkbox("Enable Edges", &params.post.enableEdges);
         ImGui::Checkbox("Enable Fog", &params.post.enableFog);
@@ -109,6 +110,21 @@ void ImGuiLayer::renderOverlay(DebugParams& params, std::vector<RenderLight>& li
         ImGui::ColorEdit3("Highlight Tint", &params.post.highlightTint.x, ImGuiColorEditFlags_Float | ImGuiColorEditFlags_NoInputs);
     }
 
+    if (ImGui::CollapsingHeader("Sky", ImGuiTreeNodeFlags_DefaultOpen)) {
+        ImGui::BeginDisabled(!params.post.enableSky);
+        ImGui::SliderFloat("Sun Size", &params.post.sky.sunSize, 0.002f, 0.08f, "%.3f");
+        ImGui::SliderFloat("Sun Glow", &params.post.sky.sunGlow, 0.0f, 1.2f, "%.2f");
+        ImGui::SliderFloat("Cloud Scale", &params.post.sky.cloudScale, 0.25f, 4.0f, "%.2f");
+        ImGui::SliderFloat("Cloud Speed", &params.post.sky.cloudSpeed, 0.0f, 0.04f, "%.3f");
+        ImGui::SliderFloat("Cloud Coverage", &params.post.sky.cloudCoverage, 0.0f, 1.0f, "%.2f");
+        ImGui::SliderFloat("Cloud Parallax", &params.post.sky.cloudParallax, 0.0f, 0.20f, "%.3f");
+        ImGui::SliderFloat("Horizon Fade", &params.post.sky.horizonFade, 0.02f, 0.60f, "%.2f");
+        ImGui::ColorEdit3("Zenith Color", &params.post.sky.zenithColor.x, ImGuiColorEditFlags_Float | ImGuiColorEditFlags_NoInputs);
+        ImGui::ColorEdit3("Horizon Color", &params.post.sky.horizonColor.x, ImGuiColorEditFlags_Float | ImGuiColorEditFlags_NoInputs);
+        ImGui::ColorEdit3("Cloud Tint", &params.post.sky.cloudTint.x, ImGuiColorEditFlags_Float | ImGuiColorEditFlags_NoInputs);
+        ImGui::EndDisabled();
+    }
+
     if (ImGui::CollapsingHeader("Glow", ImGuiTreeNodeFlags_DefaultOpen)) {
         ImGui::BeginDisabled(!params.post.enableBloom);
         ImGui::SliderFloat("Bloom Threshold", &params.post.bloomThreshold, 0.1f, 1.2f, "%.2f");
@@ -148,6 +164,7 @@ void ImGuiLayer::renderOverlay(DebugParams& params, std::vector<RenderLight>& li
         ImGui::SliderFloat("Hemi Strength", &params.hemisphereStrength, 0.0f, 1.2f, "%.2f");
         ImGui::Checkbox("Directional Lights", &params.enableDirectionalLights);
         ImGui::SliderFloat("Directional Scale", &params.directionalLightIntensityScale, 0.0f, 3.0f, "%.2f");
+        ImGui::ColorEdit3("Directional Tint", &params.directionalLightTint.x, ImGuiColorEditFlags_Float | ImGuiColorEditFlags_NoInputs);
         ImGui::SliderFloat("Torch Inner Cone", &params.playerTorchInnerConeDegrees, 5.0f, 50.0f, "%.1f");
         ImGui::SliderFloat("Torch Outer Cone", &params.playerTorchOuterConeDegrees, 8.0f, 65.0f, "%.1f");
     }

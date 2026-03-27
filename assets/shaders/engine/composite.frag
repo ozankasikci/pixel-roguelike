@@ -3,7 +3,11 @@
 uniform sampler2D sceneColor;
 uniform sampler2D sceneDepth;
 uniform sampler2D sceneNormal;
+uniform sampler2D uCloudLayerA;
+uniform sampler2D uCloudLayerB;
+uniform sampler2D uHorizonLayer;
 
+uniform int uEnableSky;
 uniform int uEnableFog;
 uniform int uEnableToneMap;
 uniform int uEnableBloom;
@@ -12,6 +16,11 @@ uniform int uEnableGrain;
 uniform int uEnableScanlines;
 uniform int uEnableSharpen;
 uniform int uToneMapMode;
+uniform int uDebugViewMode;
+uniform int uMoonEnabled;
+uniform int uHasCloudLayerA;
+uniform int uHasCloudLayerB;
+uniform int uHasHorizonLayer;
 
 uniform float uFogDensity;
 uniform float uFogStart;
@@ -32,17 +41,39 @@ uniform float uSharpenAmount;
 uniform float uSplitToneStrength;
 uniform float uSplitToneBalance;
 uniform float uTimeSeconds;
+uniform float uNearPlane;
+uniform float uFarPlane;
+uniform float uSunSize;
+uniform float uSunGlow;
+uniform float uMoonSize;
+uniform float uMoonGlow;
+uniform float uCloudScale;
+uniform float uCloudSpeed;
+uniform float uCloudCoverage;
+uniform float uCloudParallax;
+uniform float uHorizonHeight;
+uniform float uHorizonFade;
+
 uniform vec3 uFogNearColor;
 uniform vec3 uFogFarColor;
 uniform vec3 uShadowTint;
 uniform vec3 uHighlightTint;
-uniform float uNearPlane;
-uniform float uFarPlane;
+uniform vec3 uSkyZenithColor;
+uniform vec3 uSkyHorizonColor;
+uniform vec3 uSkyGroundHazeColor;
+uniform vec3 uSunDirection;
+uniform vec3 uSunColor;
+uniform vec3 uMoonDirection;
+uniform vec3 uMoonColor;
+uniform vec3 uCloudTint;
+uniform vec3 uHorizonTint;
+uniform mat4 uInverseViewProjection;
 
 in vec2 vTexCoord;
 out vec4 fragColor;
 
 const vec3 lumaWeights = vec3(0.2126, 0.7152, 0.0722);
+const float PI = 3.14159265359;
 
 float hash12(vec2 p) {
     return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453);
@@ -121,6 +152,94 @@ vec3 bloomGlow(vec2 uv, vec2 texelSize) {
     return totalWeight > 0.0 ? glow / totalWeight : vec3(0.0);
 }
 
+vec3 reconstructWorldDir(vec2 uv) {
+    vec2 ndc = uv * 2.0 - 1.0;
+    vec4 nearPoint = uInverseViewProjection * vec4(ndc, -1.0, 1.0);
+    vec4 farPoint = uInverseViewProjection * vec4(ndc, 1.0, 1.0);
+    nearPoint /= max(nearPoint.w, 0.0001);
+    farPoint /= max(farPoint.w, 0.0001);
+    return normalize(farPoint.xyz - nearPoint.xyz);
+}
+
+vec2 skyUvFromDirection(vec3 dir) {
+    float longitude = atan(dir.z, dir.x) / (2.0 * PI) + 0.5;
+    float latitude = asin(clamp(dir.y, -1.0, 1.0)) / PI + 0.5;
+    return vec2(fract(longitude), clamp(latitude, 0.0, 1.0));
+}
+
+float celestialDisc(vec3 rayDir, vec3 lightDir, float angularRadius, float softness) {
+    float angle = acos(clamp(dot(normalize(rayDir), normalize(lightDir)), -1.0, 1.0));
+    return 1.0 - smoothstep(angularRadius, angularRadius + softness, angle);
+}
+
+vec4 samplePanoramaLayer(sampler2D layer, vec3 worldDir, float xShift, float yShift, float scale) {
+    vec2 uv = skyUvFromDirection(worldDir);
+    uv.x = fract(uv.x * scale + xShift);
+    uv.y = clamp((uv.y - 0.5) * scale + 0.5 + yShift, 0.0, 1.0);
+    return texture(layer, uv);
+}
+
+vec3 renderSky(vec3 worldDir) {
+    float horizonBlend = smoothstep(-0.22, 0.18, worldDir.y);
+    float zenithBlend = smoothstep(0.02, 0.82, worldDir.y);
+
+    vec3 skyColor = mix(uSkyGroundHazeColor, uSkyHorizonColor, horizonBlend);
+    skyColor = mix(skyColor, uSkyZenithColor, zenithBlend);
+
+    float horizonGlow = exp(-abs(worldDir.y) * 10.0);
+    skyColor = mix(skyColor, mix(uSkyGroundHazeColor, uSkyHorizonColor, 0.65), horizonGlow * 0.12);
+
+    float sunDisc = celestialDisc(worldDir, normalize(uSunDirection), max(uSunSize, 0.001), max(uSunSize * 1.8, 0.002));
+    float sunHalo = pow(max(dot(worldDir, normalize(uSunDirection)), 0.0), mix(220.0, 10.0, clamp(uSunGlow, 0.0, 1.0))) * uSunGlow;
+    skyColor += uSunColor * (sunDisc * 1.35 + sunHalo * 0.55);
+
+    if (uMoonEnabled != 0) {
+        float moonDisc = celestialDisc(worldDir, normalize(uMoonDirection), max(uMoonSize, 0.001), max(uMoonSize * 1.5, 0.002));
+        float moonHalo = pow(max(dot(worldDir, normalize(uMoonDirection)), 0.0), mix(180.0, 14.0, clamp(uMoonGlow, 0.0, 1.0))) * uMoonGlow;
+        skyColor += uMoonColor * (moonDisc * 0.85 + moonHalo * 0.30);
+    }
+
+    float upperSkyMask = smoothstep(-0.04, 0.16, worldDir.y);
+    float layerScaleA = max(uCloudScale, 0.001);
+    float layerScaleB = max(uCloudScale * 1.55, 0.001);
+    float coverageThreshold = mix(0.94, 0.16, clamp(uCloudCoverage, 0.0, 1.0));
+    float parallax = worldDir.y * uCloudParallax * 0.12;
+
+    if (uHasCloudLayerA != 0) {
+        vec4 cloudsA = samplePanoramaLayer(
+            uCloudLayerA,
+            worldDir,
+            uTimeSeconds * uCloudSpeed,
+            parallax,
+            layerScaleA
+        );
+        float cloudAlpha = smoothstep(coverageThreshold, 1.0, cloudsA.a) * upperSkyMask;
+        vec3 cloudColor = mix(skyColor, cloudsA.rgb * uCloudTint, 0.72);
+        skyColor = mix(skyColor, cloudColor, cloudAlpha * 0.82);
+    }
+
+    if (uHasCloudLayerB != 0) {
+        vec4 cloudsB = samplePanoramaLayer(
+            uCloudLayerB,
+            worldDir,
+            -uTimeSeconds * uCloudSpeed * 0.62,
+            -parallax * 0.45,
+            layerScaleB
+        );
+        float cloudAlpha = smoothstep(coverageThreshold + 0.06, 1.0, cloudsB.a) * upperSkyMask;
+        vec3 cloudColor = mix(skyColor, cloudsB.rgb * uCloudTint, 0.62);
+        skyColor = mix(skyColor, cloudColor, cloudAlpha * 0.58);
+    }
+
+    if (uHasHorizonLayer != 0) {
+        vec4 horizon = texture(uHorizonLayer, skyUvFromDirection(worldDir));
+        float horizonMask = 1.0 - smoothstep(uHorizonHeight, uHorizonHeight + max(uHorizonFade, 0.001), abs(worldDir.y));
+        skyColor = mix(skyColor, horizon.rgb * uHorizonTint, horizon.a * horizonMask);
+    }
+
+    return max(skyColor, vec3(0.0));
+}
+
 void main() {
     vec2 texSize = vec2(textureSize(sceneColor, 0));
     vec2 texelSize = 1.0 / texSize;
@@ -128,6 +247,18 @@ void main() {
 
     float rawDepth = texture(sceneDepth, vTexCoord).r;
     float linDepth = linearizeDepth(rawDepth);
+    bool isSkyPixel = (uEnableSky != 0) && rawDepth >= 0.9999;
+    vec3 worldDir = reconstructWorldDir(vTexCoord);
+    vec3 skyColor = (uEnableSky != 0) ? renderSky(worldDir) : uFogFarColor;
+
+    if (uDebugViewMode == 4) {
+        fragColor = vec4(skyColor, 1.0);
+        return;
+    }
+
+    if (isSkyPixel) {
+        color = skyColor;
+    }
 
     float fogFactor = 0.0;
     if (uEnableFog != 0 && uFogDensity > 0.0) {
@@ -152,9 +283,13 @@ void main() {
     vec3 localFogColor = mix(uFogNearColor, uFogFarColor, clamp(0.28 + fogNoise * 0.42 + verticalMist * 0.10, 0.0, 1.0));
     localFogColor = clamp(localFogColor * fogShade, 0.0, 1.0);
 
-    float fogContrastFade = 1.0 - fogFactor * 0.22;
-    color = mix(vec3(dot(color, lumaWeights)), color, fogContrastFade);
-    color = mix(color, localFogColor, fogFactor * mistAmount);
+    if (isSkyPixel) {
+        color = mix(color, localFogColor, fogFactor * 0.10);
+    } else {
+        float fogContrastFade = 1.0 - fogFactor * 0.22;
+        color = mix(vec3(dot(color, lumaWeights)), color, fogContrastFade);
+        color = mix(color, localFogColor, fogFactor * mistAmount);
+    }
 
     if (uEnableBloom != 0) {
         color += bloomGlow(vTexCoord, texelSize) * uBloomIntensity;

@@ -42,6 +42,7 @@ struct DebugParams {
     float hemisphereStrength = 0.32f;
     bool enableDirectionalLights = true;
     float directionalLightIntensityScale = 1.0f;
+    glm::vec3 directionalLightTint{1.0f, 1.0f, 1.0f};
     float playerTorchInnerConeDegrees = 58.0f;
     float playerTorchOuterConeDegrees = 82.0f;
 };

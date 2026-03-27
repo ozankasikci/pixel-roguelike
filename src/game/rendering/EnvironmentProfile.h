@@ -12,11 +12,13 @@ enum class EnvironmentProfile {
     MountainDusk = 3,
     ArcaneField = 4,
     CathedralArcade = 5,
+    CloisterDaylight = 6,
 };
 
 struct EnvironmentRenderSettings {
     EnvironmentProfile profile = EnvironmentProfile::Neutral;
     PostProcessParams post;
+    SkySettings sky;
     LightingEnvironment lighting;
 };
 

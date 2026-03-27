@@ -1,9 +1,12 @@
 #pragma once
 
+#include "engine/rendering/post/SkySettings.h"
+
 #include <glm/glm.hpp>
 
 struct PostProcessParams {
     int  paletteVariant  = 0;      // 0=neutral, 1=dungeon, 2=meadow, 3=dusk, 4=arcane, 5=cathedral_arcade
+    bool enableSky       = true;
     bool enableDither    = true;
     bool enableEdges     = true;
     bool enableFog       = true;
@@ -13,7 +16,7 @@ struct PostProcessParams {
     bool enableGrain     = true;
     bool enableScanlines = false;
     bool enableSharpen   = false;
-    int  debugViewMode   = 0;      // 0=final, 1=scene color, 2=normals, 3=depth
+    int  debugViewMode   = 0;      // 0=final, 1=scene color, 2=normals, 3=depth, 4=sky
     int  toneMapMode     = 1;      // 0=linear, 1=aces fitted
     float thresholdBias   = 0.024f;
     float patternScale    = 0.0f;  // 0 = match internal resolution grid
@@ -43,4 +46,6 @@ struct PostProcessParams {
     glm::vec3 highlightTint = glm::vec3(0.98f, 0.92f, 0.82f);
     float nearPlane         = 0.1f;
     float farPlane          = 100.0f;
+    glm::mat4 inverseViewProjection = glm::mat4(1.0f);
+    SkySettings sky{};
 };

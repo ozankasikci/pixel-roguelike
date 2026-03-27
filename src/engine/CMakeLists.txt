@@ -12,6 +12,7 @@ add_library(engine_rendering STATIC
     rendering/core/Framebuffer.cpp
     rendering/lighting/ShadowMap.cpp
     rendering/post/CompositePass.cpp
+    rendering/post/SkyTextureLibrary.cpp
     rendering/geometry/Mesh.cpp
     rendering/geometry/MeshLibrary.cpp
     rendering/geometry/Renderer.cpp

@@ -294,6 +294,7 @@ LightingEnvironment RenderSystem::lightingEnvironment() const {
     lighting.hemisphereStrength = debugParams_.hemisphereStrength;
     lighting.enableDirectionalLights = debugParams_.enableDirectionalLights;
     lighting.directionalIntensityScale = debugParams_.directionalLightIntensityScale;
+    lighting.directionalLightTint = debugParams_.directionalLightTint;
     lighting.enableShadows = debugParams_.shadowsEnabled;
     lighting.shadowBias = debugParams_.shadowBias;
     lighting.shadowNormalBias = debugParams_.shadowNormalBias;
@@ -303,6 +304,7 @@ LightingEnvironment RenderSystem::lightingEnvironment() const {
 void RenderSystem::applyEnvironmentSettings(EnvironmentProfile profile) {
     const EnvironmentRenderSettings settings = makeEnvironmentRenderSettings(profile);
 
+    const bool enableSky = debugParams_.post.enableSky;
     const bool enableDither = debugParams_.post.enableDither;
     const bool enableEdges = debugParams_.post.enableEdges;
     const bool enableFog = debugParams_.post.enableFog;
@@ -321,6 +323,8 @@ void RenderSystem::applyEnvironmentSettings(EnvironmentProfile profile) {
     const float timeSeconds = debugParams_.post.timeSeconds;
 
     debugParams_.post = settings.post;
+    debugParams_.post.sky = settings.sky;
+    debugParams_.post.enableSky = enableSky;
     debugParams_.post.enableDither = enableDither;
     debugParams_.post.enableEdges = enableEdges;
     debugParams_.post.enableFog = enableFog;
@@ -343,6 +347,7 @@ void RenderSystem::applyEnvironmentSettings(EnvironmentProfile profile) {
     debugParams_.hemisphereStrength = settings.lighting.hemisphereStrength;
     debugParams_.enableDirectionalLights = settings.lighting.enableDirectionalLights;
     debugParams_.directionalLightIntensityScale = settings.lighting.directionalIntensityScale;
+    debugParams_.directionalLightTint = settings.lighting.directionalLightTint;
 }
 
 void RenderSystem::syncEnvironmentProfile(entt::registry& registry) {
@@ -481,10 +486,10 @@ void RenderSystem::renderPostProcess(Application& app, const CameraState& camera
     int displayH = app.window().height();
     glClear(GL_COLOR_BUFFER_BIT);
 
-    (void)camera;
     debugParams_.post.nearPlane = 0.1f;
     debugParams_.post.farPlane  = 100.0f;
     debugParams_.post.timeSeconds = static_cast<float>(glfwGetTime());
+    debugParams_.post.inverseViewProjection = glm::inverse(camera.projectionMatrix * camera.viewMatrix);
 
     compositePass_.apply(sceneFBO_.colorTexture(),
                          sceneFBO_.depthTexture(),

@@ -330,6 +330,10 @@ void main() {
         fragColor = vec4(vec3(clamp(depthPreview, 0.0, 1.0)), 1.0);
         return;
     }
+    if (uDebugViewMode == 4) {
+        fragColor = vec4(gradedColor, 1.0);
+        return;
+    }
 
     bool isFloor = abs(normalSample.a - materialFloorMarker) < 0.02;
     vec2 patternScale = (uPatternScale <= 1.0) ? texSize : vec2(uPatternScale);

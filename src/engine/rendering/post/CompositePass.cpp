@@ -70,6 +70,19 @@ void CompositePass::apply(GLuint sceneColorTex,
     glBindTexture(GL_TEXTURE_2D, sceneNormalTex);
     shader_->setInt("sceneNormal", 2);
 
+    glActiveTexture(GL_TEXTURE3);
+    glBindTexture(GL_TEXTURE_2D, skyTextures_.resolve(params.sky.cloudLayerAPath));
+    shader_->setInt("uCloudLayerA", 3);
+
+    glActiveTexture(GL_TEXTURE4);
+    glBindTexture(GL_TEXTURE_2D, skyTextures_.resolve(params.sky.cloudLayerBPath));
+    shader_->setInt("uCloudLayerB", 4);
+
+    glActiveTexture(GL_TEXTURE5);
+    glBindTexture(GL_TEXTURE_2D, skyTextures_.resolve(params.sky.horizonLayerPath));
+    shader_->setInt("uHorizonLayer", 5);
+
+    shader_->setInt("uEnableSky", (params.enableSky && params.sky.enabled) ? 1 : 0);
     shader_->setInt("uEnableFog", params.enableFog ? 1 : 0);
     shader_->setInt("uEnableToneMap", params.enableToneMap ? 1 : 0);
     shader_->setInt("uEnableBloom", params.enableBloom ? 1 : 0);
@@ -78,6 +91,7 @@ void CompositePass::apply(GLuint sceneColorTex,
     shader_->setInt("uEnableScanlines", params.enableScanlines ? 1 : 0);
     shader_->setInt("uEnableSharpen", params.enableSharpen ? 1 : 0);
     shader_->setInt("uToneMapMode", params.toneMapMode);
+    shader_->setInt("uDebugViewMode", params.debugViewMode);
     shader_->setFloat("uFogDensity", params.fogDensity);
     shader_->setFloat("uFogStart", params.fogStart);
     shader_->setFloat("uExposure", params.exposure);
@@ -103,9 +117,34 @@ void CompositePass::apply(GLuint sceneColorTex,
     shader_->setVec3("uHighlightTint", params.highlightTint);
     shader_->setFloat("uNearPlane", params.nearPlane);
     shader_->setFloat("uFarPlane", params.farPlane);
+    shader_->setMat4("uInverseViewProjection", params.inverseViewProjection);
+    shader_->setVec3("uSkyZenithColor", params.sky.zenithColor);
+    shader_->setVec3("uSkyHorizonColor", params.sky.horizonColor);
+    shader_->setVec3("uSkyGroundHazeColor", params.sky.groundHazeColor);
+    shader_->setVec3("uSunDirection", params.sky.sunDirection);
+    shader_->setVec3("uSunColor", params.sky.sunColor);
+    shader_->setFloat("uSunSize", params.sky.sunSize);
+    shader_->setFloat("uSunGlow", params.sky.sunGlow);
+    shader_->setInt("uMoonEnabled", params.sky.moonEnabled ? 1 : 0);
+    shader_->setVec3("uMoonDirection", params.sky.moonDirection);
+    shader_->setVec3("uMoonColor", params.sky.moonColor);
+    shader_->setFloat("uMoonSize", params.sky.moonSize);
+    shader_->setFloat("uMoonGlow", params.sky.moonGlow);
+    shader_->setVec3("uCloudTint", params.sky.cloudTint);
+    shader_->setFloat("uCloudScale", params.sky.cloudScale);
+    shader_->setFloat("uCloudSpeed", params.sky.cloudSpeed);
+    shader_->setFloat("uCloudCoverage", params.sky.cloudCoverage);
+    shader_->setFloat("uCloudParallax", params.sky.cloudParallax);
+    shader_->setVec3("uHorizonTint", params.sky.horizonTint);
+    shader_->setFloat("uHorizonHeight", params.sky.horizonHeight);
+    shader_->setFloat("uHorizonFade", params.sky.horizonFade);
+    shader_->setInt("uHasCloudLayerA", params.sky.cloudLayerAPath.empty() ? 0 : 1);
+    shader_->setInt("uHasCloudLayerB", params.sky.cloudLayerBPath.empty() ? 0 : 1);
+    shader_->setInt("uHasHorizonLayer", params.sky.horizonLayerPath.empty() ? 0 : 1);
 
     glBindVertexArray(quadVAO_);
     glDrawArrays(GL_TRIANGLES, 0, 6);
     glBindVertexArray(0);
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    glActiveTexture(GL_TEXTURE0);
 }

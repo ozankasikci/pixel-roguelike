@@ -36,6 +36,7 @@ uniform vec3 uHemisphereGroundColor;
 uniform float uHemisphereStrength;
 uniform int uEnableDirectionalLights;
 uniform float uDirectionalLightIntensityScale;
+uniform vec3 uDirectionalLightTint;
 uniform vec3 uCameraPos;
 uniform vec3 uBaseColor;
 uniform int uMaterialKind;
@@ -648,7 +649,11 @@ void main() {
     }
     vec3 V = normalize(uCameraPos - vWorldPos);
     vec3 baseColor = clamp(uBaseColor, 0.0, 1.0);
-    vec3 albedo = applyMaterialDetail(baseColor, geometricNormal);
+    vec3 materialBaseColor = baseColor;
+    if (uUseMaterialMaps != 0 && uMaterialKind != MATERIAL_BRICK) {
+        materialBaseColor = clamp(baseColor * texture(uAlbedoMap, uv).rgb, 0.0, 1.0);
+    }
+    vec3 albedo = applyMaterialDetail(materialBaseColor, geometricNormal);
 
     float roughness = clamp(materialRoughness() * uMaterialRoughnessScale + uMaterialRoughnessBias, 0.08, 0.98);
     float metalness = clamp(uMaterialMetalness, 0.0, 1.0);
@@ -717,7 +722,11 @@ void main() {
         vec3 specular = (D * G * F) / max(4.0 * NdotV * NdotL, 0.001);
         vec3 kD = (vec3(1.0) - F) * (1.0 - metalness);
 
-        vec3 radiance = light.color * light.intensity * falloff;
+        vec3 effectiveLightColor = light.color;
+        if (light.type == LIGHT_DIRECTIONAL) {
+            effectiveLightColor *= uDirectionalLightTint;
+        }
+        vec3 radiance = effectiveLightColor * light.intensity * falloff;
         float neutralEnergy = luminance(radiance);
         float chromaBoost = smoothstep(0.18, 0.72, saturationOf(light.color));
         float diffuseTintResponse = tintResponse;
