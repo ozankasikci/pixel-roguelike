@@ -1,0 +1,11 @@
+id floor_default
+shading_model floor
+base_color 1.0 1.0 1.0
+uv_mode mesh
+uv_scale 1.0 1.0
+normal_strength 1.0
+roughness_scale 1.0
+roughness_bias 0.0
+metalness 0.0
+ao_strength 1.0
+light_tint_response 0.06

@@ -152,6 +152,37 @@ EnvironmentRenderSettings makeArcaneFieldSettings() {
     return settings;
 }
 
+EnvironmentRenderSettings makeCathedralArcadeSettings() {
+    EnvironmentRenderSettings settings = makeNeutralSettings();
+    settings.profile = EnvironmentProfile::CathedralArcade;
+    settings.post.paletteVariant = 5;
+    settings.post.thresholdBias = -0.018f;
+    settings.post.fogNearColor = glm::vec3(0.06f, 0.07f, 0.07f);
+    settings.post.fogFarColor = glm::vec3(0.15f, 0.17f, 0.15f);
+    settings.post.fogDensity = 0.034f;
+    settings.post.fogStart = 14.5f;
+    settings.post.exposure = 1.04f;
+    settings.post.gamma = 1.0f;
+    settings.post.contrast = 1.06f;
+    settings.post.saturation = 0.90f;
+    settings.post.bloomThreshold = 0.54f;
+    settings.post.bloomIntensity = 0.10f;
+    settings.post.bloomRadius = 1.50f;
+    settings.post.vignetteStrength = 0.22f;
+    settings.post.vignetteSoftness = 0.64f;
+    settings.post.splitToneStrength = 0.04f;
+    settings.post.splitToneBalance = 0.50f;
+    settings.post.shadowTint = glm::vec3(0.82f, 0.88f, 0.84f);
+    settings.post.highlightTint = glm::vec3(0.94f, 0.89f, 0.78f);
+
+    settings.lighting.hemisphereSkyColor = glm::vec3(0.18f, 0.21f, 0.18f);
+    settings.lighting.hemisphereGroundColor = glm::vec3(0.05f, 0.06f, 0.04f);
+    settings.lighting.hemisphereStrength = 0.40f;
+    settings.lighting.enableDirectionalLights = false;
+    settings.lighting.directionalIntensityScale = 0.0f;
+    return settings;
+}
+
 } // namespace
 
 bool tryParseEnvironmentProfileToken(const std::string& token, EnvironmentProfile& profile) {
@@ -175,6 +206,10 @@ bool tryParseEnvironmentProfileToken(const std::string& token, EnvironmentProfil
         profile = EnvironmentProfile::ArcaneField;
         return true;
     }
+    if (token == "cathedral_arcade") {
+        profile = EnvironmentProfile::CathedralArcade;
+        return true;
+    }
     return false;
 }
 
@@ -190,6 +225,8 @@ const char* environmentProfileName(EnvironmentProfile profile) {
         return "mountain_dusk";
     case EnvironmentProfile::ArcaneField:
         return "arcane_field";
+    case EnvironmentProfile::CathedralArcade:
+        return "cathedral_arcade";
     }
     return "neutral";
 }
@@ -204,6 +241,8 @@ EnvironmentRenderSettings makeEnvironmentRenderSettings(EnvironmentProfile profi
         return makeMountainDuskSettings();
     case EnvironmentProfile::ArcaneField:
         return makeArcaneFieldSettings();
+    case EnvironmentProfile::CathedralArcade:
+        return makeCathedralArcadeSettings();
     case EnvironmentProfile::Neutral:
     default:
         return makeNeutralSettings();

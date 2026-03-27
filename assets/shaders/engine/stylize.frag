@@ -106,6 +106,23 @@ const vec3 arcaneInkPalette[15] = vec3[15](
     vec3(0.77, 0.32, 0.20),
     vec3(0.40, 0.28, 0.12)
 );
+const vec3 cathedralArcadeInkPalette[15] = vec3[15](
+    vec3(0.00, 0.00, 0.00),
+    vec3(0.03, 0.03, 0.04),
+    vec3(0.07, 0.07, 0.08),
+    vec3(0.11, 0.11, 0.12),
+    vec3(0.16, 0.16, 0.16),
+    vec3(0.22, 0.22, 0.21),
+    vec3(0.30, 0.30, 0.28),
+    vec3(0.40, 0.40, 0.38),
+    vec3(0.54, 0.54, 0.50),
+    vec3(0.70, 0.69, 0.64),
+    vec3(0.84, 0.82, 0.76),
+    vec3(0.58, 0.61, 0.63),
+    vec3(0.44, 0.47, 0.39),
+    vec3(0.46, 0.34, 0.26),
+    vec3(0.35, 0.23, 0.22)
+);
 const vec3 neutralFloorPalette[6] = vec3[6](
     vec3(0.08, 0.08, 0.08),
     vec3(0.15, 0.14, 0.13),
@@ -146,6 +163,14 @@ const vec3 arcaneFloorPalette[6] = vec3[6](
     vec3(0.50, 0.62, 0.27),
     vec3(0.72, 0.77, 0.34)
 );
+const vec3 cathedralArcadeFloorPalette[6] = vec3[6](
+    vec3(0.08, 0.08, 0.09),
+    vec3(0.14, 0.13, 0.12),
+    vec3(0.21, 0.20, 0.18),
+    vec3(0.30, 0.28, 0.25),
+    vec3(0.42, 0.39, 0.34),
+    vec3(0.58, 0.53, 0.45)
+);
 const float materialFloorMarker = (6.0 + 0.5) / 8.0;
 
 const int bayer8[64] = int[64](
@@ -183,6 +208,9 @@ vec3 inkSwatch(int variant, int index) {
     if (variant == 4) {
         return arcaneInkPalette[index];
     }
+    if (variant == 5) {
+        return cathedralArcadeInkPalette[index];
+    }
     return neutralInkPalette[index];
 }
 
@@ -199,11 +227,14 @@ vec3 floorSwatch(int variant, int index) {
     if (variant == 4) {
         return arcaneFloorPalette[index];
     }
+    if (variant == 5) {
+        return cathedralArcadeFloorPalette[index];
+    }
     return neutralFloorPalette[index];
 }
 
 vec3 pickInkColor(vec3 sourceColor) {
-    int variant = clamp(uPaletteVariant, 0, 4);
+    int variant = clamp(uPaletteVariant, 0, 5);
     float sourceLuma = dot(sourceColor, lumaWeights);
     float sourceSaturation = saturationOf(sourceColor);
     int bestIndex = 0;
@@ -226,7 +257,7 @@ vec3 pickInkColor(vec3 sourceColor) {
 }
 
 vec3 pickFloorInkColor(vec3 sourceColor) {
-    int variant = clamp(uPaletteVariant, 0, 4);
+    int variant = clamp(uPaletteVariant, 0, 5);
     int bestIndex = 0;
     float bestScore = 1e9;
 
@@ -317,19 +348,33 @@ void main() {
     float shapedLuma = clamp((luma - 0.006) * 1.16, 0.0, 1.0);
     shapedLuma = shapedLuma * shapedLuma * (3.0 - 2.0 * shapedLuma);
     vec3 posterColor = gradedColor * (shapedLuma / max(luma, 0.001));
-    posterColor = mix(vec3(shapedLuma), posterColor, 0.96);
+    posterColor = mix(vec3(shapedLuma), posterColor, 0.92);
     posterColor = clamp(posterColor, 0.0, 1.0);
-    vec3 inkColor = isFloor ? pickFloorInkColor(posterColor) : pickInkColor(posterColor);
+    vec3 shadowInk = isFloor
+        ? pickFloorInkColor(clamp(posterColor * 0.52 + vec3(0.01), 0.0, 1.0))
+        : pickInkColor(clamp(posterColor * 0.52 + vec3(0.01), 0.0, 1.0));
+    vec3 midInk = isFloor
+        ? pickFloorInkColor(clamp(posterColor * 0.88 + vec3(0.02), 0.0, 1.0))
+        : pickInkColor(clamp(posterColor * 0.88 + vec3(0.02), 0.0, 1.0));
+    vec3 lightInk = isFloor
+        ? pickFloorInkColor(clamp(posterColor * 1.20 + vec3(0.04), 0.0, 1.0))
+        : pickInkColor(clamp(posterColor * 1.20 + vec3(0.04), 0.0, 1.0));
 
     float depthFade = 1.0 - smoothstep(uFogStart, uFogStart + 16.0, linDepth) * 0.72;
 
     if (uEnableDither == 0) {
-        vec3 rawOutput = posterColor * (1.0 - isEdge * depthFade);
+        vec3 rawOutput = posterColor * (1.0 - isEdge * depthFade * 0.78);
         fragColor = vec4(rawOutput, 1.0);
         return;
     }
 
-    float bit = step(threshold, shapedLuma);
-    bit = bit * (1.0 - isEdge * depthFade);
-    fragColor = vec4(inkColor * bit, 1.0);
+    float shade = clamp(shapedLuma * 2.2, 0.0, 2.0);
+    vec3 inkColor = vec3(0.0);
+    if (shade < 1.0) {
+        inkColor = mix(shadowInk, midInk, step(threshold, shade));
+    } else {
+        inkColor = mix(midInk, lightInk, step(threshold, shade - 1.0));
+    }
+    inkColor = mix(inkColor, shadowInk * 0.28, isEdge * depthFade);
+    fragColor = vec4(inkColor, 1.0);
 }

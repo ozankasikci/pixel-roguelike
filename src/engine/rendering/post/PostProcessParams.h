@@ -3,7 +3,7 @@
 #include <glm/glm.hpp>
 
 struct PostProcessParams {
-    int  paletteVariant  = 0;      // 0=neutral, 1=dungeon, 2=meadow, 3=dusk, 4=arcane
+    int  paletteVariant  = 0;      // 0=neutral, 1=dungeon, 2=meadow, 3=dusk, 4=arcane, 5=cathedral_arcade
     bool enableDither    = true;
     bool enableEdges     = true;
     bool enableFog       = true;

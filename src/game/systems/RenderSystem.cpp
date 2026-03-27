@@ -87,6 +87,7 @@ void RenderSystem::init(Application& app) {
     sceneShader_ = std::make_unique<Shader>("assets/shaders/game/scene.vert", "assets/shaders/game/scene.frag");
     shadowShader_ = std::make_unique<Shader>("assets/shaders/engine/shadow_depth.vert", "assets/shaders/engine/shadow_depth.frag");
     renderer_    = std::make_unique<Renderer>(sceneShader_.get());
+    materialTextureLibrary_.init(app.getService<ContentRegistry>());
     sceneFBO_.create(RES_W[2], RES_H[2]);  // default 720p
     compositeFBO_.create(RES_W[2], RES_H[2]);
     for (auto& shadowMap : shadowMaps_) {
@@ -125,7 +126,12 @@ std::vector<RenderObject> RenderSystem::collectSceneObjects(entt::registry& regi
         if (mesh.mesh == nullptr) continue;
         if (registry.any_of<ViewmodelComponent>(entity)) continue;
         glm::mat4 model = mesh.useModelOverride ? mesh.modelOverride : transform.modelMatrix();
-        objects.push_back({mesh.mesh, model, mesh.tint, mesh.material});
+        objects.push_back({
+            mesh.mesh,
+            model,
+            mesh.tint,
+            materialTextureLibrary_.resolve(mesh.materialId, mesh.material)
+        });
     }
 
     return objects;
@@ -162,7 +168,12 @@ std::vector<RenderObject> RenderSystem::collectViewmodelObjects(entt::registry& 
         model = model * glm::scale(glm::mat4(1.0f), vm.scale);
         model = model * glm::translate(glm::mat4(1.0f), -vm.meshCenter);
 
-        objects.push_back({mesh.mesh, model, mesh.tint, mesh.material});
+        objects.push_back({
+            mesh.mesh,
+            model,
+            mesh.tint,
+            materialTextureLibrary_.resolve(mesh.materialId, mesh.material)
+        });
     }
 
     return objects;
@@ -436,6 +447,9 @@ void RenderSystem::renderScenePass(const CameraState& camera,
     glEnable(GL_DEPTH_TEST);
 
     const LightingEnvironment lighting = lightingEnvironment();
+    const float timeSeconds = static_cast<float>(glfwGetTime());
+    sceneShader_->use();
+    sceneShader_->setFloat("uTimeSeconds", timeSeconds);
     renderer_->drawScene(objects,
                          lights,
                          lighting,
@@ -446,6 +460,8 @@ void RenderSystem::renderScenePass(const CameraState& camera,
 
     if (!viewmodelObjects.empty()) {
         glDepthRange(0.0, 0.01);
+        sceneShader_->use();
+        sceneShader_->setFloat("uTimeSeconds", timeSeconds);
         renderer_->drawScene(viewmodelObjects,
                              lights,
                              lighting,
@@ -616,6 +632,7 @@ void RenderSystem::shutdown() {
 }
 
 void RenderSystem::enableAutoScreenshot(const std::string& path, int delayFrames) {
+    overlaysVisible_ = false;
     autoCapture_.enable(path, delayFrames);
     spdlog::info("Auto-screenshot enabled: {}", path);
 }

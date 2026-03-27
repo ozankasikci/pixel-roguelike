@@ -79,6 +79,16 @@ int main() {
     assert(registry.findItem("kindling_shard") != nullptr);
     assert(registry.findSkill("cathedral_attunement") != nullptr);
     assert(registry.findArchetype("checkpoint_shrine") != nullptr);
+    assert(registry.findMaterial("brick_default") != nullptr);
+    assert(registry.findMaterial("brick_wall_old") != nullptr);
+
+    const auto resolvedBrick = resolveMaterialDefinition("brick_wall_old", registry.materials());
+    assert(resolvedBrick.shadingModel == MaterialKind::Brick);
+    assert(nearlyEqualVec3(resolvedBrick.baseColor, glm::vec3(0.98f, 0.95f, 0.92f)));
+    assert(nearlyEqual(resolvedBrick.uvScale.x, 0.16f));
+    assert(nearlyEqual(resolvedBrick.uvScale.y, 0.16f));
+    assert(resolvedBrick.uvMode == MaterialUvMode::WorldProjected);
+    assert(resolvedBrick.proceduralSource == MaterialProceduralSource::GeneratedBrick);
 
     return 0;
 }

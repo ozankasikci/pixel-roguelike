@@ -1,0 +1,4 @@
+id stone_default
+parent masonry_base
+shading_model stone
+light_tint_response 0.08

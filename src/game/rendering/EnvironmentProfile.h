@@ -11,6 +11,7 @@ enum class EnvironmentProfile {
     SunlitMeadow = 2,
     MountainDusk = 3,
     ArcaneField = 4,
+    CathedralArcade = 5,
 };
 
 struct EnvironmentRenderSettings {

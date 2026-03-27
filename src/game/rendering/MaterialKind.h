@@ -8,4 +8,7 @@ enum class MaterialKind {
     Moss = 4,
     Viewmodel = 5,
     Floor = 6,
+    Brick = 7,
 };
+
+inline constexpr int kMaterialKindCount = 8;

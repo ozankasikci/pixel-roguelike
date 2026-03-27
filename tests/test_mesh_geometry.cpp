@@ -9,6 +9,8 @@ int main() {
         auto cube = generateCube(1.0f);
         assert(cube.positions.size() == 24);
         assert(cube.normals.size() == 24);
+        assert(cube.uvs.size() == 24);
+        assert(cube.tangents.size() == 24);
         assert(cube.indices.size() == 36);
     }
 
@@ -17,16 +19,20 @@ int main() {
         auto plane = generatePlane(1.0f);
         assert(plane.positions.size() == 4);
         assert(plane.normals.size() == 4);
+        assert(plane.uvs.size() == 4);
+        assert(plane.tangents.size() == 4);
         assert(plane.indices.size() == 6);
     }
 
-    // generateCylinder: (segments+1)*2 side verts + 2 cap centers
+    // generateCylinder: side ring + duplicated cap rings + 2 cap centers
     {
         int seg = 12;
         auto cyl = generateCylinder(1.0f, 1.0f, seg);
-        int expectedVerts = (seg + 1) * 2 + 2; // 28
+        int expectedVerts = (seg + 1) * 4 + 2;
         assert(cyl.positions.size() == static_cast<size_t>(expectedVerts));
         assert(cyl.normals.size() == cyl.positions.size());
+        assert(cyl.uvs.size() == cyl.positions.size());
+        assert(cyl.tangents.size() == cyl.positions.size());
         // Side: seg*6, bottom cap: seg*3, top cap: seg*3
         int expectedIndices = seg * 6 + seg * 3 + seg * 3;
         assert(cyl.indices.size() == static_cast<size_t>(expectedIndices));
@@ -41,6 +47,8 @@ int main() {
         });
         assert(merged.positions.size() == 48);
         assert(merged.normals.size() == 48);
+        assert(merged.uvs.size() == 48);
+        assert(merged.tangents.size() == 48);
         assert(merged.indices.size() == 72);
 
         // Second cube's indices should be offset by 24

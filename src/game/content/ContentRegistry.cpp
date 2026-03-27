@@ -2,6 +2,7 @@
 #include "engine/core/PathUtils.h"
 
 #include <cctype>
+#include <array>
 #include <cmath>
 #include <fstream>
 #include <functional>
@@ -385,6 +386,7 @@ void ContentRegistry::loadDefaults() {
     items_.clear();
     skills_.clear();
     archetypes_.clear();
+    materials_.clear();
 
     auto oldDagger = loadWeaponDefinitionAsset(resolveProjectPath("assets/defs/weapons/old_dagger.weapon"));
     weapons_.emplace(oldDagger.id, oldDagger);
@@ -406,6 +408,23 @@ void ContentRegistry::loadDefaults() {
 
     auto doubleDoor = loadGameplayArchetypeAsset(resolveProjectPath("assets/prefabs/gameplay/double_door.prefab"));
     archetypes_.emplace(doubleDoor.id, doubleDoor);
+
+    const std::array materialFiles{
+        "assets/defs/materials/masonry_base.material",
+        "assets/defs/materials/stone_default.material",
+        "assets/defs/materials/wood_default.material",
+        "assets/defs/materials/metal_default.material",
+        "assets/defs/materials/wax_default.material",
+        "assets/defs/materials/moss_default.material",
+        "assets/defs/materials/floor_default.material",
+        "assets/defs/materials/brick_default.material",
+        "assets/defs/materials/viewmodel_default.material",
+        "assets/defs/materials/brick_wall_old.material",
+    };
+    for (const char* path : materialFiles) {
+        auto material = loadMaterialDefinitionAsset(resolveProjectPath(path));
+        materials_.emplace(material.id, material);
+    }
 }
 
 const WeaponDefinition* ContentRegistry::findWeapon(const std::string& id) const {
@@ -431,4 +450,9 @@ const SkillDefinition* ContentRegistry::findSkill(const std::string& id) const {
 const GameplayArchetypeDefinition* ContentRegistry::findArchetype(const std::string& id) const {
     auto it = archetypes_.find(id);
     return it == archetypes_.end() ? nullptr : &it->second;
+}
+
+const MaterialDefinition* ContentRegistry::findMaterial(const std::string& id) const {
+    auto it = materials_.find(id);
+    return it == materials_.end() ? nullptr : &it->second;
 }

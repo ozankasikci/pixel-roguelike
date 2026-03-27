@@ -17,6 +17,7 @@ add_library(engine_rendering STATIC
     rendering/geometry/Renderer.cpp
     rendering/post/StylizePass.cpp
     rendering/assets/GltfLoader.cpp
+    rendering/assets/Texture2D.cpp
 )
 target_include_directories(engine_rendering PUBLIC ${CMAKE_SOURCE_DIR}/src)
 target_link_libraries(engine_rendering PUBLIC engine_core glm::glm)

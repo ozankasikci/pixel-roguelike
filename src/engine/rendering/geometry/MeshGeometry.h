@@ -10,8 +10,73 @@
 struct RawMeshData {
     std::vector<glm::vec3> positions;
     std::vector<glm::vec3> normals;
+    std::vector<glm::vec2> uvs;
+    std::vector<glm::vec3> tangents;
     std::vector<uint32_t> indices;
 };
+
+inline void generateTangents(RawMeshData& mesh) {
+    if (mesh.positions.size() != mesh.normals.size() ||
+        mesh.positions.size() != mesh.uvs.size()) {
+        mesh.tangents.clear();
+        return;
+    }
+
+    mesh.tangents.assign(mesh.positions.size(), glm::vec3(0.0f));
+    std::vector<glm::vec3> bitangents(mesh.positions.size(), glm::vec3(0.0f));
+
+    for (size_t i = 0; i + 2 < mesh.indices.size(); i += 3) {
+        const uint32_t ia = mesh.indices[i + 0];
+        const uint32_t ib = mesh.indices[i + 1];
+        const uint32_t ic = mesh.indices[i + 2];
+
+        const glm::vec3& p0 = mesh.positions[ia];
+        const glm::vec3& p1 = mesh.positions[ib];
+        const glm::vec3& p2 = mesh.positions[ic];
+        const glm::vec2& uv0 = mesh.uvs[ia];
+        const glm::vec2& uv1 = mesh.uvs[ib];
+        const glm::vec2& uv2 = mesh.uvs[ic];
+
+        const glm::vec3 edge1 = p1 - p0;
+        const glm::vec3 edge2 = p2 - p0;
+        const glm::vec2 deltaUv1 = uv1 - uv0;
+        const glm::vec2 deltaUv2 = uv2 - uv0;
+        const float det = deltaUv1.x * deltaUv2.y - deltaUv2.x * deltaUv1.y;
+        if (std::abs(det) <= 1e-6f) {
+            continue;
+        }
+
+        const float invDet = 1.0f / det;
+        const glm::vec3 tangent = (edge1 * deltaUv2.y - edge2 * deltaUv1.y) * invDet;
+        const glm::vec3 bitangent = (edge2 * deltaUv1.x - edge1 * deltaUv2.x) * invDet;
+
+        mesh.tangents[ia] += tangent;
+        mesh.tangents[ib] += tangent;
+        mesh.tangents[ic] += tangent;
+        bitangents[ia] += bitangent;
+        bitangents[ib] += bitangent;
+        bitangents[ic] += bitangent;
+    }
+
+    for (size_t i = 0; i < mesh.tangents.size(); ++i) {
+        glm::vec3 tangent = mesh.tangents[i];
+        const glm::vec3 normal = i < mesh.normals.size() ? mesh.normals[i] : glm::vec3(0.0f, 1.0f, 0.0f);
+
+        if (glm::dot(tangent, tangent) <= 1e-12f) {
+            tangent = std::abs(normal.y) < 0.999f
+                ? glm::normalize(glm::cross(glm::vec3(0.0f, 1.0f, 0.0f), normal))
+                : glm::normalize(glm::cross(glm::vec3(1.0f, 0.0f, 0.0f), normal));
+        } else {
+            tangent = glm::normalize(tangent - normal * glm::dot(normal, tangent));
+        }
+
+        if (glm::dot(tangent, tangent) <= 1e-12f) {
+            tangent = glm::vec3(1.0f, 0.0f, 0.0f);
+        }
+
+        mesh.tangents[i] = tangent;
+    }
+}
 
 inline RawMeshData generateCube(float size) {
     float h = size * 0.5f;
@@ -40,6 +105,15 @@ inline RawMeshData generateCube(float size) {
         {0,-1,0},{0,-1,0},{0,-1,0},{0,-1,0},
     };
 
+    std::vector<glm::vec2> uvs = {
+        {0,0}, {1,0}, {1,1}, {0,1},
+        {0,0}, {1,0}, {1,1}, {0,1},
+        {0,0}, {1,0}, {1,1}, {0,1},
+        {0,0}, {1,0}, {1,1}, {0,1},
+        {0,0}, {1,0}, {1,1}, {0,1},
+        {0,0}, {1,0}, {1,1}, {0,1},
+    };
+
     std::vector<uint32_t> indices;
     for (uint32_t face = 0; face < 6; ++face) {
         uint32_t base = face * 4;
@@ -51,24 +125,32 @@ inline RawMeshData generateCube(float size) {
         indices.push_back(base + 3);
     }
 
-    return {positions, normals, indices};
+    RawMeshData mesh{positions, normals, uvs, {}, indices};
+    generateTangents(mesh);
+    return mesh;
 }
 
 inline RawMeshData generatePlane(float size) {
     float h = size * 0.5f;
-    return {
+    RawMeshData mesh{
         {{-h, 0.0f, -h}, {h, 0.0f, -h}, {h, 0.0f, h}, {-h, 0.0f, h}},
         {{0, 1, 0}, {0, 1, 0}, {0, 1, 0}, {0, 1, 0}},
+        {{0, 0}, {1, 0}, {1, 1}, {0, 1}},
+        {},
         {0, 1, 2, 0, 2, 3}
     };
+    generateTangents(mesh);
+    return mesh;
 }
 
 inline RawMeshData generateCylinder(float radius, float height, int segments) {
     std::vector<glm::vec3> positions;
     std::vector<glm::vec3> normals;
+    std::vector<glm::vec2> uvs;
     std::vector<uint32_t> indices;
 
     constexpr float PI = 3.14159265f;
+    segments = std::max(segments, 3);
 
     // Side vertices: 2 rings
     for (int ring = 0; ring <= 1; ++ring) {
@@ -79,6 +161,7 @@ inline RawMeshData generateCylinder(float radius, float height, int segments) {
             float z = radius * std::sin(angle);
             positions.push_back(glm::vec3(x, y, z));
             normals.push_back(glm::normalize(glm::vec3(std::cos(angle), 0.0f, std::sin(angle))));
+            uvs.push_back(glm::vec2(static_cast<float>(i) / segments, static_cast<float>(ring)));
         }
     }
 
@@ -94,23 +177,45 @@ inline RawMeshData generateCylinder(float radius, float height, int segments) {
     uint32_t botCenter = static_cast<uint32_t>(positions.size());
     positions.push_back(glm::vec3(0, 0, 0));
     normals.push_back(glm::vec3(0, -1, 0));
+    uvs.push_back(glm::vec2(0.5f, 0.5f));
+    uint32_t botRingStart = static_cast<uint32_t>(positions.size());
+    for (int i = 0; i <= segments; ++i) {
+        float angle = static_cast<float>(i) / segments * 2.0f * PI;
+        float x = radius * std::cos(angle);
+        float z = radius * std::sin(angle);
+        positions.push_back(glm::vec3(x, 0.0f, z));
+        normals.push_back(glm::vec3(0, -1, 0));
+        uvs.push_back(glm::vec2(std::cos(angle) * 0.5f + 0.5f, std::sin(angle) * 0.5f + 0.5f));
+    }
     for (int i = 0; i < segments; ++i) {
         indices.push_back(botCenter);
-        indices.push_back(i + 1);
-        indices.push_back(i);
+        indices.push_back(botRingStart + i + 1);
+        indices.push_back(botRingStart + i);
     }
 
     // Top cap
     uint32_t topCenter = static_cast<uint32_t>(positions.size());
     positions.push_back(glm::vec3(0, height, 0));
     normals.push_back(glm::vec3(0, 1, 0));
+    uvs.push_back(glm::vec2(0.5f, 0.5f));
+    uint32_t topRingStart = static_cast<uint32_t>(positions.size());
+    for (int i = 0; i <= segments; ++i) {
+        float angle = static_cast<float>(i) / segments * 2.0f * PI;
+        float x = radius * std::cos(angle);
+        float z = radius * std::sin(angle);
+        positions.push_back(glm::vec3(x, height, z));
+        normals.push_back(glm::vec3(0, 1, 0));
+        uvs.push_back(glm::vec2(std::cos(angle) * 0.5f + 0.5f, std::sin(angle) * 0.5f + 0.5f));
+    }
     for (int i = 0; i < segments; ++i) {
         indices.push_back(topCenter);
-        indices.push_back(i + stride);
-        indices.push_back(i + 1 + stride);
+        indices.push_back(topRingStart + i);
+        indices.push_back(topRingStart + i + 1);
     }
 
-    return {positions, normals, indices};
+    RawMeshData mesh{positions, normals, uvs, {}, indices};
+    generateTangents(mesh);
+    return mesh;
 }
 
 inline RawMeshData mergeMeshes(const std::vector<std::pair<RawMeshData, glm::mat4>>& parts) {
@@ -125,6 +230,16 @@ inline RawMeshData mergeMeshes(const std::vector<std::pair<RawMeshData, glm::mat
             glm::vec3 norm = glm::normalize(normalMatrix * mesh.normals[i]);
             result.positions.push_back(pos);
             result.normals.push_back(norm);
+            if (i < mesh.uvs.size()) {
+                result.uvs.push_back(mesh.uvs[i]);
+            } else {
+                result.uvs.push_back(glm::vec2(0.0f));
+            }
+            if (i < mesh.tangents.size()) {
+                result.tangents.push_back(glm::normalize(normalMatrix * mesh.tangents[i]));
+            } else {
+                result.tangents.push_back(glm::vec3(1.0f, 0.0f, 0.0f));
+            }
         }
 
         for (uint32_t idx : mesh.indices) {
@@ -179,6 +294,14 @@ inline RawMeshData bendFingers(const RawMeshData& hand, float bendAngleDeg,
         float nY = norm.y, nZ = norm.z;
         norm.y = nY * cosA - nZ * sinA;
         norm.z = nY * sinA + nZ * cosA;
+
+        if (i < result.tangents.size()) {
+            glm::vec3& tangent = result.tangents[i];
+            float tY = tangent.y;
+            float tZ = tangent.z;
+            tangent.y = tY * cosA - tZ * sinA;
+            tangent.z = tY * sinA + tZ * cosA;
+        }
     }
 
     return result;
@@ -254,4 +377,3 @@ inline RawMeshData generateHand() {
 
     return mergeMeshes(parts);
 }
-

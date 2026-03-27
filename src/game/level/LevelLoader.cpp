@@ -4,6 +4,7 @@
 #include "game/level/LevelBuilder.h"
 #include "game/prefabs/GameplayPrefabs.h"
 #include "game/rendering/EnvironmentProfile.h"
+#include "game/rendering/MaterialDefinition.h"
 #include "game/rendering/MeshAssetProvider.h"
 #include "game/session/RunSession.h"
 #include "game/components/CameraComponent.h"
@@ -39,7 +40,15 @@ entt::entity spawnViewmodelMesh(entt::registry& registry,
     auto entity = registry.create();
     registry.emplace<MeshComponent>(
         entity,
-        MeshComponent{meshId, meshLibrary.get(meshId), glm::mat4(1.0f), false, tint, material}
+        MeshComponent{
+            meshId,
+            meshLibrary.get(meshId),
+            glm::mat4(1.0f),
+            false,
+            tint,
+            material,
+            std::string(defaultMaterialIdForKind(material))
+        }
     );
 
     ViewmodelComponent viewmodel;
@@ -73,7 +82,15 @@ void LevelLoader::load(Application& app, const LevelLoadRequest& request) {
     }
 
     for (const auto& placement : level.meshes) {
-        builder.addMesh(placement.meshId, placement.position, placement.scale, placement.rotation, placement.tint, placement.material);
+        builder.addMesh(placement.meshId,
+                        placement.position,
+                        placement.scale,
+                        placement.rotation,
+                        placement.tint,
+                        placement.material,
+                        placement.materialId.empty()
+                            ? std::optional<std::string>{}
+                            : std::optional<std::string>{placement.materialId});
     }
 
     for (const auto& placement : level.lights) {

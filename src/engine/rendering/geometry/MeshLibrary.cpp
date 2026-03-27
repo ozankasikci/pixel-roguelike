@@ -23,9 +23,10 @@ bool MeshLibrary::has(const std::string& name) const {
 void MeshLibrary::registerDefaults() {
     registerMesh("cube", std::make_unique<Mesh>(Mesh::createCube(1.0f)));
     registerMesh("plane", std::make_unique<Mesh>(Mesh::createPlane(1.0f)));
-    registerMesh("cylinder", std::make_unique<Mesh>(Mesh::createCylinder(1.0f, 1.0f, 12)));
-    registerMesh("cylinder_wide", std::make_unique<Mesh>(Mesh::createCylinder(1.5f, 1.0f, 12)));
-    registerMesh("cylinder_cap", std::make_unique<Mesh>(Mesh::createCylinder(1.4f, 1.0f, 12)));
+    constexpr int defaultCylinderSegments = 24;
+    registerMesh("cylinder", std::make_unique<Mesh>(Mesh::createCylinder(1.0f, 1.0f, defaultCylinderSegments)));
+    registerMesh("cylinder_wide", std::make_unique<Mesh>(Mesh::createCylinder(1.5f, 1.0f, defaultCylinderSegments)));
+    registerMesh("cylinder_cap", std::make_unique<Mesh>(Mesh::createCylinder(1.4f, 1.0f, defaultCylinderSegments)));
     spdlog::info("MeshLibrary: registered {} default meshes", meshes_.size());
 }
 

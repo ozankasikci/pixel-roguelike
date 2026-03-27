@@ -1,6 +1,8 @@
 add_library(game STATIC
     content/ContentRegistry.cpp
     rendering/EnvironmentProfile.cpp
+    rendering/MaterialDefinition.cpp
+    rendering/MaterialTextureLibrary.cpp
     session/EquipmentState.cpp
     scenes/CathedralScene.cpp
     systems/InteractionSystem.cpp

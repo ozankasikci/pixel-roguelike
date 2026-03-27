@@ -5,12 +5,14 @@
 
 Mesh::Mesh(const std::vector<glm::vec3>& positions,
            const std::vector<glm::vec3>& normals,
+           const std::vector<glm::vec2>& uvs,
+           const std::vector<glm::vec3>& tangents,
            const std::vector<uint32_t>& indices) {
     indexCount_ = static_cast<GLsizei>(indices.size());
 
-    // Interleave: position (vec3) + normal (vec3) = 6 floats per vertex
+    // Interleave: position (vec3) + normal (vec3) + uv (vec2) + tangent (vec3)
     std::vector<float> vertData;
-    vertData.reserve(positions.size() * 6);
+    vertData.reserve(positions.size() * 11);
     for (size_t i = 0; i < positions.size(); ++i) {
         vertData.push_back(positions[i].x);
         vertData.push_back(positions[i].y);
@@ -22,6 +24,22 @@ Mesh::Mesh(const std::vector<glm::vec3>& positions,
         } else {
             vertData.push_back(0.0f);
             vertData.push_back(1.0f);
+            vertData.push_back(0.0f);
+        }
+        if (i < uvs.size()) {
+            vertData.push_back(uvs[i].x);
+            vertData.push_back(uvs[i].y);
+        } else {
+            vertData.push_back(0.0f);
+            vertData.push_back(0.0f);
+        }
+        if (i < tangents.size()) {
+            vertData.push_back(tangents[i].x);
+            vertData.push_back(tangents[i].y);
+            vertData.push_back(tangents[i].z);
+        } else {
+            vertData.push_back(1.0f);
+            vertData.push_back(0.0f);
             vertData.push_back(0.0f);
         }
     }
@@ -44,12 +62,22 @@ Mesh::Mesh(const std::vector<glm::vec3>& positions,
 
     // location 0: position (vec3)
     glEnableVertexAttribArray(0);
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 11 * sizeof(float), (void*)0);
 
     // location 1: normal (vec3)
     glEnableVertexAttribArray(1);
-    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float),
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 11 * sizeof(float),
                           (void*)(3 * sizeof(float)));
+
+    // location 2: uv (vec2)
+    glEnableVertexAttribArray(2);
+    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 11 * sizeof(float),
+                          (void*)(6 * sizeof(float)));
+
+    // location 3: tangent (vec3)
+    glEnableVertexAttribArray(3);
+    glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, 11 * sizeof(float),
+                          (void*)(8 * sizeof(float)));
 
     glBindVertexArray(0);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
@@ -96,25 +124,25 @@ void Mesh::draw() const {
 
 Mesh Mesh::createCube(float size) {
     auto data = generateCube(size);
-    return Mesh(data.positions, data.normals, data.indices);
+    return Mesh(data.positions, data.normals, data.uvs, data.tangents, data.indices);
 }
 
 Mesh Mesh::createPlane(float size) {
     auto data = generatePlane(size);
-    return Mesh(data.positions, data.normals, data.indices);
+    return Mesh(data.positions, data.normals, data.uvs, data.tangents, data.indices);
 }
 
 Mesh Mesh::createCylinder(float radius, float height, int segments) {
     auto data = generateCylinder(radius, height, segments);
-    return Mesh(data.positions, data.normals, data.indices);
+    return Mesh(data.positions, data.normals, data.uvs, data.tangents, data.indices);
 }
 
 Mesh Mesh::createHand() {
     auto data = generateHand();
-    return Mesh(data.positions, data.normals, data.indices);
+    return Mesh(data.positions, data.normals, data.uvs, data.tangents, data.indices);
 }
 
 Mesh Mesh::createDagger() {
     auto data = generateDagger();
-    return Mesh(data.positions, data.normals, data.indices);
+    return Mesh(data.positions, data.normals, data.uvs, data.tangents, data.indices);
 }

@@ -61,6 +61,13 @@ void Shader::setVec3(const std::string& name, const glm::vec3& v) const {
     }
 }
 
+void Shader::setVec2(const std::string& name, const glm::vec2& v) const {
+    GLint loc = glGetUniformLocation(program_, name.c_str());
+    if (loc != -1) {
+        glUniform2fv(loc, 1, glm::value_ptr(v));
+    }
+}
+
 void Shader::setFloat(const std::string& name, float v) const {
     GLint loc = glGetUniformLocation(program_, name.c_str());
     if (loc != -1) {

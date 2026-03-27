@@ -7,12 +7,12 @@
 
 class GltfLoader {
 public:
-    // Load a .glb/.gltf file and return a Mesh with the first primitive's
-    // POSITION and NORMAL attributes. Returns nullptr on failure.
+    // Load a .glb/.gltf file, merging all scene nodes and mesh primitives
+    // into a single Mesh. Missing normals are generated automatically.
+    // Returns nullptr on failure.
     static std::unique_ptr<Mesh> load(const std::string& filepath);
 
-    // Load a .glb/.gltf file and return raw CPU-side mesh data (positions,
-    // normals, indices) for merging with other geometry before GPU upload.
-    // Returns empty RawMeshData on failure.
+    // Load a .glb/.gltf file and return merged CPU-side mesh data
+    // (positions, normals, uvs, tangents, indices). Returns empty RawMeshData on failure.
     static RawMeshData loadRaw(const std::string& filepath);
 };

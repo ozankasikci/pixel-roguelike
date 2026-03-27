@@ -14,4 +14,5 @@ struct MeshComponent {
     bool useModelOverride = false;
     glm::vec3 tint{1.0f};
     MaterialKind material = MaterialKind::Stone;
+    std::string materialId;
 };

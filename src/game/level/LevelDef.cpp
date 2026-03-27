@@ -1,6 +1,7 @@
 #include "game/level/LevelDef.h"
 
 #include "game/rendering/EnvironmentProfile.h"
+#include "game/rendering/MaterialDefinition.h"
 
 #include <cctype>
 #include <fstream>
@@ -47,34 +48,6 @@ bool tryParseBoolToken(const std::string& token, bool& value) {
     return false;
 }
 
-bool tryParseMaterialKind(const std::string& token, MaterialKind& material) {
-    if (token == "stone") {
-        material = MaterialKind::Stone;
-        return true;
-    }
-    if (token == "wood") {
-        material = MaterialKind::Wood;
-        return true;
-    }
-    if (token == "metal") {
-        material = MaterialKind::Metal;
-        return true;
-    }
-    if (token == "wax") {
-        material = MaterialKind::Wax;
-        return true;
-    }
-    if (token == "moss") {
-        material = MaterialKind::Moss;
-        return true;
-    }
-    if (token == "floor") {
-        material = MaterialKind::Floor;
-        return true;
-    }
-    return false;
-}
-
 } // namespace
 
 LevelDef loadLevelDef(const std::string& path) {
@@ -107,28 +80,75 @@ LevelDef loadLevelDef(const std::string& path) {
             }
             stream >> std::ws;
             if (!stream.eof()) {
+                std::vector<std::string> tokens;
                 std::string token;
-                if (!(stream >> token)) {
-                    throwParseError(path, lineNumber, "invalid mesh metadata");
+                while (stream >> token) {
+                    tokens.push_back(token);
                 }
 
-                MaterialKind material;
-                if (tryParseMaterialKind(token, material)) {
-                    placement.material = material;
-                    stream >> std::ws;
-                    if (!stream.eof()) {
+                if (!tokens.empty()) {
+                    std::size_t index = 0;
+
+                    MaterialKind legacyMaterial;
+                    if (tryParseMaterialKindToken(tokens[0], legacyMaterial)) {
+                        placement.material = legacyMaterial;
+                        placement.materialId = std::string(defaultMaterialIdForKind(legacyMaterial));
+                        index = 1;
+                        if (index < tokens.size() && tokens[index] == "tint") {
+                            ++index;
+                        }
+                        if (index < tokens.size()) {
+                            if (index + 2 >= tokens.size()) {
+                                throwParseError(path, lineNumber, "invalid mesh tint");
+                            }
+                            glm::vec3 tint{1.0f};
+                            if (!tryParseFloatToken(tokens[index], tint.r)
+                                || !tryParseFloatToken(tokens[index + 1], tint.g)
+                                || !tryParseFloatToken(tokens[index + 2], tint.b)) {
+                                throwParseError(path, lineNumber, "invalid mesh tint");
+                            }
+                            placement.tint = tint;
+                            index += 3;
+                        }
+                        if (index != tokens.size()) {
+                            throwParseError(path, lineNumber, "invalid mesh metadata");
+                        }
+                    } else if (tokens[0] == "material" || tokens[0] == "tint") {
+                        while (index < tokens.size()) {
+                            if (tokens[index] == "material") {
+                                if (index + 1 >= tokens.size()) {
+                                    throwParseError(path, lineNumber, "missing material id");
+                                }
+                                placement.materialId = tokens[index + 1];
+                                index += 2;
+                                continue;
+                            }
+                            if (tokens[index] == "tint") {
+                                if (index + 3 >= tokens.size()) {
+                                    throwParseError(path, lineNumber, "invalid mesh tint");
+                                }
+                                glm::vec3 tint{1.0f};
+                                if (!tryParseFloatToken(tokens[index + 1], tint.r)
+                                    || !tryParseFloatToken(tokens[index + 2], tint.g)
+                                    || !tryParseFloatToken(tokens[index + 3], tint.b)) {
+                                    throwParseError(path, lineNumber, "invalid mesh tint");
+                                }
+                                placement.tint = tint;
+                                index += 4;
+                                continue;
+                            }
+                            throwParseError(path, lineNumber, "invalid mesh metadata");
+                        }
+                    } else {
                         glm::vec3 tint{1.0f};
-                        if (!(stream >> tint.r >> tint.g >> tint.b)) {
-                            throwParseError(path, lineNumber, "invalid mesh tint");
+                        if (tokens.size() != 3
+                            || !tryParseFloatToken(tokens[0], tint.r)
+                            || !tryParseFloatToken(tokens[1], tint.g)
+                            || !tryParseFloatToken(tokens[2], tint.b)) {
+                            throwParseError(path, lineNumber, "invalid mesh metadata");
                         }
                         placement.tint = tint;
                     }
-                } else {
-                    glm::vec3 tint{1.0f};
-                    if (!tryParseFloatToken(token, tint.r) || !(stream >> tint.g >> tint.b)) {
-                        throwParseError(path, lineNumber, "invalid mesh tint");
-                    }
-                    placement.tint = tint;
                 }
             }
             data.meshes.push_back(std::move(placement));

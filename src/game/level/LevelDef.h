@@ -15,6 +15,7 @@ struct LevelMeshPlacement {
     glm::vec3 position{0.0f};
     glm::vec3 scale{1.0f};
     glm::vec3 rotation{0.0f};
+    std::string materialId;
     std::optional<MaterialKind> material;
     std::optional<glm::vec3> tint;
 };

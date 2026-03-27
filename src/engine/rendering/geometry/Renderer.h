@@ -4,6 +4,7 @@
 #include <glad/gl.h>
 #include <glm/glm.hpp>
 #include <array>
+#include <string>
 #include <vector>
 
 #include "game/rendering/MaterialKind.h"
@@ -11,11 +12,30 @@
 class Mesh;
 class Shader;
 
+struct RenderMaterialData {
+    std::string id;
+    MaterialKind shadingModel = MaterialKind::Stone;
+    glm::vec3 baseColor{1.0f};
+    bool useMaterialMaps = false;
+    GLuint albedoTexture = 0;
+    GLuint normalTexture = 0;
+    GLuint roughnessTexture = 0;
+    GLuint aoTexture = 0;
+    int uvMode = 0;
+    glm::vec2 uvScale{1.0f, 1.0f};
+    float normalStrength = 1.0f;
+    float roughnessScale = 1.0f;
+    float roughnessBias = 0.0f;
+    float metalness = 0.0f;
+    float aoStrength = 1.0f;
+    float lightTintResponse = 0.18f;
+};
+
 struct RenderObject {
     Mesh* mesh;
     glm::mat4 modelMatrix;
     glm::vec3 tint{1.0f};
-    MaterialKind material = MaterialKind::Stone;
+    RenderMaterialData material;
 };
 
 struct ShadowRenderData {

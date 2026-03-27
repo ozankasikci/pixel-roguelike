@@ -44,6 +44,10 @@ void Renderer::drawScene(const std::vector<RenderObject>& objects,
         glBindTexture(GL_TEXTURE_2D, shadowData.textures[static_cast<std::size_t>(i)]);
     }
     glActiveTexture(GL_TEXTURE0);
+    shader_->setInt("uAlbedoMap", 12);
+    shader_->setInt("uNormalMap", 13);
+    shader_->setInt("uRoughnessMap", 14);
+    shader_->setInt("uAoMap", 15);
 
     for (int i = 0; i < numLights; ++i) {
         const RenderLight& light = lights[static_cast<std::size_t>(i)];
@@ -61,9 +65,28 @@ void Renderer::drawScene(const std::vector<RenderObject>& objects,
     }
 
     for (const auto& obj : objects) {
+        const RenderMaterialData& material = obj.material;
+        shader_->setInt("uUseMaterialMaps", material.useMaterialMaps ? 1 : 0);
+        shader_->setInt("uMaterialUvMode", material.uvMode);
+        shader_->setVec2("uMaterialUvScale", material.uvScale);
+        shader_->setFloat("uMaterialNormalStrength", material.normalStrength);
+        shader_->setFloat("uMaterialRoughnessScale", material.roughnessScale);
+        shader_->setFloat("uMaterialRoughnessBias", material.roughnessBias);
+        shader_->setFloat("uMaterialMetalness", material.metalness);
+        shader_->setFloat("uMaterialAoStrength", material.aoStrength);
+        shader_->setFloat("uMaterialLightTintResponse", material.lightTintResponse);
+        glActiveTexture(GL_TEXTURE12);
+        glBindTexture(GL_TEXTURE_2D, material.albedoTexture);
+        glActiveTexture(GL_TEXTURE13);
+        glBindTexture(GL_TEXTURE_2D, material.normalTexture);
+        glActiveTexture(GL_TEXTURE14);
+        glBindTexture(GL_TEXTURE_2D, material.roughnessTexture);
+        glActiveTexture(GL_TEXTURE15);
+        glBindTexture(GL_TEXTURE_2D, material.aoTexture);
+        glActiveTexture(GL_TEXTURE0);
         shader_->setMat4("uModel", obj.modelMatrix);
-        shader_->setVec3("uBaseColor", obj.tint);
-        shader_->setInt("uMaterialKind", static_cast<int>(obj.material));
+        shader_->setVec3("uBaseColor", obj.tint * material.baseColor);
+        shader_->setInt("uMaterialKind", static_cast<int>(material.shadingModel));
         obj.mesh->draw();
     }
 }

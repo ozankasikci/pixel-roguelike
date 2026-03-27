@@ -9,6 +9,8 @@ class Mesh {
 public:
     Mesh(const std::vector<glm::vec3>& positions,
          const std::vector<glm::vec3>& normals,
+         const std::vector<glm::vec2>& uvs,
+         const std::vector<glm::vec3>& tangents,
          const std::vector<uint32_t>& indices);
     ~Mesh();
 

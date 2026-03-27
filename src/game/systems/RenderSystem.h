@@ -10,6 +10,7 @@
 #include "engine/ui/ImGuiLayer.h"
 #include "engine/ui/Screenshot.h"
 #include "game/rendering/EnvironmentProfile.h"
+#include "game/rendering/MaterialTextureLibrary.h"
 #include <array>
 #include <memory>
 #include <string>
@@ -86,6 +87,7 @@ private:
     bool hasAppliedEnvironmentProfile_ = false;
     std::string appliedEnvironmentLevelId_;
     EnvironmentProfile appliedEnvironmentProfile_ = EnvironmentProfile::Neutral;
+    MaterialTextureLibrary materialTextureLibrary_;
 
     // Internal resolution presets (same as current main.cpp)
     static constexpr int RES_W[] = {854, 960, 1280};
