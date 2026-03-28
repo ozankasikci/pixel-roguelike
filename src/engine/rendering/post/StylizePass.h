@@ -21,7 +21,8 @@ public:
                GLuint sceneNormalTex,
                const PostProcessParams& params,
                int displayW,
-               int displayH);
+               int displayH,
+               GLuint targetFbo = 0);
 
 private:
     std::unique_ptr<Shader> shader_;

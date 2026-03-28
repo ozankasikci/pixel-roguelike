@@ -52,6 +52,7 @@ uniform float uMaterialRoughnessBias;
 uniform float uMaterialMetalness;
 uniform float uMaterialAoStrength;
 uniform float uMaterialLightTintResponse;
+uniform int uUnlit;
 
 const int LIGHT_POINT = 0;
 const int LIGHT_SPOT = 1;
@@ -647,6 +648,12 @@ void main() {
     }
     vec3 V = normalize(uCameraPos - vWorldPos);
     vec3 baseColor = clamp(uBaseColor, 0.0, 1.0);
+    if (uUnlit != 0) {
+        float materialMarker = (float(uMaterialKind) + 0.5) / 8.0;
+        fragColor = vec4(baseColor, 1.0);
+        fragNormal = vec4(N * 0.5 + 0.5, materialMarker);
+        return;
+    }
     vec3 materialBaseColor = baseColor;
     if (uUseMaterialMaps != 0 && uMaterialKind != MATERIAL_BRICK) {
         materialBaseColor = clamp(baseColor * texture(uAlbedoMap, uv).rgb, 0.0, 1.0);

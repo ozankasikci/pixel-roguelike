@@ -138,17 +138,25 @@ SkySettings makeCloisterSky() {
     sky.groundHazeColor = glm::vec3(0.78f, 0.74f, 0.66f);
     sky.sunDirection = glm::normalize(glm::vec3(0.26f, 0.88f, 0.24f));
     sky.sunColor = glm::vec3(0.98f, 0.93f, 0.82f);
-    sky.sunSize = 0.020f;
-    sky.sunGlow = 0.26f;
-    sky.cloudLayerAPath = "assets/skies/clouds_soft.tga";
-    sky.cloudLayerBPath = "assets/skies/clouds_wispy.tga";
-    sky.horizonLayerPath = "assets/skies/horizon_hills.tga";
-    sky.cloudTint = glm::vec3(0.96f, 0.96f, 0.94f);
+    sky.sunSize = 0.012f;
+    sky.sunGlow = 0.06f;
+    sky.cubemapFacePaths = {
+        "assets/skies/syferfontein_0d_clear_puresky_cube/px.jpg",
+        "assets/skies/syferfontein_0d_clear_puresky_cube/nx.jpg",
+        "assets/skies/syferfontein_0d_clear_puresky_cube/py.jpg",
+        "assets/skies/syferfontein_0d_clear_puresky_cube/ny.jpg",
+        "assets/skies/syferfontein_0d_clear_puresky_cube/pz.jpg",
+        "assets/skies/syferfontein_0d_clear_puresky_cube/nz.jpg",
+    };
+    sky.cubemapTint = glm::vec3(1.00f);
+    sky.cubemapStrength = 1.00f;
+    sky.horizonLayerPath.clear();
+    sky.cloudTint = glm::vec3(1.00f);
     sky.cloudScale = 0.90f;
-    sky.cloudSpeed = 0.0030f;
-    sky.cloudCoverage = 0.46f;
+    sky.cloudSpeed = 0.0f;
+    sky.cloudCoverage = 0.0f;
     sky.cloudParallax = 0.024f;
-    sky.horizonTint = glm::vec3(0.70f, 0.76f, 0.68f);
+    sky.horizonTint = glm::vec3(1.0f);
     sky.horizonHeight = 0.55f;
     sky.horizonFade = 0.22f;
     return sky;

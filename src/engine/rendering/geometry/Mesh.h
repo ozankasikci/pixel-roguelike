@@ -24,6 +24,9 @@ public:
 
     void draw() const;
 
+    const glm::vec3& aabbMin() const { return aabbMin_; }
+    const glm::vec3& aabbMax() const { return aabbMax_; }
+
     static Mesh createCube(float size);
     static Mesh createPlane(float size);
     static Mesh createCylinder(float radius, float height, int segments);
@@ -35,4 +38,6 @@ private:
     GLuint vbo_ = 0;
     GLuint ebo_ = 0;
     GLsizei indexCount_ = 0;
+    glm::vec3 aabbMin_{0.0f};
+    glm::vec3 aabbMax_{0.0f};
 };

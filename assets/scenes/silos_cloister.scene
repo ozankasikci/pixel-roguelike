@@ -1,0 +1,124 @@
+environment_profile cloister_daylight
+
+mesh plane 0.0 -0.05 0.0 24.0 1.0 24.0 0.0 0.0 0.0 material floor_default tint 0.4 0.39 0.36
+mesh plane 0.0 -0.03 0.0 13.8 1.0 13.8 0.0 0.0 0.0 material moss_default tint 0.28 0.37 0.2
+mesh cube 0.0 0.12 0.0 6.2 0.14 6.2 0.0 0.0 0.0 material cloister_stone tint 0.67 0.65 0.6
+mesh cube 0.0 0.26 6.05 6.0 0.12 0.18 0.0 0.0 0.0 material cloister_stone tint 0.73 0.71 0.66
+mesh cube 0.0 0.26 -6.05 6.0 0.12 0.18 0.0 0.0 0.0 material cloister_stone tint 0.71 0.69 0.64
+mesh cube 6.05 0.26 0.0 0.18 0.12 6.0 0.0 0.0 0.0 material cloister_stone tint 0.7 0.68 0.63
+mesh cube -6.05 0.26 0.0 0.18 0.12 6.0 0.0 0.0 0.0 material cloister_stone tint 0.72 0.7 0.65
+mesh plane 0.0 0.03 0.0 5.75 1.0 5.75 0.0 0.0 0.0 material moss_default tint 0.24 0.34 0.18
+mesh cube 0.0 0.12 0.0 1.45 0.12 1.45 0.0 0.0 0.0 material cloister_stone tint 0.76 0.74 0.7
+mesh cylinder 0.0 0.4 0.0 0.52 0.2 0.52 0.0 0.0 0.0 material cloister_stone tint 0.74 0.72 0.68
+mesh cylinder 0.0 0.74 0.0 0.18 0.16 0.18 0.0 0.0 0.0 material cloister_stone tint 0.8 0.78 0.74
+mesh cube 3.8 0.16 3.8 0.62 0.16 0.62 0.0 0.0 0.0 material moss_default tint 0.23 0.33 0.17
+mesh cube -3.8 0.16 3.8 0.62 0.16 0.62 0.0 0.0 0.0 material moss_default tint 0.22 0.31 0.16
+mesh cube 3.8 0.16 -3.8 0.62 0.16 0.62 0.0 0.0 0.0 material moss_default tint 0.23 0.33 0.17
+mesh cube -3.8 0.16 -3.8 0.62 0.16 0.62 0.0 0.0 0.0 material moss_default tint 0.22 0.31 0.16
+mesh cube 0.0 2.7 11.2 11.2 2.7 0.65 0.0 0.0 0.0 material cloister_stone tint 0.71 0.69 0.64
+mesh cube 0.0 2.7 -11.2 11.2 2.7 0.65 0.0 0.0 0.0 material cloister_stone tint 0.68 0.66 0.61
+mesh cube -11.2 2.7 0.0 0.65 2.7 11.2 0.0 0.0 0.0 material cloister_stone tint 0.69 0.67 0.62
+mesh cube 11.2 2.7 0.0 0.65 2.7 11.2 0.0 0.0 0.0 material cloister_stone tint 0.66 0.64 0.59
+mesh cube 0.0 6.45 11.2 11.2 1.05 0.65 0.0 0.0 0.0 material cloister_stone tint 0.67 0.65 0.6
+mesh cube 0.0 6.45 -11.2 11.2 1.05 0.65 0.0 0.0 0.0 material cloister_stone tint 0.64 0.62 0.57
+mesh cube -11.2 6.45 0.0 0.65 1.05 11.2 0.0 0.0 0.0 material cloister_stone tint 0.66 0.64 0.59
+mesh cube 11.2 6.45 0.0 0.65 1.05 11.2 0.0 0.0 0.0 material cloister_stone tint 0.63 0.61 0.56
+mesh cube 0.0 5.52 10.55 10.55 0.12 0.22 0.0 0.0 0.0 material cloister_stone tint 0.73 0.71 0.66
+mesh cube 0.0 5.52 -10.55 10.55 0.12 0.22 0.0 0.0 0.0 material cloister_stone tint 0.71 0.69 0.64
+mesh cube -10.55 5.52 0.0 0.22 0.12 10.55 0.0 0.0 0.0 material cloister_stone tint 0.72 0.7 0.65
+mesh cube 10.55 5.52 0.0 0.22 0.12 10.55 0.0 0.0 0.0 material cloister_stone tint 0.7 0.68 0.63
+mesh cube 0.0 4.95 8.95 10.2 0.18 3.6 0.0 0.0 0.0 material wood_default tint 0.24 0.17 0.1
+mesh cube 0.0 4.95 -8.95 10.2 0.18 3.6 0.0 0.0 0.0 material wood_default tint 0.23 0.16 0.09
+mesh cube -8.95 4.95 0.0 3.6 0.18 10.2 0.0 0.0 0.0 material wood_default tint 0.22 0.16 0.09
+mesh cube 8.95 4.95 0.0 3.6 0.18 10.2 0.0 0.0 0.0 material wood_default tint 0.24 0.17 0.1
+mesh cube 0.0 4.62 8.95 10.0 0.1 3.45 0.0 0.0 0.0 material wood_default tint 0.15 0.11 0.07
+mesh cube 0.0 4.62 -8.95 10.0 0.1 3.45 0.0 0.0 0.0 material wood_default tint 0.14 0.1 0.06
+mesh cube -8.95 4.62 0.0 3.45 0.1 10.0 0.0 0.0 0.0 material wood_default tint 0.14 0.1 0.06
+mesh cube 8.95 4.62 0.0 3.45 0.1 10.0 0.0 0.0 0.0 material wood_default tint 0.15 0.11 0.07
+mesh cube -7.8 4.55 8.95 0.18 0.72 3.45 0.0 0.0 0.0 material wood_default tint 0.29 0.21 0.13
+mesh cube -2.6 4.55 8.95 0.18 0.72 3.45 0.0 0.0 0.0 material wood_default tint 0.28 0.2 0.12
+mesh cube 2.6 4.55 8.95 0.18 0.72 3.45 0.0 0.0 0.0 material wood_default tint 0.29 0.21 0.13
+mesh cube 7.8 4.55 8.95 0.18 0.72 3.45 0.0 0.0 0.0 material wood_default tint 0.28 0.2 0.12
+mesh cube -7.8 4.55 -8.95 0.18 0.72 3.45 0.0 0.0 0.0 material wood_default tint 0.28 0.2 0.12
+mesh cube -2.6 4.55 -8.95 0.18 0.72 3.45 0.0 0.0 0.0 material wood_default tint 0.29 0.21 0.13
+mesh cube 2.6 4.55 -8.95 0.18 0.72 3.45 0.0 0.0 0.0 material wood_default tint 0.28 0.2 0.12
+mesh cube 7.8 4.55 -8.95 0.18 0.72 3.45 0.0 0.0 0.0 material wood_default tint 0.29 0.21 0.13
+mesh cube -8.95 4.55 -7.8 3.45 0.72 0.18 0.0 0.0 0.0 material wood_default tint 0.28 0.2 0.12
+mesh cube -8.95 4.55 -2.6 3.45 0.72 0.18 0.0 0.0 0.0 material wood_default tint 0.29 0.21 0.13
+mesh cube -8.95 4.55 2.6 3.45 0.72 0.18 0.0 0.0 0.0 material wood_default tint 0.28 0.2 0.12
+mesh cube -8.95 4.55 7.8 3.45 0.72 0.18 0.0 0.0 0.0 material wood_default tint 0.29 0.21 0.13
+mesh cube 8.95 4.55 -7.8 3.45 0.72 0.18 0.0 0.0 0.0 material wood_default tint 0.29 0.21 0.13
+mesh cube 8.95 4.55 -2.6 3.45 0.72 0.18 0.0 0.0 0.0 material wood_default tint 0.28 0.2 0.12
+mesh cube 8.95 4.55 2.6 3.45 0.72 0.18 0.0 0.0 0.0 material wood_default tint 0.29 0.21 0.13
+mesh cube 8.95 4.55 7.8 3.45 0.72 0.18 0.0 0.0 0.0 material wood_default tint 0.28 0.2 0.12
+mesh arch -5.175 0.0 6.8 0.75 0.88 0.82 0.0 0.0 0.0 material cloister_stone tint 0.74 0.72 0.67
+mesh arch 0.0 0.0 6.8 0.75 0.88 0.82 0.0 0.0 0.0 material cloister_stone tint 0.72 0.7 0.65
+mesh arch 5.175 0.0 6.8 0.75 0.88 0.82 0.0 0.0 0.0 material cloister_stone tint 0.71 0.69 0.64
+mesh arch -5.175 0.0 -6.8 0.75 0.88 0.82 0.0 180.0 0.0 material cloister_stone tint 0.72 0.7 0.65
+mesh arch 0.0 0.0 -6.8 0.75 0.88 0.82 0.0 180.0 0.0 material cloister_stone tint 0.7 0.68 0.63
+mesh arch 5.175 0.0 -6.8 0.75 0.88 0.82 0.0 180.0 0.0 material cloister_stone tint 0.69 0.67 0.62
+mesh arch 6.8 0.0 -5.175 0.75 0.88 0.82 0.0 90.0 0.0 material cloister_stone tint 0.71 0.69 0.64
+mesh arch 6.8 0.0 0.0 0.75 0.88 0.82 0.0 90.0 0.0 material cloister_stone tint 0.7 0.68 0.63
+mesh arch 6.8 0.0 5.175 0.75 0.88 0.82 0.0 90.0 0.0 material cloister_stone tint 0.69 0.67 0.62
+mesh arch -6.8 0.0 -5.175 0.75 0.88 0.82 0.0 -90.0 0.0 material cloister_stone tint 0.73 0.71 0.66
+mesh arch -6.8 0.0 0.0 0.75 0.88 0.82 0.0 -90.0 0.0 material cloister_stone tint 0.72 0.7 0.65
+mesh arch -6.8 0.0 5.175 0.75 0.88 0.82 0.0 -90.0 0.0 material cloister_stone tint 0.71 0.69 0.64
+mesh pillar -7.76 0.0 6.8 0.78 0.78 0.78 0.0 0.0 0.0 material cloister_stone tint 0.74 0.72 0.67
+mesh pillar -2.59 0.0 6.8 0.78 0.78 0.78 0.0 0.0 0.0 material cloister_stone tint 0.73 0.71 0.66
+mesh pillar 2.59 0.0 6.8 0.78 0.78 0.78 0.0 0.0 0.0 material cloister_stone tint 0.72 0.7 0.65
+mesh pillar 7.76 0.0 6.8 0.78 0.78 0.78 0.0 0.0 0.0 material cloister_stone tint 0.71 0.69 0.64
+mesh pillar -7.76 0.0 -6.8 0.78 0.78 0.78 0.0 0.0 0.0 material cloister_stone tint 0.72 0.7 0.65
+mesh pillar -2.59 0.0 -6.8 0.78 0.78 0.78 0.0 0.0 0.0 material cloister_stone tint 0.71 0.69 0.64
+mesh pillar 2.59 0.0 -6.8 0.78 0.78 0.78 0.0 0.0 0.0 material cloister_stone tint 0.7 0.68 0.63
+mesh pillar 7.76 0.0 -6.8 0.78 0.78 0.78 0.0 0.0 0.0 material cloister_stone tint 0.69 0.67 0.62
+mesh pillar -6.8 0.0 -7.76 0.78 0.78 0.78 0.0 0.0 0.0 material cloister_stone tint 0.72 0.7 0.65
+mesh pillar -6.8 0.0 -2.59 0.78 0.78 0.78 0.0 0.0 0.0 material cloister_stone tint 0.73 0.71 0.66
+mesh pillar -6.8 0.0 2.59 0.78 0.78 0.78 0.0 0.0 0.0 material cloister_stone tint 0.72 0.7 0.65
+mesh pillar -6.8 0.0 7.76 0.78 0.78 0.78 0.0 0.0 0.0 material cloister_stone tint 0.71 0.69 0.64
+mesh pillar 6.8 0.0 -7.76 0.78 0.78 0.78 0.0 0.0 0.0 material cloister_stone tint 0.7 0.68 0.63
+mesh pillar 6.8 0.0 -2.59 0.78 0.78 0.78 0.0 0.0 0.0 material cloister_stone tint 0.69 0.67 0.62
+mesh pillar 6.8 0.0 2.59 0.78 0.78 0.78 0.0 0.0 0.0 material cloister_stone tint 0.68 0.66 0.61
+mesh pillar 6.8 0.0 7.76 0.78 0.78 0.78 0.0 0.0 0.0 material cloister_stone tint 0.67 0.65 0.6
+mesh cube 0.0 1.35 10.85 3.0 2.3 0.32 0.0 0.0 0.0 material cloister_stone tint 0.79 0.77 0.72
+mesh arch 0.0 0.0 10.55 0.92 0.96 0.82 0.0 0.0 0.0 material cloister_stone tint 0.75 0.73 0.68
+mesh cube -7.7 0.42 10.0 1.4 0.32 0.48 0.0 0.0 0.0 material wood_default tint 0.36 0.24 0.15
+mesh cube -7.7 0.72 10.0 1.2 0.16 0.32 0.0 0.0 0.0 material wood_default tint 0.39 0.26 0.16
+mesh cube 7.7 0.42 -10.0 1.4 0.32 0.48 0.0 0.0 0.0 material wood_default tint 0.36 0.24 0.15
+mesh cube 7.7 0.72 -10.0 1.2 0.16 0.32 0.0 0.0 0.0 material wood_default tint 0.39 0.26 0.16
+mesh cube 10.0 0.42 7.7 0.48 0.32 1.4 0.0 0.0 0.0 material wood_default tint 0.36 0.24 0.15
+mesh cube 10.0 0.72 7.7 0.32 0.16 1.2 0.0 0.0 0.0 material wood_default tint 0.39 0.26 0.16
+mesh cube -10.0 0.42 -7.7 0.48 0.32 1.4 0.0 0.0 0.0 material wood_default tint 0.36 0.24 0.15
+mesh cube -10.0 0.72 -7.7 0.32 0.16 1.2 0.0 0.0 0.0 material wood_default tint 0.39 0.26 0.16
+dir_light -0.28 -1.0 -0.18 0.98 0.95 0.88 1.55
+light 0.0 5.8 0.0 0.46 0.48 0.42 24.0 0.22
+light 0.0 3.0 10.0 0.94 0.82 0.6 10.5 0.26
+light 0.0 3.0 -10.0 0.94 0.82 0.6 10.5 0.22
+collider_box 0.0 2.7 11.2 11.2 2.7 0.65
+collider_box 0.0 2.7 -11.2 11.2 2.7 0.65
+collider_box -11.2 2.7 0.0 0.65 2.7 11.2
+collider_box 11.2 2.7 0.0 0.65 2.7 11.2
+collider_box 0.0 6.45 11.2 11.2 1.05 0.65
+collider_box 0.0 6.45 -11.2 11.2 1.05 0.65
+collider_box -11.2 6.45 0.0 0.65 1.05 11.2
+collider_box 11.2 6.45 0.0 0.65 1.05 11.2
+collider_box 0.0 0.12 0.0 1.45 0.12 1.45
+collider_cylinder 0.0 0.4 0.0 0.52 0.2
+collider_cylinder 0.0 0.74 0.0 0.18 0.16
+collider_cylinder -7.76 1.8 6.8 0.4 1.8
+collider_cylinder -2.59 1.8 6.8 0.4 1.8
+collider_cylinder 2.59 1.8 6.8 0.4 1.8
+collider_cylinder 7.76 1.8 6.8 0.4 1.8
+collider_cylinder -7.76 1.8 -6.8 0.4 1.8
+collider_cylinder -2.59 1.8 -6.8 0.4 1.8
+collider_cylinder 2.59 1.8 -6.8 0.4 1.8
+collider_cylinder 7.76 1.8 -6.8 0.4 1.8
+collider_cylinder -6.8 1.8 -7.76 0.4 1.8
+collider_cylinder -6.8 1.8 -2.59 0.4 1.8
+collider_cylinder -6.8 1.8 2.59 0.4 1.8
+collider_cylinder -6.8 1.8 7.76 0.4 1.8
+collider_cylinder 6.8 1.8 -7.76 0.4 1.8
+collider_cylinder 6.8 1.8 -2.59 0.4 1.8
+collider_cylinder 6.8 1.8 2.59 0.4 1.8
+collider_cylinder 6.8 1.8 7.76 0.4 1.8
+player_spawn 0.0 1.6 10.1 -6.0
+archetype_instance checkpoint_shrine 9.0 0.0 0.0 -90.0

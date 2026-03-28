@@ -1,6 +1,7 @@
 #pragma once
 
 #include "game/prefabs/GameplayPrefabData.h"
+#include "game/rendering/EnvironmentDefinition.h"
 #include "game/rendering/MaterialDefinition.h"
 
 #include <glm/glm.hpp>
@@ -85,7 +86,11 @@ public:
     const SkillDefinition* findSkill(const std::string& id) const;
     const GameplayArchetypeDefinition* findArchetype(const std::string& id) const;
     const MaterialDefinition* findMaterial(const std::string& id) const;
+    const EnvironmentDefinition* findEnvironment(const std::string& id) const;
+    const std::string* findEnvironmentPath(const std::string& id) const;
+    const std::unordered_map<std::string, GameplayArchetypeDefinition>& archetypes() const { return archetypes_; }
     const std::unordered_map<std::string, MaterialDefinition>& materials() const { return materials_; }
+    const std::unordered_map<std::string, EnvironmentDefinition>& environments() const { return environments_; }
 
 private:
     std::unordered_map<std::string, WeaponDefinition> weapons_;
@@ -94,4 +99,6 @@ private:
     std::unordered_map<std::string, SkillDefinition> skills_;
     std::unordered_map<std::string, GameplayArchetypeDefinition> archetypes_;
     std::unordered_map<std::string, MaterialDefinition> materials_;
+    std::unordered_map<std::string, EnvironmentDefinition> environments_;
+    std::unordered_map<std::string, std::string> environmentPaths_;
 };

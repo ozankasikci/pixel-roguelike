@@ -20,6 +20,16 @@ bool MeshLibrary::has(const std::string& name) const {
     return meshes_.find(name) != meshes_.end();
 }
 
+std::vector<std::string> MeshLibrary::names() const {
+    std::vector<std::string> result;
+    result.reserve(meshes_.size());
+    for (const auto& [name, mesh] : meshes_) {
+        (void)mesh;
+        result.push_back(name);
+    }
+    return result;
+}
+
 void MeshLibrary::registerDefaults() {
     registerMesh("cube", std::make_unique<Mesh>(Mesh::createCube(1.0f)));
     registerMesh("plane", std::make_unique<Mesh>(Mesh::createPlane(1.0f)));

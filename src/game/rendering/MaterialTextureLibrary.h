@@ -25,6 +25,7 @@ private:
 
     void createFallbackTextures();
     void buildBrickSet(TextureSet& brick) const;
+    void buildStoneSet(TextureSet& stone) const;
 
     TextureSet fallbackTextures_{};
     std::unordered_map<std::string, TextureSet> textureSets_{};

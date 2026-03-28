@@ -86,6 +86,7 @@ private:
     bool f12Pressed_ = false;
     bool hasAppliedEnvironmentProfile_ = false;
     std::string appliedEnvironmentLevelId_;
+    std::string appliedEnvironmentId_;
     EnvironmentProfile appliedEnvironmentProfile_ = EnvironmentProfile::Neutral;
     MaterialTextureLibrary materialTextureLibrary_;
 

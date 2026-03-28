@@ -215,6 +215,10 @@ bool tryParseMaterialProceduralSourceToken(const std::string& token, MaterialPro
         source = MaterialProceduralSource::GeneratedBrick;
         return true;
     }
+    if (token == "generated_stone") {
+        source = MaterialProceduralSource::GeneratedStone;
+        return true;
+    }
     return false;
 }
 

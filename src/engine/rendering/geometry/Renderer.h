@@ -36,6 +36,10 @@ struct RenderObject {
     glm::mat4 modelMatrix;
     glm::vec3 tint{1.0f};
     RenderMaterialData material;
+    bool wireframe = false;
+    bool ignoreDepth = false;
+    bool unlit = false;
+    float lineWidth = 1.0f;
 };
 
 struct ShadowRenderData {

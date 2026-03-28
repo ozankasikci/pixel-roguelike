@@ -6,6 +6,8 @@ uniform sampler2D sceneNormal;
 uniform sampler2D uCloudLayerA;
 uniform sampler2D uCloudLayerB;
 uniform sampler2D uHorizonLayer;
+uniform sampler2D uSkyPanorama;
+uniform samplerCube uSkyCubemap;
 
 uniform int uEnableSky;
 uniform int uEnableFog;
@@ -21,6 +23,8 @@ uniform int uMoonEnabled;
 uniform int uHasCloudLayerA;
 uniform int uHasCloudLayerB;
 uniform int uHasHorizonLayer;
+uniform int uHasSkyPanorama;
+uniform int uHasSkyCubemap;
 
 uniform float uFogDensity;
 uniform float uFogStart;
@@ -45,6 +49,9 @@ uniform float uNearPlane;
 uniform float uFarPlane;
 uniform float uSunSize;
 uniform float uSunGlow;
+uniform float uSkyPanoramaStrength;
+uniform float uSkyPanoramaYawOffset;
+uniform float uSkyCubemapStrength;
 uniform float uMoonSize;
 uniform float uMoonGlow;
 uniform float uCloudScale;
@@ -63,6 +70,8 @@ uniform vec3 uSkyHorizonColor;
 uniform vec3 uSkyGroundHazeColor;
 uniform vec3 uSunDirection;
 uniform vec3 uSunColor;
+uniform vec3 uSkyPanoramaTint;
+uniform vec3 uSkyCubemapTint;
 uniform vec3 uMoonDirection;
 uniform vec3 uMoonColor;
 uniform vec3 uCloudTint;
@@ -185,6 +194,16 @@ vec3 renderSky(vec3 worldDir) {
 
     vec3 skyColor = mix(uSkyGroundHazeColor, uSkyHorizonColor, horizonBlend);
     skyColor = mix(skyColor, uSkyZenithColor, zenithBlend);
+
+    if (uHasSkyCubemap != 0) {
+        vec3 cubemapColor = texture(uSkyCubemap, normalize(vec3(worldDir.x, worldDir.y, -worldDir.z))).rgb * uSkyCubemapTint;
+        skyColor = mix(skyColor, cubemapColor, clamp(uSkyCubemapStrength, 0.0, 1.0));
+    } else if (uHasSkyPanorama != 0) {
+        vec2 panoUv = skyUvFromDirection(worldDir);
+        panoUv.x = fract(panoUv.x + uSkyPanoramaYawOffset);
+        vec3 panoramaColor = texture(uSkyPanorama, panoUv).rgb * uSkyPanoramaTint;
+        skyColor = mix(skyColor, panoramaColor, clamp(uSkyPanoramaStrength, 0.0, 1.0));
+    }
 
     float horizonGlow = exp(-abs(worldDir.y) * 10.0);
     skyColor = mix(skyColor, mix(uSkyGroundHazeColor, uSkyHorizonColor, 0.65), horizonGlow * 0.12);

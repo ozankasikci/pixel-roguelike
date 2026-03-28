@@ -50,8 +50,9 @@ void StylizePass::apply(GLuint compositeColorTex,
                         GLuint sceneNormalTex,
                         const PostProcessParams& params,
                         int displayW,
-                        int displayH) {
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+                        int displayH,
+                        GLuint targetFbo) {
+    glBindFramebuffer(GL_FRAMEBUFFER, targetFbo);
     glViewport(0, 0, displayW, displayH);
     glDisable(GL_DEPTH_TEST);
 
@@ -88,4 +89,5 @@ void StylizePass::apply(GLuint compositeColorTex,
     glBindVertexArray(quadVAO_);
     glDrawArrays(GL_TRIANGLES, 0, 6);
     glBindVertexArray(0);
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }

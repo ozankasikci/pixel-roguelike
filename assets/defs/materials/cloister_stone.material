@@ -1,0 +1,8 @@
+id cloister_stone
+parent stone_default
+base_color 0.74 0.72 0.68
+uv_scale 0.68 0.68
+normal_strength 0.34
+roughness_bias 0.06
+ao_strength 0.90
+light_tint_response 0.04

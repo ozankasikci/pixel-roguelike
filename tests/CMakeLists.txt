@@ -32,6 +32,8 @@ add_test(NAME level_lighting COMMAND test_level_lighting)
 add_executable(test_content_registry
     test_content_registry.cpp
     ${CMAKE_SOURCE_DIR}/src/engine/core/PathUtils.cpp
+    ${CMAKE_SOURCE_DIR}/src/game/rendering/EnvironmentDefinition.cpp
+    ${CMAKE_SOURCE_DIR}/src/game/rendering/EnvironmentProfile.cpp
     ${CMAKE_SOURCE_DIR}/src/game/rendering/MaterialDefinition.cpp
     ${CMAKE_SOURCE_DIR}/src/game/content/ContentRegistry.cpp
 )
@@ -51,6 +53,8 @@ add_test(NAME content_registry COMMAND test_content_registry)
 add_executable(test_equipment_state
     test_equipment_state.cpp
     ${CMAKE_SOURCE_DIR}/src/engine/core/PathUtils.cpp
+    ${CMAKE_SOURCE_DIR}/src/game/rendering/EnvironmentDefinition.cpp
+    ${CMAKE_SOURCE_DIR}/src/game/rendering/EnvironmentProfile.cpp
     ${CMAKE_SOURCE_DIR}/src/game/rendering/MaterialDefinition.cpp
     ${CMAKE_SOURCE_DIR}/src/game/content/ContentRegistry.cpp
     ${CMAKE_SOURCE_DIR}/src/game/session/EquipmentState.cpp
@@ -81,3 +85,55 @@ target_compile_definitions(test_material_definitions PRIVATE
     MATERIAL_BRICK_OLD_FILE="${CMAKE_SOURCE_DIR}/assets/defs/materials/brick_wall_old.material"
 )
 add_test(NAME material_definitions COMMAND test_material_definitions)
+
+add_executable(test_silos_cloister_level
+    test_silos_cloister_level.cpp
+    ${CMAKE_SOURCE_DIR}/src/game/rendering/EnvironmentProfile.cpp
+    ${CMAKE_SOURCE_DIR}/src/game/rendering/MaterialDefinition.cpp
+    ${CMAKE_SOURCE_DIR}/src/game/level/LevelDef.cpp
+)
+target_include_directories(test_silos_cloister_level PRIVATE ${CMAKE_SOURCE_DIR}/src)
+target_link_libraries(test_silos_cloister_level PRIVATE glm::glm)
+target_compile_definitions(test_silos_cloister_level PRIVATE
+    SILOS_CLOISTER_SCENE_FILE="${CMAKE_SOURCE_DIR}/assets/scenes/silos_cloister.scene"
+)
+add_test(NAME silos_cloister_level COMMAND test_silos_cloister_level)
+
+add_executable(test_level_roundtrip
+    test_level_roundtrip.cpp
+    ${CMAKE_SOURCE_DIR}/src/game/rendering/EnvironmentProfile.cpp
+    ${CMAKE_SOURCE_DIR}/src/game/rendering/MaterialDefinition.cpp
+    ${CMAKE_SOURCE_DIR}/src/game/level/LevelDef.cpp
+)
+target_include_directories(test_level_roundtrip PRIVATE ${CMAKE_SOURCE_DIR}/src)
+target_link_libraries(test_level_roundtrip PRIVATE glm::glm)
+add_test(NAME level_roundtrip COMMAND test_level_roundtrip)
+
+add_executable(test_environment_profiles
+    test_environment_profiles.cpp
+    ${CMAKE_SOURCE_DIR}/src/game/rendering/EnvironmentProfile.cpp
+)
+target_include_directories(test_environment_profiles PRIVATE ${CMAKE_SOURCE_DIR}/src)
+target_link_libraries(test_environment_profiles PRIVATE glm::glm)
+add_test(NAME environment_profiles COMMAND test_environment_profiles)
+
+add_executable(test_editor_selection
+    test_editor_selection.cpp
+    ${CMAKE_SOURCE_DIR}/src/editor/EditorSelectionSystem.cpp
+    ${CMAKE_SOURCE_DIR}/src/editor/EditorSceneDocument.cpp
+    ${CMAKE_SOURCE_DIR}/src/editor/EditorSceneSerializer.cpp
+    ${CMAKE_SOURCE_DIR}/src/editor/EditorPreviewWorld.cpp
+)
+target_include_directories(test_editor_selection PRIVATE ${CMAKE_SOURCE_DIR}/src)
+target_link_libraries(test_editor_selection PRIVATE game engine_rendering EnTT::EnTT glm::glm)
+add_test(NAME editor_selection COMMAND test_editor_selection)
+
+add_executable(test_editor_command_stack
+    test_editor_command_stack.cpp
+    ${CMAKE_SOURCE_DIR}/src/editor/EditorCommand.cpp
+    ${CMAKE_SOURCE_DIR}/src/editor/EditorSceneDocument.cpp
+    ${CMAKE_SOURCE_DIR}/src/editor/EditorSceneSerializer.cpp
+)
+target_include_directories(test_editor_command_stack PRIVATE ${CMAKE_SOURCE_DIR}/src)
+target_link_libraries(test_editor_command_stack PRIVATE game engine_rendering EnTT::EnTT glm::glm)
+add_test(NAME editor_command_stack COMMAND test_editor_command_stack)

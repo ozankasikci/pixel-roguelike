@@ -81,6 +81,10 @@ int main() {
     assert(registry.findArchetype("checkpoint_shrine") != nullptr);
     assert(registry.findMaterial("brick_default") != nullptr);
     assert(registry.findMaterial("brick_wall_old") != nullptr);
+    assert(registry.findMaterial("cloister_stone") != nullptr);
+    assert(registry.findEnvironment("neutral") != nullptr);
+    assert(registry.findEnvironment("cloister_daylight") != nullptr);
+    assert(registry.findEnvironmentPath("cloister_daylight") != nullptr);
 
     const auto resolvedBrick = resolveMaterialDefinition("brick_wall_old", registry.materials());
     assert(resolvedBrick.shadingModel == MaterialKind::Brick);
@@ -89,6 +93,17 @@ int main() {
     assert(nearlyEqual(resolvedBrick.uvScale.y, 0.16f));
     assert(resolvedBrick.uvMode == MaterialUvMode::WorldProjected);
     assert(resolvedBrick.proceduralSource == MaterialProceduralSource::GeneratedBrick);
+
+    const auto resolvedStone = resolveMaterialDefinition("cloister_stone", registry.materials());
+    assert(resolvedStone.shadingModel == MaterialKind::Stone);
+    assert(resolvedStone.proceduralSource == MaterialProceduralSource::GeneratedStone);
+    assert(nearlyEqual(resolvedStone.normalStrength, 0.34f));
+
+    const auto* cloister = registry.findEnvironment("cloister_daylight");
+    assert(cloister != nullptr);
+    assert(cloister->id == "cloister_daylight");
+    assert(cloister->sky.enabled);
+    assert(cloister->lighting.sun.enabled);
 
     return 0;
 }

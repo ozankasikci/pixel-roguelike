@@ -3,8 +3,10 @@
 #include "game/rendering/EnvironmentProfile.h"
 #include "game/rendering/MaterialDefinition.h"
 
+#include <filesystem>
 #include <cctype>
 #include <fstream>
+#include <iomanip>
 #include <sstream>
 #include <stdexcept>
 
@@ -46,6 +48,33 @@ bool tryParseBoolToken(const std::string& token, bool& value) {
         return true;
     }
     return false;
+}
+
+std::string formatFloat(float value) {
+    std::ostringstream stream;
+    stream << std::fixed << std::setprecision(6) << value;
+    std::string text = stream.str();
+    while (!text.empty() && text.back() == '0') {
+        text.pop_back();
+    }
+    if (!text.empty() && text.back() == '.') {
+        text.push_back('0');
+    }
+    return text;
+}
+
+std::string resolvedEnvironmentId(const LevelDef& data) {
+    if (!data.environmentId.empty()) {
+        return data.environmentId;
+    }
+    return environmentProfileName(data.environmentProfile);
+}
+
+std::string resolvedMaterialId(const LevelMeshPlacement& placement) {
+    if (!placement.materialId.empty()) {
+        return placement.materialId;
+    }
+    return std::string(defaultMaterialIdForKind(placement.material.value_or(MaterialKind::Stone)));
 }
 
 } // namespace
@@ -160,8 +189,9 @@ LevelDef loadLevelDef(const std::string& path) {
             if (!(stream >> token)) {
                 throwParseError(path, lineNumber, "invalid environment_profile record");
             }
-            if (!tryParseEnvironmentProfileToken(token, data.environmentProfile)) {
-                throwParseError(path, lineNumber, "unknown environment_profile '" + token + "'");
+            data.environmentId = token;
+            if (tryParseEnvironmentProfileToken(token, data.environmentProfile)) {
+                continue;
             }
             continue;
         }
@@ -255,4 +285,123 @@ LevelDef loadLevelDef(const std::string& path) {
     }
 
     return data;
+}
+
+std::string serializeLevelDef(const LevelDef& data) {
+    std::ostringstream out;
+    out << "environment_profile " << resolvedEnvironmentId(data) << "\n\n";
+
+    for (const auto& placement : data.meshes) {
+        out << "mesh " << placement.meshId << ' '
+            << formatFloat(placement.position.x) << ' '
+            << formatFloat(placement.position.y) << ' '
+            << formatFloat(placement.position.z) << ' '
+            << formatFloat(placement.scale.x) << ' '
+            << formatFloat(placement.scale.y) << ' '
+            << formatFloat(placement.scale.z) << ' '
+            << formatFloat(placement.rotation.x) << ' '
+            << formatFloat(placement.rotation.y) << ' '
+            << formatFloat(placement.rotation.z) << ' '
+            << "material " << resolvedMaterialId(placement);
+        if (placement.tint.has_value()) {
+            out << " tint "
+                << formatFloat(placement.tint->r) << ' '
+                << formatFloat(placement.tint->g) << ' '
+                << formatFloat(placement.tint->b);
+        }
+        out << '\n';
+    }
+
+    for (const auto& placement : data.lights) {
+        if (placement.type == LightType::Spot) {
+            out << "spot_light "
+                << formatFloat(placement.position.x) << ' '
+                << formatFloat(placement.position.y) << ' '
+                << formatFloat(placement.position.z) << ' '
+                << formatFloat(placement.direction.x) << ' '
+                << formatFloat(placement.direction.y) << ' '
+                << formatFloat(placement.direction.z) << ' '
+                << formatFloat(placement.color.r) << ' '
+                << formatFloat(placement.color.g) << ' '
+                << formatFloat(placement.color.b) << ' '
+                << formatFloat(placement.radius) << ' '
+                << formatFloat(placement.intensity) << ' '
+                << formatFloat(placement.innerConeDegrees) << ' '
+                << formatFloat(placement.outerConeDegrees) << ' '
+                << (placement.castsShadows ? "true" : "false") << '\n';
+            continue;
+        }
+
+        if (placement.type == LightType::Directional) {
+            out << "dir_light "
+                << formatFloat(placement.direction.x) << ' '
+                << formatFloat(placement.direction.y) << ' '
+                << formatFloat(placement.direction.z) << ' '
+                << formatFloat(placement.color.r) << ' '
+                << formatFloat(placement.color.g) << ' '
+                << formatFloat(placement.color.b) << ' '
+                << formatFloat(placement.intensity) << '\n';
+            continue;
+        }
+
+        out << "light "
+            << formatFloat(placement.position.x) << ' '
+            << formatFloat(placement.position.y) << ' '
+            << formatFloat(placement.position.z) << ' '
+            << formatFloat(placement.color.r) << ' '
+            << formatFloat(placement.color.g) << ' '
+            << formatFloat(placement.color.b) << ' '
+            << formatFloat(placement.radius) << ' '
+            << formatFloat(placement.intensity) << '\n';
+    }
+
+    for (const auto& placement : data.boxColliders) {
+        out << "collider_box "
+            << formatFloat(placement.position.x) << ' '
+            << formatFloat(placement.position.y) << ' '
+            << formatFloat(placement.position.z) << ' '
+            << formatFloat(placement.halfExtents.x) << ' '
+            << formatFloat(placement.halfExtents.y) << ' '
+            << formatFloat(placement.halfExtents.z) << '\n';
+    }
+
+    for (const auto& placement : data.cylinderColliders) {
+        out << "collider_cylinder "
+            << formatFloat(placement.position.x) << ' '
+            << formatFloat(placement.position.y) << ' '
+            << formatFloat(placement.position.z) << ' '
+            << formatFloat(placement.radius) << ' '
+            << formatFloat(placement.halfHeight) << '\n';
+    }
+
+    if (data.hasPlayerSpawn) {
+        out << "player_spawn "
+            << formatFloat(data.playerSpawn.position.x) << ' '
+            << formatFloat(data.playerSpawn.position.y) << ' '
+            << formatFloat(data.playerSpawn.position.z) << ' '
+            << formatFloat(data.playerSpawn.fallRespawnY) << '\n';
+    }
+
+    for (const auto& placement : data.archetypes) {
+        out << "archetype_instance " << placement.archetypeId << ' '
+            << formatFloat(placement.position.x) << ' '
+            << formatFloat(placement.position.y) << ' '
+            << formatFloat(placement.position.z) << ' '
+            << formatFloat(placement.yawDegrees) << '\n';
+    }
+
+    return out.str();
+}
+
+void saveLevelDef(const std::string& path, const LevelDef& data) {
+    namespace fs = std::filesystem;
+    const fs::path target(path);
+    if (target.has_parent_path()) {
+        fs::create_directories(target.parent_path());
+    }
+    std::ofstream out(target);
+    if (!out.is_open()) {
+        throw std::runtime_error("Failed to write level definition: " + target.string());
+    }
+    out << serializeLevelDef(data);
 }

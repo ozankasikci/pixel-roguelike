@@ -55,6 +55,7 @@ struct LevelArchetypePlacement {
 };
 
 struct LevelDef {
+    std::string environmentId = "neutral";
     EnvironmentProfile environmentProfile = EnvironmentProfile::Neutral;
     std::vector<LevelMeshPlacement> meshes;
     std::vector<LevelLightPlacement> lights;
@@ -66,3 +67,5 @@ struct LevelDef {
 };
 
 LevelDef loadLevelDef(const std::string& path);
+std::string serializeLevelDef(const LevelDef& data);
+void saveLevelDef(const std::string& path, const LevelDef& data);

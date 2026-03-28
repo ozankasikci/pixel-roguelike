@@ -9,7 +9,7 @@
 #include "game/systems/DoorSystem.h"
 #include "game/systems/InteractionSystem.h"
 #include "game/systems/RenderSystem.h"
-#include "game/scenes/CathedralScene.h"
+#include "game/scenes/SilosCloisterScene.h"
 #include "game/content/ContentRegistry.h"
 #include "game/session/RunSession.h"
 
@@ -31,7 +31,9 @@ int main(int argc, char* argv[]) {
 
     Application app(1280, 720, "Pixel Roguelike");
     app.emplaceService<RunSession>();
-    app.emplaceService<ContentRegistry>().loadDefaults();
+    auto& content = app.emplaceService<ContentRegistry>();
+    content.loadDefaults();
+    app.registry().ctx().insert_or_assign<ContentRegistry*>(&content);
 
     // Register systems by phase so scheduling policy lives in the engine instead of boot order.
     auto& input = app.addSystem<InputSystem>(Application::UpdatePhase::Input);
@@ -54,10 +56,10 @@ int main(int argc, char* argv[]) {
         render.enableAutoScreenshot(autoScreenshotPath, 10);
     }
 
-    // Push the cathedral scene (per D-14, D-15)
+    // Push the Silos-inspired cloister scene as the starting level.
     SceneManager sceneManager;
     app.setSceneManager(&sceneManager);
-    sceneManager.pushScene(std::make_unique<CathedralScene>(), app);
+    sceneManager.pushScene(std::make_unique<SilosCloisterScene>(), app);
 
     // Run the game loop (per D-04)
     app.run();

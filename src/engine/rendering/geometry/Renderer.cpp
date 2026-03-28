@@ -64,7 +64,20 @@ void Renderer::drawScene(const std::vector<RenderObject>& objects,
     }
 
     for (const auto& obj : objects) {
+        if (obj.ignoreDepth) {
+            glDisable(GL_DEPTH_TEST);
+        } else {
+            glEnable(GL_DEPTH_TEST);
+        }
+        if (obj.wireframe) {
+            glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+            glLineWidth(std::max(1.0f, obj.lineWidth));
+        } else {
+            glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+        }
+
         const RenderMaterialData& material = obj.material;
+        shader_->setInt("uUnlit", obj.unlit ? 1 : 0);
         shader_->setInt("uUseMaterialMaps", material.useMaterialMaps ? 1 : 0);
         shader_->setInt("uMaterialUvMode", material.uvMode);
         shader_->setVec2("uMaterialUvScale", material.uvScale);
@@ -88,4 +101,8 @@ void Renderer::drawScene(const std::vector<RenderObject>& objects,
         shader_->setInt("uMaterialKind", static_cast<int>(material.shadingModel));
         obj.mesh->draw();
     }
+
+    glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+    glLineWidth(1.0f);
+    glEnable(GL_DEPTH_TEST);
 }

@@ -10,6 +10,15 @@ Mesh::Mesh(const std::vector<glm::vec3>& positions,
            const std::vector<uint32_t>& indices) {
     indexCount_ = static_cast<GLsizei>(indices.size());
 
+    if (!positions.empty()) {
+        aabbMin_ = positions.front();
+        aabbMax_ = positions.front();
+        for (const auto& position : positions) {
+            aabbMin_ = glm::min(aabbMin_, position);
+            aabbMax_ = glm::max(aabbMax_, position);
+        }
+    }
+
     // Interleave: position (vec3) + normal (vec3) + uv (vec2) + tangent (vec3)
     std::vector<float> vertData;
     vertData.reserve(positions.size() * 11);

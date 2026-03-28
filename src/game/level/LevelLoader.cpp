@@ -74,7 +74,7 @@ void LevelLoader::load(Application& app, const LevelLoadRequest& request) {
     registry.ctx().insert_or_assign(MeshAssetProvider{&context_.meshLibrary});
 
     const LevelDef level = loadLevelDef(resolveProjectPath(request.levelPath));
-    registry.ctx().insert_or_assign(ActiveEnvironmentProfile{request.levelId, level.environmentProfile});
+    registry.ctx().insert_or_assign(ActiveEnvironmentProfile{request.levelId, level.environmentId, level.environmentProfile});
 
     LevelBuilder builder(context_);
     if (request.buildScriptedGeometry) {

@@ -24,6 +24,7 @@ struct EnvironmentRenderSettings {
 
 struct ActiveEnvironmentProfile {
     std::string levelId;
+    std::string environmentId;
     EnvironmentProfile profile = EnvironmentProfile::Neutral;
 };
 

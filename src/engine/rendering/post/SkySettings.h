@@ -2,6 +2,7 @@
 
 #include <glm/glm.hpp>
 
+#include <array>
 #include <string>
 
 struct SkySettings {
@@ -15,6 +16,15 @@ struct SkySettings {
     glm::vec3 sunColor{1.0f, 0.94f, 0.82f};
     float sunSize = 0.020f;
     float sunGlow = 0.24f;
+
+    std::string panoramaPath;
+    glm::vec3 panoramaTint{1.0f, 1.0f, 1.0f};
+    float panoramaStrength = 0.0f;
+    float panoramaYawOffset = 0.0f;
+
+    std::array<std::string, 6> cubemapFacePaths{};
+    glm::vec3 cubemapTint{1.0f, 1.0f, 1.0f};
+    float cubemapStrength = 0.0f;
 
     bool moonEnabled = false;
     glm::vec3 moonDirection{-0.30f, 0.85f, -0.22f};

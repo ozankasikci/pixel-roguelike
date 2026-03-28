@@ -3,6 +3,7 @@
 #include <string>
 #include <memory>
 #include <unordered_map>
+#include <vector>
 
 #include "engine/rendering/geometry/Mesh.h"
 
@@ -25,6 +26,7 @@ public:
 
     // Check if a mesh with the given name exists
     bool has(const std::string& name) const;
+    std::vector<std::string> names() const;
 
     // Register standard primitive meshes:
     //   "cube"          - unit cube (1x1x1, centered at origin)

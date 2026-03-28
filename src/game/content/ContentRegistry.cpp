@@ -387,6 +387,8 @@ void ContentRegistry::loadDefaults() {
     skills_.clear();
     archetypes_.clear();
     materials_.clear();
+    environments_.clear();
+    environmentPaths_.clear();
 
     auto oldDagger = loadWeaponDefinitionAsset(resolveProjectPath("assets/defs/weapons/old_dagger.weapon"));
     weapons_.emplace(oldDagger.id, oldDagger);
@@ -420,10 +422,26 @@ void ContentRegistry::loadDefaults() {
         "assets/defs/materials/brick_default.material",
         "assets/defs/materials/viewmodel_default.material",
         "assets/defs/materials/brick_wall_old.material",
+        "assets/defs/materials/cloister_stone.material",
     };
     for (const char* path : materialFiles) {
         auto material = loadMaterialDefinitionAsset(resolveProjectPath(path));
         materials_.emplace(material.id, material);
+    }
+
+    const std::array environmentFiles{
+        "assets/defs/environments/neutral.environment",
+        "assets/defs/environments/dungeon_torch.environment",
+        "assets/defs/environments/sunlit_meadow.environment",
+        "assets/defs/environments/mountain_dusk.environment",
+        "assets/defs/environments/arcane_field.environment",
+        "assets/defs/environments/cathedral_arcade.environment",
+        "assets/defs/environments/cloister_daylight.environment",
+    };
+    for (const char* path : environmentFiles) {
+        auto environment = loadEnvironmentDefinitionAsset(resolveProjectPath(path));
+        environmentPaths_.emplace(environment.id, resolveProjectPath(path));
+        environments_.emplace(environment.id, environment);
     }
 }
 
@@ -455,4 +473,14 @@ const GameplayArchetypeDefinition* ContentRegistry::findArchetype(const std::str
 const MaterialDefinition* ContentRegistry::findMaterial(const std::string& id) const {
     auto it = materials_.find(id);
     return it == materials_.end() ? nullptr : &it->second;
+}
+
+const EnvironmentDefinition* ContentRegistry::findEnvironment(const std::string& id) const {
+    auto it = environments_.find(id);
+    return it == environments_.end() ? nullptr : &it->second;
+}
+
+const std::string* ContentRegistry::findEnvironmentPath(const std::string& id) const {
+    auto it = environmentPaths_.find(id);
+    return it == environmentPaths_.end() ? nullptr : &it->second;
 }

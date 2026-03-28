@@ -12,6 +12,7 @@
 #include "game/components/PlayerMovementComponent.h"
 #include "game/components/ViewmodelComponent.h"
 #include "game/content/ContentRegistry.h"
+#include "game/rendering/EnvironmentDefinition.h"
 #include "game/session/EquipmentState.h"
 #include "game/session/RunSession.h"
 #include "game/ui/InventoryMenuState.h"
@@ -382,6 +383,7 @@ void RenderSystem::syncEnvironmentProfile(entt::registry& registry) {
             applyEnvironmentSettings(EnvironmentProfile::Neutral);
             hasAppliedEnvironmentProfile_ = true;
             appliedEnvironmentLevelId_.clear();
+            appliedEnvironmentId_ = "neutral";
             appliedEnvironmentProfile_ = EnvironmentProfile::Neutral;
         }
         return;
@@ -390,13 +392,72 @@ void RenderSystem::syncEnvironmentProfile(entt::registry& registry) {
     const auto& active = registry.ctx().get<ActiveEnvironmentProfile>();
     if (hasAppliedEnvironmentProfile_
         && active.levelId == appliedEnvironmentLevelId_
+        && active.environmentId == appliedEnvironmentId_
         && active.profile == appliedEnvironmentProfile_) {
         return;
     }
 
-    applyEnvironmentSettings(active.profile);
+    const ContentRegistry* content = registry.ctx().contains<ContentRegistry*>()
+        ? registry.ctx().get<ContentRegistry*>()
+        : nullptr;
+    if (content != nullptr) {
+        if (const auto* environment = content->findEnvironment(active.environmentId)) {
+            applyEnvironmentSettings(makeEnvironmentRenderSettings(*environment).profile);
+            const EnvironmentRenderSettings settings = makeEnvironmentRenderSettings(*environment);
+            const bool enableSky = debugParams_.post.enableSky;
+            const bool enableDither = debugParams_.post.enableDither;
+            const bool enableEdges = debugParams_.post.enableEdges;
+            const bool enableFog = debugParams_.post.enableFog;
+            const bool enableToneMap = debugParams_.post.enableToneMap;
+            const bool enableBloom = debugParams_.post.enableBloom;
+            const bool enableVignette = debugParams_.post.enableVignette;
+            const bool enableGrain = debugParams_.post.enableGrain;
+            const bool enableScanlines = debugParams_.post.enableScanlines;
+            const bool enableSharpen = debugParams_.post.enableSharpen;
+            const int debugViewMode = debugParams_.post.debugViewMode;
+            const int toneMapMode = debugParams_.post.toneMapMode;
+            const float patternScale = debugParams_.post.patternScale;
+            const float depthViewScale = debugParams_.post.depthViewScale;
+            const float nearPlane = debugParams_.post.nearPlane;
+            const float farPlane = debugParams_.post.farPlane;
+            const float timeSeconds = debugParams_.post.timeSeconds;
+
+            debugParams_.post = settings.post;
+            debugParams_.post.sky = settings.sky;
+            debugParams_.post.enableSky = enableSky;
+            debugParams_.post.enableDither = enableDither;
+            debugParams_.post.enableEdges = enableEdges;
+            debugParams_.post.enableFog = enableFog;
+            debugParams_.post.enableToneMap = enableToneMap;
+            debugParams_.post.enableBloom = enableBloom;
+            debugParams_.post.enableVignette = enableVignette;
+            debugParams_.post.enableGrain = enableGrain;
+            debugParams_.post.enableScanlines = enableScanlines;
+            debugParams_.post.enableSharpen = enableSharpen;
+            debugParams_.post.debugViewMode = debugViewMode;
+            debugParams_.post.toneMapMode = toneMapMode;
+            debugParams_.post.patternScale = patternScale;
+            debugParams_.post.depthViewScale = depthViewScale;
+            debugParams_.post.nearPlane = nearPlane;
+            debugParams_.post.farPlane = farPlane;
+            debugParams_.post.timeSeconds = timeSeconds;
+
+            debugParams_.hemisphereSkyColor = settings.lighting.hemisphereSkyColor;
+            debugParams_.hemisphereGroundColor = settings.lighting.hemisphereGroundColor;
+            debugParams_.hemisphereStrength = settings.lighting.hemisphereStrength;
+            debugParams_.enableDirectionalLights = settings.lighting.enableDirectionalLights;
+            debugParams_.sunDirectional = settings.lighting.sun;
+            debugParams_.fillDirectional = settings.lighting.fill;
+            syncSkySunFromDirectional(debugParams_);
+        } else {
+            applyEnvironmentSettings(active.profile);
+        }
+    } else {
+        applyEnvironmentSettings(active.profile);
+    }
     hasAppliedEnvironmentProfile_ = true;
     appliedEnvironmentLevelId_ = active.levelId;
+    appliedEnvironmentId_ = active.environmentId;
     appliedEnvironmentProfile_ = active.profile;
 }
 

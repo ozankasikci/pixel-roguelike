@@ -98,6 +98,9 @@ void MaterialTextureLibrary::init(const ContentRegistry& content) {
         if (resolved.proceduralSource == MaterialProceduralSource::GeneratedBrick) {
             buildBrickSet(textures);
             useMaterialMaps = true;
+        } else if (resolved.proceduralSource == MaterialProceduralSource::GeneratedStone) {
+            buildStoneSet(textures);
+            useMaterialMaps = true;
         } else {
             if (!resolved.albedoMapPath.empty()) {
                 textures.albedo.createRGBA8FromFile(resolveProjectPath(resolved.albedoMapPath));
@@ -262,4 +265,77 @@ void MaterialTextureLibrary::buildBrickSet(TextureSet& brick) const {
     brick.normal.createRGBA8(kSize, kSize, normal);
     brick.roughness.createR8(kSize, kSize, roughness);
     brick.ao.createR8(kSize, kSize, ao);
+}
+
+void MaterialTextureLibrary::buildStoneSet(TextureSet& stone) const {
+    constexpr int kSize = 512;
+
+    std::vector<std::uint8_t> albedo(static_cast<size_t>(kSize * kSize * 4), 255);
+    std::vector<std::uint8_t> normal(static_cast<size_t>(kSize * kSize * 4), 255);
+    std::vector<std::uint8_t> roughness(static_cast<size_t>(kSize * kSize), 255);
+    std::vector<std::uint8_t> ao(static_cast<size_t>(kSize * kSize), 255);
+    std::vector<float> height(static_cast<size_t>(kSize * kSize), 0.0f);
+
+    for (int y = 0; y < kSize; ++y) {
+        for (int x = 0; x < kSize; ++x) {
+            const float u = (static_cast<float>(x) + 0.5f) / static_cast<float>(kSize);
+            const float v = (static_cast<float>(y) + 0.5f) / static_cast<float>(kSize);
+            glm::vec2 p(u, v);
+
+            const float macro = fbm(p * 1.2f + glm::vec2(2.1f, 5.4f));
+            const float mid = fbm(p * 3.4f + glm::vec2(7.2f, 1.3f));
+            const float micro = fbm(p * 13.5f + glm::vec2(4.7f, 11.6f));
+            const float grain = fbm(p * 22.0f + glm::vec2(13.4f, 8.9f));
+            const float veins = smooth01(0.58f, 0.88f, 1.0f - std::abs(std::sin((u * 7.0f + v * 5.6f + macro * 1.8f) * 3.14159f)));
+            const float damp = smooth01(0.60f, 0.84f, fbm(p * glm::vec2(2.0f, 4.6f) + glm::vec2(9.1f, 3.7f)));
+            const float specks = smooth01(0.76f, 0.94f, fbm(p * 30.0f + glm::vec2(6.6f, 17.2f)));
+
+            glm::vec3 baseA(0.77f, 0.75f, 0.71f);
+            glm::vec3 baseB(0.69f, 0.68f, 0.63f);
+            glm::vec3 warmPatch(0.83f, 0.80f, 0.74f);
+            glm::vec3 coolPatch(0.63f, 0.65f, 0.64f);
+
+            glm::vec3 color = glm::mix(baseA, baseB, macro * 0.70f);
+            color = glm::mix(color, warmPatch, mid * 0.16f);
+            color = glm::mix(color, coolPatch, damp * 0.10f);
+            color *= 0.95f + micro * 0.10f + grain * 0.04f;
+            color = glm::mix(color, color * glm::vec3(1.04f, 1.03f, 1.00f), veins * 0.10f);
+            color = glm::mix(color, color * glm::vec3(0.84f, 0.86f, 0.84f), damp * 0.08f);
+            color = glm::mix(color, color * glm::vec3(0.78f, 0.76f, 0.74f), specks * 0.04f);
+
+            float localHeight = (micro - 0.5f) * 0.010f
+                + (grain - 0.5f) * 0.004f
+                - veins * 0.004f
+                - damp * 0.003f
+                - specks * 0.002f;
+            float localRoughness = 0.72f + damp * 0.10f + (1.0f - veins) * 0.06f + grain * 0.04f;
+            float localAo = 0.96f - damp * 0.08f - veins * 0.04f - specks * 0.03f;
+
+            const size_t pixelIndex = static_cast<size_t>(y * kSize + x);
+            const size_t colorIndex = pixelIndex * 4;
+            albedo[colorIndex + 0] = toByte(color.r);
+            albedo[colorIndex + 1] = toByte(color.g);
+            albedo[colorIndex + 2] = toByte(color.b);
+            albedo[colorIndex + 3] = 255;
+            roughness[pixelIndex] = toByte(localRoughness);
+            ao[pixelIndex] = toByte(localAo);
+            height[pixelIndex] = localHeight;
+        }
+    }
+
+    for (int y = 0; y < kSize; ++y) {
+        for (int x = 0; x < kSize; ++x) {
+            glm::vec3 n = sampleHeightNormal(height, kSize, x, y);
+            const size_t colorIndex = static_cast<size_t>(y * kSize + x) * 4;
+            normal[colorIndex + 0] = toByte(n.x * 0.5f + 0.5f);
+            normal[colorIndex + 1] = toByte(n.y * 0.5f + 0.5f);
+            normal[colorIndex + 2] = toByte(n.z * 0.5f + 0.5f);
+            normal[colorIndex + 3] = 255;
+        }
+    }
+
+    stone.albedo.createRGBA8(kSize, kSize, albedo);
+    stone.normal.createRGBA8(kSize, kSize, normal);
+    stone.roughness.createR8(kSize, kSize, roughness);
+    stone.ao.createR8(kSize, kSize, ao);
 }

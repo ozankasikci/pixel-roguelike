@@ -10,6 +10,9 @@
 
 namespace {
 
+constexpr glm::vec3 kDoorRomanesqueLeft(0.33f, 0.15f, 0.09f);
+constexpr glm::vec3 kDoorRomanesqueRight(0.26f, 0.11f, 0.07f);
+
 entt::entity spawnDoorLeaf(LevelBuilder& builder,
                            Mesh* mesh,
                            const glm::vec3& closedCenter,
@@ -100,7 +103,7 @@ entt::entity spawnDoubleDoor(LevelBuilder& builder,
         spec.leafScale,
         spec.closedYaw,
         spec.closedYaw - spec.openAngle,
-        RetroPalette::OldWood
+        kDoorRomanesqueLeft
     );
     auto rightLeaf = spawnDoorLeaf(
         builder,
@@ -110,7 +113,7 @@ entt::entity spawnDoubleDoor(LevelBuilder& builder,
         spec.leafScale,
         spec.closedYaw,
         spec.closedYaw + spec.openAngle,
-        RetroPalette::OldWoodDark
+        kDoorRomanesqueRight
     );
 
     if (leftLeaf == entt::null || rightLeaf == entt::null) {

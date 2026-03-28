@@ -82,6 +82,14 @@ void CompositePass::apply(GLuint sceneColorTex,
     glBindTexture(GL_TEXTURE_2D, skyTextures_.resolve(params.sky.horizonLayerPath));
     shader_->setInt("uHorizonLayer", 5);
 
+    glActiveTexture(GL_TEXTURE6);
+    glBindTexture(GL_TEXTURE_2D, skyTextures_.resolve(params.sky.panoramaPath));
+    shader_->setInt("uSkyPanorama", 6);
+
+    glActiveTexture(GL_TEXTURE7);
+    glBindTexture(GL_TEXTURE_CUBE_MAP, skyTextures_.resolveCube(params.sky.cubemapFacePaths));
+    shader_->setInt("uSkyCubemap", 7);
+
     shader_->setInt("uEnableSky", (params.enableSky && params.sky.enabled) ? 1 : 0);
     shader_->setInt("uEnableFog", params.enableFog ? 1 : 0);
     shader_->setInt("uEnableToneMap", params.enableToneMap ? 1 : 0);
@@ -125,6 +133,11 @@ void CompositePass::apply(GLuint sceneColorTex,
     shader_->setVec3("uSunColor", params.sky.sunColor);
     shader_->setFloat("uSunSize", params.sky.sunSize);
     shader_->setFloat("uSunGlow", params.sky.sunGlow);
+    shader_->setVec3("uSkyPanoramaTint", params.sky.panoramaTint);
+    shader_->setFloat("uSkyPanoramaStrength", params.sky.panoramaStrength);
+    shader_->setFloat("uSkyPanoramaYawOffset", params.sky.panoramaYawOffset);
+    shader_->setVec3("uSkyCubemapTint", params.sky.cubemapTint);
+    shader_->setFloat("uSkyCubemapStrength", params.sky.cubemapStrength);
     shader_->setInt("uMoonEnabled", params.sky.moonEnabled ? 1 : 0);
     shader_->setVec3("uMoonDirection", params.sky.moonDirection);
     shader_->setVec3("uMoonColor", params.sky.moonColor);
@@ -141,10 +154,13 @@ void CompositePass::apply(GLuint sceneColorTex,
     shader_->setInt("uHasCloudLayerA", params.sky.cloudLayerAPath.empty() ? 0 : 1);
     shader_->setInt("uHasCloudLayerB", params.sky.cloudLayerBPath.empty() ? 0 : 1);
     shader_->setInt("uHasHorizonLayer", params.sky.horizonLayerPath.empty() ? 0 : 1);
+    shader_->setInt("uHasSkyPanorama", params.sky.panoramaPath.empty() ? 0 : 1);
+    shader_->setInt("uHasSkyCubemap", params.sky.cubemapFacePaths[0].empty() ? 0 : 1);
 
     glBindVertexArray(quadVAO_);
     glDrawArrays(GL_TRIANGLES, 0, 6);
     glBindVertexArray(0);
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
     glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_CUBE_MAP, 0);
 }
