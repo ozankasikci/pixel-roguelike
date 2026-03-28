@@ -10,22 +10,52 @@ void MeshLibrary::registerMesh(const std::string& name, std::unique_ptr<Mesh> me
     meshes_[name] = std::move(mesh);
 }
 
+void MeshLibrary::registerFileAlias(const std::string& name, const std::string& filepath) {
+    fileAliases_[name] = filepath;
+}
+
+Mesh* MeshLibrary::get(const std::string& name) {
+    auto it = meshes_.find(name);
+    if (it != meshes_.end()) {
+        return it->second.get();
+    }
+
+    auto alias = fileAliases_.find(name);
+    if (alias != fileAliases_.end()) {
+        loadFromFile(name, alias->second);
+        it = meshes_.find(name);
+        if (it != meshes_.end()) {
+            return it->second.get();
+        }
+    }
+
+    return nullptr;
+}
+
 Mesh* MeshLibrary::get(const std::string& name) const {
     auto it = meshes_.find(name);
-    if (it == meshes_.end()) return nullptr;
+    if (it == meshes_.end()) {
+        return nullptr;
+    }
     return it->second.get();
 }
 
 bool MeshLibrary::has(const std::string& name) const {
-    return meshes_.find(name) != meshes_.end();
+    return meshes_.find(name) != meshes_.end() || fileAliases_.find(name) != fileAliases_.end();
 }
 
 std::vector<std::string> MeshLibrary::names() const {
     std::vector<std::string> result;
-    result.reserve(meshes_.size());
+    result.reserve(meshes_.size() + fileAliases_.size());
     for (const auto& [name, mesh] : meshes_) {
         (void)mesh;
         result.push_back(name);
+    }
+    for (const auto& [name, path] : fileAliases_) {
+        (void)path;
+        if (meshes_.find(name) == meshes_.end()) {
+            result.push_back(name);
+        }
     }
     return result;
 }
@@ -51,4 +81,5 @@ void MeshLibrary::loadFromFile(const std::string& name, const std::string& filep
 
 void MeshLibrary::clear() {
     meshes_.clear();
+    fileAliases_.clear();
 }

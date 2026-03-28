@@ -84,86 +84,116 @@ void MaterialTextureLibrary::createFallbackTextures() {
 }
 
 void MaterialTextureLibrary::init(const ContentRegistry& content) {
+    resolvedDefinitions_.clear();
     materials_.clear();
     textureSets_.clear();
     createFallbackTextures();
 
     for (const auto& [id, definition] : content.materials()) {
         (void)definition;
-        const auto resolved = resolveMaterialDefinition(id, content.materials());
-
-        TextureSet textures;
-        bool useMaterialMaps = false;
-
-        if (resolved.proceduralSource == MaterialProceduralSource::GeneratedBrick) {
-            buildBrickSet(textures);
-            useMaterialMaps = true;
-        } else if (resolved.proceduralSource == MaterialProceduralSource::GeneratedStone) {
-            buildStoneSet(textures);
-            useMaterialMaps = true;
-        } else {
-            if (!resolved.albedoMapPath.empty()) {
-                textures.albedo.createRGBA8FromFile(resolveProjectPath(resolved.albedoMapPath));
-                useMaterialMaps = true;
-            }
-            if (!resolved.normalMapPath.empty()) {
-                textures.normal.createRGBA8FromFile(resolveProjectPath(resolved.normalMapPath));
-                useMaterialMaps = true;
-            }
-            if (!resolved.roughnessMapPath.empty()) {
-                textures.roughness.createR8FromFile(resolveProjectPath(resolved.roughnessMapPath));
-                useMaterialMaps = true;
-            }
-            if (!resolved.aoMapPath.empty()) {
-                textures.ao.createR8FromFile(resolveProjectPath(resolved.aoMapPath));
-                useMaterialMaps = true;
-            }
-        }
-
-        auto [it, inserted] = textureSets_.emplace(id, std::move(textures));
-        (void)inserted;
-        const TextureSet& storedTextures = it->second;
-
-        RenderMaterialData renderMaterial;
-        renderMaterial.id = resolved.id;
-        renderMaterial.shadingModel = resolved.shadingModel;
-        renderMaterial.baseColor = resolved.baseColor;
-        renderMaterial.useMaterialMaps = useMaterialMaps;
-        renderMaterial.albedoTexture = storedTextures.albedo.id() != 0 ? storedTextures.albedo.id() : fallbackTextures_.albedo.id();
-        renderMaterial.normalTexture = storedTextures.normal.id() != 0 ? storedTextures.normal.id() : fallbackTextures_.normal.id();
-        renderMaterial.roughnessTexture = storedTextures.roughness.id() != 0 ? storedTextures.roughness.id() : fallbackTextures_.roughness.id();
-        renderMaterial.aoTexture = storedTextures.ao.id() != 0 ? storedTextures.ao.id() : fallbackTextures_.ao.id();
-        renderMaterial.uvMode = static_cast<int>(resolved.uvMode);
-        renderMaterial.uvScale = resolved.uvScale;
-        renderMaterial.normalStrength = resolved.normalStrength;
-        renderMaterial.roughnessScale = resolved.roughnessScale;
-        renderMaterial.roughnessBias = resolved.roughnessBias;
-        renderMaterial.metalness = resolved.metalness;
-        renderMaterial.aoStrength = resolved.aoStrength;
-        renderMaterial.lightTintResponse = resolved.lightTintResponse;
-        materials_.emplace(renderMaterial.id, renderMaterial);
+        resolvedDefinitions_.emplace(id, resolveMaterialDefinition(id, content.materials()));
     }
 }
 
 const RenderMaterialData& MaterialTextureLibrary::resolve(std::string_view materialId, MaterialKind legacyKind) const {
+    const ResolvedMaterialDefinition& resolved = definitionFor(materialId, legacyKind);
+    auto cached = materials_.find(resolved.id);
+    if (cached != materials_.end()) {
+        return cached->second;
+    }
+
+    const bool useMaterialMaps =
+        resolved.proceduralSource != MaterialProceduralSource::None ||
+        !resolved.albedoMapPath.empty() ||
+        !resolved.normalMapPath.empty() ||
+        !resolved.roughnessMapPath.empty() ||
+        !resolved.aoMapPath.empty();
+
+    const TextureSet* textures = useMaterialMaps ? &ensureTextureSet(resolved) : nullptr;
+
+    RenderMaterialData renderMaterial;
+    renderMaterial.id = resolved.id;
+    renderMaterial.shadingModel = resolved.shadingModel;
+    renderMaterial.baseColor = resolved.baseColor;
+    renderMaterial.useMaterialMaps = useMaterialMaps;
+    renderMaterial.albedoTexture = (textures != nullptr && textures->albedo.id() != 0) ? textures->albedo.id() : fallbackTextures_.albedo.id();
+    renderMaterial.normalTexture = (textures != nullptr && textures->normal.id() != 0) ? textures->normal.id() : fallbackTextures_.normal.id();
+    renderMaterial.roughnessTexture = (textures != nullptr && textures->roughness.id() != 0) ? textures->roughness.id() : fallbackTextures_.roughness.id();
+    renderMaterial.aoTexture = (textures != nullptr && textures->ao.id() != 0) ? textures->ao.id() : fallbackTextures_.ao.id();
+    renderMaterial.uvMode = static_cast<int>(resolved.uvMode);
+    renderMaterial.uvScale = resolved.uvScale;
+    renderMaterial.normalStrength = resolved.normalStrength;
+    renderMaterial.roughnessScale = resolved.roughnessScale;
+    renderMaterial.roughnessBias = resolved.roughnessBias;
+    renderMaterial.metalness = resolved.metalness;
+    renderMaterial.aoStrength = resolved.aoStrength;
+    renderMaterial.lightTintResponse = resolved.lightTintResponse;
+
+    auto [it, inserted] = materials_.emplace(renderMaterial.id, renderMaterial);
+    (void)inserted;
+    return it->second;
+}
+
+const ResolvedMaterialDefinition& MaterialTextureLibrary::definitionFor(std::string_view materialId,
+                                                                        MaterialKind legacyKind) const {
     if (!materialId.empty()) {
-        auto it = materials_.find(std::string(materialId));
-        if (it != materials_.end()) {
+        auto it = resolvedDefinitions_.find(std::string(materialId));
+        if (it != resolvedDefinitions_.end()) {
             return it->second;
         }
     }
 
-    auto fallback = materials_.find(std::string(defaultMaterialIdForKind(legacyKind)));
-    if (fallback != materials_.end()) {
+    auto fallback = resolvedDefinitions_.find(std::string(defaultMaterialIdForKind(legacyKind)));
+    if (fallback != resolvedDefinitions_.end()) {
         return fallback->second;
     }
 
-    auto stone = materials_.find("stone_default");
-    if (stone != materials_.end()) {
+    auto stone = resolvedDefinitions_.find("stone_default");
+    if (stone != resolvedDefinitions_.end()) {
         return stone->second;
     }
 
     throw std::runtime_error("Material library missing stone_default fallback");
+}
+
+const MaterialTextureLibrary::TextureSet& MaterialTextureLibrary::ensureTextureSet(const ResolvedMaterialDefinition& resolved) const {
+    const std::string key = textureKeyFor(resolved);
+    auto cached = textureSets_.find(key);
+    if (cached != textureSets_.end()) {
+        return cached->second;
+    }
+
+    TextureSet textures;
+    if (resolved.proceduralSource == MaterialProceduralSource::GeneratedBrick) {
+        buildBrickSet(textures);
+    } else if (resolved.proceduralSource == MaterialProceduralSource::GeneratedStone) {
+        buildStoneSet(textures);
+    } else {
+        if (!resolved.albedoMapPath.empty()) {
+            textures.albedo.createRGBA8FromFile(resolveProjectPath(resolved.albedoMapPath));
+        }
+        if (!resolved.normalMapPath.empty()) {
+            textures.normal.createRGBA8FromFile(resolveProjectPath(resolved.normalMapPath));
+        }
+        if (!resolved.roughnessMapPath.empty()) {
+            textures.roughness.createR8FromFile(resolveProjectPath(resolved.roughnessMapPath));
+        }
+        if (!resolved.aoMapPath.empty()) {
+            textures.ao.createR8FromFile(resolveProjectPath(resolved.aoMapPath));
+        }
+    }
+
+    auto [it, inserted] = textureSets_.emplace(key, std::move(textures));
+    (void)inserted;
+    return it->second;
+}
+
+std::string MaterialTextureLibrary::textureKeyFor(const ResolvedMaterialDefinition& resolved) const {
+    return std::to_string(static_cast<int>(resolved.proceduralSource))
+        + "|" + resolved.albedoMapPath
+        + "|" + resolved.normalMapPath
+        + "|" + resolved.roughnessMapPath
+        + "|" + resolved.aoMapPath;
 }
 
 void MaterialTextureLibrary::buildBrickSet(TextureSet& brick) const {

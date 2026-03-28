@@ -221,7 +221,7 @@ void registerCathedralAssets(MeshLibrary& meshLibrary) {
     meshLibrary.registerMesh("door_frame_romanesque", createRomanesqueDoorFrameMesh());
     meshLibrary.registerMesh("door_leaf_left", createWoodDoorLeafMesh(true));
     meshLibrary.registerMesh("door_leaf_right", createWoodDoorLeafMesh(false));
-    meshLibrary.loadFromFile("pillar", "assets/meshes/pillar.glb");
-    meshLibrary.loadFromFile("arch", "assets/meshes/arch.glb");
-    meshLibrary.loadFromFile("hand", "assets/meshes/hand_with_old_dagger.glb");
+    meshLibrary.registerFileAlias("pillar", "assets/meshes/pillar.glb");
+    meshLibrary.registerFileAlias("arch", "assets/meshes/arch.glb");
+    meshLibrary.registerFileAlias("hand", "assets/meshes/hand_with_old_dagger.glb");
 }

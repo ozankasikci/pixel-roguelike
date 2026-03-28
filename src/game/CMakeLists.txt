@@ -7,6 +7,8 @@ add_library(game STATIC
     rendering/MaterialTextureLibrary.cpp
     rendering/RuntimeCameraMath.cpp
     rendering/RuntimeSceneRenderer.cpp
+    runtime/RuntimeGameplay.cpp
+    runtime/RuntimeGameSession.cpp
     session/EquipmentState.cpp
     scenes/CathedralScene.cpp
     scenes/SilosCloisterScene.cpp

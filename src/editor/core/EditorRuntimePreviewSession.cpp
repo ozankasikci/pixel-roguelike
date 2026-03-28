@@ -1,95 +1,128 @@
 #include "editor/core/EditorRuntimePreviewSession.h"
 
-#include "engine/core/PathUtils.h"
 #include "editor/EditorSceneDocument.h"
-#include "game/content/ContentRegistry.h"
-#include "game/level/LevelLoader.h"
-#include "game/levels/cathedral/CathedralAssets.h"
-#include "game/rendering/EnvironmentDebugSync.h"
-#include "game/rendering/MeshAssetProvider.h"
-#include "game/session/RunSession.h"
 
-#include <filesystem>
+#include <GLFW/glfw3.h>
+#include <imgui.h>
 
 namespace {
 
-void bootstrapPreviewMeshLibrary(MeshLibrary& meshLibrary) {
-    registerCathedralAssets(meshLibrary);
-
-    const std::filesystem::path meshDirectory(resolveProjectPath("assets/meshes"));
-    if (std::filesystem::exists(meshDirectory)) {
-        for (const auto& entry : std::filesystem::directory_iterator(meshDirectory)) {
-            if (!entry.is_regular_file()) {
-                continue;
-            }
-            const std::string extension = entry.path().extension().string();
-            if (extension != ".glb" && extension != ".gltf") {
-                continue;
-            }
-            const std::string meshId = entry.path().stem().string();
-            if (!meshLibrary.has(meshId)) {
-                meshLibrary.loadFromFile(meshId, std::filesystem::relative(entry.path(), std::filesystem::current_path()).generic_string());
-            }
-        }
+void setCursorCapture(GLFWwindow* window, bool captured) {
+    if (window == nullptr) {
+        return;
     }
 
-    const std::string staticDoorPath = resolveProjectPath("assets/meshes/gothic_door_static.glb");
-    if (std::filesystem::exists(staticDoorPath) && !meshLibrary.has("gothic_door_static")) {
-        meshLibrary.loadFromFile("gothic_door_static", "assets/meshes/gothic_door_static.glb");
+    glfwSetInputMode(window, GLFW_CURSOR, captured ? GLFW_CURSOR_DISABLED : GLFW_CURSOR_NORMAL);
+    if (glfwRawMouseMotionSupported()) {
+        glfwSetInputMode(window, GLFW_RAW_MOUSE_MOTION, captured ? GLFW_TRUE : GLFW_FALSE);
     }
 }
 
 } // namespace
 
-EditorRuntimePreviewSession::EditorRuntimePreviewSession() {
-    bootstrapPreviewMeshLibrary(meshLibrary_);
-}
-
 void EditorRuntimePreviewSession::rebuild(const EditorSceneDocument& document, ContentRegistry& content) {
-    clearEntities();
-    session_ = RunSession{};
-
-    registry_.ctx().insert_or_assign<ContentRegistry*>(&content);
-    registry_.ctx().insert_or_assign(RuntimeEnvironmentOverride{document.environment()});
-
-    LevelBuildContext context{
-        .registry = registry_,
-        .meshLibrary = meshLibrary_,
-        .entities = entities_,
-    };
-    LevelLoader loader(context);
     LevelLoadRequest request;
     request.levelId = document.scenePath().empty() ? "editor_runtime_preview" : document.scenePath();
     request.levelPath = document.scenePath();
-    request.registerAssets = [](MeshLibrary& library) {
-        bootstrapPreviewMeshLibrary(library);
-    };
-    loader.load(content, session_, request, document.toLevelDef());
+    session_.rebuild(document.toLevelDef(), request.levelId, request.levelPath, content, request);
 }
 
 void EditorRuntimePreviewSession::clear() {
-    clearEntities();
+    captured_ = false;
+    hasLastCursorPosition_ = false;
+    session_.clear();
 }
 
-void EditorRuntimePreviewSession::clearEntities() {
-    for (auto entity : entities_) {
-        if (registry_.valid(entity)) {
-            registry_.destroy(entity);
+void EditorRuntimePreviewSession::tick(float deltaTime, float aspect) {
+    session_.tick(deltaTime, aspect);
+}
+
+void EditorRuntimePreviewSession::prewarmRenderer(ContentRegistry& content) {
+    session_.prewarmRenderer(content);
+}
+
+RuntimeSceneRenderOutput EditorRuntimePreviewSession::render(float deltaTime,
+                                                            int internalWidth,
+                                                            int internalHeight,
+                                                            int outputWidth,
+                                                            int outputHeight,
+                                                            GLuint targetFramebuffer) {
+    return session_.render(deltaTime, internalWidth, internalHeight, outputWidth, outputHeight, targetFramebuffer);
+}
+
+void EditorRuntimePreviewSession::updateInput(GLFWwindow* window, const ImGuiIO& io) {
+    RuntimeInputState& state = session_.input();
+    state.beginFrame();
+    state.setWantsCaptureMouse(false);
+
+    if (!captured_ || window == nullptr) {
+        state.setCursorLocked(false);
+        for (int key = 0; key < RuntimeInputState::MaxKeys; ++key) {
+            state.setKeyPressed(key, false);
+        }
+        for (int button = 0; button < RuntimeInputState::MaxButtons; ++button) {
+            state.setMouseButtonPressed(button, false);
+        }
+        state.setMousePosition(glm::vec2(io.MousePos.x, io.MousePos.y));
+        state.setMouseDelta(glm::vec2(0.0f));
+        state.setScrollDelta(0.0f);
+        return;
+    }
+
+    for (int key = 0; key < RuntimeInputState::MaxKeys; ++key) {
+        const bool pressed = glfwGetKey(window, key) == GLFW_PRESS;
+        state.setKeyPressed(key, pressed);
+        if (state.isKeyJustPressed(key)) {
+            state.addKeyPressEvent(key, glfwGetKeyScancode(key));
         }
     }
-    entities_.clear();
 
-    auto& ctx = registry_.ctx();
-    if (ctx.contains<MeshAssetProvider>()) {
-        ctx.erase<MeshAssetProvider>();
+    for (int button = 0; button < RuntimeInputState::MaxButtons; ++button) {
+        state.setMouseButtonPressed(button, glfwGetMouseButton(window, button) == GLFW_PRESS);
     }
-    if (ctx.contains<ActiveEnvironmentProfile>()) {
-        ctx.erase<ActiveEnvironmentProfile>();
+
+    double mouseX = 0.0;
+    double mouseY = 0.0;
+    glfwGetCursorPos(window, &mouseX, &mouseY);
+    const glm::vec2 mousePosition(static_cast<float>(mouseX), static_cast<float>(mouseY));
+    glm::vec2 mouseDelta(0.0f);
+    if (hasLastCursorPosition_) {
+        mouseDelta = mousePosition - lastCursorPosition_;
     }
-    if (ctx.contains<RuntimeEnvironmentOverride>()) {
-        ctx.erase<RuntimeEnvironmentOverride>();
+    lastCursorPosition_ = mousePosition;
+    hasLastCursorPosition_ = true;
+
+    state.setMousePosition(mousePosition);
+    state.setMouseDelta(mouseDelta);
+    state.setScrollDelta(io.MouseWheel);
+    for (ImWchar character : io.InputQueueCharacters) {
+        state.addTypedCharacter(static_cast<unsigned int>(character));
     }
-    if (ctx.contains<ContentRegistry*>()) {
-        ctx.erase<ContentRegistry*>();
+}
+
+void EditorRuntimePreviewSession::beginCapture(GLFWwindow* window) {
+    if (captured_) {
+        return;
     }
+    captured_ = true;
+    hasLastCursorPosition_ = false;
+    session_.input().reset();
+    session_.input().setCursorLocked(true);
+    setCursorCapture(window, true);
+}
+
+void EditorRuntimePreviewSession::endCapture(GLFWwindow* window) {
+    if (!captured_ && window == nullptr) {
+        session_.input().reset();
+        return;
+    }
+    captured_ = false;
+    hasLastCursorPosition_ = false;
+    session_.input().reset();
+    session_.input().setCursorLocked(false);
+    setCursorCapture(window, false);
+}
+
+void EditorRuntimePreviewSession::syncCursor(GLFWwindow* window) {
+    setCursorCapture(window, captured_ && session_.input().isCursorLocked());
 }

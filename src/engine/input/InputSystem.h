@@ -1,7 +1,7 @@
 #pragma once
 #include "engine/core/System.h"
+#include "game/runtime/RuntimeInputState.h"
 #include <glm/glm.hpp>
-#include <string_view>
 #include <vector>
 
 struct GLFWwindow;
@@ -36,43 +36,18 @@ public:
 
     // ImGui integration
     bool wantsCaptureMouse() const;
+    RuntimeInputState& state() { return state_; }
+    const RuntimeInputState& state() const { return state_; }
 
 private:
-    struct KeyPressEvent {
-        int key = -1;
-        int scancode = -1;
-    };
-
     GLFWwindow* window_ = nullptr;
-
-    // Key state arrays (polled each frame via glfwGetKey)
-    static constexpr int MAX_KEYS = 512;
-    bool currentKeys_[MAX_KEYS] = {};
-    bool previousKeys_[MAX_KEYS] = {};
-
-    // Mouse button state (polled each frame via glfwGetMouseButton)
-    static constexpr int MAX_BUTTONS = 8;
-    bool currentButtons_[MAX_BUTTONS] = {};
-    bool previousButtons_[MAX_BUTTONS] = {};
-
-    // Mouse position & delta (callback-driven, can't poll deltas)
     glm::vec2 mousePos_{0.0f};
-    glm::vec2 mouseDelta_{0.0f};
     glm::vec2 mouseDeltaAccum_{0.0f};
     bool firstMouse_ = true;
-
-    // Scroll (callback-driven, can't poll)
-    float scrollDelta_ = 0.0f;
     float scrollAccum_ = 0.0f;
-
-    // Printable characters typed this frame, independent of keyboard layout.
-    std::vector<unsigned int> typedCharacters_;
     std::vector<unsigned int> typedCharactersAccum_;
-    std::vector<KeyPressEvent> keyPressEvents_;
-    std::vector<KeyPressEvent> keyPressEventsAccum_;
-
-    // Cursor lock state
-    bool cursorLocked_ = false;
+    std::vector<RuntimeInputState::KeyPressEvent> keyPressEventsAccum_;
+    RuntimeInputState state_;
 
     // Static instance for GLFW callbacks
     static InputSystem* instance_;

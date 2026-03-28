@@ -276,7 +276,8 @@ void main() {
     }
 
     if (isSkyPixel) {
-        color = skyColor;
+        fragColor = vec4(clamp(skyColor, 0.0, 1.0), 1.0);
+        return;
     }
 
     float fogFactor = 0.0;

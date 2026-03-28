@@ -316,6 +316,7 @@ void main() {
     vec4 normalSample = texture(sceneNormal, vTexCoord);
     float rawDepth = texture(sceneDepth, vTexCoord).r;
     float linDepth = linearizeDepth(rawDepth);
+    bool isSkyPixel = rawDepth >= 0.9999;
 
     if (uDebugViewMode == 1) {
         fragColor = vec4(texture(sceneColor, vTexCoord).rgb, 1.0);
@@ -331,6 +332,11 @@ void main() {
         return;
     }
     if (uDebugViewMode == 4) {
+        fragColor = vec4(gradedColor, 1.0);
+        return;
+    }
+
+    if (isSkyPixel) {
         fragColor = vec4(gradedColor, 1.0);
         return;
     }

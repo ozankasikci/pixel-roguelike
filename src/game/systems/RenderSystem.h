@@ -1,10 +1,10 @@
 #pragma once
 #include "engine/core/System.h"
-#include "engine/input/InputSystem.h"
 #include "engine/ui/ImGuiLayer.h"
 #include "engine/ui/Screenshot.h"
 #include "game/rendering/EnvironmentDebugSync.h"
 #include "game/rendering/RuntimeSceneRenderer.h"
+#include "game/runtime/RuntimeInputState.h"
 
 #include <string>
 
@@ -12,7 +12,7 @@ struct InteractionPromptState;
 
 class RenderSystem : public System {
 public:
-    explicit RenderSystem(InputSystem& input) : input_(input) {}
+    explicit RenderSystem(RuntimeInputState& input) : input_(input) {}
 
     void init(Application& app) override;
     void update(Application& app, float deltaTime) override;
@@ -36,7 +36,7 @@ private:
     ImGuiLayer imguiLayer_;
     DebugParams debugParams_;
     AutoScreenshot autoCapture_;
-    InputSystem& input_;
+    RuntimeInputState& input_;
     bool overlaysVisible_ = false;
     bool f1Pressed_ = false;
     bool f12Pressed_ = false;

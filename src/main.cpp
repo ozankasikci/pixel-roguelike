@@ -34,17 +34,18 @@ int main(int argc, char* argv[]) {
     auto& content = app.emplaceService<ContentRegistry>();
     content.loadDefaults();
     app.registry().ctx().insert_or_assign<ContentRegistry*>(&content);
+    app.registry().ctx().insert_or_assign<RunSession*>(&app.getService<RunSession>());
 
     // Register systems by phase so scheduling policy lives in the engine instead of boot order.
     auto& input = app.addSystem<InputSystem>(Application::UpdatePhase::Input);
-    auto& interaction = app.addSystem<InteractionSystem>(Application::UpdatePhase::Interaction, input);
-    auto& doors = app.addSystem<DoorSystem>(Application::UpdatePhase::Interaction, input);
-    auto& checkpoints = app.addSystem<CheckpointSystem>(Application::UpdatePhase::Interaction, input);
+    auto& interaction = app.addSystem<InteractionSystem>(Application::UpdatePhase::Interaction, input.state());
+    auto& doors = app.addSystem<DoorSystem>(Application::UpdatePhase::Interaction, input.state());
+    auto& checkpoints = app.addSystem<CheckpointSystem>(Application::UpdatePhase::Interaction, input.state());
     auto& physics = app.addSystem<PhysicsSystem>(Application::UpdatePhase::Physics);
-    auto& inventory = app.addSystem<InventorySystem>(Application::UpdatePhase::Gameplay, input);
-    auto& movement = app.addSystem<PlayerMovementSystem>(Application::UpdatePhase::Gameplay, input, physics);
-    auto& camera = app.addSystem<CameraSystem>(Application::UpdatePhase::Camera, input);
-    auto& render = app.addSystem<RenderSystem>(Application::UpdatePhase::Render, input);
+    auto& inventory = app.addSystem<InventorySystem>(Application::UpdatePhase::Gameplay, input.state());
+    auto& movement = app.addSystem<PlayerMovementSystem>(Application::UpdatePhase::Gameplay, input.state(), physics);
+    auto& camera = app.addSystem<CameraSystem>(Application::UpdatePhase::Camera, input.state());
+    auto& render = app.addSystem<RenderSystem>(Application::UpdatePhase::Render, input.state());
     (void)doors;
     (void)checkpoints;
     (void)interaction;

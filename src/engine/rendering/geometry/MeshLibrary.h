@@ -20,8 +20,10 @@ public:
 
     // Register a named mesh (takes ownership)
     void registerMesh(const std::string& name, std::unique_ptr<Mesh> mesh);
+    void registerFileAlias(const std::string& name, const std::string& filepath);
 
     // Get a non-owning raw pointer to a named mesh; returns nullptr if not found
+    Mesh* get(const std::string& name);
     Mesh* get(const std::string& name) const;
 
     // Check if a mesh with the given name exists
@@ -44,4 +46,5 @@ public:
 
 private:
     std::unordered_map<std::string, std::unique_ptr<Mesh>> meshes_;
+    std::unordered_map<std::string, std::string> fileAliases_;
 };

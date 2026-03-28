@@ -165,3 +165,23 @@ add_executable(test_editor_asset_browser
 target_include_directories(test_editor_asset_browser PRIVATE ${CMAKE_SOURCE_DIR}/src)
 target_link_libraries(test_editor_asset_browser PRIVATE glm::glm)
 add_test(NAME editor_asset_browser COMMAND test_editor_asset_browser)
+
+add_executable(test_runtime_game_session test_runtime_game_session.cpp)
+target_include_directories(test_runtime_game_session PRIVATE ${CMAKE_SOURCE_DIR}/src)
+target_link_libraries(test_runtime_game_session PRIVATE game engine_rendering EnTT::EnTT glm::glm)
+target_compile_definitions(test_runtime_game_session PRIVATE
+    SILOS_CLOISTER_SCENE_FILE="${CMAKE_SOURCE_DIR}/assets/scenes/silos_cloister.scene"
+)
+add_test(NAME runtime_game_session COMMAND test_runtime_game_session)
+
+add_executable(profile_play_preview
+    profile_play_preview.cpp
+    ${CMAKE_SOURCE_DIR}/src/editor/EditorSceneDocument.cpp
+    ${CMAKE_SOURCE_DIR}/src/editor/EditorSceneSerializer.cpp
+    ${CMAKE_SOURCE_DIR}/src/editor/core/EditorRuntimePreviewSession.cpp
+)
+target_include_directories(profile_play_preview PRIVATE ${CMAKE_SOURCE_DIR}/src)
+target_link_libraries(profile_play_preview PRIVATE game engine_core engine_rendering engine_ui EnTT::EnTT glm::glm)
+target_compile_definitions(profile_play_preview PRIVATE
+    SILOS_CLOISTER_SCENE_FILE="${CMAKE_SOURCE_DIR}/assets/scenes/silos_cloister.scene"
+)

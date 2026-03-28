@@ -25,7 +25,9 @@
 #include "game/content/ContentRegistry.h"
 #include "game/rendering/MaterialDefinition.h"
 #include "game/rendering/MaterialTextureLibrary.h"
-#include "game/rendering/RuntimeSceneRenderer.h"
+#include "game/session/EquipmentState.h"
+#include "game/ui/InteractionPromptState.h"
+#include "game/ui/InventoryMenuState.h"
 
 #define GLM_ENABLE_EXPERIMENTAL
 #include <GLFW/glfw3.h>
@@ -106,8 +108,6 @@ int main(int argc, char* argv[]) {
 
     MaterialTextureLibrary materialTextures;
     materialTextures.init(content);
-    RuntimeSceneRenderer runtimeSceneRenderer;
-    runtimeSceneRenderer.init(content);
 
     EditorSceneDocument document;
     document.loadFromSceneFile(initialScene, content);
@@ -188,40 +188,47 @@ int main(int argc, char* argv[]) {
     bool redoPressed = false;
     bool playTogglePressed = false;
     std::uint64_t previewSceneRevision = document.sceneRevision();
+    bool runtimePreviewNeedsRebuild = false;
     EditorPendingCommand widgetCommand;
     EditorPendingCommand gizmoCommand;
 
     while (!window.shouldClose()) {
         window.pollEvents();
+        if (ui.playPreview && runtimePreviewSession.captured() && glfwGetWindowAttrib(window.handle(), GLFW_FOCUSED) == 0) {
+            runtimePreviewSession.endCapture(window.handle());
+        }
         imgui.beginFrame();
         ImGuizmo::SetImGuiContext(ImGui::GetCurrentContext());
         ImGuizmo::BeginFrame();
 
         const float deltaTime = 1.0f / std::max(ImGui::GetIO().Framerate, 1.0f);
         ImGuiIO& io = ImGui::GetIO();
+        const bool gameplayPreviewCaptured = ui.playPreview && runtimePreviewSession.captured();
 
-        if (ImGui::IsKeyPressed(ImGuiKey_F)) focusPressed = true;
-        if (ImGui::IsKeyPressed(ImGuiKey_Delete)) deletePressed = true;
-        if ((io.KeyCtrl || io.KeySuper) && ImGui::IsKeyPressed(ImGuiKey_D)) duplicatePressed = true;
-        if ((io.KeyCtrl || io.KeySuper) && ImGui::IsKeyPressed(ImGuiKey_Z)) {
-            if (io.KeyShift) {
-                redoPressed = true;
-            } else {
-                undoPressed = true;
+        if (!gameplayPreviewCaptured) {
+            if (ImGui::IsKeyPressed(ImGuiKey_F)) focusPressed = true;
+            if (ImGui::IsKeyPressed(ImGuiKey_Delete)) deletePressed = true;
+            if ((io.KeyCtrl || io.KeySuper) && ImGui::IsKeyPressed(ImGuiKey_D)) duplicatePressed = true;
+            if ((io.KeyCtrl || io.KeySuper) && ImGui::IsKeyPressed(ImGuiKey_Z)) {
+                if (io.KeyShift) {
+                    redoPressed = true;
+                } else {
+                    undoPressed = true;
+                }
             }
-        }
-        if ((io.KeyCtrl || io.KeySuper) && ImGui::IsKeyPressed(ImGuiKey_Y)) {
-            redoPressed = true;
-        }
-        if (!io.WantTextInput && glfwGetMouseButton(window.handle(), GLFW_MOUSE_BUTTON_RIGHT) != GLFW_PRESS) {
-            if (ImGui::IsKeyPressed(ImGuiKey_W)) ui.tool = EditorTransformTool::Translate;
-            if (ImGui::IsKeyPressed(ImGuiKey_E)) ui.tool = EditorTransformTool::Rotate;
-            if (ImGui::IsKeyPressed(ImGuiKey_R)) ui.tool = EditorTransformTool::Scale;
-        }
-        if (ImGui::IsKeyPressed(ImGuiKey_Escape)) {
-            placementState.clear();
-            widgetCommand.clear();
-            gizmoCommand.clear();
+            if ((io.KeyCtrl || io.KeySuper) && ImGui::IsKeyPressed(ImGuiKey_Y)) {
+                redoPressed = true;
+            }
+            if (!io.WantTextInput && glfwGetMouseButton(window.handle(), GLFW_MOUSE_BUTTON_RIGHT) != GLFW_PRESS) {
+                if (ImGui::IsKeyPressed(ImGuiKey_W)) ui.tool = EditorTransformTool::Translate;
+                if (ImGui::IsKeyPressed(ImGuiKey_E)) ui.tool = EditorTransformTool::Rotate;
+                if (ImGui::IsKeyPressed(ImGuiKey_R)) ui.tool = EditorTransformTool::Scale;
+            }
+            if (ImGui::IsKeyPressed(ImGuiKey_Escape)) {
+                placementState.clear();
+                widgetCommand.clear();
+                gizmoCommand.clear();
+            }
         }
 
         ImGuiViewport* mainViewport = ImGui::GetMainViewport();
@@ -235,6 +242,10 @@ int main(int argc, char* argv[]) {
                      | ImGuiWindowFlags_NoBringToFrontOnFocus
                      | ImGuiWindowFlags_NoNavFocus
                      | ImGuiWindowFlags_NoDocking);
+
+        if (gameplayPreviewCaptured) {
+            ImGui::BeginDisabled();
+        }
 
         if (ImGui::Button("Save")) {
             savePressed = true;
@@ -350,6 +361,10 @@ int main(int argc, char* argv[]) {
                                         editCamera,
                                         previewWorld,
                                         previewSceneRevision);
+                    runtimePreviewNeedsRebuild = true;
+                    if (ui.playPreview) {
+                        runtimePreviewSession.endCapture(window.handle());
+                    }
                 }
                 if (selected) {
                     ImGui::SetItemDefaultFocus();
@@ -410,6 +425,10 @@ int main(int argc, char* argv[]) {
         ImGui::SameLine();
         if (ImGui::Button("Archetype")) beginPlacement(placementState, EditorPlacementKind::Archetype, ui.selectedArchetypeId);
 
+        if (gameplayPreviewCaptured) {
+            ImGui::EndDisabled();
+        }
+
         ImGui::Separator();
         const ImVec2 dockspaceSize = ImGui::GetContentRegionAvail();
         const ImGuiID dockspaceId = ImGui::GetID("LevelEditorDockspace");
@@ -426,6 +445,9 @@ int main(int argc, char* argv[]) {
         ImGui::DockSpace(dockspaceId, ImVec2(0.0f, 0.0f), ImGuiDockNodeFlags_None);
         ImGui::End();
 
+        if (gameplayPreviewCaptured) {
+            ImGui::BeginDisabled();
+        }
         const std::vector<std::uint64_t> outlinerDeleteRequests = renderOutliner(document, ui, selectedIds, &ui.showOutliner, commandStack);
         const InspectorActionResult inspectorActions = renderInspector(ui,
                                                                        document,
@@ -442,7 +464,6 @@ int main(int argc, char* argv[]) {
             archetypeIds = sortedArchetypeIds(content);
             environmentIds = sortedEnvironmentIds(content);
             materialTextures.init(content);
-            runtimeSceneRenderer.reloadContent(content);
             previewDirty = true;
         }
         if (inspectorActions.previewDirty) {
@@ -461,6 +482,9 @@ int main(int argc, char* argv[]) {
                                                                                 archetypeIds,
                                                                                 &ui.showAssetBrowser,
                                                                                 commandStack);
+        if (gameplayPreviewCaptured) {
+            ImGui::EndDisabled();
+        }
         if (assetBrowserActions.openScenePath.has_value()) {
             loadSceneIntoEditor(*assetBrowserActions.openScenePath,
                                 ui,
@@ -476,6 +500,10 @@ int main(int argc, char* argv[]) {
                                 editCamera,
                                 previewWorld,
                                 previewSceneRevision);
+            runtimePreviewNeedsRebuild = true;
+            if (ui.playPreview) {
+                runtimePreviewSession.endCapture(window.handle());
+            }
         }
         if (assetBrowserActions.previewDirty) {
             previewDirty = true;
@@ -515,9 +543,9 @@ int main(int argc, char* argv[]) {
 
         if (previewDirty || previewSceneRevision != document.sceneRevision()) {
             previewWorld.rebuild(document, content);
-            runtimePreviewSession.rebuild(document, content);
             previewDirty = false;
             previewSceneRevision = document.sceneRevision();
+            runtimePreviewNeedsRebuild = true;
         }
         const auto selectionHandles = buildEditorSelectionHandles(document, previewWorld);
         const auto viewportSelectionHandles = buildViewportSelectionHandles(selectionHandles, ui);
@@ -619,14 +647,18 @@ int main(int argc, char* argv[]) {
                               targetH,
                               finalFbo.framebuffer());
         } else {
-            runtimeSceneRenderer.render(runtimePreviewSession.registry(),
-                                        runtimePreviewSession.debugParams(),
-                                        deltaTime,
-                                        targetW,
-                                        targetH,
-                                        targetW,
-                                        targetH,
-                                        finalFbo.framebuffer());
+            runtimePreviewSession.updateInput(window.handle(), io);
+            runtimePreviewSession.tick(deltaTime, kRuntimeViewportAspect);
+            runtimePreviewSession.syncCursor(window.handle());
+            if (runtimePreviewSession.input().isKeyJustPressed(GLFW_KEY_ESCAPE)) {
+                runtimePreviewSession.endCapture(window.handle());
+            }
+            runtimePreviewSession.render(deltaTime,
+                                         targetW,
+                                         targetH,
+                                         targetW,
+                                         targetH,
+                                         finalFbo.framebuffer());
         }
 
         if (viewportWindowVisible) {
@@ -651,6 +683,55 @@ int main(int argc, char* argv[]) {
                 drawList->AddText(badgePos,
                                   ui.playPreview ? IM_COL32(184, 216, 255, 255) : IM_COL32(200, 236, 168, 255),
                                   modeLabel);
+            }
+
+            if (ui.playPreview) {
+                ImDrawList* drawList = ImGui::GetWindowDrawList();
+                if (!runtimePreviewSession.captured()) {
+                    const char* captureLabel = "Click to Capture";
+                    const char* releaseLabel = "Esc releases back to the editor";
+                    const ImVec2 captureSize = ImGui::CalcTextSize(captureLabel);
+                    const ImVec2 releaseSize = ImGui::CalcTextSize(releaseLabel);
+                    const float boxWidth = std::max(captureSize.x, releaseSize.x) + 28.0f;
+                    const float boxHeight = captureSize.y + releaseSize.y + 28.0f;
+                    const ImVec2 boxMin(renderViewportState.origin.x + (renderViewportState.size.x - boxWidth) * 0.5f,
+                                        renderViewportState.origin.y + (renderViewportState.size.y - boxHeight) * 0.5f);
+                    const ImVec2 boxMax(boxMin.x + boxWidth, boxMin.y + boxHeight);
+                    drawList->AddRectFilled(boxMin, boxMax, IM_COL32(12, 14, 18, 210), 6.0f);
+                    drawList->AddText(ImVec2(boxMin.x + 14.0f, boxMin.y + 9.0f),
+                                      IM_COL32(230, 236, 255, 255),
+                                      captureLabel);
+                    drawList->AddText(ImVec2(boxMin.x + 14.0f, boxMin.y + 15.0f + captureSize.y),
+                                      IM_COL32(176, 184, 208, 255),
+                                      releaseLabel);
+                } else {
+                    const char* releaseLabel = "Esc to Release";
+                    const ImVec2 releasePos(renderViewportState.origin.x + 12.0f, renderViewportState.origin.y + 42.0f);
+                    const ImVec2 releaseSize = ImGui::CalcTextSize(releaseLabel);
+                    drawList->AddRectFilled(ImVec2(releasePos.x - 8.0f, releasePos.y - 6.0f),
+                                            ImVec2(releasePos.x + releaseSize.x + 8.0f, releasePos.y + releaseSize.y + 6.0f),
+                                            IM_COL32(22, 24, 28, 210),
+                                            4.0f);
+                    drawList->AddText(releasePos, IM_COL32(230, 236, 255, 255), releaseLabel);
+                }
+
+                if (runtimePreviewNeedsRebuild) {
+                    const char* rebuildLabel = "Scene changes pending: Reset Start to apply";
+                    const ImVec2 textSize = ImGui::CalcTextSize(rebuildLabel);
+                    const ImVec2 textPos(renderViewportState.origin.x + renderViewportState.size.x - textSize.x - 22.0f,
+                                         renderViewportState.origin.y + 14.0f);
+                    drawList->AddRectFilled(ImVec2(textPos.x - 8.0f, textPos.y - 6.0f),
+                                            ImVec2(textPos.x + textSize.x + 8.0f, textPos.y + textSize.y + 6.0f),
+                                            IM_COL32(44, 34, 18, 220),
+                                            4.0f);
+                    drawList->AddText(textPos, IM_COL32(255, 224, 168, 255), rebuildLabel);
+                }
+
+                if (!runtimePreviewSession.captured()
+                    && renderViewportState.hovered
+                    && ImGui::IsMouseClicked(ImGuiMouseButton_Left)) {
+                    runtimePreviewSession.beginCapture(window.handle());
+                }
             }
 
             if (!ui.playPreview && !selectedIds.empty()) {
@@ -750,19 +831,45 @@ int main(int argc, char* argv[]) {
             ImGui::End();
         }
 
+        if (ui.playPreview) {
+            auto& previewRegistry = runtimePreviewSession.registry();
+            const bool inventoryOpen = previewRegistry.ctx().contains<InventoryMenuState>()
+                && previewRegistry.ctx().get<InventoryMenuState>().open;
+            if (inventoryOpen) {
+                auto& menu = previewRegistry.ctx().get<InventoryMenuState>();
+                const auto equipment = resolveEffectiveEquipment(runtimePreviewSession.runSession(), content);
+                ImGuiLayer::renderInventory(menu, runtimePreviewSession.runSession(), content, equipment);
+            }
+            if (previewRegistry.ctx().contains<InteractionPromptState>()) {
+                const auto& prompt = previewRegistry.ctx().get<InteractionPromptState>();
+                if (prompt.visible && !inventoryOpen) {
+                    ImGuiLayer::renderInteractionPrompt(prompt.text.c_str(), prompt.busy);
+                }
+            }
+        }
+
         if (playTogglePressed) {
             widgetCommand.clear();
             gizmoCommand.clear();
             ui.playPreview = !ui.playPreview;
             if (ui.playPreview) {
-                runtimePreviewSession.rebuild(document, content);
+                runtimePreviewSession.endCapture(window.handle());
+                if (runtimePreviewNeedsRebuild) {
+                    runtimePreviewSession.rebuild(document, content);
+                    runtimePreviewNeedsRebuild = false;
+                }
+            } else {
+                runtimePreviewSession.endCapture(window.handle());
+                runtimePreviewNeedsRebuild = true;
             }
             playTogglePressed = false;
         }
 
         if (resetStartPressed) {
             if (ui.playPreview) {
+                runtimePreviewSession.endCapture(window.handle());
                 runtimePreviewSession.rebuild(document, content);
+                runtimePreviewNeedsRebuild = false;
             } else if (!syncEditorCameraToRuntimeStart(document, editCamera) && previewWorld.sceneBounds().valid) {
                 focusEditorCameraOnBounds(editCamera, previewWorld.sceneBounds().min, previewWorld.sceneBounds().max);
             }
@@ -862,7 +969,6 @@ int main(int argc, char* argv[]) {
                 document.save(content);
                 content.loadDefaults();
                 materialTextures.init(content);
-                runtimeSceneRenderer.reloadContent(content);
                 commandStack.markSaved(document);
                 scenePaths = sortedScenePaths();
                 materialIds = sortedMaterialIds(content);
@@ -879,7 +985,7 @@ int main(int argc, char* argv[]) {
         window.swapBuffers();
     }
 
-    runtimeSceneRenderer.shutdown();
+    runtimePreviewSession.endCapture(window.handle());
     imgui.shutdown();
     return 0;
 }
