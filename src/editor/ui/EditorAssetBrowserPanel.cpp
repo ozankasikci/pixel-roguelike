@@ -233,9 +233,11 @@ AssetBrowserActionResult renderAssetBrowser(EditorUiState& ui,
     visibleRows.reserve(128);
     buildVisibleRows(assetNodes, ui.expandedAssetPaths, visibleRows, "assets", 1);
     ensureValidAssetSelection(ui, visibleRows);
-    if (const AssetBrowserVisibleRow* selected = findVisibleRow(visibleRows, ui.selectedAssetPath)) {
-        if (selected->node != nullptr) {
-            setSelectedAsset(ui, *selected->node);
+    if (ui.inspectorContext == EditorInspectorContext::AssetSelection) {
+        if (const AssetBrowserVisibleRow* selected = findVisibleRow(visibleRows, ui.selectedAssetPath)) {
+            if (selected->node != nullptr) {
+                setSelectedAsset(ui, *selected->node);
+            }
         }
     }
 
