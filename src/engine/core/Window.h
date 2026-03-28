@@ -3,6 +3,9 @@
 #include <glad/gl.h>
 #include <GLFW/glfw3.h>
 
+#include <filesystem>
+#include <vector>
+
 class Window {
 public:
     Window(int width, int height, const char* title);
@@ -20,7 +23,11 @@ public:
 
     int width() const;
     int height() const;
+    std::vector<std::filesystem::path> takeDroppedPaths();
 
 private:
+    static void dropCallback(GLFWwindow* window, int pathCount, const char* paths[]);
+
     GLFWwindow* window_ = nullptr;
+    std::vector<std::filesystem::path> droppedPaths_;
 };

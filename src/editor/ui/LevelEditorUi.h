@@ -7,6 +7,7 @@
 #include "game/rendering/MaterialDefinition.h"
 
 #include <cstdint>
+#include <filesystem>
 #include <glm/vec3.hpp>
 #include <optional>
 #include <string>
@@ -114,6 +115,8 @@ struct EditorPendingCommand {
 struct AssetBrowserActionResult {
     std::optional<std::string> openScenePath;
     bool previewDirty = false;
+    bool assetCatalogChanged = false;
+    bool consumedExternalDrops = false;
 };
 
 struct InspectorActionResult {

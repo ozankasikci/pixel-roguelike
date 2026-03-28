@@ -244,9 +244,19 @@ int main(int argc, char* argv[]) {
     PlayEnterTraceState playEnterTrace;
     EditorPendingCommand widgetCommand;
     EditorPendingCommand gizmoCommand;
+    std::vector<std::filesystem::path> pendingDroppedAssetPaths;
 
     while (!window.shouldClose()) {
         window.pollEvents();
+        {
+            auto droppedPaths = window.takeDroppedPaths();
+            pendingDroppedAssetPaths.insert(pendingDroppedAssetPaths.end(),
+                                            std::make_move_iterator(droppedPaths.begin()),
+                                            std::make_move_iterator(droppedPaths.end()));
+            if (!pendingDroppedAssetPaths.empty()) {
+                ui.showAssetBrowser = true;
+            }
+        }
         if (ui.playPreview && runtimePreviewSession.captured() && glfwGetWindowAttrib(window.handle(), GLFW_FOCUSED) == 0) {
             runtimePreviewSession.endCapture(window.handle());
         }
@@ -524,16 +534,13 @@ int main(int argc, char* argv[]) {
             }
         }
 
-        const char* saveStateLabel = document.dirty() ? "Unsaved" : "Saved";
         const float currentCursorX = ImGui::GetCursorPosX();
         const float contentMaxX = ImGui::GetWindowContentRegionMax().x;
         const ImGuiStyle& style = ImGui::GetStyle();
-        const ImVec2 chipSize = ImGui::CalcTextSize(saveStateLabel);
-        const float chipWidth = chipSize.x + ImGui::GetStyle().FramePadding.x * 2.0f + 8.0f;
         const char* layoutLabelText = "Layout";
         const float layoutLabelWidth = ImGui::CalcTextSize(layoutLabelText).x;
         const float layoutGroupWidth = collapseLayoutToMore ? 0.0f : (layoutLabelWidth + style.ItemInnerSpacing.x + layoutComboWidth);
-        const float rightGroupWidth = chipWidth + (collapseLayoutToMore ? 0.0f : style.ItemSpacing.x + layoutGroupWidth);
+        const float rightGroupWidth = layoutGroupWidth;
         const float targetX = std::max(currentCursorX, contentMaxX - rightGroupWidth);
         if (targetX > currentCursorX) {
             ImGui::SameLine();
@@ -555,16 +562,7 @@ int main(int argc, char* argv[]) {
                 }
                 ImGui::EndCombo();
             }
-            ImGui::SameLine();
         }
-        ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, 999.0f);
-        ImGui::PushStyleColor(ImGuiCol_Button, document.dirty() ? IM_COL32(88, 54, 32, 255) : IM_COL32(38, 62, 44, 255));
-        ImGui::PushStyleColor(ImGuiCol_ButtonHovered, document.dirty() ? IM_COL32(88, 54, 32, 255) : IM_COL32(38, 62, 44, 255));
-        ImGui::PushStyleColor(ImGuiCol_ButtonActive, document.dirty() ? IM_COL32(88, 54, 32, 255) : IM_COL32(38, 62, 44, 255));
-        ImGui::PushStyleColor(ImGuiCol_Text, document.dirty() ? IM_COL32(255, 214, 186, 255) : IM_COL32(206, 242, 214, 255));
-        ImGui::Button(saveStateLabel);
-        ImGui::PopStyleColor(4);
-        ImGui::PopStyleVar();
 
         ImGui::SetNextWindowSize(ImVec2(420.0f, 0.0f), ImGuiCond_Appearing);
         if (ImGui::BeginPopupModal("Save Layout As", nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
@@ -685,6 +683,7 @@ int main(int argc, char* argv[]) {
                                                                                 meshIds,
                                                                                 materialIds,
                                                                                 archetypeIds,
+                                                                                pendingDroppedAssetPaths,
                                                                                 &ui.showAssetBrowser,
                                                                                 commandStack);
         if (gameplayPreviewCaptured) {
@@ -695,6 +694,14 @@ int main(int argc, char* argv[]) {
         }
         if (assetBrowserActions.previewDirty) {
             previewDirty = true;
+        }
+        if (assetBrowserActions.assetCatalogChanged) {
+            previewWorld.reloadMeshAssets();
+            meshIds = sortedMeshNames(previewWorld.meshLibrary());
+            previewDirty = true;
+        }
+        if (assetBrowserActions.consumedExternalDrops) {
+            pendingDroppedAssetPaths.clear();
         }
         if (requestedScenePath.has_value()) {
             loadSceneIntoEditor(*requestedScenePath,

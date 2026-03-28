@@ -1,6 +1,7 @@
 #include "game/runtime/RuntimeGameSession.h"
 
 #include "engine/core/PathUtils.h"
+#include "engine/rendering/assets/ModelLoader.h"
 #include "game/components/CameraComponent.h"
 #include "game/components/CheckpointComponent.h"
 #include "game/components/CharacterControllerComponent.h"
@@ -53,25 +54,10 @@ void bootstrapRuntimeMeshLibrary(MeshLibrary& meshLibrary) {
     registerCathedralAssets(meshLibrary);
 
     const std::filesystem::path meshDirectory(resolveProjectPath("assets/meshes"));
-    if (std::filesystem::exists(meshDirectory)) {
-        for (const auto& entry : std::filesystem::directory_iterator(meshDirectory)) {
-            if (!entry.is_regular_file()) {
-                continue;
-            }
-            const std::string extension = entry.path().extension().string();
-            if (extension != ".glb" && extension != ".gltf") {
-                continue;
-            }
-            const std::string meshId = entry.path().stem().string();
-            if (!meshLibrary.has(meshId)) {
-                meshLibrary.registerFileAlias(meshId, std::filesystem::relative(entry.path(), std::filesystem::current_path()).generic_string());
-            }
+    for (const auto& asset : ModelLoader::discoverProjectAssets(meshDirectory, std::filesystem::current_path())) {
+        if (!meshLibrary.has(asset.meshId)) {
+            meshLibrary.registerFileAlias(asset.meshId, asset.relativePath);
         }
-    }
-
-    const std::string staticDoorPath = resolveProjectPath("assets/meshes/gothic_door_static.glb");
-    if (std::filesystem::exists(staticDoorPath) && !meshLibrary.has("gothic_door_static")) {
-        meshLibrary.registerFileAlias("gothic_door_static", "assets/meshes/gothic_door_static.glb");
     }
 }
 
@@ -123,6 +109,7 @@ void RuntimeGameSession::rebuild(const LevelDef& level,
     if (rendererInitialized_) {
         renderer_.reloadContent(content);
     }
+    bootstrapRuntimeMeshLibrary(meshLibrary_);
     clearEntities();
     runSession_ = RunSession{};
     input_.reset();

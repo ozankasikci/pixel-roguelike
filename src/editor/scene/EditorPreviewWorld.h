@@ -27,6 +27,7 @@ public:
     EditorPreviewWorld();
 
     void rebuild(const EditorSceneDocument& document, const ContentRegistry& content);
+    void reloadMeshAssets();
 
     entt::registry& registry() { return registry_; }
     const entt::registry& registry() const { return registry_; }

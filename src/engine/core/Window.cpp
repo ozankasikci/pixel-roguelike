@@ -2,6 +2,7 @@
 
 #include <spdlog/spdlog.h>
 #include <stdexcept>
+#include <utility>
 
 Window::Window(int width, int height, const char* title) {
     if (!glfwInit()) {
@@ -19,6 +20,9 @@ Window::Window(int width, int height, const char* title) {
         glfwTerminate();
         throw std::runtime_error("Failed to create GLFW window");
     }
+
+    glfwSetWindowUserPointer(window_, this);
+    glfwSetDropCallback(window_, &Window::dropCallback);
 
     glfwMakeContextCurrent(window_);
 
@@ -74,4 +78,24 @@ int Window::height() const {
     int w = 0, h = 0;
     glfwGetFramebufferSize(window_, &w, &h);
     return h;
+}
+
+std::vector<std::filesystem::path> Window::takeDroppedPaths() {
+    std::vector<std::filesystem::path> result = std::move(droppedPaths_);
+    droppedPaths_.clear();
+    return result;
+}
+
+void Window::dropCallback(GLFWwindow* window, int pathCount, const char* paths[]) {
+    auto* self = static_cast<Window*>(glfwGetWindowUserPointer(window));
+    if (self == nullptr || paths == nullptr || pathCount <= 0) {
+        return;
+    }
+
+    self->droppedPaths_.reserve(self->droppedPaths_.size() + static_cast<std::size_t>(pathCount));
+    for (int index = 0; index < pathCount; ++index) {
+        if (paths[index] != nullptr) {
+            self->droppedPaths_.emplace_back(paths[index]);
+        }
+    }
 }

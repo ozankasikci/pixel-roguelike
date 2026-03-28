@@ -19,6 +19,7 @@ AssetBrowserActionResult renderAssetBrowser(EditorUiState& ui,
                                             const std::vector<std::string>& meshIds,
                                             const std::vector<std::string>& materialIds,
                                             const std::vector<std::string>& archetypeIds,
+                                            const std::vector<std::filesystem::path>& externalDropPaths,
                                             bool* open,
                                             EditorCommandStack& commandStack);
 
