@@ -24,4 +24,4 @@ target_include_directories(editor PUBLIC
     ${CMAKE_SOURCE_DIR}/external
     ${CMAKE_SOURCE_DIR}/external/ImGuizmo
 )
-target_link_libraries(editor PUBLIC game)
+target_link_libraries(editor PUBLIC gameplay)

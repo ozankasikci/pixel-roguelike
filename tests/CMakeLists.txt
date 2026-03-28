@@ -155,7 +155,7 @@ add_test(NAME editor_asset_browser COMMAND test_editor_asset_browser)
 
 add_executable(test_runtime_game_session test_runtime_game_session.cpp)
 target_include_directories(test_runtime_game_session PRIVATE ${CMAKE_SOURCE_DIR}/src)
-target_link_libraries(test_runtime_game_session PRIVATE game engine_rendering EnTT::EnTT glm::glm)
+target_link_libraries(test_runtime_game_session PRIVATE gameplay)
 target_compile_definitions(test_runtime_game_session PRIVATE
     SILOS_CLOISTER_SCENE_FILE="${CMAKE_SOURCE_DIR}/assets/scenes/silos_cloister.scene"
 )
