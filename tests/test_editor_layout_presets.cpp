@@ -17,7 +17,13 @@ int main() {
     preset.visibility.showAssetBrowser = true;
     preset.visibility.showEnvironment = false;
     preset.visibility.showViewport = true;
-    preset.imguiIni = "[Window][Viewport]\nPos=100,120\nSize=900,700\nCollapsed=0\n";
+    preset.imguiIni =
+        "[Window][Viewport]\n"
+        "Pos=100,120\n"
+        "Size=900,700\n"
+        "Collapsed=0\n"
+        "[Docking][Data]\n"
+        "DockSpace     ID=0x12345678 Window=0xABCDEF01 Pos=0,0 Size=1600,900 Split=X\n";
 
     saveEditorLayoutPreset(presetPath.string(), preset);
     const EditorLayoutPreset loaded = loadEditorLayoutPreset(presetPath.string());

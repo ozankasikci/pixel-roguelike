@@ -44,7 +44,7 @@ FetchContent_MakeAvailable(JoltPhysics)
 # Uses EXCLUDE_FROM_ALL to avoid adding ImGui demo targets to the default build
 FetchContent_Declare(imgui
     GIT_REPOSITORY https://github.com/ocornut/imgui.git
-    GIT_TAG        v1.92.6
+    GIT_TAG        v1.92.6-docking
     GIT_PROGRESS   TRUE
     EXCLUDE_FROM_ALL
 )

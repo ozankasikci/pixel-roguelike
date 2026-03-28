@@ -9,6 +9,7 @@ Mesh::Mesh(const std::vector<glm::vec3>& positions,
            const std::vector<glm::vec3>& tangents,
            const std::vector<uint32_t>& indices) {
     indexCount_ = static_cast<GLsizei>(indices.size());
+    vertexCount_ = positions.size();
 
     if (!positions.empty()) {
         aabbMin_ = positions.front();
@@ -101,11 +102,13 @@ Mesh::~Mesh() {
 
 Mesh::Mesh(Mesh&& other) noexcept
     : vao_(other.vao_), vbo_(other.vbo_), ebo_(other.ebo_),
-      indexCount_(other.indexCount_) {
+      indexCount_(other.indexCount_), vertexCount_(other.vertexCount_),
+      aabbMin_(other.aabbMin_), aabbMax_(other.aabbMax_) {
     other.vao_ = 0;
     other.vbo_ = 0;
     other.ebo_ = 0;
     other.indexCount_ = 0;
+    other.vertexCount_ = 0;
 }
 
 Mesh& Mesh::operator=(Mesh&& other) noexcept {
@@ -117,10 +120,14 @@ Mesh& Mesh::operator=(Mesh&& other) noexcept {
         vbo_ = other.vbo_;
         ebo_ = other.ebo_;
         indexCount_ = other.indexCount_;
+        vertexCount_ = other.vertexCount_;
+        aabbMin_ = other.aabbMin_;
+        aabbMax_ = other.aabbMax_;
         other.vao_ = 0;
         other.vbo_ = 0;
         other.ebo_ = 0;
         other.indexCount_ = 0;
+        other.vertexCount_ = 0;
     }
     return *this;
 }

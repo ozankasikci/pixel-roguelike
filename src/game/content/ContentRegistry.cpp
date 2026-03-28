@@ -7,6 +7,7 @@
 #include <filesystem>
 #include <fstream>
 #include <functional>
+#include <iomanip>
 #include <sstream>
 #include <stdexcept>
 #include <vector>
@@ -376,6 +377,79 @@ GameplayArchetypeDefinition loadGameplayArchetypeAsset(const std::string& path) 
     }
 
     return definition;
+}
+
+std::string serializeGameplayArchetypeAsset(const GameplayArchetypeDefinition& definition) {
+    if (definition.id.empty()) {
+        throw std::runtime_error("Cannot serialize gameplay archetype without id");
+    }
+
+    std::ostringstream out;
+    out << std::fixed << std::setprecision(3);
+    out << "id " << definition.id << '\n';
+    switch (definition.kind) {
+    case GameplayArchetypeKind::Checkpoint:
+        out << "type checkpoint\n";
+        out << "position "
+            << definition.checkpoint.position.x << ' '
+            << definition.checkpoint.position.y << ' '
+            << definition.checkpoint.position.z << '\n';
+        out << "respawn_position "
+            << definition.checkpoint.respawnPosition.x << ' '
+            << definition.checkpoint.respawnPosition.y << ' '
+            << definition.checkpoint.respawnPosition.z << '\n';
+        out << "interact "
+            << definition.checkpoint.interactDistance << ' '
+            << definition.checkpoint.interactDotThreshold << '\n';
+        out << "light_position "
+            << definition.checkpoint.lightPosition.x << ' '
+            << definition.checkpoint.lightPosition.y << ' '
+            << definition.checkpoint.lightPosition.z << '\n';
+        out << "light_color "
+            << definition.checkpoint.lightColor.x << ' '
+            << definition.checkpoint.lightColor.y << ' '
+            << definition.checkpoint.lightColor.z << '\n';
+        out << "light "
+            << definition.checkpoint.lightRadius << ' '
+            << definition.checkpoint.lightIntensity << '\n';
+        break;
+    case GameplayArchetypeKind::DoubleDoor:
+        out << "type double_door\n";
+        out << "left_leaf_mesh " << definition.doubleDoor.leftLeafMeshName << '\n';
+        out << "right_leaf_mesh " << definition.doubleDoor.rightLeafMeshName << '\n';
+        out << "root_position "
+            << definition.doubleDoor.rootPosition.x << ' '
+            << definition.doubleDoor.rootPosition.y << ' '
+            << definition.doubleDoor.rootPosition.z << '\n';
+        out << "left_hinge_position "
+            << definition.doubleDoor.leftHingePosition.x << ' '
+            << definition.doubleDoor.leftHingePosition.y << ' '
+            << definition.doubleDoor.leftHingePosition.z << '\n';
+        out << "right_hinge_position "
+            << definition.doubleDoor.rightHingePosition.x << ' '
+            << definition.doubleDoor.rightHingePosition.y << ' '
+            << definition.doubleDoor.rightHingePosition.z << '\n';
+        out << "leaf_scale "
+            << definition.doubleDoor.leafScale.x << ' '
+            << definition.doubleDoor.leafScale.y << ' '
+            << definition.doubleDoor.leafScale.z << '\n';
+        out << "closed_yaw " << definition.doubleDoor.closedYaw << '\n';
+        out << "open_angle " << definition.doubleDoor.openAngle << '\n';
+        out << "interact "
+            << definition.doubleDoor.interactDistance << ' '
+            << definition.doubleDoor.interactDotThreshold << '\n';
+        out << "open_duration " << definition.doubleDoor.openDuration << '\n';
+        break;
+    }
+    return out.str();
+}
+
+void saveGameplayArchetypeAsset(const std::string& path, const GameplayArchetypeDefinition& definition) {
+    std::ofstream file(path, std::ios::trunc);
+    if (!file.is_open()) {
+        throw std::runtime_error("Failed to save gameplay archetype asset: " + path);
+    }
+    file << serializeGameplayArchetypeAsset(definition);
 }
 
 GameplayPrefabInstance instantiateGameplayArchetype(const GameplayArchetypeDefinition& definition,

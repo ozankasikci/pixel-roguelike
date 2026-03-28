@@ -68,6 +68,21 @@ int main() {
     assert(rotatedDoor.type == GameplayPrefabType::DoubleDoor);
     assert(nearlyEqualVec3(rotatedDoor.doubleDoor.rootPosition, glm::vec3(10.0f, 3.13f, 5.0f)));
 
+    {
+        GameplayArchetypeDefinition prefabRoundtrip = door;
+        prefabRoundtrip.id = "editor_roundtrip_prefab";
+        prefabRoundtrip.doubleDoor.openDuration = 3.7f;
+        const auto prefabPath = std::filesystem::temp_directory_path() / "editor_roundtrip_prefab.prefab";
+        saveGameplayArchetypeAsset(prefabPath.string(), prefabRoundtrip);
+        const auto loadedPrefab = loadGameplayArchetypeAsset(prefabPath.string());
+        std::filesystem::remove(prefabPath);
+        assert(loadedPrefab.id == prefabRoundtrip.id);
+        assert(loadedPrefab.kind == prefabRoundtrip.kind);
+        assert(loadedPrefab.doubleDoor.leftLeafMeshName == prefabRoundtrip.doubleDoor.leftLeafMeshName);
+        assert(nearlyEqual(loadedPrefab.doubleDoor.openDuration, prefabRoundtrip.doubleDoor.openDuration));
+        assert(nearlyEqualVec3(loadedPrefab.doubleDoor.leafScale, prefabRoundtrip.doubleDoor.leafScale));
+    }
+
     ContentRegistry registry;
     registry.loadDefaults();
     const auto* oldDagger = registry.findWeapon("old_dagger");

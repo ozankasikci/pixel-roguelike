@@ -156,3 +156,12 @@ add_executable(test_editor_hierarchy
 target_include_directories(test_editor_hierarchy PRIVATE ${CMAKE_SOURCE_DIR}/src)
 target_link_libraries(test_editor_hierarchy PRIVATE game engine_rendering EnTT::EnTT glm::glm)
 add_test(NAME editor_hierarchy COMMAND test_editor_hierarchy)
+
+add_executable(test_editor_asset_browser
+    test_editor_asset_browser.cpp
+    ${CMAKE_SOURCE_DIR}/src/editor/EditorAssetBrowser.cpp
+    ${CMAKE_SOURCE_DIR}/src/engine/core/PathUtils.cpp
+)
+target_include_directories(test_editor_asset_browser PRIVATE ${CMAKE_SOURCE_DIR}/src)
+target_link_libraries(test_editor_asset_browser PRIVATE glm::glm)
+add_test(NAME editor_asset_browser COMMAND test_editor_asset_browser)

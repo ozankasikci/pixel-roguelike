@@ -81,6 +81,9 @@ public:
     bool canSetParent(std::uint64_t childId, std::uint64_t parentId) const;
     bool setParent(std::uint64_t childId, std::uint64_t parentId);
     bool clearParent(std::uint64_t childId);
+    bool moveObjectBefore(std::uint64_t objectId, std::uint64_t targetId);
+    bool moveObjectAfter(std::uint64_t objectId, std::uint64_t targetId);
+    bool moveObjectToRootEnd(std::uint64_t objectId);
     bool supportsParenting(std::uint64_t id) const;
     glm::mat4 worldTransformMatrix(std::uint64_t id) const;
     glm::mat3 worldRotationMatrix(std::uint64_t id) const;
@@ -119,6 +122,8 @@ private:
     glm::mat4 localTransformMatrix(const EditorSceneObject& object) const;
     glm::mat4 localParentMatrix(const EditorSceneObject& object) const;
     glm::mat3 localParentRotationMatrix(const EditorSceneObject& object) const;
+    std::vector<std::uint64_t> subtreeObjectIds(std::uint64_t rootId) const;
+    bool reorderObjectBlock(std::uint64_t objectId, std::uint64_t targetId, bool after);
 
     std::string scenePath_;
     std::vector<EditorSceneObject> objects_;

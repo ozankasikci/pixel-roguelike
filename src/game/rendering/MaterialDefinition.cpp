@@ -1,6 +1,7 @@
 #include "game/rendering/MaterialDefinition.h"
 
 #include <fstream>
+#include <iomanip>
 #include <sstream>
 #include <stdexcept>
 #include <unordered_set>
@@ -363,4 +364,120 @@ ResolvedMaterialDefinition resolveMaterialDefinition(
     std::unordered_map<std::string, ResolvedMaterialDefinition> cache;
     std::unordered_set<std::string> visiting;
     return resolveMaterialDefinitionRecursive(id, definitions, cache, visiting);
+}
+
+namespace {
+
+std::string materialKindToken(MaterialKind kind) {
+    switch (kind) {
+    case MaterialKind::Stone:
+        return "stone";
+    case MaterialKind::Wood:
+        return "wood";
+    case MaterialKind::Metal:
+        return "metal";
+    case MaterialKind::Wax:
+        return "wax";
+    case MaterialKind::Moss:
+        return "moss";
+    case MaterialKind::Viewmodel:
+        return "viewmodel";
+    case MaterialKind::Floor:
+        return "floor";
+    case MaterialKind::Brick:
+        return "brick";
+    }
+    return "stone";
+}
+
+std::string materialUvModeToken(MaterialUvMode uvMode) {
+    switch (uvMode) {
+    case MaterialUvMode::Mesh:
+        return "mesh";
+    case MaterialUvMode::WorldProjected:
+        return "world_projected";
+    }
+    return "mesh";
+}
+
+std::string materialProceduralSourceToken(MaterialProceduralSource source) {
+    switch (source) {
+    case MaterialProceduralSource::None:
+        return "none";
+    case MaterialProceduralSource::GeneratedBrick:
+        return "generated_brick";
+    case MaterialProceduralSource::GeneratedStone:
+        return "generated_stone";
+    }
+    return "none";
+}
+
+void writeOptionalPath(std::ostringstream& out,
+                       std::string_view key,
+                       const std::optional<std::string>& value) {
+    if (value.has_value() && !value->empty()) {
+        out << key << ' ' << *value << '\n';
+    }
+}
+
+void writeOptionalFloat(std::ostringstream& out,
+                        std::string_view key,
+                        const std::optional<float>& value) {
+    if (value.has_value()) {
+        out << key << ' ' << *value << '\n';
+    }
+}
+
+} // namespace
+
+std::string serializeMaterialDefinitionAsset(const MaterialDefinition& definition) {
+    if (definition.id.empty()) {
+        throw std::runtime_error("Cannot serialize material definition without id");
+    }
+
+    std::ostringstream out;
+    out << std::fixed << std::setprecision(3);
+    out << "id " << definition.id << '\n';
+    if (definition.parent.has_value() && !definition.parent->empty()) {
+        out << "parent " << *definition.parent << '\n';
+    }
+    if (definition.shadingModel.has_value()) {
+        out << "shading_model " << materialKindToken(*definition.shadingModel) << '\n';
+    }
+    writeOptionalPath(out, "albedo_map", definition.albedoMapPath);
+    writeOptionalPath(out, "normal_map", definition.normalMapPath);
+    writeOptionalPath(out, "roughness_map", definition.roughnessMapPath);
+    writeOptionalPath(out, "ao_map", definition.aoMapPath);
+    if (definition.baseColor.has_value()) {
+        out << "base_color "
+            << definition.baseColor->x << ' '
+            << definition.baseColor->y << ' '
+            << definition.baseColor->z << '\n';
+    }
+    if (definition.uvMode.has_value()) {
+        out << "uv_mode " << materialUvModeToken(*definition.uvMode) << '\n';
+    }
+    if (definition.uvScale.has_value()) {
+        out << "uv_scale "
+            << definition.uvScale->x << ' '
+            << definition.uvScale->y << '\n';
+    }
+    writeOptionalFloat(out, "normal_strength", definition.normalStrength);
+    writeOptionalFloat(out, "roughness_scale", definition.roughnessScale);
+    writeOptionalFloat(out, "roughness_bias", definition.roughnessBias);
+    writeOptionalFloat(out, "metalness", definition.metalness);
+    writeOptionalFloat(out, "ao_strength", definition.aoStrength);
+    writeOptionalFloat(out, "light_tint_response", definition.lightTintResponse);
+    if (definition.proceduralSource.has_value()) {
+        out << "procedural_source " << materialProceduralSourceToken(*definition.proceduralSource) << '\n';
+    }
+    return out.str();
+}
+
+void saveMaterialDefinitionAsset(const std::string& path, const MaterialDefinition& definition) {
+    std::ofstream file(path, std::ios::trunc);
+    if (!file.is_open()) {
+        throw std::runtime_error("Failed to save material definition: " + path);
+    }
+    file << serializeMaterialDefinitionAsset(definition);
 }

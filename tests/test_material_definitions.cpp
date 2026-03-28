@@ -2,6 +2,7 @@
 
 #include <cassert>
 #include <cmath>
+#include <filesystem>
 #include <stdexcept>
 #include <unordered_map>
 
@@ -73,6 +74,39 @@ int main() {
             threw = true;
         }
         assert(threw);
+    }
+
+    {
+        MaterialDefinition roundtrip;
+        roundtrip.id = "editor_roundtrip_material";
+        roundtrip.parent = "masonry_base";
+        roundtrip.shadingModel = MaterialKind::Stone;
+        roundtrip.baseColor = glm::vec3(0.8f, 0.7f, 0.6f);
+        roundtrip.uvMode = MaterialUvMode::WorldProjected;
+        roundtrip.uvScale = glm::vec2(0.2f, 0.25f);
+        roundtrip.normalStrength = 0.45f;
+        roundtrip.roughnessScale = 1.2f;
+        roundtrip.metalness = 0.1f;
+        roundtrip.proceduralSource = MaterialProceduralSource::GeneratedStone;
+
+        const auto path = std::filesystem::temp_directory_path() / "editor_roundtrip_material.material";
+        saveMaterialDefinitionAsset(path.string(), roundtrip);
+        const auto loaded = loadMaterialDefinitionAsset(path.string());
+        std::filesystem::remove(path);
+
+        assert(loaded.id == roundtrip.id);
+        assert(loaded.parent == roundtrip.parent);
+        assert(loaded.shadingModel == roundtrip.shadingModel);
+        assert(nearlyEqual(loaded.baseColor->x, roundtrip.baseColor->x));
+        assert(nearlyEqual(loaded.baseColor->y, roundtrip.baseColor->y));
+        assert(nearlyEqual(loaded.baseColor->z, roundtrip.baseColor->z));
+        assert(loaded.uvMode == roundtrip.uvMode);
+        assert(nearlyEqual(loaded.uvScale->x, roundtrip.uvScale->x));
+        assert(nearlyEqual(loaded.uvScale->y, roundtrip.uvScale->y));
+        assert(nearlyEqual(*loaded.normalStrength, *roundtrip.normalStrength));
+        assert(nearlyEqual(*loaded.roughnessScale, *roundtrip.roughnessScale));
+        assert(nearlyEqual(*loaded.metalness, *roundtrip.metalness));
+        assert(loaded.proceduralSource == roundtrip.proceduralSource);
     }
 
     return 0;

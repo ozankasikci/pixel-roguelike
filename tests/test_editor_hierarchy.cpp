@@ -69,5 +69,22 @@ int main() {
         assert(mesh.parentNodeId.empty());
     }
 
+    EditorSceneDocument reorderDocument;
+    reorderDocument.clear();
+    const std::uint64_t rootA = reorderDocument.addMesh(makeMesh(glm::vec3(0.0f)));
+    const std::uint64_t rootB = reorderDocument.addMesh(makeMesh(glm::vec3(3.0f, 0.0f, 0.0f)));
+    const std::uint64_t childOfA = reorderDocument.addMesh(makeMesh(glm::vec3(1.0f, 0.0f, 0.0f)));
+    assert(reorderDocument.setParent(childOfA, rootA));
+    const glm::vec3 childWorld = translationOf(reorderDocument.worldTransformMatrix(childOfA));
+
+    assert(reorderDocument.moveObjectBefore(childOfA, rootB));
+    assert(reorderDocument.parentObjectId(childOfA) == 0);
+    const auto roots = reorderDocument.rootObjectIds();
+    assert(roots.size() == 3);
+    assert(roots[0] == rootA);
+    assert(roots[1] == childOfA);
+    assert(roots[2] == rootB);
+    assert(nearlyEqualVec3(translationOf(reorderDocument.worldTransformMatrix(childOfA)), childWorld));
+
     return 0;
 }

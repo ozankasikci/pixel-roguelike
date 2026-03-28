@@ -26,6 +26,8 @@ public:
 
     const glm::vec3& aabbMin() const { return aabbMin_; }
     const glm::vec3& aabbMax() const { return aabbMax_; }
+    std::size_t vertexCount() const { return vertexCount_; }
+    std::size_t indexCount() const { return static_cast<std::size_t>(indexCount_); }
 
     static Mesh createCube(float size);
     static Mesh createPlane(float size);
@@ -38,6 +40,7 @@ private:
     GLuint vbo_ = 0;
     GLuint ebo_ = 0;
     GLsizei indexCount_ = 0;
+    std::size_t vertexCount_ = 0;
     glm::vec3 aabbMin_{0.0f};
     glm::vec3 aabbMax_{0.0f};
 };

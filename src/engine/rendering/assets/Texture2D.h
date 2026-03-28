@@ -22,6 +22,8 @@ public:
     bool createR8FromFile(const std::string& path);
 
     GLuint id() const { return texture_; }
+    int width() const { return width_; }
+    int height() const { return height_; }
 
 private:
     void destroy();
@@ -32,4 +34,6 @@ private:
                 const std::vector<std::uint8_t>& pixels);
 
     GLuint texture_ = 0;
+    int width_ = 0;
+    int height_ = 0;
 };

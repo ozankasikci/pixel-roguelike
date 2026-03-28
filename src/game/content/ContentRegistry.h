@@ -71,6 +71,8 @@ EnemyDefinition loadEnemyDefinitionAsset(const std::string& path);
 ItemDefinition loadItemDefinitionAsset(const std::string& path);
 SkillDefinition loadSkillDefinitionAsset(const std::string& path);
 GameplayArchetypeDefinition loadGameplayArchetypeAsset(const std::string& path);
+std::string serializeGameplayArchetypeAsset(const GameplayArchetypeDefinition& definition);
+void saveGameplayArchetypeAsset(const std::string& path, const GameplayArchetypeDefinition& definition);
 MaterialDefinition loadMaterialDefinitionAsset(const std::string& path);
 GameplayPrefabInstance instantiateGameplayArchetype(const GameplayArchetypeDefinition& definition,
                                                     const glm::vec3& position,

@@ -64,6 +64,8 @@ MaterialDefinition loadMaterialDefinitionAsset(const std::string& path);
 ResolvedMaterialDefinition resolveMaterialDefinition(
     const std::string& id,
     const std::unordered_map<std::string, MaterialDefinition>& definitions);
+std::string serializeMaterialDefinitionAsset(const MaterialDefinition& definition);
+void saveMaterialDefinitionAsset(const std::string& path, const MaterialDefinition& definition);
 
 bool tryParseMaterialKindToken(const std::string& token, MaterialKind& materialKind);
 bool tryParseMaterialUvModeToken(const std::string& token, MaterialUvMode& uvMode);

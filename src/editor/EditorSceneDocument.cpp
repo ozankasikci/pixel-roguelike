@@ -351,6 +351,191 @@ bool EditorSceneDocument::clearParent(std::uint64_t childId) {
     return true;
 }
 
+std::vector<std::uint64_t> EditorSceneDocument::subtreeObjectIds(std::uint64_t rootId) const {
+    std::vector<std::uint64_t> subtree;
+    const EditorSceneObject* root = findObject(rootId);
+    if (root == nullptr) {
+        return subtree;
+    }
+
+    subtree.push_back(rootId);
+    const std::string* rootNodeId = nodeIdPtr(*root);
+    if (rootNodeId == nullptr || rootNodeId->empty()) {
+        return subtree;
+    }
+
+    for (const auto& object : objects_) {
+        std::uint64_t probe = parentObjectId(object.id);
+        while (probe != 0) {
+            if (probe == rootId) {
+                subtree.push_back(object.id);
+                break;
+            }
+            probe = parentObjectId(probe);
+        }
+    }
+    return subtree;
+}
+
+bool EditorSceneDocument::reorderObjectBlock(std::uint64_t objectId, std::uint64_t targetId, bool after) {
+    if (objectId == 0 || targetId == 0 || objectId == targetId) {
+        return false;
+    }
+
+    const std::vector<std::uint64_t> movedIds = subtreeObjectIds(objectId);
+    if (movedIds.empty()) {
+        return false;
+    }
+    if (std::find(movedIds.begin(), movedIds.end(), targetId) != movedIds.end()) {
+        return false;
+    }
+
+    const std::vector<std::uint64_t> targetIds = after ? subtreeObjectIds(targetId) : std::vector<std::uint64_t>{targetId};
+    if (targetIds.empty()) {
+        return false;
+    }
+
+    auto isMoved = [&](std::uint64_t id) {
+        return std::find(movedIds.begin(), movedIds.end(), id) != movedIds.end();
+    };
+    auto isTarget = [&](std::uint64_t id) {
+        return std::find(targetIds.begin(), targetIds.end(), id) != targetIds.end();
+    };
+
+    std::vector<EditorSceneObject> movedBlock;
+    std::vector<EditorSceneObject> remaining;
+    movedBlock.reserve(movedIds.size());
+    remaining.reserve(objects_.size() - movedIds.size());
+    for (const auto& object : objects_) {
+        if (isMoved(object.id)) {
+            movedBlock.push_back(object);
+        } else {
+            remaining.push_back(object);
+        }
+    }
+
+    std::size_t insertIndex = remaining.size();
+    if (after) {
+        for (std::size_t i = 0; i < remaining.size(); ++i) {
+            if (isTarget(remaining[i].id)) {
+                insertIndex = i + 1;
+            }
+        }
+    } else {
+        for (std::size_t i = 0; i < remaining.size(); ++i) {
+            if (remaining[i].id == targetId) {
+                insertIndex = i;
+                break;
+            }
+        }
+    }
+
+    if (insertIndex > remaining.size()) {
+        return false;
+    }
+
+    remaining.insert(remaining.begin() + static_cast<std::ptrdiff_t>(insertIndex),
+                     movedBlock.begin(),
+                     movedBlock.end());
+    objects_ = std::move(remaining);
+    markSceneDirty();
+    return true;
+}
+
+bool EditorSceneDocument::moveObjectBefore(std::uint64_t objectId, std::uint64_t targetId) {
+    if (objectId == 0 || targetId == 0 || objectId == targetId) {
+        return false;
+    }
+
+    const std::uint64_t targetParentId = parentObjectId(targetId);
+    const std::uint64_t currentParentId = parentObjectId(objectId);
+    const glm::mat4 world = worldTransformMatrix(objectId);
+
+    bool parentChanged = false;
+    if (currentParentId != targetParentId) {
+        if (targetParentId == 0) {
+            parentChanged = clearParent(objectId);
+        } else {
+            parentChanged = setParent(objectId, targetParentId);
+        }
+        if (!parentChanged) {
+            return false;
+        }
+        if (!applyWorldTransform(objectId, world)) {
+            return false;
+        }
+    }
+
+    return reorderObjectBlock(objectId, targetId, false);
+}
+
+bool EditorSceneDocument::moveObjectAfter(std::uint64_t objectId, std::uint64_t targetId) {
+    if (objectId == 0 || targetId == 0 || objectId == targetId) {
+        return false;
+    }
+
+    const std::uint64_t targetParentId = parentObjectId(targetId);
+    const std::uint64_t currentParentId = parentObjectId(objectId);
+    const glm::mat4 world = worldTransformMatrix(objectId);
+
+    bool parentChanged = false;
+    if (currentParentId != targetParentId) {
+        if (targetParentId == 0) {
+            parentChanged = clearParent(objectId);
+        } else {
+            parentChanged = setParent(objectId, targetParentId);
+        }
+        if (!parentChanged) {
+            return false;
+        }
+        if (!applyWorldTransform(objectId, world)) {
+            return false;
+        }
+    }
+
+    return reorderObjectBlock(objectId, targetId, true);
+}
+
+bool EditorSceneDocument::moveObjectToRootEnd(std::uint64_t objectId) {
+    if (objectId == 0) {
+        return false;
+    }
+
+    const glm::mat4 world = worldTransformMatrix(objectId);
+    if (parentObjectId(objectId) != 0) {
+        if (!clearParent(objectId)) {
+            return false;
+        }
+        if (!applyWorldTransform(objectId, world)) {
+            return false;
+        }
+    }
+
+    const std::vector<std::uint64_t> movedIds = subtreeObjectIds(objectId);
+    if (movedIds.empty()) {
+        return false;
+    }
+
+    auto isMoved = [&](std::uint64_t id) {
+        return std::find(movedIds.begin(), movedIds.end(), id) != movedIds.end();
+    };
+
+    std::vector<EditorSceneObject> movedBlock;
+    std::vector<EditorSceneObject> remaining;
+    for (const auto& object : objects_) {
+        if (isMoved(object.id)) {
+            movedBlock.push_back(object);
+        } else {
+            remaining.push_back(object);
+        }
+    }
+
+    remaining.insert(remaining.end(), movedBlock.begin(), movedBlock.end());
+    objects_ = std::move(remaining);
+    markSceneDirty();
+    return true;
+}
+
 glm::mat4 EditorSceneDocument::worldTransformMatrix(std::uint64_t id) const {
     const EditorSceneObject* object = findObject(id);
     if (object == nullptr) {

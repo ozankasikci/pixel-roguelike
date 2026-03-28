@@ -9,15 +9,23 @@ Texture2D::~Texture2D() {
 }
 
 Texture2D::Texture2D(Texture2D&& other) noexcept
-    : texture_(other.texture_) {
+    : texture_(other.texture_)
+    , width_(other.width_)
+    , height_(other.height_) {
     other.texture_ = 0;
+    other.width_ = 0;
+    other.height_ = 0;
 }
 
 Texture2D& Texture2D::operator=(Texture2D&& other) noexcept {
     if (this != &other) {
         destroy();
         texture_ = other.texture_;
+        width_ = other.width_;
+        height_ = other.height_;
         other.texture_ = 0;
+        other.width_ = 0;
+        other.height_ = 0;
     }
     return *this;
 }
@@ -67,6 +75,8 @@ void Texture2D::destroy() {
         glDeleteTextures(1, &texture_);
         texture_ = 0;
     }
+    width_ = 0;
+    height_ = 0;
 }
 
 void Texture2D::create(int width,
@@ -94,4 +104,6 @@ void Texture2D::create(int width,
                  pixels.data());
     glGenerateMipmap(GL_TEXTURE_2D);
     glBindTexture(GL_TEXTURE_2D, 0);
+    width_ = width;
+    height_ = height;
 }
