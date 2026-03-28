@@ -17,6 +17,8 @@ public:
     EditorRuntimePreviewSession() = default;
 
     void rebuild(const EditorSceneDocument& document, ContentRegistry& content);
+    void resetForPlay();
+    void syncEnvironment(const EditorSceneDocument& document);
     void clear();
     void tick(float deltaTime, float aspect);
     void prewarmRenderer(ContentRegistry& content);
@@ -43,6 +45,7 @@ public:
     const RuntimeInputState& input() const { return session_.input(); }
     RunSession& runSession() { return session_.runSession(); }
     const RunSession& runSession() const { return session_.runSession(); }
+    const RuntimeSessionPerformanceStats& performanceStats() const { return session_.performanceStats(); }
 
 private:
     RuntimeGameSession session_;

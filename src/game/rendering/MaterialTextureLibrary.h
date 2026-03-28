@@ -14,6 +14,7 @@ class ContentRegistry;
 class MaterialTextureLibrary {
 public:
     void init(const ContentRegistry& content);
+    std::size_t prewarmAllMaterialMaps() const;
 
     const RenderMaterialData& resolve(std::string_view materialId, MaterialKind legacyKind) const;
 

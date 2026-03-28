@@ -95,6 +95,29 @@ void MaterialTextureLibrary::init(const ContentRegistry& content) {
     }
 }
 
+std::size_t MaterialTextureLibrary::prewarmAllMaterialMaps() const {
+    std::size_t warmedTextureSets = 0;
+    for (const auto& [id, resolved] : resolvedDefinitions_) {
+        (void)id;
+        const bool useMaterialMaps =
+            resolved.proceduralSource != MaterialProceduralSource::None ||
+            !resolved.albedoMapPath.empty() ||
+            !resolved.normalMapPath.empty() ||
+            !resolved.roughnessMapPath.empty() ||
+            !resolved.aoMapPath.empty();
+        if (!useMaterialMaps) {
+            continue;
+        }
+
+        const std::string key = textureKeyFor(resolved);
+        if (textureSets_.find(key) == textureSets_.end()) {
+            (void)ensureTextureSet(resolved);
+            ++warmedTextureSets;
+        }
+    }
+    return warmedTextureSets;
+}
+
 const RenderMaterialData& MaterialTextureLibrary::resolve(std::string_view materialId, MaterialKind legacyKind) const {
     const ResolvedMaterialDefinition& resolved = definitionFor(materialId, legacyKind);
     auto cached = materials_.find(resolved.id);

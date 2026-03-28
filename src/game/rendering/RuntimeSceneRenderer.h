@@ -27,6 +27,7 @@ public:
     void init(const ContentRegistry& content);
     void shutdown();
     void reloadContent(const ContentRegistry& content);
+    std::size_t prewarmMaterialResources(entt::registry& registry);
 
     void render(entt::registry& registry,
                 DebugParams& params,

@@ -41,6 +41,7 @@
 
 #include <algorithm>
 #include <array>
+#include <chrono>
 #include <cmath>
 #include <cstdint>
 #include <cstdio>
@@ -55,6 +56,8 @@
 
 namespace {
 
+using Clock = std::chrono::steady_clock;
+
 constexpr int kMaxShadowedSpotLightsLocal = 2;
 constexpr int kShadowResolutions[] = {512, 1024, 2048};
 constexpr const char* kEditorRootWindowName = "Level Editor Root";
@@ -65,6 +68,46 @@ constexpr const char* kAssetBrowserWindowName = "Asset Browser";
 constexpr const char* kEnvironmentWindowName = "Environment";
 constexpr float kRuntimeViewportAspect = 1280.0f / 720.0f;
 constexpr const char* kPreviewModes[] = {"Final", "Lighting", "Sky"};
+
+enum class RuntimePreviewDirtyState {
+    None,
+    EnvironmentOnly,
+    GameplayStateReset,
+    FullWorldRebuild,
+};
+
+struct PlayEnterTraceState {
+    bool pending = false;
+    Clock::time_point startedAt{};
+    RuntimePreviewDirtyState dirtyState = RuntimePreviewDirtyState::None;
+    double rebuildMs = 0.0;
+    double resetForPlayMs = 0.0;
+    double rendererInitMs = 0.0;
+    double rendererPrewarmMs = 0.0;
+};
+
+double elapsedMilliseconds(Clock::time_point start, Clock::time_point end) {
+    return std::chrono::duration<double, std::milli>(end - start).count();
+}
+
+RuntimePreviewDirtyState mergeRuntimePreviewDirtyState(RuntimePreviewDirtyState current,
+                                                       RuntimePreviewDirtyState incoming) {
+    return static_cast<int>(incoming) > static_cast<int>(current) ? incoming : current;
+}
+
+const char* runtimePreviewDirtyStateLabel(RuntimePreviewDirtyState state) {
+    switch (state) {
+    case RuntimePreviewDirtyState::None:
+        return "none";
+    case RuntimePreviewDirtyState::EnvironmentOnly:
+        return "environment";
+    case RuntimePreviewDirtyState::GameplayStateReset:
+        return "reset";
+    case RuntimePreviewDirtyState::FullWorldRebuild:
+        return "rebuild";
+    }
+    return "unknown";
+}
 
 const char* previewModeLabel(EditorPreviewMode mode) {
     const int index = std::clamp(static_cast<int>(mode), 0, 2);
@@ -124,6 +167,7 @@ int main(int argc, char* argv[]) {
     previewWorld.rebuild(document, content);
     EditorRuntimePreviewSession runtimePreviewSession;
     runtimePreviewSession.rebuild(document, content);
+    runtimePreviewSession.prewarmRenderer(content);
 
     std::unique_ptr<Shader> sceneShader = std::make_unique<Shader>(
         "assets/shaders/game/scene.vert",
@@ -195,7 +239,9 @@ int main(int argc, char* argv[]) {
     bool playTogglePressed = false;
     std::uint64_t previewSceneRevision = document.sceneRevision();
     std::uint64_t previewEnvironmentRevision = document.environmentRevision();
-    bool runtimePreviewNeedsRebuild = false;
+    RuntimePreviewDirtyState runtimePreviewDirtyState = RuntimePreviewDirtyState::None;
+    double lastRuntimePreviewStructuralChangeTime = glfwGetTime();
+    PlayEnterTraceState playEnterTrace;
     EditorPendingCommand widgetCommand;
     EditorPendingCommand gizmoCommand;
 
@@ -622,6 +668,7 @@ int main(int argc, char* argv[]) {
             archetypeIds = sortedArchetypeIds(content);
             environmentIds = sortedEnvironmentIds(content);
             materialTextures.init(content);
+            runtimePreviewSession.prewarmRenderer(content);
             previewDirty = true;
         }
         if (inspectorActions.previewDirty) {
@@ -665,7 +712,8 @@ int main(int argc, char* argv[]) {
                                 previewWorld,
                                 previewSceneRevision);
             previewEnvironmentRevision = document.environmentRevision();
-            runtimePreviewNeedsRebuild = true;
+            runtimePreviewDirtyState = RuntimePreviewDirtyState::FullWorldRebuild;
+            lastRuntimePreviewStructuralChangeTime = glfwGetTime();
             if (ui.playPreview) {
                 runtimePreviewSession.endCapture(window.handle());
             }
@@ -781,11 +829,27 @@ int main(int argc, char* argv[]) {
             previewWorld.rebuild(document, content);
             previewDirty = false;
             previewSceneRevision = document.sceneRevision();
-            runtimePreviewNeedsRebuild = true;
+            runtimePreviewDirtyState = RuntimePreviewDirtyState::FullWorldRebuild;
+            lastRuntimePreviewStructuralChangeTime = glfwGetTime();
         }
         if (previewEnvironmentRevision != document.environmentRevision()) {
             previewEnvironmentRevision = document.environmentRevision();
+            runtimePreviewDirtyState = mergeRuntimePreviewDirtyState(runtimePreviewDirtyState,
+                                                                     RuntimePreviewDirtyState::EnvironmentOnly);
             runtimePreviewSession.syncEnvironment(document);
+            if (runtimePreviewDirtyState == RuntimePreviewDirtyState::EnvironmentOnly) {
+                runtimePreviewDirtyState = RuntimePreviewDirtyState::None;
+            }
+        }
+        if (!ui.playPreview
+            && runtimePreviewDirtyState == RuntimePreviewDirtyState::FullWorldRebuild
+            && !editorGizmoIsHot()
+            && !widgetCommand.active
+            && !gizmoCommand.active
+            && glfwGetTime() - lastRuntimePreviewStructuralChangeTime >= 0.20) {
+            runtimePreviewSession.rebuild(document, content);
+            runtimePreviewSession.prewarmRenderer(content);
+            runtimePreviewDirtyState = RuntimePreviewDirtyState::None;
         }
         const auto selectionHandles = buildEditorSelectionHandles(document, previewWorld);
         const auto viewportSelectionHandles = buildViewportSelectionHandles(selectionHandles, ui);
@@ -899,6 +963,20 @@ int main(int argc, char* argv[]) {
                                          targetW,
                                          targetH,
                                          finalFbo.framebuffer());
+            if (playEnterTrace.pending) {
+                const RuntimeSessionPerformanceStats& stats = runtimePreviewSession.performanceStats();
+                const double totalMs = elapsedMilliseconds(playEnterTrace.startedAt, Clock::now());
+                spdlog::info(
+                    "Play preview ready in {:.1f} ms (mode={}, rebuild={:.1f} ms, reset={:.1f} ms, renderer init={:.1f} ms, renderer prewarm={:.1f} ms, first render={:.1f} ms)",
+                    totalMs,
+                    runtimePreviewDirtyStateLabel(playEnterTrace.dirtyState),
+                    playEnterTrace.rebuildMs,
+                    playEnterTrace.resetForPlayMs,
+                    playEnterTrace.rendererInitMs,
+                    playEnterTrace.rendererPrewarmMs,
+                    stats.lastRenderMs);
+                playEnterTrace.pending = false;
+            }
         }
 
         if (viewportWindowVisible) {
@@ -955,7 +1033,7 @@ int main(int argc, char* argv[]) {
                     drawList->AddText(releasePos, IM_COL32(230, 236, 255, 255), releaseLabel);
                 }
 
-                if (runtimePreviewNeedsRebuild) {
+                if (runtimePreviewDirtyState == RuntimePreviewDirtyState::FullWorldRebuild) {
                     const char* rebuildLabel = "Scene changes pending: Reset Start to apply";
                     const ImVec2 textSize = ImGui::CalcTextSize(rebuildLabel);
                     const ImVec2 textPos(renderViewportState.origin.x + renderViewportState.size.x - textSize.x - 22.0f,
@@ -1105,16 +1183,36 @@ int main(int argc, char* argv[]) {
             ui.playPreview = !ui.playPreview;
             if (ui.playPreview) {
                 runtimePreviewSession.endCapture(window.handle());
-                if (runtimePreviewNeedsRebuild) {
+                const RuntimePreviewDirtyState requestedDirtyState = runtimePreviewDirtyState;
+                if (runtimePreviewDirtyState == RuntimePreviewDirtyState::FullWorldRebuild) {
                     runtimePreviewSession.rebuild(document, content);
-                    runtimePreviewNeedsRebuild = false;
+                    runtimePreviewDirtyState = RuntimePreviewDirtyState::None;
+                } else if (runtimePreviewDirtyState == RuntimePreviewDirtyState::GameplayStateReset) {
+                    runtimePreviewSession.resetForPlay();
+                    runtimePreviewDirtyState = RuntimePreviewDirtyState::None;
+                } else if (runtimePreviewDirtyState == RuntimePreviewDirtyState::EnvironmentOnly) {
+                    runtimePreviewSession.syncEnvironment(document);
+                    runtimePreviewDirtyState = RuntimePreviewDirtyState::None;
                 }
+                const RuntimeSessionPerformanceStats& stats = runtimePreviewSession.performanceStats();
+                playEnterTrace.pending = true;
+                playEnterTrace.startedAt = Clock::now();
+                playEnterTrace.dirtyState = requestedDirtyState;
+                playEnterTrace.rebuildMs = requestedDirtyState == RuntimePreviewDirtyState::FullWorldRebuild
+                    ? stats.rebuildMs
+                    : 0.0;
+                playEnterTrace.resetForPlayMs = requestedDirtyState == RuntimePreviewDirtyState::GameplayStateReset
+                    ? stats.resetForPlayMs
+                    : 0.0;
+                playEnterTrace.rendererInitMs = stats.rendererInitMs;
+                playEnterTrace.rendererPrewarmMs = stats.rendererPrewarmMs;
                 if (ui.showViewport) {
                     runtimePreviewSession.beginCapture(window.handle());
                 }
             } else {
                 runtimePreviewSession.endCapture(window.handle());
-                runtimePreviewNeedsRebuild = true;
+                runtimePreviewDirtyState = mergeRuntimePreviewDirtyState(runtimePreviewDirtyState,
+                                                                        RuntimePreviewDirtyState::GameplayStateReset);
             }
             playTogglePressed = false;
         }
@@ -1123,7 +1221,8 @@ int main(int argc, char* argv[]) {
             if (ui.playPreview) {
                 runtimePreviewSession.endCapture(window.handle());
                 runtimePreviewSession.rebuild(document, content);
-                runtimePreviewNeedsRebuild = false;
+                runtimePreviewSession.prewarmRenderer(content);
+                runtimePreviewDirtyState = RuntimePreviewDirtyState::None;
             } else if (!syncEditorCameraToRuntimeStart(document, editCamera) && previewWorld.sceneBounds().valid) {
                 focusEditorCameraOnBounds(editCamera, previewWorld.sceneBounds().min, previewWorld.sceneBounds().max);
             }
@@ -1228,6 +1327,7 @@ int main(int argc, char* argv[]) {
                 document.save(content);
                 content.loadDefaults();
                 materialTextures.init(content);
+                runtimePreviewSession.prewarmRenderer(content);
                 commandStack.markSaved(document);
                 scenePaths = sortedScenePaths();
                 materialIds = sortedMaterialIds(content);
