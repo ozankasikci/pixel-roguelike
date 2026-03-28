@@ -1,9 +1,12 @@
 add_library(game STATIC
     content/ContentRegistry.cpp
+    rendering/EnvironmentDebugSync.cpp
     rendering/EnvironmentDefinition.cpp
     rendering/EnvironmentProfile.cpp
     rendering/MaterialDefinition.cpp
     rendering/MaterialTextureLibrary.cpp
+    rendering/RuntimeCameraMath.cpp
+    rendering/RuntimeSceneRenderer.cpp
     session/EquipmentState.cpp
     scenes/CathedralScene.cpp
     scenes/SilosCloisterScene.cpp

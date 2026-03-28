@@ -41,7 +41,7 @@ glm::mat4 editorCameraView(const EditorCamera& camera) {
 }
 
 glm::mat4 editorCameraProjection(const EditorCamera& camera, float aspect) {
-    return glm::perspective(glm::radians(camera.fovDegrees), aspect, 0.1f, 150.0f);
+    return glm::perspective(glm::radians(camera.fovDegrees), aspect, camera.nearPlane, camera.farPlane);
 }
 
 void updateEditorFlyCamera(EditorCamera& camera,

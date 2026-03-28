@@ -538,6 +538,7 @@ void renderMaterialAssetInspector(EditorUiState& ui,
 void renderEnvironmentAssetInspector(EditorUiState& ui,
                                      const EditorInspectedAsset& asset,
                                      AssetInspectorSession& session,
+                                     EditorSceneDocument& document,
                                      ContentRegistry& content,
                                      InspectorActionResult& result) {
     renderFileHeader(asset);
@@ -573,6 +574,14 @@ void renderEnvironmentAssetInspector(EditorUiState& ui,
     const bool dirty = renderEnvironmentDraftFields(environment);
     if (dirty) {
         session.environmentDirty = true;
+        const std::string activeEnvironmentPath = document.environmentAssetPath(content);
+        if (!activeEnvironmentPath.empty()
+            && std::filesystem::weakly_canonical(std::filesystem::path(activeEnvironmentPath))
+                == std::filesystem::weakly_canonical(std::filesystem::path(asset.absolutePath))) {
+            document.environment() = environment;
+            document.markEnvironmentDirty();
+            result.previewDirty = true;
+        }
     }
     if (session.environmentDirty) {
         ImGui::TextDisabled("Unsaved changes");
@@ -960,7 +969,7 @@ InspectorActionResult renderInspector(EditorUiState& ui,
             renderMaterialAssetInspector(ui, ui.inspectedAsset, session, content, result);
             break;
         case EditorAssetBrowserKind::Environment:
-            renderEnvironmentAssetInspector(ui, ui.inspectedAsset, session, content, result);
+            renderEnvironmentAssetInspector(ui, ui.inspectedAsset, session, document, content, result);
             break;
         case EditorAssetBrowserKind::Prefab:
             renderPrefabAssetInspector(ui, ui.inspectedAsset, session, content, result);

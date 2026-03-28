@@ -16,6 +16,7 @@
 #include "editor/EditorSelectionSystem.h"
 #include "editor/EditorViewportController.h"
 #include "editor/LevelEditorUi.h"
+#include "editor/core/EditorRuntimePreviewSession.h"
 #include "editor/core/LevelEditorCore.h"
 #include "editor/render/EditorScenePreviewRenderer.h"
 #include "editor/ui/EditorOutlinerPanel.h"
@@ -24,6 +25,7 @@
 #include "game/content/ContentRegistry.h"
 #include "game/rendering/MaterialDefinition.h"
 #include "game/rendering/MaterialTextureLibrary.h"
+#include "game/rendering/RuntimeSceneRenderer.h"
 
 #define GLM_ENABLE_EXPERIMENTAL
 #include <GLFW/glfw3.h>
@@ -59,12 +61,30 @@ constexpr const char* kOutlinerWindowName = "Outliner";
 constexpr const char* kInspectorWindowName = "Inspector";
 constexpr const char* kAssetBrowserWindowName = "Asset Browser";
 constexpr const char* kEnvironmentWindowName = "Environment";
+constexpr float kRuntimeViewportAspect = 1280.0f / 720.0f;
 
 glm::vec3 safeNormalize(const glm::vec3& value, const glm::vec3& fallback) {
     if (glm::dot(value, value) <= 0.0001f) {
         return fallback;
     }
     return glm::normalize(value);
+}
+
+EditorViewportState fitViewportToAspect(const EditorViewportState& viewport, float aspect) {
+    EditorViewportState fitted = viewport;
+    if (viewport.size.x <= 1.0f || viewport.size.y <= 1.0f || aspect <= 0.0f) {
+        return fitted;
+    }
+
+    const float currentAspect = viewport.size.x / viewport.size.y;
+    if (currentAspect > aspect) {
+        fitted.size.x = viewport.size.y * aspect;
+        fitted.origin.x += (viewport.size.x - fitted.size.x) * 0.5f;
+    } else if (currentAspect < aspect) {
+        fitted.size.y = viewport.size.x / aspect;
+        fitted.origin.y += (viewport.size.y - fitted.size.y) * 0.5f;
+    }
+    return fitted;
 }
 
 } // namespace
@@ -86,6 +106,8 @@ int main(int argc, char* argv[]) {
 
     MaterialTextureLibrary materialTextures;
     materialTextures.init(content);
+    RuntimeSceneRenderer runtimeSceneRenderer;
+    runtimeSceneRenderer.init(content);
 
     EditorSceneDocument document;
     document.loadFromSceneFile(initialScene, content);
@@ -94,6 +116,8 @@ int main(int argc, char* argv[]) {
 
     EditorPreviewWorld previewWorld;
     previewWorld.rebuild(document, content);
+    EditorRuntimePreviewSession runtimePreviewSession;
+    runtimePreviewSession.rebuild(document, content);
 
     std::unique_ptr<Shader> sceneShader = std::make_unique<Shader>(
         "assets/shaders/game/scene.vert",
@@ -117,8 +141,7 @@ int main(int argc, char* argv[]) {
     std::array<ShadowMap, kMaxShadowedSpotLightsLocal> shadowMaps;
 
     EditorCamera editCamera;
-    EditorCamera playCamera;
-    if (previewWorld.sceneBounds().valid) {
+    if (!syncEditorCameraToRuntimeStart(document, editCamera) && previewWorld.sceneBounds().valid) {
         focusEditorCameraOnBounds(editCamera, previewWorld.sceneBounds().min, previewWorld.sceneBounds().max);
     }
     EditorUiState ui;
@@ -158,6 +181,7 @@ int main(int argc, char* argv[]) {
     bool previewDirty = true;
     bool savePressed = false;
     bool focusPressed = false;
+    bool resetStartPressed = false;
     bool duplicatePressed = false;
     bool deletePressed = false;
     bool undoPressed = false;
@@ -230,6 +254,10 @@ int main(int argc, char* argv[]) {
         ImGui::SameLine();
         if (ImGui::Button(ui.playPreview ? "Stop Preview" : "Play Preview")) {
             playTogglePressed = true;
+        }
+        ImGui::SameLine();
+        if (ImGui::Button("Reset Start")) {
+            resetStartPressed = true;
         }
         ImGui::SameLine();
         if (ImGui::Button("Focus")) {
@@ -320,7 +348,6 @@ int main(int argc, char* argv[]) {
                                         gizmoCommand,
                                         previewDirty,
                                         editCamera,
-                                        playCamera,
                                         previewWorld,
                                         previewSceneRevision);
                 }
@@ -414,6 +441,8 @@ int main(int argc, char* argv[]) {
             materialIds = sortedMaterialIds(content);
             archetypeIds = sortedArchetypeIds(content);
             environmentIds = sortedEnvironmentIds(content);
+            materialTextures.init(content);
+            runtimeSceneRenderer.reloadContent(content);
             previewDirty = true;
         }
         if (inspectorActions.previewDirty) {
@@ -445,7 +474,6 @@ int main(int argc, char* argv[]) {
                                 gizmoCommand,
                                 previewDirty,
                                 editCamera,
-                                playCamera,
                                 previewWorld,
                                 previewSceneRevision);
         }
@@ -471,8 +499,14 @@ int main(int argc, char* argv[]) {
             }
         }
 
-        const int targetW = std::max(1, static_cast<int>(std::max(viewportState.size.x, 64.0f)));
-        const int targetH = std::max(1, static_cast<int>(std::max(viewportState.size.y, 64.0f)));
+        EditorViewportState renderViewportState = viewportState;
+        if (ui.playPreview) {
+            renderViewportState = fitViewportToAspect(viewportState, kRuntimeViewportAspect);
+            renderViewportState.hovered = pointInViewport(renderViewportState, io.MousePos);
+        }
+
+        const int targetW = std::max(1, static_cast<int>(std::max(renderViewportState.size.x, 64.0f)));
+        const int targetH = std::max(1, static_cast<int>(std::max(renderViewportState.size.y, 64.0f)));
         if (sceneFbo.width() != targetW || sceneFbo.height() != targetH) {
             sceneFbo.resize(targetW, targetH);
             compositeFbo.resize(targetW, targetH);
@@ -481,115 +515,145 @@ int main(int argc, char* argv[]) {
 
         if (previewDirty || previewSceneRevision != document.sceneRevision()) {
             previewWorld.rebuild(document, content);
+            runtimePreviewSession.rebuild(document, content);
             previewDirty = false;
             previewSceneRevision = document.sceneRevision();
         }
-
-        EditorCamera& activeCamera = ui.playPreview ? playCamera : editCamera;
-        updateEditorFlyCamera(activeCamera, window.handle(), viewportState, deltaTime);
-
-        const glm::mat4 view = editorCameraView(activeCamera);
-        const glm::mat4 projection = editorCameraProjection(activeCamera, static_cast<float>(targetW) / static_cast<float>(targetH));
-        const glm::mat4 inverseViewProjection = glm::inverse(projection * view);
         const auto selectionHandles = buildEditorSelectionHandles(document, previewWorld);
         const auto viewportSelectionHandles = buildViewportSelectionHandles(selectionHandles, ui);
+        std::optional<glm::vec3> placementPoint;
+        glm::mat4 view(1.0f);
+        glm::mat4 projection(1.0f);
+        glm::mat4 inverseViewProjection(1.0f);
 
-        std::vector<RenderObject> objects = collectRenderObjects(previewWorld, materialTextures, selectedIds);
         if (!ui.playPreview) {
+            updateEditorFlyCamera(editCamera, window.handle(), renderViewportState, deltaTime);
+
+            view = editorCameraView(editCamera);
+            projection = editorCameraProjection(editCamera, static_cast<float>(targetW) / static_cast<float>(targetH));
+            inverseViewProjection = glm::inverse(projection * view);
+
+            std::vector<RenderObject> objects = collectRenderObjects(previewWorld, materialTextures, selectedIds);
             appendHelperObjects(objects, previewWorld, document, materialTextures, selectedIds,
                                 ui.showColliders, ui.showLightHelpers, ui.showSpawnMarker);
             appendSelectionOverlays(objects, previewWorld, materialTextures, selectedIds);
-        }
 
-        EditorPlacementState dragPlacement;
-        if (!ui.playPreview && viewportState.hovered) {
-            if (const ImGuiPayload* payload = ImGui::GetDragDropPayload();
-                payload != nullptr && payload->IsDataType("EDITOR_PLACE") && payload->DataSize == sizeof(EditorDragPayload)) {
-                dragPlacement = makePlacementState(*static_cast<const EditorDragPayload*>(payload->Data));
+            EditorPlacementState dragPlacement;
+            if (viewportState.hovered) {
+                if (const ImGuiPayload* payload = ImGui::GetDragDropPayload();
+                    payload != nullptr && payload->IsDataType("EDITOR_PLACE") && payload->DataSize == sizeof(EditorDragPayload)) {
+                    dragPlacement = makePlacementState(*static_cast<const EditorDragPayload*>(payload->Data));
+                }
             }
-        }
 
-        const EditorPlacementState effectivePlacement = dragPlacement.active() ? dragPlacement : placementState;
-        std::optional<glm::vec3> placementPoint;
-        if (!ui.playPreview && effectivePlacement.active() && pointInViewport(viewportState, io.MousePos)) {
-            const EditorRay ray = buildEditorRay(inverseViewProjection,
-                                                 glm::vec2(viewportState.origin.x, viewportState.origin.y),
-                                                 glm::vec2(viewportState.size.x, viewportState.size.y),
-                                                 glm::vec2(io.MousePos.x, io.MousePos.y));
-            placementPoint = computePlacementPoint(selectionHandles, ray, activeCamera, ui.snappingEnabled, ui.moveSnap);
-            if (placementPoint.has_value()) {
-                appendPlacementGhost(objects, effectivePlacement, *placementPoint, previewWorld, materialTextures, content);
+            const EditorPlacementState effectivePlacement = dragPlacement.active() ? dragPlacement : placementState;
+            if (effectivePlacement.active() && pointInViewport(renderViewportState, io.MousePos)) {
+                const EditorRay ray = buildEditorRay(inverseViewProjection,
+                                                     glm::vec2(renderViewportState.origin.x, renderViewportState.origin.y),
+                                                     glm::vec2(renderViewportState.size.x, renderViewportState.size.y),
+                                                     glm::vec2(io.MousePos.x, io.MousePos.y));
+                placementPoint = computePlacementPoint(selectionHandles, ray, editCamera, ui.snappingEnabled, ui.moveSnap);
+                if (placementPoint.has_value()) {
+                    appendPlacementGhost(objects, effectivePlacement, *placementPoint, previewWorld, materialTextures, content);
+                }
             }
-        }
 
-        EnvironmentDefinition previewEnvironment = document.environment();
-        previewEnvironment.post.timeSeconds = static_cast<float>(glfwGetTime());
-        previewEnvironment.post.nearPlane = 0.1f;
-        previewEnvironment.post.farPlane = 150.0f;
-        previewEnvironment.post.inverseViewProjection = inverseViewProjection;
-        previewEnvironment.post.sky.sunDirection = safeNormalize(previewEnvironment.lighting.sun.direction, previewEnvironment.post.sky.sunDirection);
-        previewEnvironment.post.sky.sunColor = previewEnvironment.lighting.sun.color;
-        switch (ui.previewMode) {
-        case EditorPreviewMode::Final:
-            previewEnvironment.post.debugViewMode = 0;
-            break;
-        case EditorPreviewMode::LightingOnly:
-            previewEnvironment.post.debugViewMode = 1;
-            break;
-        case EditorPreviewMode::SkyOnly:
-            previewEnvironment.post.debugViewMode = 4;
-            break;
-        }
+            EnvironmentDefinition previewEnvironment = document.environment();
+            previewEnvironment.post.timeSeconds = static_cast<float>(glfwGetTime());
+            previewEnvironment.post.nearPlane = editCamera.nearPlane;
+            previewEnvironment.post.farPlane = editCamera.farPlane;
+            previewEnvironment.post.inverseViewProjection = inverseViewProjection;
+            previewEnvironment.post.sky = previewEnvironment.sky;
+            previewEnvironment.post.sky.sunDirection = safeNormalize(previewEnvironment.lighting.sun.direction, previewEnvironment.post.sky.sunDirection);
+            previewEnvironment.post.sky.sunColor = previewEnvironment.lighting.sun.color;
+            switch (ui.previewMode) {
+            case EditorPreviewMode::Final:
+                previewEnvironment.post.debugViewMode = 0;
+                break;
+            case EditorPreviewMode::LightingOnly:
+                previewEnvironment.post.debugViewMode = 1;
+                break;
+            case EditorPreviewMode::SkyOnly:
+                previewEnvironment.post.debugViewMode = 4;
+                break;
+            }
 
-        std::vector<RenderLight> lights = collectLights(previewWorld.registry(), previewEnvironment);
-        ShadowRenderData shadowData;
-        if (previewEnvironment.lighting.enableShadows) {
-            renderShadowPass(objects, lights, *shadowShader, shadowMaps, kShadowResolutions[ui.shadowResolutionIndex], shadowData);
+            std::vector<RenderLight> lights = collectLights(previewWorld.registry(), previewEnvironment);
+            ShadowRenderData shadowData;
+            if (previewEnvironment.lighting.enableShadows) {
+                renderShadowPass(objects, lights, *shadowShader, shadowMaps, kShadowResolutions[ui.shadowResolutionIndex], shadowData);
+            } else {
+                shadowData.shadowCount = 0;
+                shadowData.matrices = {glm::mat4(1.0f), glm::mat4(1.0f)};
+                shadowData.textures = {0, 0};
+            }
+
+            sceneFbo.bind();
+            glViewport(0, 0, targetW, targetH);
+            glEnable(GL_DEPTH_TEST);
+            glClearColor(0.04f, 0.04f, 0.045f, 1.0f);
+            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+            renderer.drawScene(objects,
+                               lights,
+                               makeLightingEnvironment(previewEnvironment),
+                               shadowData,
+                               view,
+                               projection,
+                               editCamera.position);
+            sceneFbo.unbind();
+            glDisable(GL_DEPTH_TEST);
+
+            compositePass.apply(sceneFbo.colorTexture(),
+                                sceneFbo.depthTexture(),
+                                sceneFbo.normalTexture(),
+                                compositeFbo.framebuffer(),
+                                previewEnvironment.post,
+                                targetW,
+                                targetH);
+            stylizePass.apply(compositeFbo.colorTexture(),
+                              sceneFbo.colorTexture(),
+                              sceneFbo.depthTexture(),
+                              sceneFbo.normalTexture(),
+                              previewEnvironment.post,
+                              targetW,
+                              targetH,
+                              finalFbo.framebuffer());
         } else {
-            shadowData.shadowCount = 0;
-            shadowData.matrices = {glm::mat4(1.0f), glm::mat4(1.0f)};
-            shadowData.textures = {0, 0};
+            runtimeSceneRenderer.render(runtimePreviewSession.registry(),
+                                        runtimePreviewSession.debugParams(),
+                                        deltaTime,
+                                        targetW,
+                                        targetH,
+                                        targetW,
+                                        targetH,
+                                        finalFbo.framebuffer());
         }
-
-        sceneFbo.bind();
-        glViewport(0, 0, targetW, targetH);
-        glEnable(GL_DEPTH_TEST);
-        glClearColor(0.04f, 0.04f, 0.045f, 1.0f);
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-        renderer.drawScene(objects,
-                           lights,
-                           makeLightingEnvironment(previewEnvironment),
-                           shadowData,
-                           view,
-                           projection,
-                           activeCamera.position);
-        sceneFbo.unbind();
-        glDisable(GL_DEPTH_TEST);
-
-        compositePass.apply(sceneFbo.colorTexture(),
-                            sceneFbo.depthTexture(),
-                            sceneFbo.normalTexture(),
-                            compositeFbo.framebuffer(),
-                            previewEnvironment.post,
-                            targetW,
-                            targetH);
-        stylizePass.apply(compositeFbo.colorTexture(),
-                          sceneFbo.colorTexture(),
-                          sceneFbo.depthTexture(),
-                          sceneFbo.normalTexture(),
-                          previewEnvironment.post,
-                          targetW,
-                          targetH,
-                          finalFbo.framebuffer());
 
         if (viewportWindowVisible) {
+            if (ui.playPreview) {
+                ImGui::SetCursorScreenPos(renderViewportState.origin);
+            }
             ImGui::SetNextItemAllowOverlap();
             ImGui::Image(static_cast<ImTextureID>(static_cast<uintptr_t>(finalFbo.colorTexture())),
-                         viewportState.size,
+                         renderViewportState.size,
                          ImVec2(0.0f, 1.0f),
                          ImVec2(1.0f, 0.0f));
 
-            if (!selectedIds.empty()) {
+            {
+                const char* modeLabel = ui.playPreview ? "Game Preview" : "Edit View";
+                ImDrawList* drawList = ImGui::GetWindowDrawList();
+                const ImVec2 badgePos(renderViewportState.origin.x + 12.0f, renderViewportState.origin.y + 12.0f);
+                const ImVec2 badgeSize = ImGui::CalcTextSize(modeLabel);
+                drawList->AddRectFilled(ImVec2(badgePos.x - 8.0f, badgePos.y - 6.0f),
+                                        ImVec2(badgePos.x + badgeSize.x + 8.0f, badgePos.y + badgeSize.y + 6.0f),
+                                        ui.playPreview ? IM_COL32(24, 34, 48, 220) : IM_COL32(26, 32, 24, 220),
+                                        4.0f);
+                drawList->AddText(badgePos,
+                                  ui.playPreview ? IM_COL32(184, 216, 255, 255) : IM_COL32(200, 236, 168, 255),
+                                  modeLabel);
+            }
+
+            if (!ui.playPreview && !selectedIds.empty()) {
                 const std::uint64_t activeId = selectedIds.back();
                 std::string label = selectedIds.size() == 1
                     ? "Selected: "
@@ -601,7 +665,7 @@ int main(int argc, char* argv[]) {
                 }
 
                 ImDrawList* drawList = ImGui::GetWindowDrawList();
-                const ImVec2 textPos(viewportState.origin.x + 12.0f, viewportState.origin.y + 12.0f);
+                const ImVec2 textPos(renderViewportState.origin.x + 12.0f, renderViewportState.origin.y + 42.0f);
                 const ImVec2 textSize = ImGui::CalcTextSize(label.c_str());
                 const ImVec2 padding(8.0f, 6.0f);
                 drawList->AddRectFilled(ImVec2(textPos.x - padding.x, textPos.y - padding.y),
@@ -613,7 +677,7 @@ int main(int argc, char* argv[]) {
 
             const EditorSceneDocumentState gizmoBeforeState = document.captureState();
             if (!ui.playPreview) {
-                if (applyGizmoToSelectedObject(document, selectedIds, viewportState, view, projection, ui, previewWorld)) {
+                if (applyGizmoToSelectedObject(document, selectedIds, renderViewportState, view, projection, ui, previewWorld)) {
                     previewDirty = true;
                 }
                 if (editorGizmoIsHot() && !gizmoCommand.active) {
@@ -629,7 +693,7 @@ int main(int argc, char* argv[]) {
                         if (payload->Delivery && placementPoint.has_value() && payload->DataSize == sizeof(EditorDragPayload)) {
                             const EditorPlacementState droppedState = makePlacementState(*static_cast<const EditorDragPayload*>(payload->Data));
                             const EditorSceneDocumentState beforeState = document.captureState();
-                            commitPlacement(document, droppedState, *placementPoint, content, activeCamera);
+                            commitPlacement(document, droppedState, *placementPoint, content, editCamera);
                             commandStack.pushDocumentStateCommand(
                                 "Place Object",
                                 beforeState,
@@ -642,9 +706,9 @@ int main(int argc, char* argv[]) {
                     ImGui::EndDragDropTarget();
                 }
 
-                if (placementState.active() && placementPoint.has_value() && viewportState.hovered && ImGui::IsMouseClicked(ImGuiMouseButton_Left) && !editorGizmoIsHot()) {
+                if (placementState.active() && placementPoint.has_value() && renderViewportState.hovered && ImGui::IsMouseClicked(ImGuiMouseButton_Left) && !editorGizmoIsHot()) {
                     const EditorSceneDocumentState beforeState = document.captureState();
-                    commitPlacement(document, placementState, *placementPoint, content, activeCamera);
+                    commitPlacement(document, placementState, *placementPoint, content, editCamera);
                     commandStack.pushDocumentStateCommand(
                         "Place Object",
                         beforeState,
@@ -653,10 +717,10 @@ int main(int argc, char* argv[]) {
                     placementState.clear();
                     selectionPicker.clear();
                     previewDirty = true;
-                } else if (viewportState.hovered && ImGui::IsMouseClicked(ImGuiMouseButton_Left) && !editorGizmoIsHot()) {
+                } else if (renderViewportState.hovered && ImGui::IsMouseClicked(ImGuiMouseButton_Left) && !editorGizmoIsHot()) {
                     const EditorRay ray = buildEditorRay(inverseViewProjection,
-                                                         glm::vec2(viewportState.origin.x, viewportState.origin.y),
-                                                         glm::vec2(viewportState.size.x, viewportState.size.y),
+                                                         glm::vec2(renderViewportState.origin.x, renderViewportState.origin.y),
+                                                         glm::vec2(renderViewportState.size.x, renderViewportState.size.y),
                                                          glm::vec2(io.MousePos.x, io.MousePos.y));
                     const std::vector<EditorHitResult> hits = pickEditorObjects(viewportSelectionHandles, ray);
                     if (!hits.empty()) {
@@ -691,15 +755,18 @@ int main(int argc, char* argv[]) {
             gizmoCommand.clear();
             ui.playPreview = !ui.playPreview;
             if (ui.playPreview) {
-                playCamera = editCamera;
-                for (const auto& object : document.objects()) {
-                    if (object.kind == EditorSceneObjectKind::PlayerSpawn) {
-                        playCamera.position = std::get<LevelPlayerSpawn>(object.payload).position;
-                        break;
-                    }
-                }
+                runtimePreviewSession.rebuild(document, content);
             }
             playTogglePressed = false;
+        }
+
+        if (resetStartPressed) {
+            if (ui.playPreview) {
+                runtimePreviewSession.rebuild(document, content);
+            } else if (!syncEditorCameraToRuntimeStart(document, editCamera) && previewWorld.sceneBounds().valid) {
+                focusEditorCameraOnBounds(editCamera, previewWorld.sceneBounds().min, previewWorld.sceneBounds().max);
+            }
+            resetStartPressed = false;
         }
 
         if (focusPressed && selectedIds.size() == 1) {
@@ -794,6 +861,8 @@ int main(int argc, char* argv[]) {
             try {
                 document.save(content);
                 content.loadDefaults();
+                materialTextures.init(content);
+                runtimeSceneRenderer.reloadContent(content);
                 commandStack.markSaved(document);
                 scenePaths = sortedScenePaths();
                 materialIds = sortedMaterialIds(content);
@@ -810,6 +879,7 @@ int main(int argc, char* argv[]) {
         window.swapBuffers();
     }
 
+    runtimeSceneRenderer.shutdown();
     imgui.shutdown();
     return 0;
 }

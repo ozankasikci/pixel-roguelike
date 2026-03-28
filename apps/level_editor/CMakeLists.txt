@@ -10,6 +10,7 @@ add_executable(level-editor
     ${CMAKE_SOURCE_DIR}/src/editor/EditorSelectionSystem.cpp
     ${CMAKE_SOURCE_DIR}/src/editor/EditorViewportController.cpp
     ${CMAKE_SOURCE_DIR}/src/editor/core/LevelEditorCore.cpp
+    ${CMAKE_SOURCE_DIR}/src/editor/core/EditorRuntimePreviewSession.cpp
     ${CMAKE_SOURCE_DIR}/src/editor/render/EditorScenePreviewRenderer.cpp
     ${CMAKE_SOURCE_DIR}/src/editor/ui/EditorAssetBrowserPanel.cpp
     ${CMAKE_SOURCE_DIR}/src/editor/ui/EditorOutlinerPanel.cpp

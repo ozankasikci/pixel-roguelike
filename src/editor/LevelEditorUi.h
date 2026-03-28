@@ -57,9 +57,9 @@ struct EditorUiState {
     bool showAssetBrowser = true;
     bool showEnvironment = true;
     bool showViewport = true;
-    bool showColliders = true;
-    bool showLightHelpers = true;
-    bool showSpawnMarker = true;
+    bool showColliders = false;
+    bool showLightHelpers = false;
+    bool showSpawnMarker = false;
     bool snappingEnabled = true;
     float moveSnap = 0.5f;
     float rotateSnap = 15.0f;

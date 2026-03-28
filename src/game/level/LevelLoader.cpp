@@ -64,16 +64,23 @@ entt::entity spawnViewmodelMesh(entt::registry& registry,
 } // namespace
 
 void LevelLoader::load(Application& app, const LevelLoadRequest& request) {
+    load(app.getService<ContentRegistry>(),
+         app.getService<RunSession>(),
+         request,
+         loadLevelDef(resolveProjectPath(request.levelPath)));
+}
+
+void LevelLoader::load(ContentRegistry& content,
+                       RunSession& session,
+                       const LevelLoadRequest& request,
+                       const LevelDef& rawLevel) {
     auto& registry = context_.registry;
-    auto& session = app.getService<RunSession>();
-    auto& content = app.getService<ContentRegistry>();
 
     if (request.registerAssets) {
         request.registerAssets(context_.meshLibrary);
     }
     registry.ctx().insert_or_assign(MeshAssetProvider{&context_.meshLibrary});
 
-    const LevelDef rawLevel = loadLevelDef(resolveProjectPath(request.levelPath));
     const LevelDef level = resolveLevelHierarchy(rawLevel);
     registry.ctx().insert_or_assign(ActiveEnvironmentProfile{request.levelId, level.environmentId, level.environmentProfile});
 

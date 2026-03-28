@@ -30,6 +30,8 @@ void buildDefaultEditorDockLayout(ImGuiID dockspaceId,
                                   const char* inspectorWindowName,
                                   const char* assetBrowserWindowName,
                                   const char* environmentWindowName);
+void resetEditorCameraToRuntimeDefaults(EditorCamera& camera);
+bool syncEditorCameraToRuntimeStart(const EditorSceneDocument& document, EditorCamera& camera);
 
 void loadSceneIntoEditor(const std::string& scenePath,
                          EditorUiState& ui,
@@ -43,7 +45,6 @@ void loadSceneIntoEditor(const std::string& scenePath,
                          EditorPendingCommand& gizmoCommand,
                          bool& previewDirty,
                          EditorCamera& editCamera,
-                         EditorCamera& playCamera,
                          EditorPreviewWorld& previewWorld,
                          std::uint64_t& previewSceneRevision);
 

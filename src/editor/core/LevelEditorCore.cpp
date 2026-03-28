@@ -3,6 +3,7 @@
 #include "engine/core/PathUtils.h"
 #include "editor/EditorCommand.h"
 #include "editor/EditorViewportController.h"
+#include "game/components/CameraComponent.h"
 #include "game/content/ContentRegistry.h"
 #include "game/rendering/EnvironmentDefinition.h"
 
@@ -87,6 +88,28 @@ void buildDefaultEditorDockLayout(ImGuiID dockspaceId,
     ImGui::DockBuilderFinish(dockspaceId);
 }
 
+void resetEditorCameraToRuntimeDefaults(EditorCamera& camera) {
+    const CameraComponent runtimeDefaults;
+    camera.yawDegrees = runtimeDefaults.yaw;
+    camera.pitchDegrees = runtimeDefaults.pitch;
+    camera.fovDegrees = runtimeDefaults.fov;
+    camera.moveSpeed = runtimeDefaults.moveSpeed;
+    camera.nearPlane = runtimeDefaults.nearPlane;
+    camera.farPlane = runtimeDefaults.farPlane;
+}
+
+bool syncEditorCameraToRuntimeStart(const EditorSceneDocument& document, EditorCamera& camera) {
+    resetEditorCameraToRuntimeDefaults(camera);
+    for (const auto& object : document.objects()) {
+        if (object.kind != EditorSceneObjectKind::PlayerSpawn) {
+            continue;
+        }
+        camera.position = std::get<LevelPlayerSpawn>(object.payload).position;
+        return true;
+    }
+    return false;
+}
+
 void loadSceneIntoEditor(const std::string& scenePath,
                          EditorUiState& ui,
                          EditorSceneDocument& document,
@@ -99,7 +122,6 @@ void loadSceneIntoEditor(const std::string& scenePath,
                          EditorPendingCommand& gizmoCommand,
                          bool& previewDirty,
                          EditorCamera& editCamera,
-                         EditorCamera& playCamera,
                          EditorPreviewWorld& previewWorld,
                          std::uint64_t& previewSceneRevision) {
     ui.pendingScenePath = scenePath;
@@ -111,11 +133,10 @@ void loadSceneIntoEditor(const std::string& scenePath,
     widgetCommand.clear();
     gizmoCommand.clear();
     previewDirty = true;
-    playCamera = editCamera;
     previewWorld.rebuild(document, content);
     previewDirty = false;
     previewSceneRevision = document.sceneRevision();
-    if (previewWorld.sceneBounds().valid) {
+    if (!syncEditorCameraToRuntimeStart(document, editCamera) && previewWorld.sceneBounds().valid) {
         focusEditorCameraOnBounds(editCamera, previewWorld.sceneBounds().min, previewWorld.sceneBounds().max);
     }
 }

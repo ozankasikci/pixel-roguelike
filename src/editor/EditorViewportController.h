@@ -17,6 +17,8 @@ struct EditorCamera {
     float pitchDegrees = -8.0f;
     float fovDegrees = 70.0f;
     float moveSpeed = 8.0f;
+    float nearPlane = 0.1f;
+    float farPlane = 100.0f;
 };
 
 struct EditorViewportState {
