@@ -50,8 +50,13 @@ public:
                          float innerConeDegrees,
                          float outerConeDegrees,
                          bool castsShadows);
-    entt::entity addBoxCollider(const glm::vec3& position, const glm::vec3& halfExtents);
-    entt::entity addCylinderCollider(const glm::vec3& position, float radius, float halfHeight);
+    entt::entity addBoxCollider(const glm::vec3& position,
+                                const glm::vec3& halfExtents,
+                                const glm::vec3& rotation = glm::vec3(0.0f));
+    entt::entity addCylinderCollider(const glm::vec3& position,
+                                     float radius,
+                                     float halfHeight,
+                                     const glm::vec3& rotation = glm::vec3(0.0f));
 
 private:
     LevelBuildContext& context_;

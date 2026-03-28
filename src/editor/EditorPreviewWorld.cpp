@@ -12,7 +12,10 @@
 #include "game/rendering/EnvironmentProfile.h"
 #include "game/rendering/MeshAssetProvider.h"
 
+#define GLM_ENABLE_EXPERIMENTAL
 #include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtx/matrix_decompose.hpp>
+#include <glm/gtx/quaternion.hpp>
 
 #include <filesystem>
 
@@ -63,6 +66,20 @@ EditorObjectBounds colliderBounds(const StaticColliderComponent& collider) {
     return transformBounds(glm::vec3(-collider.radius, -collider.halfHeight, -collider.radius),
                            glm::vec3(collider.radius, collider.halfHeight, collider.radius),
                            matrix);
+}
+
+bool decomposeTransformMatrix(const glm::mat4& matrix,
+                              glm::vec3& position,
+                              glm::vec3& rotationDegrees,
+                              glm::vec3& scale) {
+    glm::vec3 skew(0.0f);
+    glm::vec4 perspective(0.0f);
+    glm::quat orientation;
+    if (!glm::decompose(matrix, scale, orientation, position, skew, perspective)) {
+        return false;
+    }
+    rotationDegrees = glm::degrees(glm::eulerAngles(orientation));
+    return true;
 }
 
 } // namespace
@@ -116,7 +133,13 @@ void EditorPreviewWorld::rebuild(const EditorSceneDocument& document, const Cont
 
         switch (object.kind) {
         case EditorSceneObjectKind::Mesh: {
-            const auto& placement = std::get<LevelMeshPlacement>(object.payload);
+            auto placement = std::get<LevelMeshPlacement>(object.payload);
+            glm::vec3 position(0.0f), rotation(0.0f), scale(1.0f);
+            if (decomposeTransformMatrix(document.worldTransformMatrix(object.id), position, rotation, scale)) {
+                placement.position = position;
+                placement.rotation = rotation;
+                placement.scale = scale;
+            }
             builder.addMesh(placement.meshId,
                             placement.position,
                             placement.scale,
@@ -142,19 +165,37 @@ void EditorPreviewWorld::rebuild(const EditorSceneDocument& document, const Cont
             break;
         }
         case EditorSceneObjectKind::BoxCollider: {
-            const auto& placement = std::get<LevelBoxColliderPlacement>(object.payload);
-            builder.addBoxCollider(placement.position, placement.halfExtents);
+            auto placement = std::get<LevelBoxColliderPlacement>(object.payload);
+            glm::vec3 position(0.0f), rotation(0.0f), scale(1.0f);
+            if (decomposeTransformMatrix(document.worldTransformMatrix(object.id), position, rotation, scale)) {
+                placement.position = position;
+                placement.rotation = rotation;
+                placement.halfExtents = glm::max(scale * 0.5f, glm::vec3(0.001f));
+            }
+            builder.addBoxCollider(placement.position, placement.halfExtents, placement.rotation);
             break;
         }
         case EditorSceneObjectKind::CylinderCollider: {
-            const auto& placement = std::get<LevelCylinderColliderPlacement>(object.payload);
-            builder.addCylinderCollider(placement.position, placement.radius, placement.halfHeight);
+            auto placement = std::get<LevelCylinderColliderPlacement>(object.payload);
+            glm::vec3 position(0.0f), rotation(0.0f), scale(1.0f);
+            if (decomposeTransformMatrix(document.worldTransformMatrix(object.id), position, rotation, scale)) {
+                placement.position = position;
+                placement.rotation = rotation;
+                placement.radius = std::max(0.001f, (std::abs(scale.x) + std::abs(scale.z)) * 0.25f);
+                placement.halfHeight = std::max(0.001f, std::abs(scale.y) * 0.5f);
+            }
+            builder.addCylinderCollider(placement.position, placement.radius, placement.halfHeight, placement.rotation);
             break;
         }
         case EditorSceneObjectKind::PlayerSpawn:
             break;
         case EditorSceneObjectKind::Archetype: {
-            const auto& placement = std::get<LevelArchetypePlacement>(object.payload);
+            auto placement = std::get<LevelArchetypePlacement>(object.payload);
+            glm::vec3 position(0.0f), rotation(0.0f), scale(1.0f);
+            if (decomposeTransformMatrix(document.worldTransformMatrix(object.id), position, rotation, scale)) {
+                placement.position = position;
+                placement.yawDegrees = rotation.y;
+            }
             if (const auto* archetype = content.findArchetype(placement.archetypeId)) {
                 (void)spawnGameplayPrefab(
                     builder,

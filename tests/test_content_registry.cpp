@@ -2,6 +2,7 @@
 
 #include <cassert>
 #include <cmath>
+#include <filesystem>
 
 namespace {
 
@@ -86,6 +87,23 @@ int main() {
     assert(registry.findEnvironment("cloister_daylight") != nullptr);
     assert(registry.findEnvironmentPath("cloister_daylight") != nullptr);
 
+    EnvironmentDefinition customEnvironment = makeEnvironmentDefinition(EnvironmentProfile::Neutral);
+    customEnvironment.id = "editor_custom_test";
+    customEnvironment.post.exposure = 1.23f;
+    const auto customEnvironmentPath =
+        std::filesystem::path(ENVIRONMENT_DIR) / "editor_custom_test.environment";
+    saveEnvironmentDefinitionAsset(customEnvironmentPath.string(), customEnvironment);
+    registry.loadDefaults();
+    const auto* customLoaded = registry.findEnvironment("editor_custom_test");
+    assert(customLoaded != nullptr);
+    assert(nearlyEqual(customLoaded->post.exposure, 1.23f));
+    const auto* customLoadedPath = registry.findEnvironmentPath("editor_custom_test");
+    assert(customLoadedPath != nullptr);
+    assert(std::filesystem::path(*customLoadedPath) == customEnvironmentPath);
+    std::filesystem::remove(customEnvironmentPath);
+    registry.loadDefaults();
+    assert(registry.findEnvironment("editor_custom_test") == nullptr);
+
     const auto resolvedBrick = resolveMaterialDefinition("brick_wall_old", registry.materials());
     assert(resolvedBrick.shadingModel == MaterialKind::Brick);
     assert(nearlyEqualVec3(resolvedBrick.baseColor, glm::vec3(0.98f, 0.95f, 0.92f)));
@@ -104,6 +122,54 @@ int main() {
     assert(cloister->id == "cloister_daylight");
     assert(cloister->sky.enabled);
     assert(cloister->lighting.sun.enabled);
+
+    EnvironmentDefinition roundtrip;
+    roundtrip.id = "editor_roundtrip_test";
+    roundtrip.post.toneMapMode = 0;
+    roundtrip.post.patternScale = 96.0f;
+    roundtrip.post.depthViewScale = 0.133f;
+    roundtrip.post.edgeThreshold = 0.27f;
+    roundtrip.sky.enabled = true;
+    roundtrip.sky.panoramaPath = "assets/skies/test_panorama.jpg";
+    roundtrip.sky.panoramaTint = glm::vec3(0.91f, 0.87f, 0.79f);
+    roundtrip.sky.panoramaStrength = 0.72f;
+    roundtrip.sky.panoramaYawOffset = 24.0f;
+    roundtrip.sky.cubemapFacePaths = {
+        "assets/skies/test_cube/px.png",
+        "assets/skies/test_cube/nx.png",
+        "assets/skies/test_cube/py.png",
+        "assets/skies/test_cube/ny.png",
+        "assets/skies/test_cube/pz.png",
+        "assets/skies/test_cube/nz.png",
+    };
+    roundtrip.sky.cubemapTint = glm::vec3(0.84f, 0.88f, 0.95f);
+    roundtrip.sky.cubemapStrength = 0.61f;
+    roundtrip.sky.cloudLayerAPath = "assets/skies/cloud_a.png";
+    roundtrip.sky.cloudLayerBPath = "assets/skies/cloud_b.png";
+    roundtrip.sky.horizonLayerPath = "assets/skies/horizon.png";
+    roundtrip.lighting.sun.enabled = true;
+    roundtrip.lighting.sun.intensity = 1.27f;
+
+    const auto roundtripPath = std::filesystem::temp_directory_path() / "editor_roundtrip_test.environment";
+    saveEnvironmentDefinitionAsset(roundtripPath.string(), roundtrip);
+    const auto loadedRoundtrip = loadEnvironmentDefinitionAsset(roundtripPath.string());
+    std::filesystem::remove(roundtripPath);
+
+    assert(loadedRoundtrip.id == roundtrip.id);
+    assert(loadedRoundtrip.post.toneMapMode == 0);
+    assert(nearlyEqual(loadedRoundtrip.post.patternScale, 96.0f));
+    assert(nearlyEqual(loadedRoundtrip.post.depthViewScale, 0.133f));
+    assert(nearlyEqual(loadedRoundtrip.post.edgeThreshold, 0.27f));
+    assert(loadedRoundtrip.sky.panoramaPath == roundtrip.sky.panoramaPath);
+    assert(nearlyEqualVec3(loadedRoundtrip.sky.panoramaTint, roundtrip.sky.panoramaTint));
+    assert(nearlyEqual(loadedRoundtrip.sky.panoramaStrength, roundtrip.sky.panoramaStrength));
+    assert(nearlyEqual(loadedRoundtrip.sky.panoramaYawOffset, roundtrip.sky.panoramaYawOffset));
+    assert(loadedRoundtrip.sky.cubemapFacePaths == roundtrip.sky.cubemapFacePaths);
+    assert(nearlyEqualVec3(loadedRoundtrip.sky.cubemapTint, roundtrip.sky.cubemapTint));
+    assert(nearlyEqual(loadedRoundtrip.sky.cubemapStrength, roundtrip.sky.cubemapStrength));
+    assert(loadedRoundtrip.sky.cloudLayerAPath == roundtrip.sky.cloudLayerAPath);
+    assert(loadedRoundtrip.sky.cloudLayerBPath == roundtrip.sky.cloudLayerBPath);
+    assert(loadedRoundtrip.sky.horizonLayerPath == roundtrip.sky.horizonLayerPath);
 
     return 0;
 }

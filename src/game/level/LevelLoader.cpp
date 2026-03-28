@@ -73,7 +73,8 @@ void LevelLoader::load(Application& app, const LevelLoadRequest& request) {
     }
     registry.ctx().insert_or_assign(MeshAssetProvider{&context_.meshLibrary});
 
-    const LevelDef level = loadLevelDef(resolveProjectPath(request.levelPath));
+    const LevelDef rawLevel = loadLevelDef(resolveProjectPath(request.levelPath));
+    const LevelDef level = resolveLevelHierarchy(rawLevel);
     registry.ctx().insert_or_assign(ActiveEnvironmentProfile{request.levelId, level.environmentId, level.environmentProfile});
 
     LevelBuilder builder(context_);
@@ -106,11 +107,11 @@ void LevelLoader::load(Application& app, const LevelLoadRequest& request) {
     }
 
     for (const auto& placement : level.boxColliders) {
-        builder.addBoxCollider(placement.position, placement.halfExtents);
+        builder.addBoxCollider(placement.position, placement.halfExtents, placement.rotation);
     }
 
     for (const auto& placement : level.cylinderColliders) {
-        builder.addCylinderCollider(placement.position, placement.radius, placement.halfHeight);
+        builder.addCylinderCollider(placement.position, placement.radius, placement.halfHeight, placement.rotation);
     }
 
     for (const auto& placement : level.archetypes) {

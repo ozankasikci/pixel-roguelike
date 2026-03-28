@@ -47,6 +47,7 @@ target_compile_definitions(test_content_registry PRIVATE
     SKILL_DEF_FILE="${CMAKE_SOURCE_DIR}/assets/defs/skills/cathedral_attunement.skill"
     CHECKPOINT_ARCHETYPE_FILE="${CMAKE_SOURCE_DIR}/assets/prefabs/gameplay/checkpoint.prefab"
     DOOR_ARCHETYPE_FILE="${CMAKE_SOURCE_DIR}/assets/prefabs/gameplay/double_door.prefab"
+    ENVIRONMENT_DIR="${CMAKE_SOURCE_DIR}/assets/defs/environments"
 )
 add_test(NAME content_registry COMMAND test_content_registry)
 
@@ -137,3 +138,21 @@ add_executable(test_editor_command_stack
 target_include_directories(test_editor_command_stack PRIVATE ${CMAKE_SOURCE_DIR}/src)
 target_link_libraries(test_editor_command_stack PRIVATE game engine_rendering EnTT::EnTT glm::glm)
 add_test(NAME editor_command_stack COMMAND test_editor_command_stack)
+
+add_executable(test_editor_layout_presets
+    test_editor_layout_presets.cpp
+    ${CMAKE_SOURCE_DIR}/src/engine/core/PathUtils.cpp
+    ${CMAKE_SOURCE_DIR}/src/editor/EditorLayoutPreset.cpp
+)
+target_include_directories(test_editor_layout_presets PRIVATE ${CMAKE_SOURCE_DIR}/src)
+target_link_libraries(test_editor_layout_presets PRIVATE glm::glm)
+add_test(NAME editor_layout_presets COMMAND test_editor_layout_presets)
+
+add_executable(test_editor_hierarchy
+    test_editor_hierarchy.cpp
+    ${CMAKE_SOURCE_DIR}/src/editor/EditorSceneDocument.cpp
+    ${CMAKE_SOURCE_DIR}/src/editor/EditorSceneSerializer.cpp
+)
+target_include_directories(test_editor_hierarchy PRIVATE ${CMAKE_SOURCE_DIR}/src)
+target_link_libraries(test_editor_hierarchy PRIVATE game engine_rendering EnTT::EnTT glm::glm)
+add_test(NAME editor_hierarchy COMMAND test_editor_hierarchy)

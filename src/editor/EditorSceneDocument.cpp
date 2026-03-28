@@ -8,10 +8,58 @@
 #include <filesystem>
 #include <sstream>
 
+#define GLM_ENABLE_EXPERIMENTAL
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtx/matrix_decompose.hpp>
+#include <glm/gtx/quaternion.hpp>
+
 namespace {
 
 std::string defaultEnvironmentAssetPath(const std::string& id) {
     return "assets/defs/environments/" + id + ".environment";
+}
+
+glm::mat4 makeTransformMatrix(const glm::vec3& position,
+                              const glm::vec3& rotationDegrees,
+                              const glm::vec3& scale) {
+    glm::mat4 matrix = glm::translate(glm::mat4(1.0f), position);
+    matrix = glm::rotate(matrix, glm::radians(rotationDegrees.x), glm::vec3(1.0f, 0.0f, 0.0f));
+    matrix = glm::rotate(matrix, glm::radians(rotationDegrees.y), glm::vec3(0.0f, 1.0f, 0.0f));
+    matrix = glm::rotate(matrix, glm::radians(rotationDegrees.z), glm::vec3(0.0f, 0.0f, 1.0f));
+    matrix = glm::scale(matrix, scale);
+    return matrix;
+}
+
+glm::mat3 extractRotationMatrix(const glm::mat4& matrix) {
+    glm::mat3 basis(matrix);
+    for (int column = 0; column < 3; ++column) {
+        const float length = glm::length(basis[column]);
+        if (length > 0.0001f) {
+            basis[column] /= length;
+        }
+    }
+    return basis;
+}
+
+bool decomposeTransformMatrix(const glm::mat4& matrix,
+                              glm::vec3& position,
+                              glm::vec3& rotationDegrees,
+                              glm::vec3& scale) {
+    glm::vec3 skew(0.0f);
+    glm::vec4 perspective(0.0f);
+    glm::quat orientation;
+    if (!glm::decompose(matrix, scale, orientation, position, skew, perspective)) {
+        return false;
+    }
+    rotationDegrees = glm::degrees(glm::eulerAngles(orientation));
+    return true;
+}
+
+glm::vec3 safeNormalize(const glm::vec3& value, const glm::vec3& fallback) {
+    if (glm::dot(value, value) <= 0.0001f) {
+        return fallback;
+    }
+    return glm::normalize(value);
 }
 
 } // namespace
@@ -96,6 +144,49 @@ void EditorSceneDocument::setEnvironmentId(const std::string& environmentId, con
     markEnvironmentDirty();
 }
 
+void EditorSceneDocument::renameEnvironmentId(std::string environmentId) {
+    if (environment_.id == environmentId) {
+        return;
+    }
+    environment_.id = std::move(environmentId);
+    if (tryParseEnvironmentProfileToken(environment_.id, legacyEnvironmentProfile_)) {
+        // keep parsed legacy profile for backward-compatible defaults and tests
+    } else {
+        legacyEnvironmentProfile_ = EnvironmentProfile::Neutral;
+    }
+    markSceneDirty();
+    markEnvironmentDirty();
+}
+
+bool EditorSceneDocument::reloadEnvironmentFromRegistry(const ContentRegistry& content) {
+    if (environment_.id.empty()) {
+        return false;
+    }
+    const std::string environmentId = environment_.id;
+
+    if (const EnvironmentDefinition* definition = content.findEnvironment(environmentId)) {
+        environment_ = *definition;
+    } else {
+        EnvironmentProfile builtIn = EnvironmentProfile::Neutral;
+        environment_ = makeEnvironmentDefinition(tryParseEnvironmentProfileToken(environmentId, builtIn)
+            ? builtIn
+            : EnvironmentProfile::Neutral);
+        environment_.id = environmentId;
+    }
+
+    if (tryParseEnvironmentProfileToken(environmentId, legacyEnvironmentProfile_)) {
+        // keep parsed legacy profile for backward-compatible defaults and tests
+    } else {
+        legacyEnvironmentProfile_ = EnvironmentProfile::Neutral;
+    }
+    markEnvironmentDirty();
+    return true;
+}
+
+void EditorSceneDocument::markEnvironmentSaved() {
+    setDirtyFlags(sceneDirty_, false);
+}
+
 EditorSceneObject* EditorSceneDocument::findObject(std::uint64_t id) {
     auto it = std::find_if(objects_.begin(), objects_.end(), [&](const EditorSceneObject& object) {
         return object.id == id;
@@ -141,6 +232,205 @@ std::uint64_t EditorSceneDocument::addArchetype(const LevelArchetypePlacement& p
     return addObject(EditorSceneObjectKind::Archetype, placement);
 }
 
+std::uint64_t EditorSceneDocument::parentObjectId(std::uint64_t id) const {
+    const EditorSceneObject* object = findObject(id);
+    if (object == nullptr) {
+        return 0;
+    }
+    const std::string* parentNodeId = parentNodeIdPtr(*object);
+    if (parentNodeId == nullptr || parentNodeId->empty()) {
+        return 0;
+    }
+    return findObjectIdByNodeId(*parentNodeId);
+}
+
+std::vector<std::uint64_t> EditorSceneDocument::childObjectIds(std::uint64_t id) const {
+    std::vector<std::uint64_t> children;
+    const EditorSceneObject* parent = findObject(id);
+    if (parent == nullptr) {
+        return children;
+    }
+    const std::string* nodeId = nodeIdPtr(*parent);
+    if (nodeId == nullptr || nodeId->empty()) {
+        return children;
+    }
+    for (const auto& object : objects_) {
+        const std::string* parentNodeId = parentNodeIdPtr(object);
+        if (parentNodeId != nullptr && *parentNodeId == *nodeId) {
+            children.push_back(object.id);
+        }
+    }
+    return children;
+}
+
+std::vector<std::uint64_t> EditorSceneDocument::rootObjectIds() const {
+    std::vector<std::uint64_t> roots;
+    for (const auto& object : objects_) {
+        if (parentObjectId(object.id) == 0) {
+            roots.push_back(object.id);
+        }
+    }
+    return roots;
+}
+
+bool EditorSceneDocument::supportsParenting(std::uint64_t id) const {
+    const EditorSceneObject* object = findObject(id);
+    if (object == nullptr) {
+        return false;
+    }
+    return object->kind == EditorSceneObjectKind::Mesh
+        || object->kind == EditorSceneObjectKind::BoxCollider
+        || object->kind == EditorSceneObjectKind::CylinderCollider
+        || object->kind == EditorSceneObjectKind::Archetype;
+}
+
+bool EditorSceneDocument::canSetParent(std::uint64_t childId, std::uint64_t parentId) const {
+    if (childId == 0 || parentId == 0 || childId == parentId) {
+        return false;
+    }
+    if (!supportsParenting(childId) || !supportsParenting(parentId)) {
+        return false;
+    }
+    const EditorSceneObject* child = findObject(childId);
+    const EditorSceneObject* parent = findObject(parentId);
+    if (child == nullptr || parent == nullptr) {
+        return false;
+    }
+
+    std::uint64_t probe = parentId;
+    while (probe != 0) {
+        if (probe == childId) {
+            return false;
+        }
+        probe = parentObjectId(probe);
+    }
+    return true;
+}
+
+bool EditorSceneDocument::setParent(std::uint64_t childId, std::uint64_t parentId) {
+    if (!canSetParent(childId, parentId)) {
+        return false;
+    }
+
+    EditorSceneObject* child = findObject(childId);
+    EditorSceneObject* parent = findObject(parentId);
+    if (child == nullptr || parent == nullptr) {
+        return false;
+    }
+
+    const glm::mat4 childWorld = worldTransformMatrix(childId);
+    ensureObjectNodeId(*parent);
+    std::string* childParentNodeId = parentNodeIdPtr(*child);
+    const std::string* parentNodeId = nodeIdPtr(*parent);
+    if (childParentNodeId == nullptr || parentNodeId == nullptr) {
+        return false;
+    }
+    *childParentNodeId = *parentNodeId;
+    if (!applyWorldTransform(childId, childWorld)) {
+        return false;
+    }
+    markSceneDirty();
+    return true;
+}
+
+bool EditorSceneDocument::clearParent(std::uint64_t childId) {
+    EditorSceneObject* child = findObject(childId);
+    if (child == nullptr) {
+        return false;
+    }
+    std::string* parentNodeId = parentNodeIdPtr(*child);
+    if (parentNodeId == nullptr || parentNodeId->empty()) {
+        return false;
+    }
+    const glm::mat4 childWorld = worldTransformMatrix(childId);
+    parentNodeId->clear();
+    if (!applyWorldTransform(childId, childWorld)) {
+        return false;
+    }
+    markSceneDirty();
+    return true;
+}
+
+glm::mat4 EditorSceneDocument::worldTransformMatrix(std::uint64_t id) const {
+    const EditorSceneObject* object = findObject(id);
+    if (object == nullptr) {
+        return glm::mat4(1.0f);
+    }
+    return localParentMatrix(*object) * localTransformMatrix(*object);
+}
+
+glm::mat3 EditorSceneDocument::worldRotationMatrix(std::uint64_t id) const {
+    return extractRotationMatrix(worldTransformMatrix(id));
+}
+
+bool EditorSceneDocument::applyWorldTransform(std::uint64_t id, const glm::mat4& worldMatrix) {
+    EditorSceneObject* object = findObject(id);
+    if (object == nullptr) {
+        return false;
+    }
+
+    const glm::mat4 localMatrix = glm::inverse(localParentMatrix(*object)) * worldMatrix;
+    glm::vec3 position(0.0f), rotation(0.0f), scale(1.0f);
+
+    switch (object->kind) {
+    case EditorSceneObjectKind::Mesh: {
+        auto& mesh = std::get<LevelMeshPlacement>(object->payload);
+        if (!decomposeTransformMatrix(localMatrix, position, rotation, scale)) {
+            return false;
+        }
+        mesh.position = position;
+        mesh.rotation = rotation;
+        mesh.scale = glm::max(scale, glm::vec3(0.01f));
+        break;
+    }
+    case EditorSceneObjectKind::Light: {
+        auto& light = std::get<LevelLightPlacement>(object->payload);
+        if (light.type != LightType::Directional) {
+            light.position = glm::vec3(localMatrix[3]);
+        }
+        break;
+    }
+    case EditorSceneObjectKind::BoxCollider: {
+        auto& box = std::get<LevelBoxColliderPlacement>(object->payload);
+        if (!decomposeTransformMatrix(localMatrix, position, rotation, scale)) {
+            return false;
+        }
+        box.position = position;
+        box.rotation = rotation;
+        box.halfExtents = glm::max(scale * 0.5f, glm::vec3(0.01f));
+        break;
+    }
+    case EditorSceneObjectKind::CylinderCollider: {
+        auto& cylinder = std::get<LevelCylinderColliderPlacement>(object->payload);
+        if (!decomposeTransformMatrix(localMatrix, position, rotation, scale)) {
+            return false;
+        }
+        cylinder.position = position;
+        cylinder.rotation = rotation;
+        cylinder.radius = std::max(0.05f, (std::abs(scale.x) + std::abs(scale.z)) * 0.25f);
+        cylinder.halfHeight = std::max(0.05f, std::abs(scale.y) * 0.5f);
+        break;
+    }
+    case EditorSceneObjectKind::PlayerSpawn: {
+        auto& spawn = std::get<LevelPlayerSpawn>(object->payload);
+        spawn.position = glm::vec3(localMatrix[3]);
+        break;
+    }
+    case EditorSceneObjectKind::Archetype: {
+        auto& archetype = std::get<LevelArchetypePlacement>(object->payload);
+        if (!decomposeTransformMatrix(localMatrix, position, rotation, scale)) {
+            return false;
+        }
+        archetype.position = position;
+        archetype.yawDegrees = rotation.y;
+        break;
+    }
+    }
+
+    markSceneDirty();
+    return true;
+}
+
 std::uint64_t EditorSceneDocument::duplicateObject(std::uint64_t id) {
     const EditorSceneObject* object = findObject(id);
     if (object == nullptr || object->kind == EditorSceneObjectKind::PlayerSpawn) {
@@ -153,9 +443,17 @@ void EditorSceneDocument::eraseObjects(const std::vector<std::uint64_t>& ids) {
     if (ids.empty()) {
         return;
     }
+    std::vector<std::uint64_t> expandedIds = ids;
+    for (std::size_t index = 0; index < expandedIds.size(); ++index) {
+        for (const auto childId : childObjectIds(expandedIds[index])) {
+            if (std::find(expandedIds.begin(), expandedIds.end(), childId) == expandedIds.end()) {
+                expandedIds.push_back(childId);
+            }
+        }
+    }
     objects_.erase(
         std::remove_if(objects_.begin(), objects_.end(), [&](const EditorSceneObject& object) {
-            return std::find(ids.begin(), ids.end(), object.id) != ids.end();
+            return std::find(expandedIds.begin(), expandedIds.end(), object.id) != expandedIds.end();
         }),
         objects_.end());
     markSceneDirty();
@@ -238,7 +536,14 @@ void EditorSceneDocument::setDirtyFlags(bool sceneDirty, bool environmentDirty) 
 
 std::uint64_t EditorSceneDocument::addObject(EditorSceneObjectKind kind, const EditorSceneObjectPayload& payload) {
     const std::uint64_t objectId = nextObjectId_++;
-    objects_.push_back(EditorSceneObject{objectId, kind, payload});
+    EditorSceneObject object{objectId, kind, payload};
+    if (std::string* nodeId = nodeIdPtr(object)) {
+        if (nodeId->empty() || findObjectIdByNodeId(*nodeId) != 0) {
+            nodeId->clear();
+        }
+    }
+    objects_.push_back(std::move(object));
+    ensureObjectNodeId(objects_.back());
     markSceneDirty();
     return objectId;
 }
@@ -251,6 +556,97 @@ void EditorSceneDocument::loadEnvironment(const ContentRegistry& content, const 
     if (const EnvironmentDefinition* definition = content.findEnvironment(environment_.id)) {
         environment_ = *definition;
     }
+}
+
+std::uint64_t EditorSceneDocument::findObjectIdByNodeId(const std::string& nodeId) const {
+    if (nodeId.empty()) {
+        return 0;
+    }
+    for (const auto& object : objects_) {
+        const std::string* objectNodeId = nodeIdPtr(object);
+        if (objectNodeId != nullptr && *objectNodeId == nodeId) {
+            return object.id;
+        }
+    }
+    return 0;
+}
+
+std::string* EditorSceneDocument::nodeIdPtr(EditorSceneObject& object) {
+    return std::visit([](auto& placement) -> std::string* { return &placement.nodeId; }, object.payload);
+}
+
+const std::string* EditorSceneDocument::nodeIdPtr(const EditorSceneObject& object) const {
+    return std::visit([](const auto& placement) -> const std::string* { return &placement.nodeId; }, object.payload);
+}
+
+std::string* EditorSceneDocument::parentNodeIdPtr(EditorSceneObject& object) {
+    return std::visit([](auto& placement) -> std::string* { return &placement.parentNodeId; }, object.payload);
+}
+
+const std::string* EditorSceneDocument::parentNodeIdPtr(const EditorSceneObject& object) const {
+    return std::visit([](const auto& placement) -> const std::string* { return &placement.parentNodeId; }, object.payload);
+}
+
+std::string EditorSceneDocument::ensureObjectNodeId(EditorSceneObject& object) {
+    std::string* nodeId = nodeIdPtr(object);
+    if (nodeId == nullptr) {
+        return {};
+    }
+    if (nodeId->empty()) {
+        *nodeId = "node_" + std::to_string(object.id);
+    }
+    return *nodeId;
+}
+
+glm::mat4 EditorSceneDocument::localTransformMatrix(const EditorSceneObject& object) const {
+    switch (object.kind) {
+    case EditorSceneObjectKind::Mesh: {
+        const auto& mesh = std::get<LevelMeshPlacement>(object.payload);
+        return makeTransformMatrix(mesh.position, mesh.rotation, mesh.scale);
+    }
+    case EditorSceneObjectKind::Light: {
+        const auto& light = std::get<LevelLightPlacement>(object.payload);
+        if (light.type == LightType::Directional) {
+            return glm::mat4(1.0f);
+        }
+        return makeTransformMatrix(light.position, glm::vec3(0.0f), glm::vec3(1.0f));
+    }
+    case EditorSceneObjectKind::BoxCollider: {
+        const auto& box = std::get<LevelBoxColliderPlacement>(object.payload);
+        return makeTransformMatrix(box.position, box.rotation, box.halfExtents * 2.0f);
+    }
+    case EditorSceneObjectKind::CylinderCollider: {
+        const auto& cylinder = std::get<LevelCylinderColliderPlacement>(object.payload);
+        return makeTransformMatrix(cylinder.position,
+                                   cylinder.rotation,
+                                   glm::vec3(cylinder.radius * 2.0f, cylinder.halfHeight * 2.0f, cylinder.radius * 2.0f));
+    }
+    case EditorSceneObjectKind::PlayerSpawn: {
+        const auto& spawn = std::get<LevelPlayerSpawn>(object.payload);
+        return makeTransformMatrix(spawn.position, glm::vec3(0.0f), glm::vec3(1.0f));
+    }
+    case EditorSceneObjectKind::Archetype: {
+        const auto& archetype = std::get<LevelArchetypePlacement>(object.payload);
+        return makeTransformMatrix(archetype.position, glm::vec3(0.0f, archetype.yawDegrees, 0.0f), glm::vec3(1.0f));
+    }
+    }
+    return glm::mat4(1.0f);
+}
+
+glm::mat4 EditorSceneDocument::localParentMatrix(const EditorSceneObject& object) const {
+    const std::string* parentNodeId = parentNodeIdPtr(object);
+    if (parentNodeId == nullptr || parentNodeId->empty()) {
+        return glm::mat4(1.0f);
+    }
+    const std::uint64_t parentId = findObjectIdByNodeId(*parentNodeId);
+    if (parentId == 0) {
+        return glm::mat4(1.0f);
+    }
+    return worldTransformMatrix(parentId);
+}
+
+glm::mat3 EditorSceneDocument::localParentRotationMatrix(const EditorSceneObject& object) const {
+    return extractRotationMatrix(localParentMatrix(object));
 }
 
 const char* editorSceneObjectKindName(EditorSceneObjectKind kind) {

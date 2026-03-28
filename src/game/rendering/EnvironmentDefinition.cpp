@@ -246,8 +246,16 @@ EnvironmentDefinition loadEnvironmentDefinitionAsset(const std::string& path) {
             definition.post.enableSharpen = parseBoolRecord(tokens, path, lineNumber, key);
             continue;
         }
+        if (key == "tone_map_mode") {
+            definition.post.toneMapMode = parseIntRecord(tokens, path, lineNumber, key);
+            continue;
+        }
         if (key == "threshold_bias") {
             definition.post.thresholdBias = parseFloatRecord(tokens, path, lineNumber, key);
+            continue;
+        }
+        if (key == "pattern_scale") {
+            definition.post.patternScale = parseFloatRecord(tokens, path, lineNumber, key);
             continue;
         }
         if (key == "edge_threshold") {
@@ -260,6 +268,10 @@ EnvironmentDefinition loadEnvironmentDefinitionAsset(const std::string& path) {
         }
         if (key == "fog_start") {
             definition.post.fogStart = parseFloatRecord(tokens, path, lineNumber, key);
+            continue;
+        }
+        if (key == "depth_view_scale") {
+            definition.post.depthViewScale = parseFloatRecord(tokens, path, lineNumber, key);
             continue;
         }
         if (key == "exposure") {
@@ -552,10 +564,13 @@ std::string serializeEnvironmentDefinitionAsset(const EnvironmentDefinition& def
     writeBool(out, "enable_grain", definition.post.enableGrain);
     writeBool(out, "enable_scanlines", definition.post.enableScanlines);
     writeBool(out, "enable_sharpen", definition.post.enableSharpen);
+    writeInt(out, "tone_map_mode", definition.post.toneMapMode);
     writeFloat(out, "threshold_bias", definition.post.thresholdBias);
+    writeFloat(out, "pattern_scale", definition.post.patternScale);
     writeFloat(out, "edge_threshold", definition.post.edgeThreshold);
     writeFloat(out, "fog_density", definition.post.fogDensity);
     writeFloat(out, "fog_start", definition.post.fogStart);
+    writeFloat(out, "depth_view_scale", definition.post.depthViewScale);
     writeFloat(out, "exposure", definition.post.exposure);
     writeFloat(out, "gamma", definition.post.gamma);
     writeFloat(out, "contrast", definition.post.contrast);

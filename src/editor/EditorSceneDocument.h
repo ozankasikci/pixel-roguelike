@@ -7,6 +7,7 @@
 #include <string>
 #include <variant>
 #include <vector>
+#include <glm/glm.hpp>
 
 class ContentRegistry;
 
@@ -57,6 +58,9 @@ public:
     EnvironmentDefinition& environment() { return environment_; }
     const EnvironmentDefinition& environment() const { return environment_; }
     void setEnvironmentId(const std::string& environmentId, const ContentRegistry& content);
+    void renameEnvironmentId(std::string environmentId);
+    bool reloadEnvironmentFromRegistry(const ContentRegistry& content);
+    void markEnvironmentSaved();
 
     const std::vector<EditorSceneObject>& objects() const { return objects_; }
     std::vector<EditorSceneObject>& objects() { return objects_; }
@@ -71,6 +75,16 @@ public:
     std::uint64_t addArchetype(const LevelArchetypePlacement& placement);
     std::uint64_t duplicateObject(std::uint64_t id);
     void eraseObjects(const std::vector<std::uint64_t>& ids);
+    std::uint64_t parentObjectId(std::uint64_t id) const;
+    std::vector<std::uint64_t> childObjectIds(std::uint64_t id) const;
+    std::vector<std::uint64_t> rootObjectIds() const;
+    bool canSetParent(std::uint64_t childId, std::uint64_t parentId) const;
+    bool setParent(std::uint64_t childId, std::uint64_t parentId);
+    bool clearParent(std::uint64_t childId);
+    bool supportsParenting(std::uint64_t id) const;
+    glm::mat4 worldTransformMatrix(std::uint64_t id) const;
+    glm::mat3 worldRotationMatrix(std::uint64_t id) const;
+    bool applyWorldTransform(std::uint64_t id, const glm::mat4& worldMatrix);
 
     bool sceneDirty() const { return sceneDirty_; }
     bool environmentDirty() const { return environmentDirty_; }
@@ -96,6 +110,15 @@ public:
 private:
     std::uint64_t addObject(EditorSceneObjectKind kind, const EditorSceneObjectPayload& payload);
     void loadEnvironment(const ContentRegistry& content, const LevelDef& level);
+    std::uint64_t findObjectIdByNodeId(const std::string& nodeId) const;
+    std::string* nodeIdPtr(EditorSceneObject& object);
+    const std::string* nodeIdPtr(const EditorSceneObject& object) const;
+    std::string* parentNodeIdPtr(EditorSceneObject& object);
+    const std::string* parentNodeIdPtr(const EditorSceneObject& object) const;
+    std::string ensureObjectNodeId(EditorSceneObject& object);
+    glm::mat4 localTransformMatrix(const EditorSceneObject& object) const;
+    glm::mat4 localParentMatrix(const EditorSceneObject& object) const;
+    glm::mat3 localParentRotationMatrix(const EditorSceneObject& object) const;
 
     std::string scenePath_;
     std::vector<EditorSceneObject> objects_;

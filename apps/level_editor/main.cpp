@@ -11,6 +11,7 @@
 #include "engine/rendering/post/StylizePass.h"
 #include "engine/ui/ImGuiLayer.h"
 #include "editor/EditorCommand.h"
+#include "editor/EditorLayoutPreset.h"
 #include "editor/EditorPreviewWorld.h"
 #include "editor/EditorSceneDocument.h"
 #include "editor/EditorSelectionSystem.h"
@@ -38,6 +39,7 @@
 #include <cstdint>
 #include <cstdio>
 #include <filesystem>
+#include <cstring>
 #include <memory>
 #include <optional>
 #include <set>
@@ -72,6 +74,11 @@ struct EditorUiState {
     EditorTransformTool tool = EditorTransformTool::Translate;
     EditorPreviewMode previewMode = EditorPreviewMode::Final;
     bool playPreview = false;
+    bool showOutliner = true;
+    bool showInspector = true;
+    bool showAssetBrowser = true;
+    bool showEnvironment = true;
+    bool showViewport = true;
     bool showColliders = true;
     bool showLightHelpers = true;
     bool showSpawnMarker = true;
@@ -84,6 +91,8 @@ struct EditorUiState {
     std::string selectedMaterialId = "stone_default";
     std::string selectedArchetypeId = "checkpoint_shrine";
     std::string pendingScenePath = "assets/scenes/silos_cloister.scene";
+    std::string activeLayoutPreset = "default";
+    char layoutNameBuffer[64] = "default";
 };
 
 struct EditorPlacementState {
@@ -119,6 +128,8 @@ struct EditorPendingCommand {
     }
 };
 
+MaterialKind resolvePlacementMaterialKind(const std::string& materialId, const ContentRegistry& content);
+
 struct EditorSelectionPickerState {
     std::vector<EditorHitResult> hits;
     ImVec2 anchorScreen{0.0f, 0.0f};
@@ -136,6 +147,53 @@ struct EditorSelectionPickerState {
         visibleUntilSeconds = 0.0;
     }
 };
+
+EditorLayoutVisibility captureLayoutVisibility(const EditorUiState& ui) {
+    return EditorLayoutVisibility{
+        ui.showOutliner,
+        ui.showInspector,
+        ui.showAssetBrowser,
+        ui.showEnvironment,
+        ui.showViewport,
+    };
+}
+
+void applyLayoutVisibility(EditorUiState& ui, const EditorLayoutVisibility& visibility) {
+    ui.showOutliner = visibility.showOutliner;
+    ui.showInspector = visibility.showInspector;
+    ui.showAssetBrowser = visibility.showAssetBrowser;
+    ui.showEnvironment = visibility.showEnvironment;
+    ui.showViewport = visibility.showViewport;
+}
+
+bool saveLayoutPresetFromUi(const EditorUiState& ui, const std::string& layoutName) {
+    const std::string trimmedName = layoutName;
+    if (trimmedName.empty()) {
+        return false;
+    }
+
+    const char* iniText = ImGui::SaveIniSettingsToMemory();
+    EditorLayoutPreset preset;
+    preset.name = trimmedName;
+    preset.visibility = captureLayoutVisibility(ui);
+    preset.imguiIni = iniText != nullptr ? std::string(iniText) : std::string();
+    saveEditorLayoutPreset(editorLayoutPresetPath(trimmedName), preset);
+    return true;
+}
+
+bool loadLayoutPresetIntoUi(EditorUiState& ui, const std::string& layoutName) {
+    if (layoutName.empty()) {
+        return false;
+    }
+
+    const EditorLayoutPreset preset = loadEditorLayoutPreset(editorLayoutPresetPath(layoutName));
+    applyLayoutVisibility(ui, preset.visibility);
+    ImGui::LoadIniSettingsFromMemory(preset.imguiIni.c_str(), preset.imguiIni.size());
+    const std::string storedName = std::filesystem::path(editorLayoutPresetPath(layoutName)).stem().string();
+    ui.activeLayoutPreset = storedName;
+    std::snprintf(ui.layoutNameBuffer, sizeof(ui.layoutNameBuffer), "%s", preset.name.c_str());
+    return true;
+}
 
 void copyPayloadString(char (&dst)[64], const std::string& src) {
     std::snprintf(dst, sizeof(dst), "%s", src.c_str());
@@ -293,6 +351,19 @@ bool isSelected(const std::vector<std::uint64_t>& selectedIds, std::uint64_t id)
     return std::find(selectedIds.begin(), selectedIds.end(), id) != selectedIds.end();
 }
 
+std::vector<EditorSceneObject*> selectedMeshObjects(EditorSceneDocument& document,
+                                                    const std::vector<std::uint64_t>& selectedIds) {
+    std::vector<EditorSceneObject*> meshes;
+    meshes.reserve(selectedIds.size());
+    for (const std::uint64_t id : selectedIds) {
+        EditorSceneObject* object = document.findObject(id);
+        if (object != nullptr && object->kind == EditorSceneObjectKind::Mesh) {
+            meshes.push_back(object);
+        }
+    }
+    return meshes;
+}
+
 bool isViewportSelectableKind(const EditorSelectionHandle& handle, const EditorUiState& ui) {
     switch (handle.objectKind) {
     case EditorSceneObjectKind::BoxCollider:
@@ -319,6 +390,58 @@ std::vector<EditorSelectionHandle> buildViewportSelectionHandles(const std::vect
         }
     }
     return filtered;
+}
+
+bool applyMaterialToMeshes(const std::vector<EditorSceneObject*>& meshObjects,
+                           const std::string& materialId,
+                           const ContentRegistry& content,
+                           EditorSceneDocument& document) {
+    if (meshObjects.empty()) {
+        return false;
+    }
+
+    const MaterialKind materialKind = resolvePlacementMaterialKind(materialId, content);
+    bool changed = false;
+    for (EditorSceneObject* object : meshObjects) {
+        if (object == nullptr || object->kind != EditorSceneObjectKind::Mesh) {
+            continue;
+        }
+        auto& mesh = std::get<LevelMeshPlacement>(object->payload);
+        if (mesh.materialId == materialId && mesh.material == materialKind) {
+            continue;
+        }
+        mesh.materialId = materialId;
+        mesh.material = materialKind;
+        changed = true;
+    }
+
+    if (changed) {
+        document.markSceneDirty();
+    }
+    return changed;
+}
+
+std::string materialSelectionLabel(const std::vector<EditorSceneObject*>& meshObjects) {
+    if (meshObjects.empty()) {
+        return "No Mesh Selected";
+    }
+
+    const auto& firstMesh = std::get<LevelMeshPlacement>(meshObjects.front()->payload);
+    const std::string firstMaterial = firstMesh.materialId.empty()
+        ? std::string(defaultMaterialIdForKind(firstMesh.material.value_or(MaterialKind::Stone)))
+        : firstMesh.materialId;
+
+    for (std::size_t index = 1; index < meshObjects.size(); ++index) {
+        const auto& mesh = std::get<LevelMeshPlacement>(meshObjects[index]->payload);
+        const std::string materialId = mesh.materialId.empty()
+            ? std::string(defaultMaterialIdForKind(mesh.material.value_or(MaterialKind::Stone)))
+            : mesh.materialId;
+        if (materialId != firstMaterial) {
+            return "<mixed>";
+        }
+    }
+
+    return firstMaterial;
 }
 
 void toggleSelection(std::vector<std::uint64_t>& selectedIds, std::uint64_t id, bool additive) {
@@ -622,6 +745,48 @@ void appendHelperObjects(std::vector<RenderObject>& objects,
     }
 }
 
+void appendSelectionOverlays(std::vector<RenderObject>& objects,
+                             const EditorPreviewWorld& world,
+                             const MaterialTextureLibrary& materials,
+                             const std::vector<std::uint64_t>& selectedIds) {
+    if (selectedIds.empty()) {
+        return;
+    }
+
+    Mesh* cube = world.meshLibrary().get("cube");
+    if (cube == nullptr) {
+        return;
+    }
+
+    for (std::size_t index = 0; index < selectedIds.size(); ++index) {
+        const std::uint64_t objectId = selectedIds[index];
+        const EditorObjectBounds* bounds = world.findObjectBounds(objectId);
+        if (bounds == nullptr || !bounds->valid) {
+            continue;
+        }
+
+        const glm::vec3 center = bounds->center();
+        glm::vec3 size = glm::max(bounds->max - bounds->min, glm::vec3(0.12f));
+        size *= 1.035f;
+
+        const bool primary = (index + 1 == selectedIds.size());
+        const glm::vec3 tint = primary
+            ? glm::vec3(1.30f, 0.92f, 0.24f)
+            : glm::vec3(0.50f, 1.00f, 0.62f);
+
+        objects.push_back(RenderObject{
+            cube,
+            makeModelMatrix(center, size),
+            tint,
+            resolveHelperMaterial(materials, MaterialKind::Metal, "metal_default"),
+            true,
+            true,
+            true,
+            primary ? 4.0f : 2.5f
+        });
+    }
+}
+
 void renderShadowPass(const std::vector<RenderObject>& objects,
                       const std::vector<RenderLight>& lights,
                       const Shader& shadowShader,
@@ -679,6 +844,21 @@ bool editColor(const char* label, glm::vec3& value) {
     return ImGui::ColorEdit3(label, &value.x, ImGuiColorEditFlags_Float | ImGuiColorEditFlags_NoInputs);
 }
 
+bool editString(const char* label, std::string& value, const char* hint = nullptr) {
+    char buffer[512]{};
+    std::snprintf(buffer, sizeof(buffer), "%s", value.c_str());
+    bool changed = false;
+    if (hint != nullptr && hint[0] != '\0') {
+        changed = ImGui::InputTextWithHint(label, hint, buffer, sizeof(buffer));
+    } else {
+        changed = ImGui::InputText(label, buffer, sizeof(buffer));
+    }
+    if (changed) {
+        value = buffer;
+    }
+    return changed;
+}
+
 float snappedValue(float value, float snap) {
     if (snap <= 0.0001f) {
         return value;
@@ -731,8 +911,7 @@ bool applyGizmoToSelectedObject(EditorSceneDocument& document,
     bool supported = true;
     switch (object->kind) {
     case EditorSceneObjectKind::Mesh: {
-        const auto& mesh = std::get<LevelMeshPlacement>(object->payload);
-        model = makeModelMatrix(mesh.position, mesh.scale, mesh.rotation);
+        model = document.worldTransformMatrix(object->id);
         break;
     }
     case EditorSceneObjectKind::Light: {
@@ -748,23 +927,21 @@ bool applyGizmoToSelectedObject(EditorSceneDocument& document,
         break;
     }
     case EditorSceneObjectKind::BoxCollider: {
-        const auto& box = std::get<LevelBoxColliderPlacement>(object->payload);
-        model = makeModelMatrix(box.position, box.halfExtents * 2.0f);
+        model = document.worldTransformMatrix(object->id);
         break;
     }
     case EditorSceneObjectKind::CylinderCollider: {
-        const auto& cylinder = std::get<LevelCylinderColliderPlacement>(object->payload);
-        model = makeModelMatrix(cylinder.position, glm::vec3(cylinder.radius * 2.0f, cylinder.halfHeight * 2.0f, cylinder.radius * 2.0f));
+        model = document.worldTransformMatrix(object->id);
         break;
     }
     case EditorSceneObjectKind::PlayerSpawn: {
-        const auto& spawn = std::get<LevelPlayerSpawn>(object->payload);
-        model = makeModelMatrix(spawn.position, glm::vec3(0.5f, 1.4f, 0.5f));
+        glm::mat4 world = document.worldTransformMatrix(object->id);
+        world = glm::scale(world, glm::vec3(0.5f, 1.4f, 0.5f));
+        model = world;
         break;
     }
     case EditorSceneObjectKind::Archetype: {
-        const auto& archetype = std::get<LevelArchetypePlacement>(object->payload);
-        model = makeModelMatrix(archetype.position, glm::vec3(1.0f), glm::vec3(0.0f, archetype.yawDegrees, 0.0f));
+        model = document.worldTransformMatrix(object->id);
         break;
     }
     }
@@ -799,10 +976,9 @@ bool applyGizmoToSelectedObject(EditorSceneDocument& document,
 
     switch (object->kind) {
     case EditorSceneObjectKind::Mesh: {
-        auto& mesh = std::get<LevelMeshPlacement>(object->payload);
-        mesh.position = position;
-        mesh.rotation = rotationDegrees;
-        mesh.scale = glm::max(scale, glm::vec3(0.01f));
+        if (!document.applyWorldTransform(object->id, model)) {
+            return false;
+        }
         break;
     }
     case EditorSceneObjectKind::Light: {
@@ -826,32 +1002,34 @@ bool applyGizmoToSelectedObject(EditorSceneDocument& document,
         break;
     }
     case EditorSceneObjectKind::BoxCollider: {
-        auto& box = std::get<LevelBoxColliderPlacement>(object->payload);
-        box.position = position;
-        box.halfExtents = glm::max(scale * 0.5f, glm::vec3(0.01f));
+        if (!document.applyWorldTransform(object->id, model)) {
+            return false;
+        }
         break;
     }
     case EditorSceneObjectKind::CylinderCollider: {
-        auto& cylinder = std::get<LevelCylinderColliderPlacement>(object->payload);
-        cylinder.position = position;
-        cylinder.radius = std::max(0.05f, scale.x * 0.5f);
-        cylinder.halfHeight = std::max(0.05f, scale.y * 0.5f);
+        if (!document.applyWorldTransform(object->id, model)) {
+            return false;
+        }
         break;
     }
     case EditorSceneObjectKind::PlayerSpawn: {
-        auto& spawn = std::get<LevelPlayerSpawn>(object->payload);
-        spawn.position = position;
+        glm::mat4 spawnWorld = model;
+        spawnWorld[0] = glm::vec4(1.0f, 0.0f, 0.0f, 0.0f);
+        spawnWorld[1] = glm::vec4(0.0f, 1.0f, 0.0f, 0.0f);
+        spawnWorld[2] = glm::vec4(0.0f, 0.0f, 1.0f, 0.0f);
+        if (!document.applyWorldTransform(object->id, spawnWorld)) {
+            return false;
+        }
         break;
     }
     case EditorSceneObjectKind::Archetype: {
-        auto& archetype = std::get<LevelArchetypePlacement>(object->payload);
-        archetype.position = position;
-        archetype.yawDegrees = rotationDegrees.y;
+        if (!document.applyWorldTransform(object->id, model)) {
+            return false;
+        }
         break;
     }
     }
-
-    document.markSceneDirty();
     return true;
 }
 
@@ -976,16 +1154,30 @@ void commitPlacement(EditorSceneDocument& document,
         break;
     }
     case EditorPlacementKind::BoxCollider:
-        document.addBoxCollider(LevelBoxColliderPlacement{position, glm::vec3(0.5f)});
+        document.addBoxCollider(LevelBoxColliderPlacement{
+            .position = position,
+            .halfExtents = glm::vec3(0.5f),
+        });
         break;
     case EditorPlacementKind::CylinderCollider:
-        document.addCylinderCollider(LevelCylinderColliderPlacement{position, 0.5f, 0.9f});
+        document.addCylinderCollider(LevelCylinderColliderPlacement{
+            .position = position,
+            .radius = 0.5f,
+            .halfHeight = 0.9f,
+        });
         break;
     case EditorPlacementKind::PlayerSpawn:
-        document.setPlayerSpawn(LevelPlayerSpawn{position, -8.0f});
+        document.setPlayerSpawn(LevelPlayerSpawn{
+            .position = position,
+            .fallRespawnY = -8.0f,
+        });
         break;
     case EditorPlacementKind::Archetype:
-        document.addArchetype(LevelArchetypePlacement{state.archetypeId, position, 0.0f});
+        document.addArchetype(LevelArchetypePlacement{
+            .archetypeId = state.archetypeId,
+            .position = position,
+            .yawDegrees = 0.0f,
+        });
         break;
     case EditorPlacementKind::None:
         break;
@@ -1073,15 +1265,25 @@ void appendPlacementGhost(std::vector<RenderObject>& objects,
     }
 }
 
-void renderEnvironmentPanel(EditorSceneDocument& document,
-                            const ContentRegistry& content,
-                            const std::vector<std::string>& environmentIds,
+bool renderEnvironmentPanel(EditorSceneDocument& document,
+                            ContentRegistry& content,
+                            std::vector<std::string>& environmentIds,
+                            bool* open,
                             EditorPendingCommand& pendingCommand,
                             EditorCommandStack& commandStack) {
+    static bool showSaveAsProfile = false;
+    static char saveAsProfileBuffer[256]{};
+    bool contentReloaded = false;
+    if (open != nullptr && !*open) {
+        return contentReloaded;
+    }
     EnvironmentDefinition& environment = document.environment();
-    ImGui::Begin("Environment");
+    if (!ImGui::Begin("Environment", open)) {
+        ImGui::End();
+        return contentReloaded;
+    }
 
-    if (ImGui::BeginCombo("Environment Id", environment.id.c_str())) {
+    if (ImGui::BeginCombo("Environment", environment.id.c_str())) {
         for (const auto& id : environmentIds) {
             const bool selected = (id == environment.id);
             if (ImGui::Selectable(id.c_str(), selected)) {
@@ -1100,6 +1302,72 @@ void renderEnvironmentPanel(EditorSceneDocument& document,
         ImGui::EndCombo();
     }
 
+    if (ImGui::Button("Save")) {
+        try {
+            saveEnvironmentDefinitionAsset(document.environmentAssetPath(content), environment);
+            document.markEnvironmentSaved();
+            content.loadDefaults();
+            environmentIds = sortedEnvironmentIds(content);
+            contentReloaded = true;
+        } catch (const std::exception& ex) {
+            spdlog::error("Environment save failed: {}", ex.what());
+        }
+    }
+    ImGui::SameLine();
+    if (ImGui::Button("Save As")) {
+        showSaveAsProfile = true;
+        std::snprintf(saveAsProfileBuffer, sizeof(saveAsProfileBuffer), "%s", environment.id.c_str());
+        ImGui::OpenPopup("Save Environment As");
+    }
+    ImGui::SameLine();
+    if (ImGui::Button("Reload")) {
+        try {
+            const EditorSceneDocumentState beforeState = document.captureState();
+            content.loadDefaults();
+            environmentIds = sortedEnvironmentIds(content);
+            contentReloaded = true;
+            if (document.reloadEnvironmentFromRegistry(content)) {
+                commandStack.pushDocumentStateCommand(
+                    "Reload Environment",
+                    beforeState,
+                    document.captureState(),
+                    document);
+            }
+        } catch (const std::exception& ex) {
+            spdlog::error("Environment reload failed: {}", ex.what());
+        }
+    }
+
+    if (showSaveAsProfile && ImGui::BeginPopupModal("Save Environment As", &showSaveAsProfile, ImGuiWindowFlags_AlwaysAutoResize)) {
+        ImGui::InputText("Profile Id", saveAsProfileBuffer, sizeof(saveAsProfileBuffer));
+        if (ImGui::Button("Create Profile")) {
+            try {
+                const EditorSceneDocumentState beforeState = document.captureState();
+                document.renameEnvironmentId(saveAsProfileBuffer);
+                saveEnvironmentDefinitionAsset(document.environmentAssetPath(content), document.environment());
+                document.markEnvironmentSaved();
+                content.loadDefaults();
+                environmentIds = sortedEnvironmentIds(content);
+                contentReloaded = true;
+                commandStack.pushDocumentStateCommand(
+                    "Save Environment As",
+                    beforeState,
+                    document.captureState(),
+                    document);
+                showSaveAsProfile = false;
+                ImGui::CloseCurrentPopup();
+            } catch (const std::exception& ex) {
+                spdlog::error("Environment save-as failed: {}", ex.what());
+            }
+        }
+        ImGui::SameLine();
+        if (ImGui::Button("Cancel")) {
+            showSaveAsProfile = false;
+            ImGui::CloseCurrentPopup();
+        }
+        ImGui::EndPopup();
+    }
+
     if (ImGui::CollapsingHeader("Post", ImGuiTreeNodeFlags_DefaultOpen)) {
         const auto trackEnvItem = [&](const EditorSceneDocumentState& beforeState, const std::string& label, bool changed) {
             if (changed) {
@@ -1108,9 +1376,26 @@ void renderEnvironmentPanel(EditorSceneDocument& document,
             trackLastItemCommand(beforeState, label, pendingCommand, commandStack, document);
         };
 
+        static constexpr const char* kPaletteVariants[] = {
+            "Neutral",
+            "Dungeon",
+            "Meadow",
+            "Dusk",
+            "Arcane",
+            "Cathedral",
+        };
+        static constexpr const char* kToneMapModes[] = {
+            "Linear",
+            "ACES Fitted",
+        };
+
         auto beforeState = document.captureState();
-        trackEnvItem(beforeState, "Change Palette Variant",
-                     ImGui::SliderInt("Palette Variant", &environment.post.paletteVariant, 0, 5));
+        int paletteVariant = environment.post.paletteVariant;
+        const bool paletteChanged = ImGui::Combo("Palette Variant", &paletteVariant, kPaletteVariants, 6);
+        if (paletteChanged) {
+            environment.post.paletteVariant = paletteVariant;
+        }
+        trackEnvItem(beforeState, "Change Palette Variant", paletteChanged);
         beforeState = document.captureState();
         trackEnvItem(beforeState, "Toggle Sky In Post", ImGui::Checkbox("Enable Sky", &environment.post.enableSky));
         beforeState = document.captureState();
@@ -1132,11 +1417,27 @@ void renderEnvironmentPanel(EditorSceneDocument& document,
         beforeState = document.captureState();
         trackEnvItem(beforeState, "Toggle Sharpen", ImGui::Checkbox("Enable Sharpen", &environment.post.enableSharpen));
         beforeState = document.captureState();
+        int toneMapMode = environment.post.toneMapMode;
+        const bool toneMapChanged = ImGui::Combo("Tone Mapper", &toneMapMode, kToneMapModes, 2);
+        if (toneMapChanged) {
+            environment.post.toneMapMode = toneMapMode;
+        }
+        trackEnvItem(beforeState, "Change Tone Mapper", toneMapChanged);
+        beforeState = document.captureState();
         trackEnvItem(beforeState, "Adjust Threshold Bias", ImGui::DragFloat("Threshold Bias", &environment.post.thresholdBias, 0.002f, -0.5f, 0.5f, "%.3f"));
+        beforeState = document.captureState();
+        trackEnvItem(beforeState, "Adjust Pattern Scale", ImGui::DragFloat("Pattern Scale", &environment.post.patternScale, 1.0f, 0.0f, 512.0f, "%.1f"));
+        if (environment.post.patternScale <= 1.0f) {
+            ImGui::TextDisabled("Pattern Scale: Auto");
+        }
+        beforeState = document.captureState();
+        trackEnvItem(beforeState, "Adjust Edge Threshold", ImGui::DragFloat("Edge Threshold", &environment.post.edgeThreshold, 0.005f, 0.0f, 1.0f, "%.3f"));
         beforeState = document.captureState();
         trackEnvItem(beforeState, "Adjust Fog Density", ImGui::DragFloat("Fog Density", &environment.post.fogDensity, 0.001f, 0.0f, 0.5f, "%.3f"));
         beforeState = document.captureState();
         trackEnvItem(beforeState, "Adjust Fog Start", ImGui::DragFloat("Fog Start", &environment.post.fogStart, 0.1f, 0.0f, 80.0f, "%.1f"));
+        beforeState = document.captureState();
+        trackEnvItem(beforeState, "Adjust Depth View Scale", ImGui::DragFloat("Depth View Scale", &environment.post.depthViewScale, 0.001f, 0.01f, 0.30f, "%.3f"));
         beforeState = document.captureState();
         trackEnvItem(beforeState, "Adjust Exposure", ImGui::DragFloat("Exposure", &environment.post.exposure, 0.01f, 0.2f, 2.5f, "%.2f"));
         beforeState = document.captureState();
@@ -1151,6 +1452,22 @@ void renderEnvironmentPanel(EditorSceneDocument& document,
         trackEnvItem(beforeState, "Adjust Bloom Intensity", ImGui::DragFloat("Bloom Intensity", &environment.post.bloomIntensity, 0.01f, 0.0f, 1.0f, "%.2f"));
         beforeState = document.captureState();
         trackEnvItem(beforeState, "Adjust Bloom Radius", ImGui::DragFloat("Bloom Radius", &environment.post.bloomRadius, 0.01f, 0.5f, 5.0f, "%.2f"));
+        beforeState = document.captureState();
+        trackEnvItem(beforeState, "Adjust Vignette Strength", ImGui::DragFloat("Vignette Strength", &environment.post.vignetteStrength, 0.01f, 0.0f, 1.0f, "%.2f"));
+        beforeState = document.captureState();
+        trackEnvItem(beforeState, "Adjust Vignette Softness", ImGui::DragFloat("Vignette Softness", &environment.post.vignetteSoftness, 0.01f, 0.1f, 1.2f, "%.2f"));
+        beforeState = document.captureState();
+        trackEnvItem(beforeState, "Adjust Grain Amount", ImGui::DragFloat("Grain Amount", &environment.post.grainAmount, 0.001f, 0.0f, 0.2f, "%.3f"));
+        beforeState = document.captureState();
+        trackEnvItem(beforeState, "Adjust Scanline Amount", ImGui::DragFloat("Scanline Amount", &environment.post.scanlineAmount, 0.01f, 0.0f, 0.35f, "%.2f"));
+        beforeState = document.captureState();
+        trackEnvItem(beforeState, "Adjust Scanline Density", ImGui::DragFloat("Scanline Density", &environment.post.scanlineDensity, 0.01f, 0.5f, 3.0f, "%.2f"));
+        beforeState = document.captureState();
+        trackEnvItem(beforeState, "Adjust Sharpen Amount", ImGui::DragFloat("Sharpen Amount", &environment.post.sharpenAmount, 0.01f, 0.0f, 1.0f, "%.2f"));
+        beforeState = document.captureState();
+        trackEnvItem(beforeState, "Adjust Split Tone Strength", ImGui::DragFloat("Split Strength", &environment.post.splitToneStrength, 0.01f, 0.0f, 0.6f, "%.2f"));
+        beforeState = document.captureState();
+        trackEnvItem(beforeState, "Adjust Split Tone Balance", ImGui::DragFloat("Split Balance", &environment.post.splitToneBalance, 0.01f, 0.15f, 0.85f, "%.2f"));
         beforeState = document.captureState();
         trackEnvItem(beforeState, "Change Fog Near Color", editColor("Fog Near", environment.post.fogNearColor));
         beforeState = document.captureState();
@@ -1186,6 +1503,45 @@ void renderEnvironmentPanel(EditorSceneDocument& document,
         beforeState = document.captureState();
         trackEnvItem(beforeState, "Adjust Sky Sun Glow", ImGui::DragFloat("Sun Glow", &environment.sky.sunGlow, 0.01f, 0.0f, 2.0f, "%.2f"));
         beforeState = document.captureState();
+        trackEnvItem(beforeState, "Set Panorama Path", editString("Panorama Path", environment.sky.panoramaPath, "assets/skies/sky.jpg"));
+        beforeState = document.captureState();
+        trackEnvItem(beforeState, "Change Panorama Tint", editColor("Panorama Tint", environment.sky.panoramaTint));
+        beforeState = document.captureState();
+        trackEnvItem(beforeState, "Adjust Panorama Strength", ImGui::DragFloat("Panorama Strength", &environment.sky.panoramaStrength, 0.01f, 0.0f, 2.0f, "%.2f"));
+        beforeState = document.captureState();
+        trackEnvItem(beforeState, "Adjust Panorama Yaw", ImGui::DragFloat("Panorama Yaw", &environment.sky.panoramaYawOffset, 0.5f, -360.0f, 360.0f, "%.1f"));
+        if (ImGui::TreeNodeEx("Cubemap", ImGuiTreeNodeFlags_DefaultOpen)) {
+            static constexpr std::array<const char*, 6> kCubemapLabels{
+                "Face +X",
+                "Face -X",
+                "Face +Y",
+                "Face -Y",
+                "Face +Z",
+                "Face -Z",
+            };
+            static constexpr std::array<const char*, 6> kCubemapCommandLabels{
+                "Set Cubemap Face +X",
+                "Set Cubemap Face -X",
+                "Set Cubemap Face +Y",
+                "Set Cubemap Face -Y",
+                "Set Cubemap Face +Z",
+                "Set Cubemap Face -Z",
+            };
+            for (std::size_t i = 0; i < kCubemapLabels.size(); ++i) {
+                beforeState = document.captureState();
+                trackEnvItem(beforeState,
+                             kCubemapCommandLabels[i],
+                             editString(kCubemapLabels[i],
+                                        environment.sky.cubemapFacePaths[i],
+                                        "assets/skies/cubemap_face.png"));
+            }
+            beforeState = document.captureState();
+            trackEnvItem(beforeState, "Change Cubemap Tint", editColor("Cubemap Tint", environment.sky.cubemapTint));
+            beforeState = document.captureState();
+            trackEnvItem(beforeState, "Adjust Cubemap Strength", ImGui::DragFloat("Cubemap Strength", &environment.sky.cubemapStrength, 0.01f, 0.0f, 2.0f, "%.2f"));
+            ImGui::TreePop();
+        }
+        beforeState = document.captureState();
         trackEnvItem(beforeState, "Toggle Moon", ImGui::Checkbox("Moon Enabled", &environment.sky.moonEnabled));
         beforeState = document.captureState();
         trackEnvItem(beforeState, "Adjust Moon Direction", editVec3("Moon Direction", environment.sky.moonDirection, 0.01f));
@@ -1195,6 +1551,15 @@ void renderEnvironmentPanel(EditorSceneDocument& document,
         trackEnvItem(beforeState, "Adjust Moon Size", ImGui::DragFloat("Moon Size", &environment.sky.moonSize, 0.001f, 0.001f, 0.10f, "%.3f"));
         beforeState = document.captureState();
         trackEnvItem(beforeState, "Adjust Moon Glow", ImGui::DragFloat("Moon Glow", &environment.sky.moonGlow, 0.01f, 0.0f, 1.0f, "%.2f"));
+        if (ImGui::TreeNodeEx("Sky Layers", ImGuiTreeNodeFlags_DefaultOpen)) {
+            beforeState = document.captureState();
+            trackEnvItem(beforeState, "Set Cloud Layer A", editString("Cloud Layer A", environment.sky.cloudLayerAPath, "assets/skies/clouds_a.png"));
+            beforeState = document.captureState();
+            trackEnvItem(beforeState, "Set Cloud Layer B", editString("Cloud Layer B", environment.sky.cloudLayerBPath, "assets/skies/clouds_b.png"));
+            beforeState = document.captureState();
+            trackEnvItem(beforeState, "Set Horizon Layer", editString("Horizon Layer", environment.sky.horizonLayerPath, "assets/skies/horizon.png"));
+            ImGui::TreePop();
+        }
         beforeState = document.captureState();
         trackEnvItem(beforeState, "Change Cloud Tint", editColor("Cloud Tint", environment.sky.cloudTint));
         beforeState = document.captureState();
@@ -1260,56 +1625,124 @@ void renderEnvironmentPanel(EditorSceneDocument& document,
     }
 
     ImGui::End();
+    return contentReloaded;
 }
 
-std::vector<std::uint64_t> renderOutliner(EditorSceneDocument& document, std::vector<std::uint64_t>& selectedIds) {
-    ImGui::Begin("Outliner");
+std::vector<std::uint64_t> renderOutliner(EditorSceneDocument& document,
+                                          std::vector<std::uint64_t>& selectedIds,
+                                          bool* open,
+                                          EditorCommandStack& commandStack) {
     std::vector<std::uint64_t> deleteRequests;
-    const bool additive = ImGui::GetIO().KeyShift;
-    constexpr std::array<EditorSceneObjectKind, 6> kinds{
-        EditorSceneObjectKind::Mesh,
-        EditorSceneObjectKind::Archetype,
-        EditorSceneObjectKind::Light,
-        EditorSceneObjectKind::BoxCollider,
-        EditorSceneObjectKind::CylinderCollider,
-        EditorSceneObjectKind::PlayerSpawn,
-    };
-    for (const auto kind : kinds) {
-        if (!ImGui::TreeNodeEx(editorSceneObjectKindName(kind), ImGuiTreeNodeFlags_DefaultOpen)) {
-            continue;
-        }
-        for (const auto& object : document.objects()) {
-            if (object.kind != kind) {
-                continue;
-            }
-            ImGui::PushID(static_cast<int>(object.id));
-            const bool selected = isSelected(selectedIds, object.id);
-            if (ImGui::Selectable(editorSceneObjectLabel(object).c_str(), selected)) {
-                toggleSelection(selectedIds, object.id, additive);
-            }
-            if (ImGui::IsItemClicked(ImGuiMouseButton_Right) && !selected) {
-                selectedIds = {object.id};
-            }
-            if (ImGui::BeginPopupContextItem("OutlinerContext")) {
-                if (ImGui::MenuItem("Delete")) {
-                    deleteRequests.push_back(object.id);
-                }
-                ImGui::EndPopup();
-            }
-            ImGui::PopID();
-        }
-        ImGui::TreePop();
+    if (open != nullptr && !*open) {
+        return deleteRequests;
     }
+    if (!ImGui::Begin("Outliner", open)) {
+        ImGui::End();
+        return deleteRequests;
+    }
+    const bool additive = ImGui::GetIO().KeyShift;
+
+    std::function<void(std::uint64_t)> renderNode = [&](std::uint64_t objectId) {
+        const EditorSceneObject* object = document.findObject(objectId);
+        if (object == nullptr) {
+            return;
+        }
+
+        const auto children = document.childObjectIds(objectId);
+        ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_SpanAvailWidth | ImGuiTreeNodeFlags_OpenOnArrow;
+        if (children.empty()) {
+            flags |= ImGuiTreeNodeFlags_Leaf;
+        }
+        if (isSelected(selectedIds, objectId)) {
+            flags |= ImGuiTreeNodeFlags_Selected;
+        }
+
+        const bool openNode = ImGui::TreeNodeEx(reinterpret_cast<void*>(static_cast<uintptr_t>(objectId)),
+                                                flags,
+                                                "%s",
+                                                editorSceneObjectLabel(*object).c_str());
+        if (ImGui::IsItemClicked(ImGuiMouseButton_Left) && !ImGui::IsItemToggledOpen()) {
+            toggleSelection(selectedIds, objectId, additive);
+        }
+        if (ImGui::IsItemClicked(ImGuiMouseButton_Right) && !isSelected(selectedIds, objectId)) {
+            selectedIds = {objectId};
+        }
+
+        if (ImGui::BeginDragDropSource()) {
+            ImGui::SetDragDropPayload("EDITOR_OUTLINER_OBJECT", &objectId, sizeof(objectId));
+            ImGui::TextUnformatted(editorSceneObjectLabel(*object).c_str());
+            ImGui::EndDragDropSource();
+        }
+
+        if (ImGui::BeginDragDropTarget()) {
+            if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("EDITOR_OUTLINER_OBJECT")) {
+                if (payload->DataSize == sizeof(std::uint64_t)) {
+                    const std::uint64_t draggedId = *static_cast<const std::uint64_t*>(payload->Data);
+                    if (draggedId != objectId && document.canSetParent(draggedId, objectId)) {
+                        const EditorSceneDocumentState beforeState = document.captureState();
+                        if (document.setParent(draggedId, objectId)) {
+                            commandStack.pushDocumentStateCommand(
+                                "Parent Object",
+                                beforeState,
+                                document.captureState(),
+                                document);
+                        }
+                    }
+                }
+            }
+            ImGui::EndDragDropTarget();
+        }
+
+        if (ImGui::BeginPopupContextItem("OutlinerContext")) {
+            if (ImGui::MenuItem("Delete")) {
+                deleteRequests.push_back(objectId);
+            }
+            if (document.parentObjectId(objectId) != 0 && ImGui::MenuItem("Clear Parent")) {
+                const EditorSceneDocumentState beforeState = document.captureState();
+                if (document.clearParent(objectId)) {
+                    commandStack.pushDocumentStateCommand(
+                        "Clear Parent",
+                        beforeState,
+                        document.captureState(),
+                        document);
+                }
+            }
+            ImGui::EndPopup();
+        }
+
+        if (openNode) {
+            for (const auto childId : children) {
+                renderNode(childId);
+            }
+            ImGui::TreePop();
+        }
+    };
+
+    for (const auto rootId : document.rootObjectIds()) {
+        renderNode(rootId);
+    }
+
     ImGui::End();
     return deleteRequests;
 }
 
 void renderAssetBrowser(EditorUiState& ui,
                         EditorPlacementState& placementState,
+                        EditorSceneDocument& document,
+                        const std::vector<std::uint64_t>& selectedIds,
+                        const ContentRegistry& content,
                         const std::vector<std::string>& meshIds,
                         const std::vector<std::string>& materialIds,
-                        const std::vector<std::string>& archetypeIds) {
-    ImGui::Begin("Asset Browser");
+                        const std::vector<std::string>& archetypeIds,
+                        bool* open,
+                        EditorCommandStack& commandStack) {
+    if (open != nullptr && !*open) {
+        return;
+    }
+    if (!ImGui::Begin("Asset Browser", open)) {
+        ImGui::End();
+        return;
+    }
 
     if (ImGui::CollapsingHeader("Add Mesh", ImGuiTreeNodeFlags_DefaultOpen)) {
         if (ImGui::BeginCombo("Mesh", ui.selectedMeshId.c_str())) {
@@ -1339,6 +1772,51 @@ void renderAssetBrowser(EditorUiState& ui,
         }
         if (ImGui::Button("Place Mesh")) {
             beginPlacement(placementState, EditorPlacementKind::Mesh, ui.selectedMeshId, ui.selectedMaterialId);
+        }
+    }
+
+    if (ImGui::CollapsingHeader("Materials", ImGuiTreeNodeFlags_DefaultOpen)) {
+        if (ImGui::BeginCombo("Active Material", ui.selectedMaterialId.c_str())) {
+            for (const auto& materialId : materialIds) {
+                const bool selected = materialId == ui.selectedMaterialId;
+                if (ImGui::Selectable(materialId.c_str(), selected)) {
+                    ui.selectedMaterialId = materialId;
+                }
+                if (ImGui::IsItemHovered() && ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left)) {
+                    ui.selectedMaterialId = materialId;
+                    const auto meshObjects = selectedMeshObjects(document, selectedIds);
+                    const EditorSceneDocumentState beforeState = document.captureState();
+                    if (applyMaterialToMeshes(meshObjects, materialId, content, document)) {
+                        commandStack.pushDocumentStateCommand(
+                            meshObjects.size() == 1 ? "Assign Mesh Material" : "Assign Mesh Materials",
+                            beforeState,
+                            document.captureState(),
+                            document);
+                    }
+                }
+                if (selected) {
+                    ImGui::SetItemDefaultFocus();
+                }
+            }
+            ImGui::EndCombo();
+        }
+
+        const auto meshObjects = selectedMeshObjects(document, selectedIds);
+        if (meshObjects.empty()) {
+            ImGui::TextDisabled("Select one or more mesh placements to assign a material.");
+        } else {
+            ImGui::Text("%zu mesh%s selected", meshObjects.size(), meshObjects.size() == 1 ? "" : "es");
+            ImGui::TextDisabled("Current: %s", materialSelectionLabel(meshObjects).c_str());
+            if (ImGui::Button(meshObjects.size() == 1 ? "Apply To Selected Mesh" : "Apply To Selected Meshes")) {
+                const EditorSceneDocumentState beforeState = document.captureState();
+                if (applyMaterialToMeshes(meshObjects, ui.selectedMaterialId, content, document)) {
+                    commandStack.pushDocumentStateCommand(
+                        meshObjects.size() == 1 ? "Assign Mesh Material" : "Assign Mesh Materials",
+                        beforeState,
+                        document.captureState(),
+                        document);
+                }
+            }
         }
     }
 
@@ -1402,16 +1880,57 @@ void renderInspector(EditorSceneDocument& document,
                      const std::vector<std::string>& meshIds,
                      const std::vector<std::string>& materialIds,
                      const std::vector<std::string>& archetypeIds,
+                     bool* open,
                      EditorPendingCommand& pendingCommand,
                      EditorCommandStack& commandStack) {
-    ImGui::Begin("Inspector");
+    if (open != nullptr && !*open) {
+        return;
+    }
+    if (!ImGui::Begin("Inspector", open)) {
+        ImGui::End();
+        return;
+    }
     if (selectedIds.empty()) {
         ImGui::TextUnformatted("No selection");
         ImGui::End();
         return;
     }
+
+    const auto trackSceneItem = [&](const EditorSceneDocumentState& beforeState, const std::string& label, bool changed) {
+        if (changed) {
+            document.markSceneDirty();
+        }
+        trackLastItemCommand(beforeState, label, pendingCommand, commandStack, document);
+    };
+
     if (selectedIds.size() > 1) {
         ImGui::Text("%zu objects selected", selectedIds.size());
+        const auto meshObjects = selectedMeshObjects(document, selectedIds);
+        if (!meshObjects.empty()) {
+            ImGui::Separator();
+            ImGui::Text("Mesh Materials");
+            const std::string currentMaterialLabel = materialSelectionLabel(meshObjects);
+            if (ImGui::BeginCombo("Material Id", currentMaterialLabel.c_str())) {
+                for (const auto& materialId : materialIds) {
+                    const bool selected = materialId == currentMaterialLabel;
+                    if (ImGui::Selectable(materialId.c_str(), selected)) {
+                        const EditorSceneDocumentState beforeState = document.captureState();
+                        if (applyMaterialToMeshes(meshObjects, materialId, content, document)) {
+                            commandStack.pushDocumentStateCommand(
+                                meshObjects.size() == 1 ? "Assign Mesh Material" : "Assign Mesh Materials",
+                                beforeState,
+                                document.captureState(),
+                                document);
+                        }
+                    }
+                    if (selected) {
+                        ImGui::SetItemDefaultFocus();
+                    }
+                }
+                ImGui::EndCombo();
+            }
+            ImGui::TextDisabled("Applies to %zu selected mesh%s", meshObjects.size(), meshObjects.size() == 1 ? "" : "es");
+        }
         ImGui::End();
         return;
     }
@@ -1424,18 +1943,66 @@ void renderInspector(EditorSceneDocument& document,
     }
 
     ImGui::TextUnformatted(editorSceneObjectKindName(object->kind));
+    ImGui::TextDisabled("Id: %llu", static_cast<unsigned long long>(object->id));
     ImGui::Separator();
 
-    const auto trackSceneItem = [&](const EditorSceneDocumentState& beforeState, const std::string& label, bool changed) {
-        if (changed) {
-            document.markSceneDirty();
+    const std::uint64_t currentParentId = document.parentObjectId(object->id);
+    if (document.supportsParenting(object->id) || currentParentId != 0) {
+        std::string parentLabel = "<None>";
+        if (currentParentId != 0) {
+            if (const EditorSceneObject* parentObject = document.findObject(currentParentId)) {
+                parentLabel = editorSceneObjectLabel(*parentObject);
+            }
         }
-        trackLastItemCommand(beforeState, label, pendingCommand, commandStack, document);
-    };
+
+        if (ImGui::BeginCombo("Parent", parentLabel.c_str())) {
+            const bool noParentSelected = (currentParentId == 0);
+            if (ImGui::Selectable("<None>", noParentSelected)) {
+                const EditorSceneDocumentState beforeState = document.captureState();
+                if (document.clearParent(object->id)) {
+                    commandStack.pushDocumentStateCommand(
+                        "Clear Parent",
+                        beforeState,
+                        document.captureState(),
+                        document);
+                }
+            }
+            if (noParentSelected) {
+                ImGui::SetItemDefaultFocus();
+            }
+
+            for (const auto& candidate : document.objects()) {
+                if (candidate.id == object->id) {
+                    continue;
+                }
+                if (!document.canSetParent(object->id, candidate.id) && candidate.id != currentParentId) {
+                    continue;
+                }
+                const bool selected = (candidate.id == currentParentId);
+                if (ImGui::Selectable(editorSceneObjectLabel(candidate).c_str(), selected)) {
+                    const EditorSceneDocumentState beforeState = document.captureState();
+                    if (document.setParent(object->id, candidate.id)) {
+                        commandStack.pushDocumentStateCommand(
+                            "Set Parent",
+                            beforeState,
+                            document.captureState(),
+                            document);
+                    }
+                }
+                if (selected) {
+                    ImGui::SetItemDefaultFocus();
+                }
+            }
+            ImGui::EndCombo();
+        }
+    }
 
     switch (object->kind) {
     case EditorSceneObjectKind::Mesh: {
         auto& mesh = std::get<LevelMeshPlacement>(object->payload);
+        const std::string currentMaterialLabel = mesh.materialId.empty()
+            ? std::string(defaultMaterialIdForKind(mesh.material.value_or(MaterialKind::Stone)))
+            : mesh.materialId;
         if (ImGui::BeginCombo("Mesh Id", mesh.meshId.c_str())) {
             for (const auto& meshId : meshIds) {
                 const bool selected = meshId == mesh.meshId;
@@ -1455,19 +2022,18 @@ void renderInspector(EditorSceneDocument& document,
             }
             ImGui::EndCombo();
         }
-        if (ImGui::BeginCombo("Material Id", mesh.materialId.c_str())) {
+        if (ImGui::BeginCombo("Material Id", currentMaterialLabel.c_str())) {
             for (const auto& materialId : materialIds) {
-                const bool selected = materialId == mesh.materialId;
+                const bool selected = materialId == currentMaterialLabel;
                 if (ImGui::Selectable(materialId.c_str(), selected)) {
                     const EditorSceneDocumentState beforeState = document.captureState();
-                    mesh.materialId = materialId;
-                    mesh.material = resolvePlacementMaterialKind(materialId, content);
-                    document.markSceneDirty();
-                    commandStack.pushDocumentStateCommand(
-                        "Change Mesh Material",
-                        beforeState,
-                        document.captureState(),
-                        document);
+                    if (applyMaterialToMeshes({object}, materialId, content, document)) {
+                        commandStack.pushDocumentStateCommand(
+                            "Change Mesh Material",
+                            beforeState,
+                            document.captureState(),
+                            document);
+                    }
                 }
                 if (selected) {
                     ImGui::SetItemDefaultFocus();
@@ -1663,6 +2229,7 @@ int main(int argc, char* argv[]) {
     auto materialIds = sortedMaterialIds(content);
     auto archetypeIds = sortedArchetypeIds(content);
     auto environmentIds = sortedEnvironmentIds(content);
+    auto layoutPresetNames = listEditorLayoutPresetNames();
 
     if (!materialIds.empty()) {
         ui.selectedMaterialId = materialIds.front();
@@ -1672,6 +2239,13 @@ int main(int argc, char* argv[]) {
     }
     if (!archetypeIds.empty()) {
         ui.selectedArchetypeId = archetypeIds.front();
+    }
+    if (std::find(layoutPresetNames.begin(), layoutPresetNames.end(), ui.activeLayoutPreset) != layoutPresetNames.end()) {
+        try {
+            loadLayoutPresetIntoUi(ui, ui.activeLayoutPreset);
+        } catch (const std::exception& ex) {
+            spdlog::warn("Failed to load editor layout '{}': {}", ui.activeLayoutPreset, ex.what());
+        }
     }
 
     bool previewDirty = true;
@@ -1762,6 +2336,58 @@ int main(int argc, char* argv[]) {
         }
         ImGui::SameLine();
         ImGui::TextUnformatted(document.dirty() ? "* Unsaved" : "Saved");
+        ImGui::SameLine();
+        if (ImGui::BeginCombo("Layout", ui.activeLayoutPreset.c_str())) {
+            for (const auto& layoutName : layoutPresetNames) {
+                const bool selected = (layoutName == ui.activeLayoutPreset);
+                if (ImGui::Selectable(layoutName.c_str(), selected)) {
+                    try {
+                        loadLayoutPresetIntoUi(ui, layoutName);
+                    } catch (const std::exception& ex) {
+                        spdlog::error("Layout load failed: {}", ex.what());
+                    }
+                }
+                if (selected) {
+                    ImGui::SetItemDefaultFocus();
+                }
+            }
+            ImGui::EndCombo();
+        }
+        ImGui::SameLine();
+        ImGui::SetNextItemWidth(120.0f);
+        ImGui::InputText("Layout Name", ui.layoutNameBuffer, sizeof(ui.layoutNameBuffer));
+        ImGui::SameLine();
+        if (ImGui::Button("Save Layout")) {
+            try {
+                const std::string layoutName(ui.layoutNameBuffer);
+                if (saveLayoutPresetFromUi(ui, layoutName)) {
+                    ui.activeLayoutPreset = std::filesystem::path(editorLayoutPresetPath(layoutName)).stem().string();
+                    layoutPresetNames = listEditorLayoutPresetNames();
+                }
+            } catch (const std::exception& ex) {
+                spdlog::error("Layout save failed: {}", ex.what());
+            }
+        }
+        ImGui::SameLine();
+        if (ImGui::Button("Reload Layout")) {
+            try {
+                loadLayoutPresetIntoUi(ui, ui.activeLayoutPreset);
+            } catch (const std::exception& ex) {
+                spdlog::error("Layout reload failed: {}", ex.what());
+            }
+        }
+        ImGui::SameLine();
+        if (ImGui::Button("Panels")) {
+            ImGui::OpenPopup("PanelVisibility");
+        }
+        if (ImGui::BeginPopup("PanelVisibility")) {
+            ImGui::Checkbox("Outliner", &ui.showOutliner);
+            ImGui::Checkbox("Inspector", &ui.showInspector);
+            ImGui::Checkbox("Asset Browser", &ui.showAssetBrowser);
+            ImGui::Checkbox("Environment", &ui.showEnvironment);
+            ImGui::Checkbox("Viewport", &ui.showViewport);
+            ImGui::EndPopup();
+        }
 
         if (ImGui::BeginCombo("Scene", ui.pendingScenePath.c_str())) {
             for (const auto& scenePath : scenePaths) {
@@ -1846,24 +2472,42 @@ int main(int argc, char* argv[]) {
         ImGui::Separator();
         ImGui::End();
 
-        const std::vector<std::uint64_t> outlinerDeleteRequests = renderOutliner(document, selectedIds);
-        renderInspector(document, selectedIds, content, meshIds, materialIds, archetypeIds, widgetCommand, commandStack);
-        renderEnvironmentPanel(document, content, environmentIds, widgetCommand, commandStack);
-        renderAssetBrowser(ui, placementState, meshIds, materialIds, archetypeIds);
+        const std::vector<std::uint64_t> outlinerDeleteRequests = renderOutliner(document, selectedIds, &ui.showOutliner, commandStack);
+        renderInspector(document, selectedIds, content, meshIds, materialIds, archetypeIds, &ui.showInspector, widgetCommand, commandStack);
+        if (renderEnvironmentPanel(document, content, environmentIds, &ui.showEnvironment, widgetCommand, commandStack)) {
+            previewDirty = true;
+        }
+        renderAssetBrowser(ui,
+                           placementState,
+                           document,
+                           selectedIds,
+                           content,
+                           meshIds,
+                           materialIds,
+                           archetypeIds,
+                           &ui.showAssetBrowser,
+                           commandStack);
 
-        ImGui::Begin("Viewport",
-                     nullptr,
-                     ImGuiWindowFlags_NoScrollbar
-                     | ImGuiWindowFlags_NoScrollWithMouse);
         EditorViewportState viewportState;
-        viewportState.focused = ImGui::IsWindowFocused();
-        const ImVec2 avail = ImGui::GetContentRegionAvail();
-        viewportState.size = ImVec2(std::max(avail.x, 64.0f), std::max(avail.y, 64.0f));
-        viewportState.origin = ImGui::GetCursorScreenPos();
-        viewportState.hovered = pointInViewport(viewportState, io.MousePos);
+        bool viewportWindowBegun = false;
+        bool viewportWindowVisible = false;
+        if (ui.showViewport) {
+            viewportWindowBegun = true;
+            viewportWindowVisible = ImGui::Begin("Viewport",
+                                                 &ui.showViewport,
+                                                 ImGuiWindowFlags_NoScrollbar
+                                                 | ImGuiWindowFlags_NoScrollWithMouse);
+            if (viewportWindowVisible) {
+                viewportState.focused = ImGui::IsWindowFocused();
+                const ImVec2 avail = ImGui::GetContentRegionAvail();
+                viewportState.size = ImVec2(std::max(avail.x, 64.0f), std::max(avail.y, 64.0f));
+                viewportState.origin = ImGui::GetCursorScreenPos();
+                viewportState.hovered = pointInViewport(viewportState, io.MousePos);
+            }
+        }
 
-        const int targetW = std::max(1, static_cast<int>(viewportState.size.x));
-        const int targetH = std::max(1, static_cast<int>(viewportState.size.y));
+        const int targetW = std::max(1, static_cast<int>(std::max(viewportState.size.x, 64.0f)));
+        const int targetH = std::max(1, static_cast<int>(std::max(viewportState.size.y, 64.0f)));
         if (sceneFbo.width() != targetW || sceneFbo.height() != targetH) {
             sceneFbo.resize(targetW, targetH);
             compositeFbo.resize(targetW, targetH);
@@ -1889,6 +2533,7 @@ int main(int argc, char* argv[]) {
         if (!ui.playPreview) {
             appendHelperObjects(objects, previewWorld, document, materialTextures, selectedIds,
                                 ui.showColliders, ui.showLightHelpers, ui.showSpawnMarker);
+            appendSelectionOverlays(objects, previewWorld, materialTextures, selectedIds);
         }
 
         EditorPlacementState dragPlacement;
@@ -1972,81 +2617,107 @@ int main(int argc, char* argv[]) {
                           targetH,
                           finalFbo.framebuffer());
 
-        ImGui::SetNextItemAllowOverlap();
-        ImGui::Image(static_cast<ImTextureID>(static_cast<uintptr_t>(finalFbo.colorTexture())),
-                     viewportState.size,
-                     ImVec2(0.0f, 1.0f),
-                     ImVec2(1.0f, 0.0f));
+        if (viewportWindowVisible) {
+            ImGui::SetNextItemAllowOverlap();
+            ImGui::Image(static_cast<ImTextureID>(static_cast<uintptr_t>(finalFbo.colorTexture())),
+                         viewportState.size,
+                         ImVec2(0.0f, 1.0f),
+                         ImVec2(1.0f, 0.0f));
 
-        const EditorSceneDocumentState gizmoBeforeState = document.captureState();
-        if (!ui.playPreview) {
-            if (applyGizmoToSelectedObject(document, selectedIds, viewportState, view, projection, ui, previewWorld)) {
-                previewDirty = true;
-            }
-            if (editorGizmoIsHot() && !gizmoCommand.active) {
-                beginPendingCommand(gizmoCommand, gizmoBeforeState, "Transform Object");
-            } else if (gizmoCommand.active && !editorGizmoIsHot()) {
-                finalizePendingCommand(gizmoCommand, commandStack, document);
-            }
-        }
-
-        if (!ui.playPreview) {
-            if (ImGui::BeginDragDropTarget()) {
-                if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("EDITOR_PLACE", ImGuiDragDropFlags_AcceptBeforeDelivery)) {
-                    if (payload->Delivery && placementPoint.has_value() && payload->DataSize == sizeof(EditorDragPayload)) {
-                        const EditorPlacementState droppedState = makePlacementState(*static_cast<const EditorDragPayload*>(payload->Data));
-                        const EditorSceneDocumentState beforeState = document.captureState();
-                        commitPlacement(document, droppedState, *placementPoint, content, activeCamera);
-                        commandStack.pushDocumentStateCommand(
-                            "Place Object",
-                            beforeState,
-                            document.captureState(),
-                            document);
-                        selectionPicker.clear();
-                        previewDirty = true;
-                    }
-                }
-                ImGui::EndDragDropTarget();
-            }
-
-            if (placementState.active() && placementPoint.has_value() && viewportState.hovered && ImGui::IsMouseClicked(ImGuiMouseButton_Left) && !editorGizmoIsHot()) {
-                const EditorSceneDocumentState beforeState = document.captureState();
-                commitPlacement(document, placementState, *placementPoint, content, activeCamera);
-                commandStack.pushDocumentStateCommand(
-                    "Place Object",
-                    beforeState,
-                    document.captureState(),
-                    document);
-                placementState.clear();
-                selectionPicker.clear();
-                previewDirty = true;
-            } else if (viewportState.hovered && ImGui::IsMouseClicked(ImGuiMouseButton_Left) && !editorGizmoIsHot()) {
-                const EditorRay ray = buildEditorRay(inverseViewProjection,
-                                                     glm::vec2(viewportState.origin.x, viewportState.origin.y),
-                                                     glm::vec2(viewportState.size.x, viewportState.size.y),
-                                                     glm::vec2(io.MousePos.x, io.MousePos.y));
-                const std::vector<EditorHitResult> hits = pickEditorObjects(viewportSelectionHandles, ray);
-                if (!hits.empty()) {
-                    refreshSelectionPicker(selectionPicker,
-                                           hits,
-                                           io.MousePos,
-                                           glfwGetTime(),
-                                           hits.size() > 1);
-                    applySelectionHit(selectedIds, selectionPicker, io.KeyShift);
+            if (!selectedIds.empty()) {
+                const std::uint64_t activeId = selectedIds.back();
+                std::string label = selectedIds.size() == 1
+                    ? "Selected: "
+                    : (std::to_string(selectedIds.size()) + " selected | Active: ");
+                if (const EditorSceneObject* selectedObject = document.findObject(activeId)) {
+                    label += editorSceneObjectLabel(*selectedObject);
                 } else {
+                    label += "Object #" + std::to_string(activeId);
+                }
+
+                ImDrawList* drawList = ImGui::GetWindowDrawList();
+                const ImVec2 textPos(viewportState.origin.x + 12.0f, viewportState.origin.y + 12.0f);
+                const ImVec2 textSize = ImGui::CalcTextSize(label.c_str());
+                const ImVec2 padding(8.0f, 6.0f);
+                drawList->AddRectFilled(ImVec2(textPos.x - padding.x, textPos.y - padding.y),
+                                        ImVec2(textPos.x + textSize.x + padding.x, textPos.y + textSize.y + padding.y),
+                                        IM_COL32(18, 20, 24, 215),
+                                        4.0f);
+                drawList->AddText(textPos, IM_COL32(255, 236, 168, 255), label.c_str());
+            }
+
+            const EditorSceneDocumentState gizmoBeforeState = document.captureState();
+            if (!ui.playPreview) {
+                if (applyGizmoToSelectedObject(document, selectedIds, viewportState, view, projection, ui, previewWorld)) {
+                    previewDirty = true;
+                }
+                if (editorGizmoIsHot() && !gizmoCommand.active) {
+                    beginPendingCommand(gizmoCommand, gizmoBeforeState, "Transform Object");
+                } else if (gizmoCommand.active && !editorGizmoIsHot()) {
+                    finalizePendingCommand(gizmoCommand, commandStack, document);
+                }
+            }
+
+            if (!ui.playPreview) {
+                if (ImGui::BeginDragDropTarget()) {
+                    if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("EDITOR_PLACE", ImGuiDragDropFlags_AcceptBeforeDelivery)) {
+                        if (payload->Delivery && placementPoint.has_value() && payload->DataSize == sizeof(EditorDragPayload)) {
+                            const EditorPlacementState droppedState = makePlacementState(*static_cast<const EditorDragPayload*>(payload->Data));
+                            const EditorSceneDocumentState beforeState = document.captureState();
+                            commitPlacement(document, droppedState, *placementPoint, content, activeCamera);
+                            commandStack.pushDocumentStateCommand(
+                                "Place Object",
+                                beforeState,
+                                document.captureState(),
+                                document);
+                            selectionPicker.clear();
+                            previewDirty = true;
+                        }
+                    }
+                    ImGui::EndDragDropTarget();
+                }
+
+                if (placementState.active() && placementPoint.has_value() && viewportState.hovered && ImGui::IsMouseClicked(ImGuiMouseButton_Left) && !editorGizmoIsHot()) {
+                    const EditorSceneDocumentState beforeState = document.captureState();
+                    commitPlacement(document, placementState, *placementPoint, content, activeCamera);
+                    commandStack.pushDocumentStateCommand(
+                        "Place Object",
+                        beforeState,
+                        document.captureState(),
+                        document);
+                    placementState.clear();
                     selectionPicker.clear();
-                    if (!io.KeyShift) {
-                        selectedIds.clear();
+                    previewDirty = true;
+                } else if (viewportState.hovered && ImGui::IsMouseClicked(ImGuiMouseButton_Left) && !editorGizmoIsHot()) {
+                    const EditorRay ray = buildEditorRay(inverseViewProjection,
+                                                         glm::vec2(viewportState.origin.x, viewportState.origin.y),
+                                                         glm::vec2(viewportState.size.x, viewportState.size.y),
+                                                         glm::vec2(io.MousePos.x, io.MousePos.y));
+                    const std::vector<EditorHitResult> hits = pickEditorObjects(viewportSelectionHandles, ray);
+                    if (!hits.empty()) {
+                        refreshSelectionPicker(selectionPicker,
+                                               hits,
+                                               io.MousePos,
+                                               glfwGetTime(),
+                                               hits.size() > 1);
+                        applySelectionHit(selectedIds, selectionPicker, io.KeyShift);
+                    } else {
+                        selectionPicker.clear();
+                        if (!io.KeyShift) {
+                            selectedIds.clear();
+                        }
                     }
                 }
             }
+
+            if (!ui.playPreview) {
+                renderSelectionPicker(selectionPicker, document, selectedIds, glfwGetTime());
+            }
         }
 
-        if (!ui.playPreview) {
-            renderSelectionPicker(selectionPicker, document, selectedIds, glfwGetTime());
+        if (viewportWindowBegun) {
+            ImGui::End();
         }
-
-        ImGui::End();
 
         if (playTogglePressed) {
             widgetCommand.clear();
@@ -2151,8 +2822,13 @@ int main(int argc, char* argv[]) {
         if (savePressed) {
             try {
                 document.save(content);
+                content.loadDefaults();
                 commandStack.markSaved(document);
                 scenePaths = sortedScenePaths();
+                materialIds = sortedMaterialIds(content);
+                archetypeIds = sortedArchetypeIds(content);
+                environmentIds = sortedEnvironmentIds(content);
+                previewDirty = true;
             } catch (const std::exception& ex) {
                 spdlog::error("Save failed: {}", ex.what());
             }

@@ -1,6 +1,7 @@
 add_executable(level-editor
     main.cpp
     ${CMAKE_SOURCE_DIR}/src/editor/EditorCommand.cpp
+    ${CMAKE_SOURCE_DIR}/src/editor/EditorLayoutPreset.cpp
     ${CMAKE_SOURCE_DIR}/src/editor/EditorPreviewWorld.cpp
     ${CMAKE_SOURCE_DIR}/src/editor/EditorSceneDocument.cpp
     ${CMAKE_SOURCE_DIR}/src/editor/EditorSceneSerializer.cpp

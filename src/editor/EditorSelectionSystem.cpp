@@ -153,6 +153,24 @@ std::optional<float> intersectHandle(const EditorSelectionHandle& handle, const 
     return std::nullopt;
 }
 
+void inflateThinBounds(glm::vec3& boundsMin, glm::vec3& boundsMax) {
+    constexpr float kMinimumPickThickness = 0.30f;
+    const glm::vec3 center = (boundsMin + boundsMax) * 0.5f;
+    glm::vec3 extents = boundsMax - boundsMin;
+    if (extents.x < kMinimumPickThickness) {
+        boundsMin.x = center.x - kMinimumPickThickness * 0.5f;
+        boundsMax.x = center.x + kMinimumPickThickness * 0.5f;
+    }
+    if (extents.y < kMinimumPickThickness) {
+        boundsMin.y = center.y - kMinimumPickThickness * 0.5f;
+        boundsMax.y = center.y + kMinimumPickThickness * 0.5f;
+    }
+    if (extents.z < kMinimumPickThickness) {
+        boundsMin.z = center.z - kMinimumPickThickness * 0.5f;
+        boundsMax.z = center.z + kMinimumPickThickness * 0.5f;
+    }
+}
+
 int selectionPriority(const EditorSelectionHandle& handle) {
     switch (handle.objectKind) {
     case EditorSceneObjectKind::Mesh:
@@ -208,6 +226,7 @@ std::vector<EditorSelectionHandle> buildEditorSelectionHandles(const EditorScene
                 handle.shape = EditorSelectionShape::WorldAabb;
                 handle.worldMin = bounds->min;
                 handle.worldMax = bounds->max;
+                inflateThinBounds(handle.worldMin, handle.worldMax);
                 handle.anchor = bounds->center();
                 handle.placementSurface = true;
             } else {
@@ -228,27 +247,26 @@ std::vector<EditorSelectionHandle> buildEditorSelectionHandles(const EditorScene
             break;
         }
         case EditorSceneObjectKind::BoxCollider: {
-            const auto& box = std::get<LevelBoxColliderPlacement>(object.payload);
             handle.shape = EditorSelectionShape::OrientedBox;
-            handle.localToWorld = glm::translate(glm::mat4(1.0f), box.position);
-            handle.halfExtents = box.halfExtents;
-            handle.anchor = box.position;
+            handle.localToWorld = document.worldTransformMatrix(object.id);
+            handle.halfExtents = glm::vec3(0.5f);
+            handle.anchor = glm::vec3(handle.localToWorld[3]);
             handle.placementSurface = true;
             break;
         }
         case EditorSceneObjectKind::CylinderCollider: {
-            const auto& cylinder = std::get<LevelCylinderColliderPlacement>(object.payload);
             handle.shape = EditorSelectionShape::Cylinder;
-            handle.localToWorld = glm::translate(glm::mat4(1.0f), cylinder.position);
-            handle.radius = cylinder.radius;
-            handle.halfHeight = cylinder.halfHeight;
-            handle.anchor = cylinder.position;
+            handle.localToWorld = document.worldTransformMatrix(object.id);
+            handle.radius = 0.5f;
+            handle.halfHeight = 0.5f;
+            handle.anchor = glm::vec3(handle.localToWorld[3]);
             handle.placementSurface = true;
             break;
         }
         case EditorSceneObjectKind::PlayerSpawn:
             handle.shape = EditorSelectionShape::Sphere;
             handle.radius = 0.45f;
+            handle.anchor = glm::vec3(document.worldTransformMatrix(object.id)[3]);
             break;
         default:
             handle.shape = EditorSelectionShape::Sphere;

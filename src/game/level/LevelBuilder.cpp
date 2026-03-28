@@ -247,21 +247,28 @@ entt::entity LevelBuilder::addLight(const glm::vec3& position,
     return entity;
 }
 
-entt::entity LevelBuilder::addBoxCollider(const glm::vec3& position, const glm::vec3& halfExtents) {
+entt::entity LevelBuilder::addBoxCollider(const glm::vec3& position,
+                                          const glm::vec3& halfExtents,
+                                          const glm::vec3& rotation) {
     auto entity = createEntity();
     StaticColliderComponent collider;
     collider.shape = ColliderShape::Box;
     collider.position = position;
+    collider.rotation = rotation;
     collider.halfExtents = halfExtents;
     context_.registry.emplace<StaticColliderComponent>(entity, collider);
     return entity;
 }
 
-entt::entity LevelBuilder::addCylinderCollider(const glm::vec3& position, float radius, float halfHeight) {
+entt::entity LevelBuilder::addCylinderCollider(const glm::vec3& position,
+                                               float radius,
+                                               float halfHeight,
+                                               const glm::vec3& rotation) {
     auto entity = createEntity();
     StaticColliderComponent collider;
     collider.shape = ColliderShape::Cylinder;
     collider.position = position;
+    collider.rotation = rotation;
     collider.radius = radius;
     collider.halfHeight = halfHeight;
     context_.registry.emplace<StaticColliderComponent>(entity, collider);

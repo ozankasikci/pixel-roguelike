@@ -4,6 +4,7 @@
 #include <cctype>
 #include <array>
 #include <cmath>
+#include <filesystem>
 #include <fstream>
 #include <functional>
 #include <sstream>
@@ -11,6 +12,27 @@
 #include <vector>
 
 namespace {
+
+std::vector<std::string> sortedDefinitionFiles(const std::string& relativeDirectory,
+                                               const std::string& extension) {
+    namespace fs = std::filesystem;
+    std::vector<std::string> files;
+    const fs::path directory = resolveProjectPath(relativeDirectory);
+    if (!fs::exists(directory)) {
+        return files;
+    }
+    for (const auto& entry : fs::directory_iterator(directory)) {
+        if (!entry.is_regular_file()) {
+            continue;
+        }
+        if (entry.path().extension() != extension) {
+            continue;
+        }
+        files.push_back(entry.path().string());
+    }
+    std::sort(files.begin(), files.end());
+    return files;
+}
 
 [[noreturn]] void throwParseError(const std::string& path, int lineNumber, const std::string& message) {
     throw std::runtime_error(path + ":" + std::to_string(lineNumber) + ": " + message);
@@ -429,18 +451,9 @@ void ContentRegistry::loadDefaults() {
         materials_.emplace(material.id, material);
     }
 
-    const std::array environmentFiles{
-        "assets/defs/environments/neutral.environment",
-        "assets/defs/environments/dungeon_torch.environment",
-        "assets/defs/environments/sunlit_meadow.environment",
-        "assets/defs/environments/mountain_dusk.environment",
-        "assets/defs/environments/arcane_field.environment",
-        "assets/defs/environments/cathedral_arcade.environment",
-        "assets/defs/environments/cloister_daylight.environment",
-    };
-    for (const char* path : environmentFiles) {
-        auto environment = loadEnvironmentDefinitionAsset(resolveProjectPath(path));
-        environmentPaths_.emplace(environment.id, resolveProjectPath(path));
+    for (const auto& path : sortedDefinitionFiles("assets/defs/environments", ".environment")) {
+        auto environment = loadEnvironmentDefinitionAsset(path);
+        environmentPaths_.emplace(environment.id, path);
         environments_.emplace(environment.id, environment);
     }
 }

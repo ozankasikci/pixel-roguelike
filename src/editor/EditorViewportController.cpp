@@ -13,6 +13,7 @@ float safeDelta(float value) {
 }
 
 constexpr float kScrollZoomSpeed = 2.5f;
+constexpr float kFastMoveMultiplier = 3.0f;
 
 } // namespace
 
@@ -60,6 +61,12 @@ void updateEditorFlyCamera(EditorCamera& camera,
         return;
     }
 
+    float moveSpeed = camera.moveSpeed;
+    if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS
+        || glfwGetKey(window, GLFW_KEY_RIGHT_SHIFT) == GLFW_PRESS) {
+        moveSpeed *= kFastMoveMultiplier;
+    }
+
     camera.yawDegrees += io.MouseDelta.x * 0.20f;
     camera.pitchDegrees = glm::clamp(camera.pitchDegrees - io.MouseDelta.y * 0.20f, -89.0f, 89.0f);
 
@@ -74,7 +81,7 @@ void updateEditorFlyCamera(EditorCamera& camera,
     if (glfwGetKey(window, GLFW_KEY_E) == GLFW_PRESS) velocity += up;
     if (glfwGetKey(window, GLFW_KEY_Q) == GLFW_PRESS) velocity -= up;
     if (glm::dot(velocity, velocity) > 0.0f) {
-        camera.position += glm::normalize(velocity) * camera.moveSpeed * safeDelta(deltaTime);
+        camera.position += glm::normalize(velocity) * moveSpeed * safeDelta(deltaTime);
     }
 }
 
