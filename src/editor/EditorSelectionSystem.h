@@ -17,6 +17,7 @@ struct EditorRay {
 
 struct EditorHitResult {
     std::uint64_t objectId = 0;
+    EditorSceneObjectKind objectKind = EditorSceneObjectKind::Mesh;
     float distance = 0.0f;
     glm::vec3 position{0.0f};
 };
@@ -49,6 +50,9 @@ EditorRay buildEditorRay(const glm::mat4& inverseViewProjection,
 
 std::vector<EditorSelectionHandle> buildEditorSelectionHandles(const EditorSceneDocument& document,
                                                                const EditorPreviewWorld& previewWorld);
+
+std::vector<EditorHitResult> pickEditorObjects(const std::vector<EditorSelectionHandle>& handles,
+                                               const EditorRay& ray);
 
 std::optional<EditorHitResult> pickEditorObject(const std::vector<EditorSelectionHandle>& handles,
                                                 const EditorRay& ray);

@@ -153,6 +153,22 @@ std::optional<float> intersectHandle(const EditorSelectionHandle& handle, const 
     return std::nullopt;
 }
 
+int selectionPriority(const EditorSelectionHandle& handle) {
+    switch (handle.objectKind) {
+    case EditorSceneObjectKind::Mesh:
+    case EditorSceneObjectKind::Archetype:
+        return 0;
+    case EditorSceneObjectKind::Light:
+        return 1;
+    case EditorSceneObjectKind::PlayerSpawn:
+        return 2;
+    case EditorSceneObjectKind::BoxCollider:
+    case EditorSceneObjectKind::CylinderCollider:
+        return 3;
+    }
+    return 4;
+}
+
 } // namespace
 
 EditorRay buildEditorRay(const glm::mat4& inverseViewProjection,
@@ -245,23 +261,61 @@ std::vector<EditorSelectionHandle> buildEditorSelectionHandles(const EditorScene
     return handles;
 }
 
-std::optional<EditorHitResult> pickEditorObject(const std::vector<EditorSelectionHandle>& handles,
-                                                const EditorRay& ray) {
-    std::optional<EditorHitResult> bestHit;
-    float bestDistance = std::numeric_limits<float>::max();
+std::vector<EditorHitResult> pickEditorObjects(const std::vector<EditorSelectionHandle>& handles,
+                                               const EditorRay& ray) {
+    struct RankedHit {
+        EditorHitResult hit;
+        int priority = 0;
+    };
+
+    std::vector<RankedHit> rankedHits;
+    rankedHits.reserve(handles.size());
     for (const auto& handle : handles) {
         const auto hitDistance = intersectHandle(handle, ray);
-        if (!hitDistance.has_value() || *hitDistance >= bestDistance) {
+        if (!hitDistance.has_value()) {
             continue;
         }
-        bestDistance = *hitDistance;
-        bestHit = EditorHitResult{
-            handle.objectId,
-            *hitDistance,
-            ray.origin + ray.direction * *hitDistance
-        };
+        rankedHits.push_back(RankedHit{
+            EditorHitResult{
+                handle.objectId,
+                handle.objectKind,
+                *hitDistance,
+                ray.origin + ray.direction * *hitDistance
+            },
+            selectionPriority(handle),
+        });
     }
-    return bestHit;
+
+    std::sort(rankedHits.begin(), rankedHits.end(), [](const RankedHit& lhs, const RankedHit& rhs) {
+        constexpr float kDistanceTieThreshold = 0.35f;
+        const float distanceDelta = lhs.hit.distance - rhs.hit.distance;
+        if (std::abs(distanceDelta) > kDistanceTieThreshold) {
+            return lhs.hit.distance < rhs.hit.distance;
+        }
+        if (lhs.priority != rhs.priority) {
+            return lhs.priority < rhs.priority;
+        }
+        if (std::abs(distanceDelta) > 0.0001f) {
+            return lhs.hit.distance < rhs.hit.distance;
+        }
+        return lhs.hit.objectId < rhs.hit.objectId;
+    });
+
+    std::vector<EditorHitResult> hits;
+    hits.reserve(rankedHits.size());
+    for (const auto& rankedHit : rankedHits) {
+        hits.push_back(rankedHit.hit);
+    }
+    return hits;
+}
+
+std::optional<EditorHitResult> pickEditorObject(const std::vector<EditorSelectionHandle>& handles,
+                                                const EditorRay& ray) {
+    std::vector<EditorHitResult> hits = pickEditorObjects(handles, ray);
+    if (hits.empty()) {
+        return std::nullopt;
+    }
+    return hits.front();
 }
 
 std::optional<EditorHitResult> pickEditorPlacementSurface(const std::vector<EditorSelectionHandle>& handles,
@@ -279,6 +333,7 @@ std::optional<EditorHitResult> pickEditorPlacementSurface(const std::vector<Edit
         bestDistance = *hitDistance;
         bestHit = EditorHitResult{
             handle.objectId,
+            handle.objectKind,
             *hitDistance,
             ray.origin + ray.direction * *hitDistance
         };

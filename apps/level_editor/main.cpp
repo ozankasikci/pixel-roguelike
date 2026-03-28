@@ -119,6 +119,24 @@ struct EditorPendingCommand {
     }
 };
 
+struct EditorSelectionPickerState {
+    std::vector<EditorHitResult> hits;
+    ImVec2 anchorScreen{0.0f, 0.0f};
+    std::size_t currentIndex = 0;
+    double visibleUntilSeconds = 0.0;
+
+    bool active(double nowSeconds) const {
+        return !hits.empty() && nowSeconds <= visibleUntilSeconds;
+    }
+
+    void clear() {
+        hits.clear();
+        anchorScreen = ImVec2(0.0f, 0.0f);
+        currentIndex = 0;
+        visibleUntilSeconds = 0.0;
+    }
+};
+
 void copyPayloadString(char (&dst)[64], const std::string& src) {
     std::snprintf(dst, sizeof(dst), "%s", src.c_str());
 }
@@ -275,6 +293,34 @@ bool isSelected(const std::vector<std::uint64_t>& selectedIds, std::uint64_t id)
     return std::find(selectedIds.begin(), selectedIds.end(), id) != selectedIds.end();
 }
 
+bool isViewportSelectableKind(const EditorSelectionHandle& handle, const EditorUiState& ui) {
+    switch (handle.objectKind) {
+    case EditorSceneObjectKind::BoxCollider:
+    case EditorSceneObjectKind::CylinderCollider:
+        return ui.showColliders;
+    case EditorSceneObjectKind::Light:
+        return ui.showLightHelpers;
+    case EditorSceneObjectKind::PlayerSpawn:
+        return ui.showSpawnMarker;
+    case EditorSceneObjectKind::Mesh:
+    case EditorSceneObjectKind::Archetype:
+        return true;
+    }
+    return true;
+}
+
+std::vector<EditorSelectionHandle> buildViewportSelectionHandles(const std::vector<EditorSelectionHandle>& handles,
+                                                                 const EditorUiState& ui) {
+    std::vector<EditorSelectionHandle> filtered;
+    filtered.reserve(handles.size());
+    for (const auto& handle : handles) {
+        if (isViewportSelectableKind(handle, ui)) {
+            filtered.push_back(handle);
+        }
+    }
+    return filtered;
+}
+
 void toggleSelection(std::vector<std::uint64_t>& selectedIds, std::uint64_t id, bool additive) {
     if (!additive) {
         selectedIds = {id};
@@ -294,6 +340,101 @@ void pruneSelection(const EditorSceneDocument& document, std::vector<std::uint64
             return document.findObject(id) == nullptr;
         }),
         selectedIds.end());
+}
+
+bool sameHitOrder(const std::vector<EditorHitResult>& lhs, const std::vector<EditorHitResult>& rhs) {
+    if (lhs.size() != rhs.size()) {
+        return false;
+    }
+    for (std::size_t index = 0; index < lhs.size(); ++index) {
+        if (lhs[index].objectId != rhs[index].objectId) {
+            return false;
+        }
+    }
+    return true;
+}
+
+void refreshSelectionPicker(EditorSelectionPickerState& picker,
+                            const std::vector<EditorHitResult>& hits,
+                            const ImVec2& mousePos,
+                            double nowSeconds,
+                            bool advanceCycle) {
+    if (hits.empty()) {
+        picker.clear();
+        return;
+    }
+
+    const bool sameHits = picker.active(nowSeconds) && sameHitOrder(picker.hits, hits);
+    if (!sameHits) {
+        picker.hits = hits;
+        picker.currentIndex = 0;
+    } else if (!hits.empty() && advanceCycle) {
+        picker.currentIndex = (picker.currentIndex + 1) % hits.size();
+    }
+
+    picker.anchorScreen = mousePos;
+    picker.visibleUntilSeconds = nowSeconds + 2.75;
+}
+
+void applySelectionHit(std::vector<std::uint64_t>& selectedIds,
+                       const EditorSelectionPickerState& picker,
+                       bool additive) {
+    if (picker.hits.empty() || picker.currentIndex >= picker.hits.size()) {
+        return;
+    }
+    toggleSelection(selectedIds, picker.hits[picker.currentIndex].objectId, additive);
+}
+
+void renderSelectionPicker(EditorSelectionPickerState& picker,
+                           EditorSceneDocument& document,
+                           std::vector<std::uint64_t>& selectedIds,
+                           double nowSeconds) {
+    if (!picker.active(nowSeconds) || picker.hits.size() <= 1) {
+        if (!picker.hits.empty() && nowSeconds > picker.visibleUntilSeconds) {
+            picker.clear();
+        }
+        return;
+    }
+
+    ImGui::SetNextWindowBgAlpha(0.94f);
+    ImGui::SetNextWindowPos(ImVec2(picker.anchorScreen.x + 14.0f, picker.anchorScreen.y + 14.0f), ImGuiCond_Always);
+    if (!ImGui::Begin("##SelectionPicker",
+                      nullptr,
+                      ImGuiWindowFlags_NoDecoration
+                      | ImGuiWindowFlags_AlwaysAutoResize
+                      | ImGuiWindowFlags_NoSavedSettings
+                      | ImGuiWindowFlags_NoNav
+                      | ImGuiWindowFlags_NoFocusOnAppearing)) {
+        ImGui::End();
+        return;
+    }
+
+    ImGui::TextUnformatted("Pick object");
+    ImGui::Separator();
+    ImGui::TextDisabled("Click again to cycle");
+
+    const std::size_t maxVisible = std::min<std::size_t>(picker.hits.size(), 8);
+    for (std::size_t index = 0; index < maxVisible; ++index) {
+        const EditorHitResult& hit = picker.hits[index];
+        const EditorSceneObject* object = document.findObject(hit.objectId);
+        std::string label = object != nullptr
+            ? editorSceneObjectLabel(*object)
+            : ("Object #" + std::to_string(hit.objectId));
+        label += "  ";
+        label += std::to_string(static_cast<int>(std::round(hit.distance * 10.0f)) / 10.0f);
+        label += "m";
+
+        if (ImGui::Selectable(label.c_str(), picker.currentIndex == index)) {
+            picker.currentIndex = index;
+            picker.visibleUntilSeconds = nowSeconds + 2.75;
+            applySelectionHit(selectedIds, picker, false);
+        }
+    }
+    if (picker.hits.size() > maxVisible) {
+        ImGui::TextDisabled("+%zu more", picker.hits.size() - maxVisible);
+    }
+
+    ImGui::End();
 }
 
 void beginPendingCommand(EditorPendingCommand& pending,
@@ -1515,6 +1656,7 @@ int main(int argc, char* argv[]) {
     ui.pendingScenePath = initialScene;
     EditorPlacementState placementState;
     std::vector<std::uint64_t> selectedIds;
+    EditorSelectionPickerState selectionPicker;
 
     auto scenePaths = sortedScenePaths();
     auto meshIds = sortedMeshNames(previewWorld.meshLibrary());
@@ -1629,6 +1771,7 @@ int main(int argc, char* argv[]) {
                     document.loadFromSceneFile(scenePath, content);
                     commandStack.reset(document);
                     selectedIds.clear();
+                    selectionPicker.clear();
                     placementState.clear();
                     widgetCommand.clear();
                     gizmoCommand.clear();
@@ -1740,6 +1883,7 @@ int main(int argc, char* argv[]) {
         const glm::mat4 projection = editorCameraProjection(activeCamera, static_cast<float>(targetW) / static_cast<float>(targetH));
         const glm::mat4 inverseViewProjection = glm::inverse(projection * view);
         const auto selectionHandles = buildEditorSelectionHandles(document, previewWorld);
+        const auto viewportSelectionHandles = buildViewportSelectionHandles(selectionHandles, ui);
 
         std::vector<RenderObject> objects = collectRenderObjects(previewWorld, materialTextures, selectedIds);
         if (!ui.playPreview) {
@@ -1858,6 +2002,7 @@ int main(int argc, char* argv[]) {
                             beforeState,
                             document.captureState(),
                             document);
+                        selectionPicker.clear();
                         previewDirty = true;
                     }
                 }
@@ -1873,18 +2018,32 @@ int main(int argc, char* argv[]) {
                     document.captureState(),
                     document);
                 placementState.clear();
+                selectionPicker.clear();
                 previewDirty = true;
             } else if (viewportState.hovered && ImGui::IsMouseClicked(ImGuiMouseButton_Left) && !editorGizmoIsHot()) {
                 const EditorRay ray = buildEditorRay(inverseViewProjection,
                                                      glm::vec2(viewportState.origin.x, viewportState.origin.y),
                                                      glm::vec2(viewportState.size.x, viewportState.size.y),
                                                      glm::vec2(io.MousePos.x, io.MousePos.y));
-                if (const auto picked = pickEditorObject(selectionHandles, ray)) {
-                    toggleSelection(selectedIds, picked->objectId, io.KeyShift);
-                } else if (!io.KeyShift) {
-                    selectedIds.clear();
+                const std::vector<EditorHitResult> hits = pickEditorObjects(viewportSelectionHandles, ray);
+                if (!hits.empty()) {
+                    refreshSelectionPicker(selectionPicker,
+                                           hits,
+                                           io.MousePos,
+                                           glfwGetTime(),
+                                           hits.size() > 1);
+                    applySelectionHit(selectedIds, selectionPicker, io.KeyShift);
+                } else {
+                    selectionPicker.clear();
+                    if (!io.KeyShift) {
+                        selectedIds.clear();
+                    }
                 }
             }
+        }
+
+        if (!ui.playPreview) {
+            renderSelectionPicker(selectionPicker, document, selectedIds, glfwGetTime());
         }
 
         ImGui::End();
@@ -1921,6 +2080,7 @@ int main(int argc, char* argv[]) {
             gizmoCommand.clear();
             if (commandStack.undo(document)) {
                 pruneSelection(document, selectedIds);
+                selectionPicker.clear();
                 previewDirty = true;
             }
             undoPressed = false;
@@ -1931,6 +2091,7 @@ int main(int argc, char* argv[]) {
             gizmoCommand.clear();
             if (commandStack.redo(document)) {
                 pruneSelection(document, selectedIds);
+                selectionPicker.clear();
                 previewDirty = true;
             }
             redoPressed = false;
@@ -1947,6 +2108,7 @@ int main(int argc, char* argv[]) {
             }
             if (!duplicated.empty()) {
                 selectedIds = duplicated;
+                selectionPicker.clear();
                 commandStack.pushDocumentStateCommand(
                     "Duplicate Selection",
                     beforeState,
@@ -1969,6 +2131,7 @@ int main(int argc, char* argv[]) {
                 previewDirty = true;
             }
             selectedIds.clear();
+            selectionPicker.clear();
             deletePressed = false;
         }
 
@@ -1981,6 +2144,7 @@ int main(int argc, char* argv[]) {
                 document.captureState(),
                 document);
             pruneSelection(document, selectedIds);
+            selectionPicker.clear();
             previewDirty = true;
         }
 
