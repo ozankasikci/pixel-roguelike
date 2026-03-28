@@ -88,6 +88,9 @@ std::vector<std::uint64_t> renderOutliner(EditorSceneDocument& document,
         if (ImGui::IsItemClicked(ImGuiMouseButton_Left) && !ImGui::IsItemToggledOpen()) {
             toggleSelection(selectedIds, objectId, additive);
             ui.inspectorContext = EditorInspectorContext::SceneSelection;
+            if (ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left)) {
+                ui.frameSelectionRequested = true;
+            }
         }
         if (ImGui::IsItemClicked(ImGuiMouseButton_Right) && !isSelected(selectedIds, objectId)) {
             selectedIds = {objectId};

@@ -21,6 +21,7 @@ struct AssetBrowserVisibleRow {
 struct AssetBrowserSession {
     std::vector<EditorAssetBrowserNode> cachedNodes;
     bool cacheValid = false;
+    std::string pendingScrollPath;
 };
 
 AssetBrowserSession& assetBrowserSession() {
@@ -37,6 +38,19 @@ const std::vector<EditorAssetBrowserNode>& cachedAssetNodes(bool forceRefresh = 
     return session.cachedNodes;
 }
 
+void requestAssetScroll(const std::string& path) {
+    assetBrowserSession().pendingScrollPath = path;
+}
+
+bool consumeAssetScrollRequest(const std::string& path) {
+    AssetBrowserSession& session = assetBrowserSession();
+    if (session.pendingScrollPath != path) {
+        return false;
+    }
+    session.pendingScrollPath.clear();
+    return true;
+}
+
 void setSelectedAsset(EditorUiState& ui, const EditorAssetBrowserNode& node) {
     if (ui.selectedAssetPath == node.relativePath
         && ui.inspectedAsset.absolutePath == node.absolutePath
@@ -47,6 +61,7 @@ void setSelectedAsset(EditorUiState& ui, const EditorAssetBrowserNode& node) {
     }
 
     ui.selectedAssetPath = node.relativePath;
+    requestAssetScroll(ui.selectedAssetPath);
     ui.inspectorContext = EditorInspectorContext::AssetSelection;
     ui.inspectedAsset.relativePath = node.relativePath;
     ui.inspectedAsset.absolutePath = node.absolutePath;
@@ -101,6 +116,7 @@ void ensureValidAssetSelection(EditorUiState& ui, const std::vector<AssetBrowser
         return;
     }
     ui.selectedAssetPath = rows.front().path;
+    requestAssetScroll(ui.selectedAssetPath);
 }
 
 bool shouldHandleAssetBrowserKeys() {
@@ -119,6 +135,7 @@ void selectAdjacentAsset(EditorUiState& ui,
     int index = findVisibleRowIndex(rows, ui.selectedAssetPath);
     if (index < 0) {
         ui.selectedAssetPath = rows.front().path;
+        requestAssetScroll(ui.selectedAssetPath);
         return;
     }
     index = std::clamp(index + delta, 0, static_cast<int>(rows.size()) - 1);
@@ -273,7 +290,7 @@ AssetBrowserActionResult renderAssetBrowser(EditorUiState& ui,
                     ui.expandedAssetPaths.erase(node.relativePath);
                 }
             }
-            if (ui.selectedAssetPath == node.relativePath) {
+            if (consumeAssetScrollRequest(node.relativePath)) {
                 ImGui::SetScrollHereY(0.5f);
             }
             if (ImGui::BeginPopupContextItem("AssetFolderContext")) {
@@ -295,7 +312,7 @@ AssetBrowserActionResult renderAssetBrowser(EditorUiState& ui,
         if (ImGui::Selectable(node.name.c_str(), selected)) {
             setSelectedAsset(ui, node);
         }
-        if (selected) {
+        if (consumeAssetScrollRequest(node.relativePath)) {
             ImGui::SetScrollHereY(0.5f);
         }
 

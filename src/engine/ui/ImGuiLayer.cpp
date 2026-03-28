@@ -10,11 +10,48 @@
 #include <GLFW/glfw3.h>
 #include <spdlog/spdlog.h>
 
+#include <array>
+#include <filesystem>
+
+namespace {
+
+void configureDefaultFont(ImGuiIO& io) {
+    // Prefer a more legible system UI font for menus and dense editor chrome.
+    static constexpr std::array<const char*, 4> kFontCandidates{
+        "/System/Library/Fonts/SFNS.ttf",
+        "/System/Library/Fonts/Supplemental/Verdana.ttf",
+        "/System/Library/Fonts/Supplemental/Trebuchet MS.ttf",
+        "/System/Library/Fonts/Supplemental/Arial.ttf",
+    };
+
+    ImFontConfig fontConfig;
+    fontConfig.OversampleH = 2;
+    fontConfig.OversampleV = 2;
+    fontConfig.RasterizerMultiply = 1.05f;
+
+    for (const char* fontPath : kFontCandidates) {
+        if (!std::filesystem::exists(fontPath)) {
+            continue;
+        }
+
+        if (ImFont* font = io.Fonts->AddFontFromFileTTF(fontPath, 16.5f, &fontConfig)) {
+            io.FontDefault = font;
+            spdlog::info("Loaded ImGui font '{}'", fontPath);
+            return;
+        }
+    }
+
+    spdlog::warn("Falling back to ImGui default font; no readable system font candidate loaded");
+}
+
+} // namespace
+
 void ImGuiLayer::init(GLFWwindow* window) {
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
     ImGuiIO& io = ImGui::GetIO();
     io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
+    configureDefaultFont(io);
 
     ImGui::StyleColorsDark();
 

@@ -74,6 +74,7 @@ struct EditorUiState {
     std::unordered_set<std::string> expandedAssetPaths{"assets"};
     EditorInspectorContext inspectorContext = EditorInspectorContext::None;
     EditorInspectedAsset inspectedAsset{};
+    bool frameSelectionRequested = false;
     char layoutNameBuffer[64] = "default";
 };
 
