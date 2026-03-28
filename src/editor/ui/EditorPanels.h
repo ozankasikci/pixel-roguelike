@@ -1,6 +1,6 @@
 #pragma once
 
-#include "editor/LevelEditorUi.h"
+#include "editor/ui/LevelEditorUi.h"
 
 class ContentRegistry;
 

@@ -1,6 +1,6 @@
-#include "editor/EditorSelectionSystem.h"
+#include "editor/scene/EditorSelectionSystem.h"
 
-#include "editor/EditorPreviewWorld.h"
+#include "editor/scene/EditorPreviewWorld.h"
 
 #include <glm/gtc/matrix_inverse.hpp>
 #include <glm/gtc/matrix_transform.hpp>

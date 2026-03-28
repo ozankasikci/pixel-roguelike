@@ -1,4 +1,4 @@
-#include "editor/EditorSelectionSystem.h"
+#include "editor/scene/EditorSelectionSystem.h"
 
 #include <cassert>
 #include <glm/glm.hpp>

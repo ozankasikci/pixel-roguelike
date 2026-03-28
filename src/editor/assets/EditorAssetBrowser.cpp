@@ -1,4 +1,4 @@
-#include "editor/EditorAssetBrowser.h"
+#include "editor/assets/EditorAssetBrowser.h"
 
 #include "engine/core/PathUtils.h"
 

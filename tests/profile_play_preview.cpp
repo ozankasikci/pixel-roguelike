@@ -1,4 +1,4 @@
-#include "editor/EditorSceneDocument.h"
+#include "editor/scene/EditorSceneDocument.h"
 #include "editor/core/EditorRuntimePreviewSession.h"
 #include "engine/core/Window.h"
 #include "game/content/ContentRegistry.h"

@@ -1,4 +1,4 @@
-#include "editor/LevelEditorUi.h"
+#include "editor/ui/LevelEditorUi.h"
 
 #include "game/content/ContentRegistry.h"
 

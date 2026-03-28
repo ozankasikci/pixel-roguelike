@@ -1,4 +1,4 @@
-#include "editor/EditorPreviewWorld.h"
+#include "editor/scene/EditorPreviewWorld.h"
 
 #include "engine/core/PathUtils.h"
 #include "game/components/LightComponent.h"

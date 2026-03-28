@@ -1,8 +1,8 @@
 #pragma once
 
-#include "editor/EditorLayoutPreset.h"
-#include "editor/EditorPreviewWorld.h"
-#include "editor/LevelEditorUi.h"
+#include "editor/core/EditorLayoutPreset.h"
+#include "editor/scene/EditorPreviewWorld.h"
+#include "editor/ui/LevelEditorUi.h"
 #include "editor/viewport/EditorViewportInteraction.h"
 
 #include <imgui.h>

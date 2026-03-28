@@ -1,8 +1,8 @@
 #include "editor/ui/EditorOutlinerPanel.h"
 
-#include "editor/EditorCommand.h"
-#include "editor/EditorSceneDocument.h"
-#include "editor/LevelEditorUi.h"
+#include "editor/core/EditorCommand.h"
+#include "editor/scene/EditorSceneDocument.h"
+#include "editor/ui/LevelEditorUi.h"
 #include "editor/viewport/EditorViewportInteraction.h"
 
 #include <imgui.h>

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "editor/EditorSceneDocument.h"
+#include "editor/scene/EditorSceneDocument.h"
 #include "game/level/LevelBuildContext.h"
 
 #include <glm/glm.hpp>

@@ -120,50 +120,37 @@ add_test(NAME environment_profiles COMMAND test_environment_profiles)
 
 add_executable(test_editor_selection
     test_editor_selection.cpp
-    ${CMAKE_SOURCE_DIR}/src/editor/EditorSelectionSystem.cpp
-    ${CMAKE_SOURCE_DIR}/src/editor/EditorSceneDocument.cpp
-    ${CMAKE_SOURCE_DIR}/src/editor/EditorSceneSerializer.cpp
-    ${CMAKE_SOURCE_DIR}/src/editor/EditorPreviewWorld.cpp
 )
 target_include_directories(test_editor_selection PRIVATE ${CMAKE_SOURCE_DIR}/src)
-target_link_libraries(test_editor_selection PRIVATE game engine_rendering EnTT::EnTT glm::glm)
+target_link_libraries(test_editor_selection PRIVATE editor)
 add_test(NAME editor_selection COMMAND test_editor_selection)
 
 add_executable(test_editor_command_stack
     test_editor_command_stack.cpp
-    ${CMAKE_SOURCE_DIR}/src/editor/EditorCommand.cpp
-    ${CMAKE_SOURCE_DIR}/src/editor/EditorSceneDocument.cpp
-    ${CMAKE_SOURCE_DIR}/src/editor/EditorSceneSerializer.cpp
 )
 target_include_directories(test_editor_command_stack PRIVATE ${CMAKE_SOURCE_DIR}/src)
-target_link_libraries(test_editor_command_stack PRIVATE game engine_rendering EnTT::EnTT glm::glm)
+target_link_libraries(test_editor_command_stack PRIVATE editor)
 add_test(NAME editor_command_stack COMMAND test_editor_command_stack)
 
 add_executable(test_editor_layout_presets
     test_editor_layout_presets.cpp
-    ${CMAKE_SOURCE_DIR}/src/engine/core/PathUtils.cpp
-    ${CMAKE_SOURCE_DIR}/src/editor/EditorLayoutPreset.cpp
 )
 target_include_directories(test_editor_layout_presets PRIVATE ${CMAKE_SOURCE_DIR}/src)
-target_link_libraries(test_editor_layout_presets PRIVATE glm::glm)
+target_link_libraries(test_editor_layout_presets PRIVATE editor)
 add_test(NAME editor_layout_presets COMMAND test_editor_layout_presets)
 
 add_executable(test_editor_hierarchy
     test_editor_hierarchy.cpp
-    ${CMAKE_SOURCE_DIR}/src/editor/EditorSceneDocument.cpp
-    ${CMAKE_SOURCE_DIR}/src/editor/EditorSceneSerializer.cpp
 )
 target_include_directories(test_editor_hierarchy PRIVATE ${CMAKE_SOURCE_DIR}/src)
-target_link_libraries(test_editor_hierarchy PRIVATE game engine_rendering EnTT::EnTT glm::glm)
+target_link_libraries(test_editor_hierarchy PRIVATE editor)
 add_test(NAME editor_hierarchy COMMAND test_editor_hierarchy)
 
 add_executable(test_editor_asset_browser
     test_editor_asset_browser.cpp
-    ${CMAKE_SOURCE_DIR}/src/editor/EditorAssetBrowser.cpp
-    ${CMAKE_SOURCE_DIR}/src/engine/core/PathUtils.cpp
 )
 target_include_directories(test_editor_asset_browser PRIVATE ${CMAKE_SOURCE_DIR}/src)
-target_link_libraries(test_editor_asset_browser PRIVATE glm::glm)
+target_link_libraries(test_editor_asset_browser PRIVATE editor)
 add_test(NAME editor_asset_browser COMMAND test_editor_asset_browser)
 
 add_executable(test_runtime_game_session test_runtime_game_session.cpp)
@@ -174,14 +161,9 @@ target_compile_definitions(test_runtime_game_session PRIVATE
 )
 add_test(NAME runtime_game_session COMMAND test_runtime_game_session)
 
-add_executable(profile_play_preview
-    profile_play_preview.cpp
-    ${CMAKE_SOURCE_DIR}/src/editor/EditorSceneDocument.cpp
-    ${CMAKE_SOURCE_DIR}/src/editor/EditorSceneSerializer.cpp
-    ${CMAKE_SOURCE_DIR}/src/editor/core/EditorRuntimePreviewSession.cpp
-)
+add_executable(profile_play_preview profile_play_preview.cpp)
 target_include_directories(profile_play_preview PRIVATE ${CMAKE_SOURCE_DIR}/src)
-target_link_libraries(profile_play_preview PRIVATE game engine_core engine_rendering engine_ui EnTT::EnTT glm::glm)
+target_link_libraries(profile_play_preview PRIVATE editor)
 target_compile_definitions(profile_play_preview PRIVATE
     SILOS_CLOISTER_SCENE_FILE="${CMAKE_SOURCE_DIR}/assets/scenes/silos_cloister.scene"
 )

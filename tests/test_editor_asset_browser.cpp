@@ -1,4 +1,4 @@
-#include "editor/EditorAssetBrowser.h"
+#include "editor/assets/EditorAssetBrowser.h"
 
 #include <cassert>
 #include <filesystem>

@@ -1,7 +1,7 @@
 #pragma once
 
-#include "editor/EditorSelectionSystem.h"
-#include "editor/LevelEditorUi.h"
+#include "editor/scene/EditorSelectionSystem.h"
+#include "editor/ui/LevelEditorUi.h"
 
 #include <imgui.h>
 

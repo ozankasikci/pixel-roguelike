@@ -1,6 +1,6 @@
 #include "editor/ui/EditorPanels.h"
 
-#include "editor/EditorAssetBrowser.h"
+#include "editor/assets/EditorAssetBrowser.h"
 #include "game/content/ContentRegistry.h"
 
 #include <algorithm>

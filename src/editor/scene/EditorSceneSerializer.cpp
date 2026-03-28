@@ -1,4 +1,4 @@
-#include "editor/EditorSceneSerializer.h"
+#include "editor/scene/EditorSceneSerializer.h"
 
 namespace EditorSceneSerializer {
 

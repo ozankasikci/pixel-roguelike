@@ -1,6 +1,6 @@
 #pragma once
 
-#include "editor/EditorSceneDocument.h"
+#include "editor/scene/EditorSceneDocument.h"
 
 #include <memory>
 #include <string>

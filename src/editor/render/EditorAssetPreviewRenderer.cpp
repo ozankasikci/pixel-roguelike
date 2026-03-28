@@ -1,4 +1,4 @@
-#include "editor/EditorAssetPreviewRenderer.h"
+#include "editor/render/EditorAssetPreviewRenderer.h"
 
 #include "engine/rendering/assets/GltfLoader.h"
 #include "engine/rendering/core/Shader.h"

@@ -1,6 +1,6 @@
 #include "editor/core/EditorRuntimePreviewSession.h"
 
-#include "editor/EditorSceneDocument.h"
+#include "editor/scene/EditorSceneDocument.h"
 
 #include <GLFW/glfw3.h>
 #include <imgui.h>

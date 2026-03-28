@@ -1,7 +1,7 @@
 #include "editor/viewport/EditorViewportInteraction.h"
 
-#include "editor/EditorPreviewWorld.h"
-#include "editor/EditorViewportController.h"
+#include "editor/scene/EditorPreviewWorld.h"
+#include "editor/viewport/EditorViewportController.h"
 #include "engine/rendering/geometry/MeshLibrary.h"
 #include "game/content/ContentRegistry.h"
 #include "game/rendering/MaterialDefinition.h"

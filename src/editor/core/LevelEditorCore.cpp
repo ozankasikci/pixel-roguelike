@@ -1,8 +1,8 @@
 #include "editor/core/LevelEditorCore.h"
 
 #include "engine/core/PathUtils.h"
-#include "editor/EditorCommand.h"
-#include "editor/EditorViewportController.h"
+#include "editor/core/EditorCommand.h"
+#include "editor/viewport/EditorViewportController.h"
 #include "game/components/CameraComponent.h"
 #include "game/content/ContentRegistry.h"
 #include "game/rendering/EnvironmentDefinition.h"

@@ -1,7 +1,7 @@
 #include "editor/render/EditorScenePreviewRenderer.h"
 
-#include "editor/EditorPreviewWorld.h"
-#include "editor/EditorSceneDocument.h"
+#include "editor/scene/EditorPreviewWorld.h"
+#include "editor/scene/EditorSceneDocument.h"
 #include "editor/viewport/EditorViewportInteraction.h"
 #include "engine/rendering/core/Shader.h"
 #include "engine/rendering/geometry/MeshLibrary.h"

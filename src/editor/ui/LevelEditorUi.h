@@ -1,9 +1,9 @@
 #pragma once
 
-#include "editor/EditorAssetBrowser.h"
-#include "editor/EditorCommand.h"
-#include "editor/EditorSceneDocument.h"
-#include "editor/EditorViewportController.h"
+#include "editor/assets/EditorAssetBrowser.h"
+#include "editor/core/EditorCommand.h"
+#include "editor/scene/EditorSceneDocument.h"
+#include "editor/viewport/EditorViewportController.h"
 #include "game/rendering/MaterialDefinition.h"
 
 #include <cstdint>

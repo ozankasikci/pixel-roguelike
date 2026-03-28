@@ -1,6 +1,6 @@
 #include "editor/ui/EditorPanels.h"
 
-#include "editor/EditorAssetPreviewRenderer.h"
+#include "editor/render/EditorAssetPreviewRenderer.h"
 #include "game/content/ContentRegistry.h"
 #include "game/level/LevelDef.h"
 #include "game/rendering/EnvironmentDefinition.h"

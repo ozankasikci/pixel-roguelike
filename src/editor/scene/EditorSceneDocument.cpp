@@ -1,6 +1,6 @@
-#include "editor/EditorSceneDocument.h"
+#include "editor/scene/EditorSceneDocument.h"
 
-#include "editor/EditorSceneSerializer.h"
+#include "editor/scene/EditorSceneSerializer.h"
 #include "game/content/ContentRegistry.h"
 #include "game/rendering/MaterialDefinition.h"
 

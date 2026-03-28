@@ -1,4 +1,4 @@
-#include "editor/EditorCommand.h"
+#include "editor/core/EditorCommand.h"
 
 #include "game/level/LevelDef.h"
 #include "game/rendering/EnvironmentDefinition.h"

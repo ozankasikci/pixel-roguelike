@@ -1,5 +1,5 @@
-#include "editor/EditorCommand.h"
-#include "editor/EditorSceneDocument.h"
+#include "editor/core/EditorCommand.h"
+#include "editor/scene/EditorSceneDocument.h"
 
 #include <cassert>
 #include <cmath>
