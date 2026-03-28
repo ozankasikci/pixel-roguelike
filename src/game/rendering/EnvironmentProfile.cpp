@@ -1,0 +1,504 @@
+#include "game/rendering/EnvironmentProfile.h"
+
+namespace {
+
+SkySettings makeNeutralSky() {
+    SkySettings sky;
+    sky.enabled = true;
+    sky.zenithColor = glm::vec3(0.20f, 0.24f, 0.30f);
+    sky.horizonColor = glm::vec3(0.62f, 0.66f, 0.68f);
+    sky.groundHazeColor = glm::vec3(0.74f, 0.72f, 0.68f);
+    sky.sunDirection = glm::normalize(glm::vec3(0.24f, 0.88f, 0.26f));
+    sky.sunColor = glm::vec3(0.98f, 0.94f, 0.88f);
+    sky.sunSize = 0.018f;
+    sky.sunGlow = 0.20f;
+    sky.cloudLayerAPath = "assets/skies/clouds_soft.tga";
+    sky.cloudTint = glm::vec3(0.92f, 0.94f, 0.96f);
+    sky.cloudScale = 0.92f;
+    sky.cloudSpeed = 0.0024f;
+    sky.cloudCoverage = 0.42f;
+    sky.cloudParallax = 0.015f;
+    return sky;
+}
+
+SkySettings makeDungeonSky() {
+    SkySettings sky;
+    sky.enabled = false;
+    sky.zenithColor = glm::vec3(0.03f, 0.03f, 0.04f);
+    sky.horizonColor = glm::vec3(0.05f, 0.04f, 0.03f);
+    sky.groundHazeColor = glm::vec3(0.06f, 0.05f, 0.04f);
+    return sky;
+}
+
+SkySettings makeMeadowSky() {
+    SkySettings sky;
+    sky.enabled = true;
+    sky.zenithColor = glm::vec3(0.22f, 0.48f, 0.86f);
+    sky.horizonColor = glm::vec3(0.88f, 0.86f, 0.72f);
+    sky.groundHazeColor = glm::vec3(0.94f, 0.84f, 0.64f);
+    sky.sunDirection = glm::normalize(glm::vec3(0.32f, 0.86f, 0.24f));
+    sky.sunColor = glm::vec3(1.00f, 0.92f, 0.72f);
+    sky.sunSize = 0.026f;
+    sky.sunGlow = 0.42f;
+    sky.cloudLayerAPath = "assets/skies/clouds_soft.tga";
+    sky.cloudLayerBPath = "assets/skies/clouds_wispy.tga";
+    sky.horizonLayerPath = "assets/skies/horizon_hills.tga";
+    sky.cloudTint = glm::vec3(1.00f, 0.97f, 0.94f);
+    sky.cloudScale = 0.86f;
+    sky.cloudSpeed = 0.0036f;
+    sky.cloudCoverage = 0.54f;
+    sky.cloudParallax = 0.028f;
+    sky.horizonTint = glm::vec3(0.74f, 0.82f, 0.70f);
+    sky.horizonHeight = 0.53f;
+    sky.horizonFade = 0.24f;
+    return sky;
+}
+
+SkySettings makeDuskSky() {
+    SkySettings sky;
+    sky.enabled = true;
+    sky.zenithColor = glm::vec3(0.14f, 0.14f, 0.28f);
+    sky.horizonColor = glm::vec3(0.56f, 0.42f, 0.60f);
+    sky.groundHazeColor = glm::vec3(0.34f, 0.30f, 0.38f);
+    sky.sunDirection = glm::normalize(glm::vec3(-0.42f, 0.28f, -0.26f));
+    sky.sunColor = glm::vec3(0.94f, 0.72f, 0.48f);
+    sky.sunSize = 0.030f;
+    sky.sunGlow = 0.36f;
+    sky.moonEnabled = true;
+    sky.moonDirection = glm::normalize(glm::vec3(0.12f, 0.92f, 0.30f));
+    sky.moonColor = glm::vec3(0.68f, 0.76f, 0.94f);
+    sky.moonSize = 0.020f;
+    sky.moonGlow = 0.16f;
+    sky.cloudLayerAPath = "assets/skies/clouds_wispy.tga";
+    sky.horizonLayerPath = "assets/skies/horizon_mountains.tga";
+    sky.cloudTint = glm::vec3(0.82f, 0.76f, 0.94f);
+    sky.cloudScale = 1.08f;
+    sky.cloudSpeed = 0.0020f;
+    sky.cloudCoverage = 0.48f;
+    sky.cloudParallax = 0.020f;
+    sky.horizonTint = glm::vec3(0.20f, 0.18f, 0.28f);
+    sky.horizonHeight = 0.56f;
+    sky.horizonFade = 0.28f;
+    return sky;
+}
+
+SkySettings makeArcaneSky() {
+    SkySettings sky;
+    sky.enabled = true;
+    sky.zenithColor = glm::vec3(0.08f, 0.28f, 0.34f);
+    sky.horizonColor = glm::vec3(0.90f, 0.74f, 0.34f);
+    sky.groundHazeColor = glm::vec3(0.34f, 0.30f, 0.16f);
+    sky.sunDirection = glm::normalize(glm::vec3(0.16f, 0.70f, 0.42f));
+    sky.sunColor = glm::vec3(1.00f, 0.86f, 0.44f);
+    sky.sunSize = 0.024f;
+    sky.sunGlow = 0.48f;
+    sky.moonEnabled = true;
+    sky.moonDirection = glm::normalize(glm::vec3(-0.36f, 0.88f, -0.18f));
+    sky.moonColor = glm::vec3(0.46f, 0.84f, 0.96f);
+    sky.moonSize = 0.030f;
+    sky.moonGlow = 0.24f;
+    sky.cloudLayerAPath = "assets/skies/clouds_wispy.tga";
+    sky.cloudLayerBPath = "assets/skies/clouds_soft.tga";
+    sky.horizonLayerPath = "assets/skies/horizon_arcane_spires.tga";
+    sky.cloudTint = glm::vec3(0.90f, 0.90f, 0.68f);
+    sky.cloudScale = 0.94f;
+    sky.cloudSpeed = 0.0032f;
+    sky.cloudCoverage = 0.42f;
+    sky.cloudParallax = 0.025f;
+    sky.horizonTint = glm::vec3(0.46f, 0.34f, 0.18f);
+    sky.horizonHeight = 0.57f;
+    sky.horizonFade = 0.24f;
+    return sky;
+}
+
+SkySettings makeCathedralSky() {
+    SkySettings sky;
+    sky.enabled = true;
+    sky.zenithColor = glm::vec3(0.12f, 0.16f, 0.18f);
+    sky.horizonColor = glm::vec3(0.34f, 0.36f, 0.34f);
+    sky.groundHazeColor = glm::vec3(0.18f, 0.18f, 0.16f);
+    sky.sunDirection = glm::normalize(glm::vec3(0.18f, 0.82f, 0.18f));
+    sky.sunColor = glm::vec3(0.90f, 0.92f, 0.88f);
+    sky.sunSize = 0.014f;
+    sky.sunGlow = 0.12f;
+    sky.cloudLayerAPath = "assets/skies/clouds_wispy.tga";
+    sky.cloudTint = glm::vec3(0.72f, 0.78f, 0.74f);
+    sky.cloudScale = 1.10f;
+    sky.cloudSpeed = 0.0016f;
+    sky.cloudCoverage = 0.28f;
+    sky.cloudParallax = 0.012f;
+    return sky;
+}
+
+SkySettings makeCloisterSky() {
+    SkySettings sky;
+    sky.enabled = true;
+    sky.zenithColor = glm::vec3(0.24f, 0.38f, 0.62f);
+    sky.horizonColor = glm::vec3(0.84f, 0.82f, 0.74f);
+    sky.groundHazeColor = glm::vec3(0.78f, 0.74f, 0.66f);
+    sky.sunDirection = glm::normalize(glm::vec3(0.26f, 0.88f, 0.24f));
+    sky.sunColor = glm::vec3(0.98f, 0.93f, 0.82f);
+    sky.sunSize = 0.012f;
+    sky.sunGlow = 0.06f;
+    sky.cubemapFacePaths = {
+        "assets/skies/syferfontein_0d_clear_puresky_cube/px.jpg",
+        "assets/skies/syferfontein_0d_clear_puresky_cube/nx.jpg",
+        "assets/skies/syferfontein_0d_clear_puresky_cube/py.jpg",
+        "assets/skies/syferfontein_0d_clear_puresky_cube/ny.jpg",
+        "assets/skies/syferfontein_0d_clear_puresky_cube/pz.jpg",
+        "assets/skies/syferfontein_0d_clear_puresky_cube/nz.jpg",
+    };
+    sky.cubemapTint = glm::vec3(1.00f);
+    sky.cubemapStrength = 1.00f;
+    sky.horizonLayerPath.clear();
+    sky.cloudTint = glm::vec3(1.00f);
+    sky.cloudScale = 0.90f;
+    sky.cloudSpeed = 0.0f;
+    sky.cloudCoverage = 0.0f;
+    sky.cloudParallax = 0.024f;
+    sky.horizonTint = glm::vec3(1.0f);
+    sky.horizonHeight = 0.55f;
+    sky.horizonFade = 0.22f;
+    return sky;
+}
+
+DirectionalLightSlot makeSunSlot(const SkySettings& sky, float intensity, bool enabled = true) {
+    DirectionalLightSlot slot;
+    slot.enabled = enabled && intensity > 0.001f;
+    if (glm::dot(sky.sunDirection, sky.sunDirection) > 0.0001f) {
+        slot.direction = glm::normalize(sky.sunDirection);
+    }
+    slot.color = sky.sunColor;
+    slot.intensity = intensity;
+    return slot;
+}
+
+DirectionalLightSlot makeFillSlot(const glm::vec3& direction,
+                                  const glm::vec3& color,
+                                  float intensity,
+                                  bool enabled = true) {
+    DirectionalLightSlot slot;
+    slot.enabled = enabled && intensity > 0.001f;
+    if (glm::dot(direction, direction) > 0.0001f) {
+        slot.direction = glm::normalize(direction);
+    }
+    slot.color = color;
+    slot.intensity = intensity;
+    return slot;
+}
+
+EnvironmentRenderSettings makeNeutralSettings() {
+    EnvironmentRenderSettings settings;
+    settings.profile = EnvironmentProfile::Neutral;
+    settings.sky = makeNeutralSky();
+    settings.post.paletteVariant = 0;
+    settings.post.fogDensity = 0.040f;
+    settings.post.fogStart = 14.0f;
+    settings.post.fogNearColor = glm::vec3(0.06f, 0.055f, 0.05f);
+    settings.post.fogFarColor = glm::vec3(0.13f, 0.12f, 0.11f);
+    settings.post.exposure = 1.02f;
+    settings.post.gamma = 1.0f;
+    settings.post.contrast = 1.06f;
+    settings.post.saturation = 0.96f;
+    settings.post.bloomThreshold = 0.58f;
+    settings.post.bloomIntensity = 0.14f;
+    settings.post.bloomRadius = 1.8f;
+    settings.post.vignetteStrength = 0.24f;
+    settings.post.vignetteSoftness = 0.68f;
+    settings.post.splitToneStrength = 0.12f;
+    settings.post.splitToneBalance = 0.50f;
+    settings.post.shadowTint = glm::vec3(0.86f, 0.88f, 0.92f);
+    settings.post.highlightTint = glm::vec3(0.98f, 0.92f, 0.82f);
+
+    settings.lighting.hemisphereSkyColor = glm::vec3(0.16f, 0.17f, 0.19f);
+    settings.lighting.hemisphereGroundColor = glm::vec3(0.06f, 0.055f, 0.05f);
+    settings.lighting.hemisphereStrength = 0.30f;
+    settings.lighting.enableDirectionalLights = true;
+    settings.lighting.sun = makeSunSlot(settings.sky, 0.92f);
+    settings.lighting.fill = makeFillSlot(glm::vec3(-0.20f, 0.72f, -0.34f),
+                                          glm::vec3(0.76f, 0.82f, 0.92f),
+                                          0.10f,
+                                          false);
+    return settings;
+}
+
+EnvironmentRenderSettings makeDungeonTorchSettings() {
+    EnvironmentRenderSettings settings = makeNeutralSettings();
+    settings.profile = EnvironmentProfile::DungeonTorch;
+    settings.sky = makeDungeonSky();
+    settings.post.paletteVariant = 1;
+    settings.post.fogNearColor = glm::vec3(0.07f, 0.05f, 0.03f);
+    settings.post.fogFarColor = glm::vec3(0.16f, 0.11f, 0.06f);
+    settings.post.fogDensity = 0.060f;
+    settings.post.fogStart = 12.0f;
+    settings.post.exposure = 1.06f;
+    settings.post.gamma = 0.98f;
+    settings.post.contrast = 1.10f;
+    settings.post.saturation = 0.98f;
+    settings.post.bloomThreshold = 0.46f;
+    settings.post.bloomIntensity = 0.28f;
+    settings.post.bloomRadius = 2.10f;
+    settings.post.vignetteStrength = 0.34f;
+    settings.post.vignetteSoftness = 0.58f;
+    settings.post.splitToneStrength = 0.24f;
+    settings.post.splitToneBalance = 0.44f;
+    settings.post.shadowTint = glm::vec3(0.64f, 0.50f, 0.30f);
+    settings.post.highlightTint = glm::vec3(0.96f, 0.78f, 0.40f);
+
+    settings.lighting.hemisphereSkyColor = glm::vec3(0.20f, 0.14f, 0.08f);
+    settings.lighting.hemisphereGroundColor = glm::vec3(0.07f, 0.05f, 0.03f);
+    settings.lighting.hemisphereStrength = 0.24f;
+    settings.lighting.enableDirectionalLights = false;
+    settings.lighting.sun = makeSunSlot(settings.sky, 0.0f, false);
+    settings.lighting.fill = makeFillSlot(glm::vec3(-0.20f, 0.72f, -0.34f),
+                                          glm::vec3(1.0f),
+                                          0.0f,
+                                          false);
+    return settings;
+}
+
+EnvironmentRenderSettings makeSunlitMeadowSettings() {
+    EnvironmentRenderSettings settings = makeNeutralSettings();
+    settings.profile = EnvironmentProfile::SunlitMeadow;
+    settings.sky = makeMeadowSky();
+    settings.post.paletteVariant = 2;
+    settings.post.fogNearColor = glm::vec3(0.66f, 0.76f, 0.84f);
+    settings.post.fogFarColor = glm::vec3(0.86f, 0.89f, 0.82f);
+    settings.post.fogDensity = 0.028f;
+    settings.post.fogStart = 18.0f;
+    settings.post.exposure = 1.12f;
+    settings.post.gamma = 1.0f;
+    settings.post.contrast = 1.04f;
+    settings.post.saturation = 1.10f;
+    settings.post.bloomThreshold = 0.68f;
+    settings.post.bloomIntensity = 0.16f;
+    settings.post.bloomRadius = 1.45f;
+    settings.post.vignetteStrength = 0.16f;
+    settings.post.vignetteSoftness = 0.70f;
+    settings.post.splitToneStrength = 0.12f;
+    settings.post.splitToneBalance = 0.58f;
+    settings.post.shadowTint = glm::vec3(0.82f, 0.90f, 0.96f);
+    settings.post.highlightTint = glm::vec3(1.00f, 0.92f, 0.66f);
+
+    settings.lighting.hemisphereSkyColor = glm::vec3(0.56f, 0.72f, 0.92f);
+    settings.lighting.hemisphereGroundColor = glm::vec3(0.26f, 0.31f, 0.15f);
+    settings.lighting.hemisphereStrength = 0.52f;
+    settings.lighting.enableDirectionalLights = true;
+    settings.lighting.sun = makeSunSlot(settings.sky, 1.24f);
+    settings.lighting.fill = makeFillSlot(glm::vec3(-0.18f, 0.64f, -0.44f),
+                                          glm::vec3(0.68f, 0.78f, 0.92f),
+                                          0.18f);
+    return settings;
+}
+
+EnvironmentRenderSettings makeMountainDuskSettings() {
+    EnvironmentRenderSettings settings = makeNeutralSettings();
+    settings.profile = EnvironmentProfile::MountainDusk;
+    settings.sky = makeDuskSky();
+    settings.post.paletteVariant = 3;
+    settings.post.fogNearColor = glm::vec3(0.24f, 0.24f, 0.34f);
+    settings.post.fogFarColor = glm::vec3(0.56f, 0.54f, 0.70f);
+    settings.post.fogDensity = 0.038f;
+    settings.post.fogStart = 15.0f;
+    settings.post.exposure = 0.96f;
+    settings.post.gamma = 1.0f;
+    settings.post.contrast = 1.02f;
+    settings.post.saturation = 0.92f;
+    settings.post.bloomThreshold = 0.64f;
+    settings.post.bloomIntensity = 0.14f;
+    settings.post.bloomRadius = 1.60f;
+    settings.post.vignetteStrength = 0.22f;
+    settings.post.vignetteSoftness = 0.68f;
+    settings.post.splitToneStrength = 0.18f;
+    settings.post.splitToneBalance = 0.42f;
+    settings.post.shadowTint = glm::vec3(0.58f, 0.60f, 0.82f);
+    settings.post.highlightTint = glm::vec3(0.90f, 0.82f, 0.64f);
+
+    settings.lighting.hemisphereSkyColor = glm::vec3(0.34f, 0.36f, 0.54f);
+    settings.lighting.hemisphereGroundColor = glm::vec3(0.10f, 0.12f, 0.16f);
+    settings.lighting.hemisphereStrength = 0.38f;
+    settings.lighting.enableDirectionalLights = true;
+    settings.lighting.sun = makeSunSlot(settings.sky, 0.72f);
+    settings.lighting.fill = makeFillSlot(glm::vec3(0.18f, 0.86f, 0.14f),
+                                          glm::vec3(0.52f, 0.56f, 0.80f),
+                                          0.16f);
+    return settings;
+}
+
+EnvironmentRenderSettings makeArcaneFieldSettings() {
+    EnvironmentRenderSettings settings = makeNeutralSettings();
+    settings.profile = EnvironmentProfile::ArcaneField;
+    settings.sky = makeArcaneSky();
+    settings.post.paletteVariant = 4;
+    settings.post.fogNearColor = glm::vec3(0.18f, 0.30f, 0.30f);
+    settings.post.fogFarColor = glm::vec3(0.74f, 0.68f, 0.42f);
+    settings.post.fogDensity = 0.030f;
+    settings.post.fogStart = 16.0f;
+    settings.post.exposure = 1.08f;
+    settings.post.gamma = 0.98f;
+    settings.post.contrast = 1.08f;
+    settings.post.saturation = 1.12f;
+    settings.post.bloomThreshold = 0.56f;
+    settings.post.bloomIntensity = 0.20f;
+    settings.post.bloomRadius = 1.90f;
+    settings.post.vignetteStrength = 0.18f;
+    settings.post.vignetteSoftness = 0.76f;
+    settings.post.splitToneStrength = 0.22f;
+    settings.post.splitToneBalance = 0.50f;
+    settings.post.shadowTint = glm::vec3(0.64f, 0.78f, 0.76f);
+    settings.post.highlightTint = glm::vec3(0.98f, 0.84f, 0.42f);
+
+    settings.lighting.hemisphereSkyColor = glm::vec3(0.22f, 0.46f, 0.52f);
+    settings.lighting.hemisphereGroundColor = glm::vec3(0.30f, 0.24f, 0.08f);
+    settings.lighting.hemisphereStrength = 0.46f;
+    settings.lighting.enableDirectionalLights = true;
+    settings.lighting.sun = makeSunSlot(settings.sky, 1.06f);
+    settings.lighting.fill = makeFillSlot(glm::vec3(-0.34f, 0.78f, -0.14f),
+                                          glm::vec3(0.42f, 0.68f, 0.78f),
+                                          0.24f);
+    return settings;
+}
+
+EnvironmentRenderSettings makeCathedralArcadeSettings() {
+    EnvironmentRenderSettings settings = makeNeutralSettings();
+    settings.profile = EnvironmentProfile::CathedralArcade;
+    settings.sky = makeCathedralSky();
+    settings.post.paletteVariant = 5;
+    settings.post.thresholdBias = -0.018f;
+    settings.post.fogNearColor = glm::vec3(0.06f, 0.07f, 0.07f);
+    settings.post.fogFarColor = glm::vec3(0.15f, 0.17f, 0.15f);
+    settings.post.fogDensity = 0.034f;
+    settings.post.fogStart = 14.5f;
+    settings.post.exposure = 1.04f;
+    settings.post.gamma = 1.0f;
+    settings.post.contrast = 1.06f;
+    settings.post.saturation = 0.90f;
+    settings.post.bloomThreshold = 0.54f;
+    settings.post.bloomIntensity = 0.10f;
+    settings.post.bloomRadius = 1.50f;
+    settings.post.vignetteStrength = 0.22f;
+    settings.post.vignetteSoftness = 0.64f;
+    settings.post.splitToneStrength = 0.04f;
+    settings.post.splitToneBalance = 0.50f;
+    settings.post.shadowTint = glm::vec3(0.82f, 0.88f, 0.84f);
+    settings.post.highlightTint = glm::vec3(0.94f, 0.89f, 0.78f);
+
+    settings.lighting.hemisphereSkyColor = glm::vec3(0.18f, 0.21f, 0.18f);
+    settings.lighting.hemisphereGroundColor = glm::vec3(0.05f, 0.06f, 0.04f);
+    settings.lighting.hemisphereStrength = 0.40f;
+    settings.lighting.enableDirectionalLights = true;
+    settings.lighting.sun = makeSunSlot(settings.sky, 0.16f);
+    settings.lighting.fill = makeFillSlot(glm::vec3(-0.26f, 0.80f, -0.18f),
+                                          glm::vec3(0.82f, 0.88f, 0.86f),
+                                          0.06f,
+                                          false);
+    return settings;
+}
+
+EnvironmentRenderSettings makeCloisterDaylightSettings() {
+    EnvironmentRenderSettings settings = makeNeutralSettings();
+    settings.profile = EnvironmentProfile::CloisterDaylight;
+    settings.sky = makeCloisterSky();
+    settings.post.paletteVariant = 0;
+    settings.post.fogDensity = 0.022f;
+    settings.post.fogStart = 22.0f;
+    settings.post.fogNearColor = glm::vec3(0.30f, 0.30f, 0.28f);
+    settings.post.fogFarColor = glm::vec3(0.56f, 0.58f, 0.54f);
+    settings.post.exposure = 0.96f;
+    settings.post.gamma = 1.0f;
+    settings.post.contrast = 1.05f;
+    settings.post.saturation = 0.92f;
+    settings.post.bloomThreshold = 0.72f;
+    settings.post.bloomIntensity = 0.08f;
+    settings.post.bloomRadius = 1.35f;
+    settings.post.vignetteStrength = 0.14f;
+    settings.post.vignetteSoftness = 0.78f;
+    settings.post.splitToneStrength = 0.05f;
+    settings.post.splitToneBalance = 0.56f;
+    settings.post.shadowTint = glm::vec3(0.86f, 0.88f, 0.84f);
+    settings.post.highlightTint = glm::vec3(0.93f, 0.90f, 0.82f);
+
+    settings.lighting.hemisphereSkyColor = glm::vec3(0.42f, 0.46f, 0.50f);
+    settings.lighting.hemisphereGroundColor = glm::vec3(0.10f, 0.09f, 0.08f);
+    settings.lighting.hemisphereStrength = 0.32f;
+    settings.lighting.enableDirectionalLights = true;
+    settings.lighting.sun = makeSunSlot(settings.sky, 0.82f);
+    settings.lighting.fill = makeFillSlot(glm::vec3(-0.16f, 0.78f, -0.42f),
+                                          glm::vec3(0.70f, 0.78f, 0.90f),
+                                          0.12f);
+    return settings;
+}
+
+} // namespace
+
+bool tryParseEnvironmentProfileToken(const std::string& token, EnvironmentProfile& profile) {
+    if (token == "neutral") {
+        profile = EnvironmentProfile::Neutral;
+        return true;
+    }
+    if (token == "dungeon_torch") {
+        profile = EnvironmentProfile::DungeonTorch;
+        return true;
+    }
+    if (token == "sunlit_meadow") {
+        profile = EnvironmentProfile::SunlitMeadow;
+        return true;
+    }
+    if (token == "mountain_dusk") {
+        profile = EnvironmentProfile::MountainDusk;
+        return true;
+    }
+    if (token == "arcane_field") {
+        profile = EnvironmentProfile::ArcaneField;
+        return true;
+    }
+    if (token == "cathedral_arcade") {
+        profile = EnvironmentProfile::CathedralArcade;
+        return true;
+    }
+    if (token == "cloister_daylight") {
+        profile = EnvironmentProfile::CloisterDaylight;
+        return true;
+    }
+    return false;
+}
+
+const char* environmentProfileName(EnvironmentProfile profile) {
+    switch (profile) {
+    case EnvironmentProfile::Neutral:
+        return "neutral";
+    case EnvironmentProfile::DungeonTorch:
+        return "dungeon_torch";
+    case EnvironmentProfile::SunlitMeadow:
+        return "sunlit_meadow";
+    case EnvironmentProfile::MountainDusk:
+        return "mountain_dusk";
+    case EnvironmentProfile::ArcaneField:
+        return "arcane_field";
+    case EnvironmentProfile::CathedralArcade:
+        return "cathedral_arcade";
+    case EnvironmentProfile::CloisterDaylight:
+        return "cloister_daylight";
+    }
+    return "neutral";
+}
+
+EnvironmentRenderSettings makeEnvironmentRenderSettings(EnvironmentProfile profile) {
+    switch (profile) {
+    case EnvironmentProfile::DungeonTorch:
+        return makeDungeonTorchSettings();
+    case EnvironmentProfile::SunlitMeadow:
+        return makeSunlitMeadowSettings();
+    case EnvironmentProfile::MountainDusk:
+        return makeMountainDuskSettings();
+    case EnvironmentProfile::ArcaneField:
+        return makeArcaneFieldSettings();
+    case EnvironmentProfile::CathedralArcade:
+        return makeCathedralArcadeSettings();
+    case EnvironmentProfile::CloisterDaylight:
+        return makeCloisterDaylightSettings();
+    case EnvironmentProfile::Neutral:
+    default:
+        return makeNeutralSettings();
+    }
+}

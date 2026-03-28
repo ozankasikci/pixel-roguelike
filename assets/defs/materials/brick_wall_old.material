@@ -1,0 +1,4 @@
+id brick_wall_old
+parent brick_default
+base_color 0.98 0.95 0.92
+uv_scale 0.16 0.16

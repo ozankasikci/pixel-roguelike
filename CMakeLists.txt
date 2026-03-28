@@ -5,6 +5,7 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 include(FetchContent)
+include(${CMAKE_SOURCE_DIR}/cmake/DesktopApp.cmake)
 
 # GLAD 2 - OpenGL 4.1 Core Profile function loader
 # Requires jinja2: python3 -m venv .venv && .venv/bin/pip install jinja2
@@ -44,7 +45,7 @@ FetchContent_MakeAvailable(JoltPhysics)
 # Uses EXCLUDE_FROM_ALL to avoid adding ImGui demo targets to the default build
 FetchContent_Declare(imgui
     GIT_REPOSITORY https://github.com/ocornut/imgui.git
-    GIT_TAG        v1.92.6
+    GIT_TAG        v1.92.6-docking
     GIT_PROGRESS   TRUE
     EXCLUDE_FROM_ALL
 )
@@ -84,6 +85,9 @@ enable_testing()
 
 add_subdirectory(src/engine)
 add_subdirectory(src/game)
+add_subdirectory(src/editor)
 add_subdirectory(apps/runtime)
+add_subdirectory(apps/model_viewer)
+add_subdirectory(apps/level_editor)
 add_subdirectory(tests)
 add_subdirectory(tools)

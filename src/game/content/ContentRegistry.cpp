@@ -2,14 +2,38 @@
 #include "engine/core/PathUtils.h"
 
 #include <cctype>
+#include <array>
 #include <cmath>
+#include <filesystem>
 #include <fstream>
 #include <functional>
+#include <iomanip>
 #include <sstream>
 #include <stdexcept>
 #include <vector>
 
 namespace {
+
+std::vector<std::string> sortedDefinitionFiles(const std::string& relativeDirectory,
+                                               const std::string& extension) {
+    namespace fs = std::filesystem;
+    std::vector<std::string> files;
+    const fs::path directory = resolveProjectPath(relativeDirectory);
+    if (!fs::exists(directory)) {
+        return files;
+    }
+    for (const auto& entry : fs::directory_iterator(directory)) {
+        if (!entry.is_regular_file()) {
+            continue;
+        }
+        if (entry.path().extension() != extension) {
+            continue;
+        }
+        files.push_back(entry.path().string());
+    }
+    std::sort(files.begin(), files.end());
+    return files;
+}
 
 [[noreturn]] void throwParseError(const std::string& path, int lineNumber, const std::string& message) {
     throw std::runtime_error(path + ":" + std::to_string(lineNumber) + ": " + message);
@@ -355,6 +379,79 @@ GameplayArchetypeDefinition loadGameplayArchetypeAsset(const std::string& path) 
     return definition;
 }
 
+std::string serializeGameplayArchetypeAsset(const GameplayArchetypeDefinition& definition) {
+    if (definition.id.empty()) {
+        throw std::runtime_error("Cannot serialize gameplay archetype without id");
+    }
+
+    std::ostringstream out;
+    out << std::fixed << std::setprecision(3);
+    out << "id " << definition.id << '\n';
+    switch (definition.kind) {
+    case GameplayArchetypeKind::Checkpoint:
+        out << "type checkpoint\n";
+        out << "position "
+            << definition.checkpoint.position.x << ' '
+            << definition.checkpoint.position.y << ' '
+            << definition.checkpoint.position.z << '\n';
+        out << "respawn_position "
+            << definition.checkpoint.respawnPosition.x << ' '
+            << definition.checkpoint.respawnPosition.y << ' '
+            << definition.checkpoint.respawnPosition.z << '\n';
+        out << "interact "
+            << definition.checkpoint.interactDistance << ' '
+            << definition.checkpoint.interactDotThreshold << '\n';
+        out << "light_position "
+            << definition.checkpoint.lightPosition.x << ' '
+            << definition.checkpoint.lightPosition.y << ' '
+            << definition.checkpoint.lightPosition.z << '\n';
+        out << "light_color "
+            << definition.checkpoint.lightColor.x << ' '
+            << definition.checkpoint.lightColor.y << ' '
+            << definition.checkpoint.lightColor.z << '\n';
+        out << "light "
+            << definition.checkpoint.lightRadius << ' '
+            << definition.checkpoint.lightIntensity << '\n';
+        break;
+    case GameplayArchetypeKind::DoubleDoor:
+        out << "type double_door\n";
+        out << "left_leaf_mesh " << definition.doubleDoor.leftLeafMeshName << '\n';
+        out << "right_leaf_mesh " << definition.doubleDoor.rightLeafMeshName << '\n';
+        out << "root_position "
+            << definition.doubleDoor.rootPosition.x << ' '
+            << definition.doubleDoor.rootPosition.y << ' '
+            << definition.doubleDoor.rootPosition.z << '\n';
+        out << "left_hinge_position "
+            << definition.doubleDoor.leftHingePosition.x << ' '
+            << definition.doubleDoor.leftHingePosition.y << ' '
+            << definition.doubleDoor.leftHingePosition.z << '\n';
+        out << "right_hinge_position "
+            << definition.doubleDoor.rightHingePosition.x << ' '
+            << definition.doubleDoor.rightHingePosition.y << ' '
+            << definition.doubleDoor.rightHingePosition.z << '\n';
+        out << "leaf_scale "
+            << definition.doubleDoor.leafScale.x << ' '
+            << definition.doubleDoor.leafScale.y << ' '
+            << definition.doubleDoor.leafScale.z << '\n';
+        out << "closed_yaw " << definition.doubleDoor.closedYaw << '\n';
+        out << "open_angle " << definition.doubleDoor.openAngle << '\n';
+        out << "interact "
+            << definition.doubleDoor.interactDistance << ' '
+            << definition.doubleDoor.interactDotThreshold << '\n';
+        out << "open_duration " << definition.doubleDoor.openDuration << '\n';
+        break;
+    }
+    return out.str();
+}
+
+void saveGameplayArchetypeAsset(const std::string& path, const GameplayArchetypeDefinition& definition) {
+    std::ofstream file(path, std::ios::trunc);
+    if (!file.is_open()) {
+        throw std::runtime_error("Failed to save gameplay archetype asset: " + path);
+    }
+    file << serializeGameplayArchetypeAsset(definition);
+}
+
 GameplayPrefabInstance instantiateGameplayArchetype(const GameplayArchetypeDefinition& definition,
                                                     const glm::vec3& position,
                                                     float yawDegrees) {
@@ -385,6 +482,9 @@ void ContentRegistry::loadDefaults() {
     items_.clear();
     skills_.clear();
     archetypes_.clear();
+    materials_.clear();
+    environments_.clear();
+    environmentPaths_.clear();
 
     auto oldDagger = loadWeaponDefinitionAsset(resolveProjectPath("assets/defs/weapons/old_dagger.weapon"));
     weapons_.emplace(oldDagger.id, oldDagger);
@@ -406,6 +506,30 @@ void ContentRegistry::loadDefaults() {
 
     auto doubleDoor = loadGameplayArchetypeAsset(resolveProjectPath("assets/prefabs/gameplay/double_door.prefab"));
     archetypes_.emplace(doubleDoor.id, doubleDoor);
+
+    const std::array materialFiles{
+        "assets/defs/materials/masonry_base.material",
+        "assets/defs/materials/stone_default.material",
+        "assets/defs/materials/wood_default.material",
+        "assets/defs/materials/metal_default.material",
+        "assets/defs/materials/wax_default.material",
+        "assets/defs/materials/moss_default.material",
+        "assets/defs/materials/floor_default.material",
+        "assets/defs/materials/brick_default.material",
+        "assets/defs/materials/viewmodel_default.material",
+        "assets/defs/materials/brick_wall_old.material",
+        "assets/defs/materials/cloister_stone.material",
+    };
+    for (const char* path : materialFiles) {
+        auto material = loadMaterialDefinitionAsset(resolveProjectPath(path));
+        materials_.emplace(material.id, material);
+    }
+
+    for (const auto& path : sortedDefinitionFiles("assets/defs/environments", ".environment")) {
+        auto environment = loadEnvironmentDefinitionAsset(path);
+        environmentPaths_.emplace(environment.id, path);
+        environments_.emplace(environment.id, environment);
+    }
 }
 
 const WeaponDefinition* ContentRegistry::findWeapon(const std::string& id) const {
@@ -431,4 +555,19 @@ const SkillDefinition* ContentRegistry::findSkill(const std::string& id) const {
 const GameplayArchetypeDefinition* ContentRegistry::findArchetype(const std::string& id) const {
     auto it = archetypes_.find(id);
     return it == archetypes_.end() ? nullptr : &it->second;
+}
+
+const MaterialDefinition* ContentRegistry::findMaterial(const std::string& id) const {
+    auto it = materials_.find(id);
+    return it == materials_.end() ? nullptr : &it->second;
+}
+
+const EnvironmentDefinition* ContentRegistry::findEnvironment(const std::string& id) const {
+    auto it = environments_.find(id);
+    return it == environments_.end() ? nullptr : &it->second;
+}
+
+const std::string* ContentRegistry::findEnvironmentPath(const std::string& id) const {
+    auto it = environmentPaths_.find(id);
+    return it == environmentPaths_.end() ? nullptr : &it->second;
 }

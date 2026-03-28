@@ -1,6 +1,7 @@
 #pragma once
 #include "engine/core/System.h"
 #include <entt/entity/fwd.hpp>
+#include <entt/entt.hpp>
 #include <glm/glm.hpp>
 #include <memory>
 
@@ -18,6 +19,10 @@ public:
     void init(Application& app) override;
     void update(Application& app, float deltaTime) override;
     void shutdown() override;
+
+    void init(entt::registry& registry);
+    void update(entt::registry& registry, float deltaTime);
+    void shutdownRuntime();
 
     // Character controller API (used by gameplay systems)
     void setCharacterVelocity(entt::entity entity, const glm::vec3& velocity);

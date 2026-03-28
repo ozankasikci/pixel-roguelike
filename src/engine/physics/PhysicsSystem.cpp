@@ -166,6 +166,10 @@ JPH::ShapeRefC makeColliderShape(const StaticColliderComponent& collider) {
 } // namespace
 
 void PhysicsSystem::init(Application& app) {
+    init(app.registry());
+}
+
+void PhysicsSystem::init(entt::registry& registry) {
     // 1. Initialize Jolt runtime
     JPH::RegisterDefaultAllocator();
     JPH::Factory::sInstance = new JPH::Factory();
@@ -189,7 +193,7 @@ void PhysicsSystem::init(Application& app) {
         impl_->objectLayerPairFilter
     );
 
-    update(app, 0.0f);
+    update(registry, 0.0f);
 
     // 4. Optimize broad phase after all bodies added
     impl_->physicsSystem->OptimizeBroadPhase();
@@ -198,10 +202,13 @@ void PhysicsSystem::init(Application& app) {
 }
 
 void PhysicsSystem::update(Application& app, float deltaTime) {
+    update(app.registry(), deltaTime);
+}
+
+void PhysicsSystem::update(entt::registry& registry, float deltaTime) {
     if (!impl_ || !impl_->physicsSystem) return;
 
     auto& bodyInterface = impl_->physicsSystem->GetBodyInterface();
-    auto& registry = app.registry();
 
     auto staticIt = impl_->staticBodies.begin();
     while (staticIt != impl_->staticBodies.end()) {
@@ -301,6 +308,10 @@ void PhysicsSystem::update(Application& app, float deltaTime) {
 }
 
 void PhysicsSystem::shutdown() {
+    shutdownRuntime();
+}
+
+void PhysicsSystem::shutdownRuntime() {
     if (!impl_) return;
 
     // Remove static bodies

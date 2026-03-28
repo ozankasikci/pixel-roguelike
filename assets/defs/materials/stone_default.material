@@ -1,0 +1,9 @@
+id stone_default
+parent masonry_base
+shading_model stone
+procedural_source generated_stone
+uv_mode mesh
+uv_scale 0.55 0.55
+normal_strength 0.42
+roughness_bias 0.02
+light_tint_response 0.08

@@ -21,6 +21,10 @@ public:
     explicit LevelLoader(LevelBuildContext& context);
 
     void load(Application& app, const LevelLoadRequest& request);
+    void load(ContentRegistry& content,
+              class RunSession& session,
+              const LevelLoadRequest& request,
+              const LevelDef& level);
 
 private:
     LevelBuildContext& context_;

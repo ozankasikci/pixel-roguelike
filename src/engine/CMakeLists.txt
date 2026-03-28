@@ -8,13 +8,18 @@ target_include_directories(engine_core PUBLIC ${CMAKE_SOURCE_DIR}/src)
 target_link_libraries(engine_core PUBLIC glad_gl glfw spdlog::spdlog EnTT::EnTT)
 
 add_library(engine_rendering STATIC
-    rendering/Shader.cpp
-    rendering/Framebuffer.cpp
-    rendering/DitherPass.cpp
-    rendering/Mesh.cpp
-    rendering/MeshLibrary.cpp
-    rendering/Renderer.cpp
-    rendering/GltfLoader.cpp
+    rendering/core/Shader.cpp
+    rendering/core/Framebuffer.cpp
+    rendering/lighting/ShadowMap.cpp
+    rendering/post/CompositePass.cpp
+    rendering/post/SkyTextureLibrary.cpp
+    rendering/geometry/Mesh.cpp
+    rendering/geometry/MeshLibrary.cpp
+    rendering/geometry/Renderer.cpp
+    rendering/post/StylizePass.cpp
+    rendering/assets/GltfLoader.cpp
+    rendering/assets/Texture2D.cpp
+    rendering/assets/TextureCube.cpp
 )
 target_include_directories(engine_rendering PUBLIC ${CMAKE_SOURCE_DIR}/src)
 target_link_libraries(engine_rendering PUBLIC engine_core glm::glm)
@@ -38,6 +43,7 @@ target_link_libraries(engine_scene PUBLIC engine_core)
 
 add_library(engine_input STATIC
     input/InputSystem.cpp
+    ${CMAKE_SOURCE_DIR}/src/game/runtime/RuntimeInputState.cpp
 )
 target_include_directories(engine_input PUBLIC ${CMAKE_SOURCE_DIR}/src)
 target_link_libraries(engine_input PUBLIC engine_core imgui glm::glm)

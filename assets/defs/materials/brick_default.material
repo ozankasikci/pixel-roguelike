@@ -1,0 +1,12 @@
+id brick_default
+parent masonry_base
+shading_model brick
+uv_mode world_projected
+uv_scale 0.18 0.18
+normal_strength 0.7
+roughness_scale 1.0
+roughness_bias 0.0
+metalness 0.0
+ao_strength 0.9
+light_tint_response 0.14
+procedural_source generated_brick

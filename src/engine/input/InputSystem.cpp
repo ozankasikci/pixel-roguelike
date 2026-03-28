@@ -25,34 +25,34 @@ void InputSystem::update(Application& app, float deltaTime) {
     (void)app;
     (void)deltaTime;
 
-    // Swap key state: previous = last frame, current = poll GLFW
-    std::memcpy(previousKeys_, currentKeys_, sizeof(currentKeys_));
-    for (int i = 0; i < MAX_KEYS; ++i) {
-        currentKeys_[i] = glfwGetKey(window_, i) == GLFW_PRESS;
+    state_.beginFrame();
+
+    for (int i = 0; i < RuntimeInputState::MaxKeys; ++i) {
+        state_.setKeyPressed(i, glfwGetKey(window_, i) == GLFW_PRESS);
     }
 
-    // Swap button state: previous = last frame, current = poll GLFW
-    std::memcpy(previousButtons_, currentButtons_, sizeof(currentButtons_));
-    for (int i = 0; i < MAX_BUTTONS; ++i) {
-        currentButtons_[i] = glfwGetMouseButton(window_, i) == GLFW_PRESS;
+    for (int i = 0; i < RuntimeInputState::MaxButtons; ++i) {
+        state_.setMouseButtonPressed(i, glfwGetMouseButton(window_, i) == GLFW_PRESS);
     }
 
-    // Transfer accumulated mouse delta from callbacks
-    mouseDelta_ = mouseDeltaAccum_;
+    state_.setMousePosition(mousePos_);
+    state_.setMouseDelta(mouseDeltaAccum_);
     mouseDeltaAccum_ = glm::vec2(0.0f);
-
-    // Transfer accumulated scroll delta from callbacks
-    scrollDelta_ = scrollAccum_;
+    state_.setScrollDelta(scrollAccum_);
     scrollAccum_ = 0.0f;
-
-    keyPressEvents_.swap(keyPressEventsAccum_);
+    for (const auto& event : keyPressEventsAccum_) {
+        state_.addKeyPressEvent(event.key, event.scancode);
+    }
     keyPressEventsAccum_.clear();
-    typedCharacters_.swap(typedCharactersAccum_);
+    for (unsigned int codepoint : typedCharactersAccum_) {
+        state_.addTypedCharacter(codepoint);
+    }
     typedCharactersAccum_.clear();
+    state_.setWantsCaptureMouse(ImGui::GetIO().WantCaptureMouse);
 
     // Toggle cursor lock with Escape (for debug tools)
     if (isKeyJustPressed(GLFW_KEY_ESCAPE)) {
-        if (cursorLocked_) {
+        if (state_.isCursorLocked()) {
             unlockCursor();
         } else {
             lockCursor();
@@ -73,94 +73,51 @@ void InputSystem::shutdown() {
 // --- Keyboard ---
 
 bool InputSystem::isKeyPressed(int key) const {
-    if (key < 0 || key >= MAX_KEYS) return false;
-    return currentKeys_[key];
+    return state_.isKeyPressed(key);
 }
 
 bool InputSystem::isKeyJustPressed(int key) const {
-    if (key < 0 || key >= MAX_KEYS) return false;
-    if (currentKeys_[key] && !previousKeys_[key]) {
-        return true;
-    }
-
-    for (const KeyPressEvent& event : keyPressEvents_) {
-        if (event.key == key) {
-            return true;
-        }
-    }
-
-    return false;
+    return state_.isKeyJustPressed(key);
 }
 
 bool InputSystem::isKeyJustReleased(int key) const {
-    if (key < 0 || key >= MAX_KEYS) return false;
-    return !currentKeys_[key] && previousKeys_[key];
+    return state_.isKeyJustReleased(key);
 }
 
 bool InputSystem::isKeyJustPressedByName(std::string_view keyName) const {
-    if (window_ == nullptr) {
-        return false;
-    }
-
-    for (const KeyPressEvent& event : keyPressEvents_) {
-        const char* localizedName = glfwGetKeyName(event.key, event.scancode);
-        if (localizedName != nullptr && keyName == localizedName) {
-            return true;
-        }
-    }
-
-    for (int key = 0; key < MAX_KEYS; ++key) {
-        if (!(currentKeys_[key] && !previousKeys_[key])) {
-            continue;
-        }
-
-        const char* localizedName = glfwGetKeyName(key, glfwGetKeyScancode(key));
-        if (localizedName != nullptr && keyName == localizedName) {
-            return true;
-        }
-    }
-
-    return false;
+    return state_.isKeyJustPressedByName(keyName);
 }
 
 bool InputSystem::wasCharacterTyped(unsigned int codepoint) const {
-    for (unsigned int typed : typedCharacters_) {
-        if (typed == codepoint) {
-            return true;
-        }
-    }
-    return false;
+    return state_.wasCharacterTyped(codepoint);
 }
 
 // --- Mouse buttons ---
 
 bool InputSystem::isMouseButtonPressed(int button) const {
-    if (button < 0 || button >= MAX_BUTTONS) return false;
-    return currentButtons_[button];
+    return state_.isMouseButtonPressed(button);
 }
 
 bool InputSystem::isMouseButtonJustPressed(int button) const {
-    if (button < 0 || button >= MAX_BUTTONS) return false;
-    return currentButtons_[button] && !previousButtons_[button];
+    return state_.isMouseButtonJustPressed(button);
 }
 
 bool InputSystem::isMouseButtonJustReleased(int button) const {
-    if (button < 0 || button >= MAX_BUTTONS) return false;
-    return !currentButtons_[button] && previousButtons_[button];
+    return state_.isMouseButtonJustReleased(button);
 }
 
 // --- Mouse movement ---
 
 glm::vec2 InputSystem::mouseDelta() const {
-    return mouseDelta_;
+    return state_.mouseDelta();
 }
 
 glm::vec2 InputSystem::mousePosition() const {
-    return mousePos_;
+    return state_.mousePosition();
 }
 
 float InputSystem::scrollDelta() const {
-    return scrollDelta_;
+    return state_.scrollDelta();
 }
 
 // --- Cursor control ---
@@ -175,10 +132,11 @@ void InputSystem::lockCursor() {
     double cursorY = 0.0;
     glfwGetCursorPos(window_, &cursorX, &cursorY);
     mousePos_ = glm::vec2(static_cast<float>(cursorX), static_cast<float>(cursorY));
-    mouseDelta_ = glm::vec2(0.0f);
     mouseDeltaAccum_ = glm::vec2(0.0f);
-    cursorLocked_ = true;
     firstMouse_ = false;
+    state_.setMousePosition(mousePos_);
+    state_.setMouseDelta(glm::vec2(0.0f));
+    state_.setCursorLocked(true);
 }
 
 void InputSystem::unlockCursor() {
@@ -187,18 +145,18 @@ void InputSystem::unlockCursor() {
         glfwSetInputMode(window_, GLFW_RAW_MOUSE_MOTION, GLFW_FALSE);
     }
 
-    mouseDelta_ = glm::vec2(0.0f);
     mouseDeltaAccum_ = glm::vec2(0.0f);
     firstMouse_ = true;
-    cursorLocked_ = false;
+    state_.setMouseDelta(glm::vec2(0.0f));
+    state_.setCursorLocked(false);
 }
 
 bool InputSystem::isCursorLocked() const {
-    return cursorLocked_;
+    return state_.isCursorLocked();
 }
 
 bool InputSystem::wantsCaptureMouse() const {
-    return ImGui::GetIO().WantCaptureMouse;
+    return state_.wantsCaptureMouse();
 }
 
 // --- GLFW Callbacks ---

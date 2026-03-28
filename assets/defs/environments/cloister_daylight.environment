@@ -1,0 +1,77 @@
+id cloister_daylight
+palette_variant 0
+enable_sky true
+enable_dither true
+enable_edges true
+enable_fog true
+enable_tone_map true
+enable_bloom true
+enable_vignette true
+enable_grain true
+enable_scanlines false
+enable_sharpen false
+threshold_bias 0.024
+edge_threshold 0.17
+fog_density 0.022
+fog_start 22.0
+exposure 0.96
+gamma 1.0
+contrast 1.05
+saturation 0.92
+bloom_threshold 0.72
+bloom_intensity 0.08
+bloom_radius 1.35
+vignette_strength 0.14
+vignette_softness 0.78
+grain_amount 0.035
+scanline_amount 0.08
+scanline_density 1.0
+sharpen_amount 0.18
+split_tone_strength 0.05
+split_tone_balance 0.56
+fog_near_color 0.3 0.3 0.28
+fog_far_color 0.56 0.58 0.54
+shadow_tint 0.86 0.88 0.84
+highlight_tint 0.93 0.9 0.82
+sky_enabled true
+sky_zenith_color 0.24 0.38 0.62
+sky_horizon_color 0.84 0.82 0.74
+sky_ground_haze_color 0.78 0.74 0.66
+sky_sun_direction 0.274125 0.927808 0.253038
+sky_sun_color 0.98 0.93 0.82
+sky_sun_size 0.012
+sky_sun_glow 0.06
+sky_panorama_tint 1.0 1.0 1.0
+sky_panorama_strength 0.0
+sky_panorama_yaw_offset 0.0
+sky_cubemap_faces assets/skies/syferfontein_0d_clear_puresky_cube/px.jpg assets/skies/syferfontein_0d_clear_puresky_cube/nx.jpg assets/skies/syferfontein_0d_clear_puresky_cube/py.jpg assets/skies/syferfontein_0d_clear_puresky_cube/ny.jpg assets/skies/syferfontein_0d_clear_puresky_cube/pz.jpg assets/skies/syferfontein_0d_clear_puresky_cube/nz.jpg
+sky_cubemap_tint 1.0 1.0 1.0
+sky_cubemap_strength 1.0
+sky_moon_enabled false
+sky_moon_direction -0.3 0.85 -0.22
+sky_moon_color 0.72 0.82 1.0
+sky_moon_size 0.018
+sky_moon_glow 0.12
+sky_cloud_tint 1.0 1.0 1.0
+sky_cloud_scale 0.9
+sky_cloud_speed 0.0
+sky_cloud_coverage 0.0
+sky_cloud_parallax 0.024
+sky_horizon_tint 1.0 1.0 1.0
+sky_horizon_height 0.55
+sky_horizon_fade 0.22
+lighting_hemi_sky_color 0.42 0.46 0.5
+lighting_hemi_ground_color 0.1 0.09 0.08
+lighting_hemi_strength 0.32
+lighting_enable_directional true
+lighting_enable_shadows true
+lighting_shadow_bias 0.0018
+lighting_shadow_normal_bias 0.03
+sun_enabled true
+sun_direction 0.274125 0.927808 0.253038
+sun_color 0.98 0.93 0.82
+sun_intensity 0.82
+fill_enabled true
+fill_direction -0.177734 0.866453 -0.466551
+fill_color 0.7 0.78 0.9
+fill_intensity 0.12

@@ -1,0 +1,46 @@
+#pragma once
+
+#include <glad/gl.h>
+#include <glm/glm.hpp>
+#include <vector>
+#include <cstdint>
+
+class Mesh {
+public:
+    Mesh(const std::vector<glm::vec3>& positions,
+         const std::vector<glm::vec3>& normals,
+         const std::vector<glm::vec2>& uvs,
+         const std::vector<glm::vec3>& tangents,
+         const std::vector<uint32_t>& indices);
+    ~Mesh();
+
+    // Non-copyable
+    Mesh(const Mesh&) = delete;
+    Mesh& operator=(const Mesh&) = delete;
+
+    // Movable
+    Mesh(Mesh&& other) noexcept;
+    Mesh& operator=(Mesh&& other) noexcept;
+
+    void draw() const;
+
+    const glm::vec3& aabbMin() const { return aabbMin_; }
+    const glm::vec3& aabbMax() const { return aabbMax_; }
+    std::size_t vertexCount() const { return vertexCount_; }
+    std::size_t indexCount() const { return static_cast<std::size_t>(indexCount_); }
+
+    static Mesh createCube(float size);
+    static Mesh createPlane(float size);
+    static Mesh createCylinder(float radius, float height, int segments);
+    static Mesh createHand();
+    static Mesh createDagger();
+
+private:
+    GLuint vao_ = 0;
+    GLuint vbo_ = 0;
+    GLuint ebo_ = 0;
+    GLsizei indexCount_ = 0;
+    std::size_t vertexCount_ = 0;
+    glm::vec3 aabbMin_{0.0f};
+    glm::vec3 aabbMax_{0.0f};
+};

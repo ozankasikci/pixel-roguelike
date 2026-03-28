@@ -6,7 +6,7 @@ right_leaf_mesh door_leaf_right
 root_position 0.0 3.13 0.0
 left_hinge_position -2.35 3.13 -0.88
 right_hinge_position 2.35 3.13 -0.88
-leaf_scale 2.315 6.26 0.30
+leaf_scale 2.315 6.26 0.42
 closed_yaw 0.0
 open_angle 102.0
 interact 3.4 0.74

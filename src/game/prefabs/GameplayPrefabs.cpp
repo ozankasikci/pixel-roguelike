@@ -5,9 +5,13 @@
 #include "game/components/DoorComponent.h"
 #include "game/components/DoorLeafComponent.h"
 #include "game/components/InteractableComponent.h"
+#include "game/rendering/RetroPalette.h"
 #include "game/components/StaticColliderComponent.h"
 
 namespace {
+
+constexpr glm::vec3 kDoorRomanesqueLeft(0.33f, 0.15f, 0.09f);
+constexpr glm::vec3 kDoorRomanesqueRight(0.26f, 0.11f, 0.07f);
 
 entt::entity spawnDoorLeaf(LevelBuilder& builder,
                            Mesh* mesh,
@@ -15,8 +19,16 @@ entt::entity spawnDoorLeaf(LevelBuilder& builder,
                            const glm::vec3& hingePosition,
                            const glm::vec3& leafScale,
                            float closedYaw,
-                           float openYaw) {
-    auto leaf = builder.addMesh(mesh, closedCenter, leafScale);
+                           float openYaw,
+                           const glm::vec3& tint) {
+    auto leaf = builder.addMesh(
+        mesh,
+        closedCenter,
+        leafScale,
+        glm::vec3(0.0f),
+        tint,
+        MaterialKind::Wood
+    );
     if (leaf == entt::null) {
         return entt::null;
     }
@@ -90,7 +102,8 @@ entt::entity spawnDoubleDoor(LevelBuilder& builder,
         spec.leftHingePosition,
         spec.leafScale,
         spec.closedYaw,
-        spec.closedYaw - spec.openAngle
+        spec.closedYaw - spec.openAngle,
+        kDoorRomanesqueLeft
     );
     auto rightLeaf = spawnDoorLeaf(
         builder,
@@ -99,7 +112,8 @@ entt::entity spawnDoubleDoor(LevelBuilder& builder,
         spec.rightHingePosition,
         spec.leafScale,
         spec.closedYaw,
-        spec.closedYaw + spec.openAngle
+        spec.closedYaw + spec.openAngle,
+        kDoorRomanesqueRight
     );
 
     if (leftLeaf == entt::null || rightLeaf == entt::null) {

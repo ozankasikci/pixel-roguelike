@@ -1,6 +1,6 @@
 #pragma once
 
-#include "engine/rendering/MeshLibrary.h"
+#include "engine/rendering/geometry/MeshLibrary.h"
 
 #include <entt/entt.hpp>
 #include <vector>

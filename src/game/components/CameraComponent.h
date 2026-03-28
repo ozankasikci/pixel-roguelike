@@ -3,7 +3,7 @@
 
 struct CameraComponent {
     float yaw = -90.0f;
-    float pitch = 0.0f;
+    float pitch = 34.0f;
     float fov = 70.0f;
     float moveSpeed = 3.0f;
     float nearPlane = 0.1f;

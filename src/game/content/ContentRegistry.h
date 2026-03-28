@@ -1,6 +1,8 @@
 #pragma once
 
 #include "game/prefabs/GameplayPrefabData.h"
+#include "game/rendering/EnvironmentDefinition.h"
+#include "game/rendering/MaterialDefinition.h"
 
 #include <glm/glm.hpp>
 
@@ -69,6 +71,9 @@ EnemyDefinition loadEnemyDefinitionAsset(const std::string& path);
 ItemDefinition loadItemDefinitionAsset(const std::string& path);
 SkillDefinition loadSkillDefinitionAsset(const std::string& path);
 GameplayArchetypeDefinition loadGameplayArchetypeAsset(const std::string& path);
+std::string serializeGameplayArchetypeAsset(const GameplayArchetypeDefinition& definition);
+void saveGameplayArchetypeAsset(const std::string& path, const GameplayArchetypeDefinition& definition);
+MaterialDefinition loadMaterialDefinitionAsset(const std::string& path);
 GameplayPrefabInstance instantiateGameplayArchetype(const GameplayArchetypeDefinition& definition,
                                                     const glm::vec3& position,
                                                     float yawDegrees = 0.0f);
@@ -82,6 +87,12 @@ public:
     const ItemDefinition* findItem(const std::string& id) const;
     const SkillDefinition* findSkill(const std::string& id) const;
     const GameplayArchetypeDefinition* findArchetype(const std::string& id) const;
+    const MaterialDefinition* findMaterial(const std::string& id) const;
+    const EnvironmentDefinition* findEnvironment(const std::string& id) const;
+    const std::string* findEnvironmentPath(const std::string& id) const;
+    const std::unordered_map<std::string, GameplayArchetypeDefinition>& archetypes() const { return archetypes_; }
+    const std::unordered_map<std::string, MaterialDefinition>& materials() const { return materials_; }
+    const std::unordered_map<std::string, EnvironmentDefinition>& environments() const { return environments_; }
 
 private:
     std::unordered_map<std::string, WeaponDefinition> weapons_;
@@ -89,4 +100,7 @@ private:
     std::unordered_map<std::string, ItemDefinition> items_;
     std::unordered_map<std::string, SkillDefinition> skills_;
     std::unordered_map<std::string, GameplayArchetypeDefinition> archetypes_;
+    std::unordered_map<std::string, MaterialDefinition> materials_;
+    std::unordered_map<std::string, EnvironmentDefinition> environments_;
+    std::unordered_map<std::string, std::string> environmentPaths_;
 };
