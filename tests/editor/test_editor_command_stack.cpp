@@ -1,14 +1,10 @@
 #include "editor/core/EditorCommand.h"
 #include "editor/scene/EditorSceneDocument.h"
+#include "common/TestSupport.h"
 
 #include <cassert>
-#include <cmath>
 
 namespace {
-
-bool nearlyEqual(float a, float b) {
-    return std::abs(a - b) < 0.0001f;
-}
 
 LevelMeshPlacement makeMeshPlacement() {
     LevelMeshPlacement placement;
@@ -52,7 +48,7 @@ int main() {
         const auto* object = document.findObject(meshId);
         assert(object != nullptr);
         const auto& mesh = std::get<LevelMeshPlacement>(object->payload);
-        assert(nearlyEqual(mesh.position.x, 0.0f));
+        assert(test_support::nearlyEqual(mesh.position.x, 0.0f));
         assert(!document.dirty());
     }
 
@@ -62,7 +58,7 @@ int main() {
         const auto* object = document.findObject(meshId);
         assert(object != nullptr);
         const auto& mesh = std::get<LevelMeshPlacement>(object->payload);
-        assert(nearlyEqual(mesh.position.x, 2.5f));
+        assert(test_support::nearlyEqual(mesh.position.x, 2.5f));
         assert(document.dirty());
     }
 

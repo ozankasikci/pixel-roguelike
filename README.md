@@ -62,6 +62,28 @@ Run the procedural model viewer:
 ./build/apps/model_viewer/procedural-model-viewer
 ```
 
+## Testing
+
+The test suite is grouped by subsystem under `tests/engine`, `tests/game`, and `tests/editor`.
+
+Run the full suite:
+
+```bash
+ctest --test-dir build --output-on-failure
+```
+
+Run one subsystem:
+
+```bash
+ctest --test-dir build --output-on-failure -L game
+```
+
+The full test command matrix and conventions live in [docs/testing.md](docs/testing.md).
+
+## Documentation
+
+The durable docs index lives in [docs/README.md](docs/README.md). Start there for architecture, building, content-pipeline, editor, dependency, tooling, and testing references, and use `docs/plans/` for dated design/implementation history.
+
 ## Repository Map
 
 - `apps/`: executable entrypoints for the runtime, level editor, and model viewer
@@ -69,12 +91,14 @@ Run the procedural model viewer:
 - `src/engine/`: shared engine systems such as application flow, rendering, input, physics, and scene management
 - `src/editor/`: editor-specific document, viewport, rendering, and UI code
 - `src/game/`: game-specific content loading, gameplay systems, scenes, and runtime rendering logic
-- `tests/`: automated tests and test data
+- `tests/`: subsystem-grouped automated tests, shared test helpers, and test data
 - `tools/`: offline or developer-facing helper tools such as mesh generation
-- `docs/`: design notes, plans, and repository documentation
+- `docs/`: durable reference docs plus dated plans
 
 ## Development Notes
 
 - The project currently uses Homebrew-discovered packages for `glfw`, `glm`, and `spdlog`.
+- Dependency source and update policy is documented in [docs/dependencies.md](docs/dependencies.md).
+- Offline tools and script ownership are documented in [docs/tooling.md](docs/tooling.md).
 - Several content definitions live under `assets/defs/`, with supporting scenes and prefabs under `assets/scenes/` and `assets/prefabs/`.
 - Root contributor workflow and pull request expectations are documented in [CONTRIBUTING.md](CONTRIBUTING.md).

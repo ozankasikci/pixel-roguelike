@@ -1,22 +1,16 @@
 #include "game/rendering/EnvironmentProfile.h"
+#include "common/TestSupport.h"
 
 #include <cassert>
-#include <cmath>
 
 int main() {
-    auto sameDirection = [](const glm::vec3& a, const glm::vec3& b) {
-        return std::abs(a.x - b.x) < 0.0001f
-            && std::abs(a.y - b.y) < 0.0001f
-            && std::abs(a.z - b.z) < 0.0001f;
-    };
-
     const auto neutral = makeEnvironmentRenderSettings(EnvironmentProfile::Neutral);
     assert(neutral.sky.enabled);
     assert(!neutral.sky.cloudLayerAPath.empty());
     assert(neutral.lighting.enableDirectionalLights);
     assert(neutral.lighting.sun.enabled);
     assert(!neutral.lighting.fill.enabled);
-    assert(sameDirection(neutral.lighting.sun.direction, neutral.sky.sunDirection));
+    assert(test_support::nearlyEqualVec3(neutral.lighting.sun.direction, neutral.sky.sunDirection));
 
     const auto dungeon = makeEnvironmentRenderSettings(EnvironmentProfile::DungeonTorch);
     assert(!dungeon.sky.enabled);
@@ -32,7 +26,7 @@ int main() {
     assert(meadow.lighting.fill.enabled);
     assert(meadow.lighting.sun.intensity > 1.0f);
     assert(meadow.lighting.sun.intensity > meadow.lighting.fill.intensity);
-    assert(sameDirection(meadow.lighting.sun.direction, meadow.sky.sunDirection));
+    assert(test_support::nearlyEqualVec3(meadow.lighting.sun.direction, meadow.sky.sunDirection));
 
     const auto dusk = makeEnvironmentRenderSettings(EnvironmentProfile::MountainDusk);
     assert(dusk.sky.enabled);
@@ -47,7 +41,7 @@ int main() {
     assert(cloister.lighting.sun.enabled);
     assert(cloister.lighting.fill.enabled);
     assert(cloister.lighting.fill.intensity < cloister.lighting.sun.intensity);
-    assert(sameDirection(cloister.lighting.sun.direction, cloister.sky.sunDirection));
+    assert(test_support::nearlyEqualVec3(cloister.lighting.sun.direction, cloister.sky.sunDirection));
     assert(cloister.post.fogFarColor.g > cloister.post.fogNearColor.g);
 
     return 0;

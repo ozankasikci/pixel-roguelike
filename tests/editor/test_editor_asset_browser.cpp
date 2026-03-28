@@ -1,4 +1,5 @@
 #include "editor/assets/EditorAssetBrowser.h"
+#include "common/TestSupport.h"
 
 #include <cassert>
 #include <filesystem>
@@ -7,8 +8,7 @@
 int main() {
     namespace fs = std::filesystem;
 
-    const fs::path tempRoot = fs::temp_directory_path() / "gsd_editor_asset_browser_test";
-    fs::remove_all(tempRoot);
+    const fs::path tempRoot = test_support::resetTempDirectory("gsd_editor_asset_browser_test");
     fs::create_directories(tempRoot / "meshes");
     fs::create_directories(tempRoot / "defs" / "materials");
     fs::create_directories(tempRoot / "scenes");

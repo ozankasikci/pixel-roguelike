@@ -1,17 +1,9 @@
 #include "editor/scene/EditorSceneDocument.h"
+#include "common/TestSupport.h"
 
 #include <cassert>
-#include <cmath>
 
 namespace {
-
-bool nearlyEqual(float a, float b) {
-    return std::abs(a - b) < 0.0001f;
-}
-
-bool nearlyEqualVec3(const glm::vec3& a, const glm::vec3& b) {
-    return nearlyEqual(a.x, b.x) && nearlyEqual(a.y, b.y) && nearlyEqual(a.z, b.z);
-}
 
 glm::vec3 translationOf(const glm::mat4& matrix) {
     return glm::vec3(matrix[3]);
@@ -38,12 +30,12 @@ int main() {
     const std::uint64_t childId = document.addMesh(makeMesh(glm::vec3(1.0f, 0.0f, 0.0f)));
 
     const glm::vec3 childWorldBeforeParenting = translationOf(document.worldTransformMatrix(childId));
-    assert(nearlyEqualVec3(childWorldBeforeParenting, glm::vec3(1.0f, 0.0f, 0.0f)));
+    assert(test_support::nearlyEqualVec3(childWorldBeforeParenting, glm::vec3(1.0f, 0.0f, 0.0f)));
 
     assert(document.canSetParent(childId, parentId));
     assert(document.setParent(childId, parentId));
     assert(document.parentObjectId(childId) == parentId);
-    assert(nearlyEqualVec3(translationOf(document.worldTransformMatrix(childId)), childWorldBeforeParenting));
+    assert(test_support::nearlyEqualVec3(translationOf(document.worldTransformMatrix(childId)), childWorldBeforeParenting));
     assert(!document.canSetParent(parentId, childId));
 
     {
@@ -56,11 +48,11 @@ int main() {
         document.markSceneDirty();
     }
 
-    assert(nearlyEqualVec3(translationOf(document.worldTransformMatrix(childId)), glm::vec3(5.0f, 0.0f, -2.0f)));
+    assert(test_support::nearlyEqualVec3(translationOf(document.worldTransformMatrix(childId)), glm::vec3(5.0f, 0.0f, -2.0f)));
 
     assert(document.clearParent(childId));
     assert(document.parentObjectId(childId) == 0);
-    assert(nearlyEqualVec3(translationOf(document.worldTransformMatrix(childId)), glm::vec3(5.0f, 0.0f, -2.0f)));
+    assert(test_support::nearlyEqualVec3(translationOf(document.worldTransformMatrix(childId)), glm::vec3(5.0f, 0.0f, -2.0f)));
 
     {
         const auto* childObject = document.findObject(childId);
@@ -84,7 +76,7 @@ int main() {
     assert(roots[0] == rootA);
     assert(roots[1] == childOfA);
     assert(roots[2] == rootB);
-    assert(nearlyEqualVec3(translationOf(reorderDocument.worldTransformMatrix(childOfA)), childWorld));
+    assert(test_support::nearlyEqualVec3(translationOf(reorderDocument.worldTransformMatrix(childOfA)), childWorld));
 
     return 0;
 }

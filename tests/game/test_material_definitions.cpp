@@ -1,18 +1,10 @@
 #include "game/rendering/MaterialDefinition.h"
+#include "common/TestSupport.h"
 
 #include <cassert>
-#include <cmath>
 #include <filesystem>
 #include <stdexcept>
 #include <unordered_map>
-
-namespace {
-
-bool nearlyEqual(float a, float b, float epsilon = 0.0001f) {
-    return std::fabs(a - b) <= epsilon;
-}
-
-} // namespace
 
 int main() {
     const auto base = loadMaterialDefinitionAsset(MATERIAL_BASE_FILE);
@@ -33,11 +25,11 @@ int main() {
     const auto resolved = resolveMaterialDefinition("brick_wall_old", definitions);
     assert(resolved.shadingModel == MaterialKind::Brick);
     assert(resolved.uvMode == MaterialUvMode::WorldProjected);
-    assert(nearlyEqual(resolved.uvScale.x, 0.16f));
-    assert(nearlyEqual(resolved.uvScale.y, 0.16f));
-    assert(nearlyEqual(resolved.baseColor.x, 0.98f));
-    assert(nearlyEqual(resolved.baseColor.y, 0.95f));
-    assert(nearlyEqual(resolved.baseColor.z, 0.92f));
+    assert(test_support::nearlyEqual(resolved.uvScale.x, 0.16f));
+    assert(test_support::nearlyEqual(resolved.uvScale.y, 0.16f));
+    assert(test_support::nearlyEqual(resolved.baseColor.x, 0.98f));
+    assert(test_support::nearlyEqual(resolved.baseColor.y, 0.95f));
+    assert(test_support::nearlyEqual(resolved.baseColor.z, 0.92f));
     assert(resolved.proceduralSource == MaterialProceduralSource::GeneratedBrick);
 
     {
@@ -89,7 +81,7 @@ int main() {
         roundtrip.metalness = 0.1f;
         roundtrip.proceduralSource = MaterialProceduralSource::GeneratedStone;
 
-        const auto path = std::filesystem::temp_directory_path() / "editor_roundtrip_material.material";
+        const auto path = test_support::tempPath("editor_roundtrip_material.material");
         saveMaterialDefinitionAsset(path.string(), roundtrip);
         const auto loaded = loadMaterialDefinitionAsset(path.string());
         std::filesystem::remove(path);
@@ -97,15 +89,15 @@ int main() {
         assert(loaded.id == roundtrip.id);
         assert(loaded.parent == roundtrip.parent);
         assert(loaded.shadingModel == roundtrip.shadingModel);
-        assert(nearlyEqual(loaded.baseColor->x, roundtrip.baseColor->x));
-        assert(nearlyEqual(loaded.baseColor->y, roundtrip.baseColor->y));
-        assert(nearlyEqual(loaded.baseColor->z, roundtrip.baseColor->z));
+        assert(test_support::nearlyEqual(loaded.baseColor->x, roundtrip.baseColor->x));
+        assert(test_support::nearlyEqual(loaded.baseColor->y, roundtrip.baseColor->y));
+        assert(test_support::nearlyEqual(loaded.baseColor->z, roundtrip.baseColor->z));
         assert(loaded.uvMode == roundtrip.uvMode);
-        assert(nearlyEqual(loaded.uvScale->x, roundtrip.uvScale->x));
-        assert(nearlyEqual(loaded.uvScale->y, roundtrip.uvScale->y));
-        assert(nearlyEqual(*loaded.normalStrength, *roundtrip.normalStrength));
-        assert(nearlyEqual(*loaded.roughnessScale, *roundtrip.roughnessScale));
-        assert(nearlyEqual(*loaded.metalness, *roundtrip.metalness));
+        assert(test_support::nearlyEqual(loaded.uvScale->x, roundtrip.uvScale->x));
+        assert(test_support::nearlyEqual(loaded.uvScale->y, roundtrip.uvScale->y));
+        assert(test_support::nearlyEqual(*loaded.normalStrength, *roundtrip.normalStrength));
+        assert(test_support::nearlyEqual(*loaded.roughnessScale, *roundtrip.roughnessScale));
+        assert(test_support::nearlyEqual(*loaded.metalness, *roundtrip.metalness));
         assert(loaded.proceduralSource == roundtrip.proceduralSource);
     }
 

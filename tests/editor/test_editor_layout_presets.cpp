@@ -1,4 +1,5 @@
 #include "editor/core/EditorLayoutPreset.h"
+#include "common/TestSupport.h"
 
 #include <cassert>
 #include <filesystem>
@@ -6,8 +7,7 @@
 int main() {
     namespace fs = std::filesystem;
 
-    const fs::path tempDir = fs::temp_directory_path() / "gsd_editor_layout_test";
-    fs::create_directories(tempDir);
+    const fs::path tempDir = test_support::resetTempDirectory("gsd_editor_layout_test");
     const fs::path presetPath = tempDir / "two_panel.layout";
 
     EditorLayoutPreset preset;

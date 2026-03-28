@@ -1,22 +1,8 @@
 #include "game/content/ContentRegistry.h"
+#include "common/TestSupport.h"
 
 #include <cassert>
-#include <cmath>
 #include <filesystem>
-
-namespace {
-
-bool nearlyEqual(float a, float b, float epsilon = 0.0001f) {
-    return std::fabs(a - b) <= epsilon;
-}
-
-bool nearlyEqualVec3(const glm::vec3& a, const glm::vec3& b, float epsilon = 0.0001f) {
-    return nearlyEqual(a.x, b.x, epsilon)
-        && nearlyEqual(a.y, b.y, epsilon)
-        && nearlyEqual(a.z, b.z, epsilon);
-}
-
-} // namespace
 
 int main() {
     const auto weapon = loadWeaponDefinitionAsset(WEAPON_DEF_FILE);
@@ -24,21 +10,21 @@ int main() {
     assert(weapon.displayName == "Old_Dagger");
     assert(weapon.slot == "melee");
     assert(weapon.handedness == WeaponHandedness::OneHanded);
-    assert(nearlyEqual(weapon.equipWeight, 2.0f));
+    assert(test_support::nearlyEqual(weapon.equipWeight, 2.0f));
     assert(weapon.category == "dagger");
     assert(weapon.description == "A_worn_blade_for_close_quarters");
-    assert(nearlyEqual(weapon.damage, 12.0f));
+    assert(test_support::nearlyEqual(weapon.damage, 12.0f));
 
     const auto twoHandedWeapon = loadWeaponDefinitionAsset(TWO_HANDED_WEAPON_DEF_FILE);
     assert(twoHandedWeapon.id == "brigand_axe");
     assert(twoHandedWeapon.handedness == WeaponHandedness::TwoHanded);
-    assert(nearlyEqual(twoHandedWeapon.equipWeight, 6.5f));
+    assert(test_support::nearlyEqual(twoHandedWeapon.equipWeight, 6.5f));
     assert(twoHandedWeapon.category == "greataxe");
     assert(twoHandedWeapon.description == "A_heavy_raider_axe_built_for_committed_swings");
 
     const auto enemy = loadEnemyDefinitionAsset(ENEMY_DEF_FILE);
     assert(enemy.id == "sentinel");
-    assert(nearlyEqual(enemy.maxHealth, 40.0f));
+    assert(test_support::nearlyEqual(enemy.maxHealth, 40.0f));
 
     const auto item = loadItemDefinitionAsset(ITEM_DEF_FILE);
     assert(item.id == "kindling_shard");
@@ -66,21 +52,21 @@ int main() {
         90.0f
     );
     assert(rotatedDoor.type == GameplayPrefabType::DoubleDoor);
-    assert(nearlyEqualVec3(rotatedDoor.doubleDoor.rootPosition, glm::vec3(10.0f, 3.13f, 5.0f)));
+    assert(test_support::nearlyEqualVec3(rotatedDoor.doubleDoor.rootPosition, glm::vec3(10.0f, 3.13f, 5.0f)));
 
     {
         GameplayArchetypeDefinition prefabRoundtrip = door;
         prefabRoundtrip.id = "editor_roundtrip_prefab";
         prefabRoundtrip.doubleDoor.openDuration = 3.7f;
-        const auto prefabPath = std::filesystem::temp_directory_path() / "editor_roundtrip_prefab.prefab";
+        const auto prefabPath = test_support::tempPath("editor_roundtrip_prefab.prefab");
         saveGameplayArchetypeAsset(prefabPath.string(), prefabRoundtrip);
         const auto loadedPrefab = loadGameplayArchetypeAsset(prefabPath.string());
         std::filesystem::remove(prefabPath);
         assert(loadedPrefab.id == prefabRoundtrip.id);
         assert(loadedPrefab.kind == prefabRoundtrip.kind);
         assert(loadedPrefab.doubleDoor.leftLeafMeshName == prefabRoundtrip.doubleDoor.leftLeafMeshName);
-        assert(nearlyEqual(loadedPrefab.doubleDoor.openDuration, prefabRoundtrip.doubleDoor.openDuration));
-        assert(nearlyEqualVec3(loadedPrefab.doubleDoor.leafScale, prefabRoundtrip.doubleDoor.leafScale));
+        assert(test_support::nearlyEqual(loadedPrefab.doubleDoor.openDuration, prefabRoundtrip.doubleDoor.openDuration));
+        assert(test_support::nearlyEqualVec3(loadedPrefab.doubleDoor.leafScale, prefabRoundtrip.doubleDoor.leafScale));
     }
 
     ContentRegistry registry;
@@ -111,7 +97,7 @@ int main() {
     registry.loadDefaults();
     const auto* customLoaded = registry.findEnvironment("editor_custom_test");
     assert(customLoaded != nullptr);
-    assert(nearlyEqual(customLoaded->post.exposure, 1.23f));
+    assert(test_support::nearlyEqual(customLoaded->post.exposure, 1.23f));
     const auto* customLoadedPath = registry.findEnvironmentPath("editor_custom_test");
     assert(customLoadedPath != nullptr);
     assert(std::filesystem::path(*customLoadedPath) == customEnvironmentPath);
@@ -121,16 +107,16 @@ int main() {
 
     const auto resolvedBrick = resolveMaterialDefinition("brick_wall_old", registry.materials());
     assert(resolvedBrick.shadingModel == MaterialKind::Brick);
-    assert(nearlyEqualVec3(resolvedBrick.baseColor, glm::vec3(0.98f, 0.95f, 0.92f)));
-    assert(nearlyEqual(resolvedBrick.uvScale.x, 0.16f));
-    assert(nearlyEqual(resolvedBrick.uvScale.y, 0.16f));
+    assert(test_support::nearlyEqualVec3(resolvedBrick.baseColor, glm::vec3(0.98f, 0.95f, 0.92f)));
+    assert(test_support::nearlyEqual(resolvedBrick.uvScale.x, 0.16f));
+    assert(test_support::nearlyEqual(resolvedBrick.uvScale.y, 0.16f));
     assert(resolvedBrick.uvMode == MaterialUvMode::WorldProjected);
     assert(resolvedBrick.proceduralSource == MaterialProceduralSource::GeneratedBrick);
 
     const auto resolvedStone = resolveMaterialDefinition("cloister_stone", registry.materials());
     assert(resolvedStone.shadingModel == MaterialKind::Stone);
     assert(resolvedStone.proceduralSource == MaterialProceduralSource::GeneratedStone);
-    assert(nearlyEqual(resolvedStone.normalStrength, 0.34f));
+    assert(test_support::nearlyEqual(resolvedStone.normalStrength, 0.34f));
 
     const auto* cloister = registry.findEnvironment("cloister_daylight");
     assert(cloister != nullptr);
@@ -165,23 +151,23 @@ int main() {
     roundtrip.lighting.sun.enabled = true;
     roundtrip.lighting.sun.intensity = 1.27f;
 
-    const auto roundtripPath = std::filesystem::temp_directory_path() / "editor_roundtrip_test.environment";
+    const auto roundtripPath = test_support::tempPath("editor_roundtrip_test.environment");
     saveEnvironmentDefinitionAsset(roundtripPath.string(), roundtrip);
     const auto loadedRoundtrip = loadEnvironmentDefinitionAsset(roundtripPath.string());
     std::filesystem::remove(roundtripPath);
 
     assert(loadedRoundtrip.id == roundtrip.id);
     assert(loadedRoundtrip.post.toneMapMode == 0);
-    assert(nearlyEqual(loadedRoundtrip.post.patternScale, 96.0f));
-    assert(nearlyEqual(loadedRoundtrip.post.depthViewScale, 0.133f));
-    assert(nearlyEqual(loadedRoundtrip.post.edgeThreshold, 0.27f));
+    assert(test_support::nearlyEqual(loadedRoundtrip.post.patternScale, 96.0f));
+    assert(test_support::nearlyEqual(loadedRoundtrip.post.depthViewScale, 0.133f));
+    assert(test_support::nearlyEqual(loadedRoundtrip.post.edgeThreshold, 0.27f));
     assert(loadedRoundtrip.sky.panoramaPath == roundtrip.sky.panoramaPath);
-    assert(nearlyEqualVec3(loadedRoundtrip.sky.panoramaTint, roundtrip.sky.panoramaTint));
-    assert(nearlyEqual(loadedRoundtrip.sky.panoramaStrength, roundtrip.sky.panoramaStrength));
-    assert(nearlyEqual(loadedRoundtrip.sky.panoramaYawOffset, roundtrip.sky.panoramaYawOffset));
+    assert(test_support::nearlyEqualVec3(loadedRoundtrip.sky.panoramaTint, roundtrip.sky.panoramaTint));
+    assert(test_support::nearlyEqual(loadedRoundtrip.sky.panoramaStrength, roundtrip.sky.panoramaStrength));
+    assert(test_support::nearlyEqual(loadedRoundtrip.sky.panoramaYawOffset, roundtrip.sky.panoramaYawOffset));
     assert(loadedRoundtrip.sky.cubemapFacePaths == roundtrip.sky.cubemapFacePaths);
-    assert(nearlyEqualVec3(loadedRoundtrip.sky.cubemapTint, roundtrip.sky.cubemapTint));
-    assert(nearlyEqual(loadedRoundtrip.sky.cubemapStrength, roundtrip.sky.cubemapStrength));
+    assert(test_support::nearlyEqualVec3(loadedRoundtrip.sky.cubemapTint, roundtrip.sky.cubemapTint));
+    assert(test_support::nearlyEqual(loadedRoundtrip.sky.cubemapStrength, roundtrip.sky.cubemapStrength));
     assert(loadedRoundtrip.sky.cloudLayerAPath == roundtrip.sky.cloudLayerAPath);
     assert(loadedRoundtrip.sky.cloudLayerBPath == roundtrip.sky.cloudLayerBPath);
     assert(loadedRoundtrip.sky.horizonLayerPath == roundtrip.sky.horizonLayerPath);

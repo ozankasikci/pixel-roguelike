@@ -1,4 +1,5 @@
 #include "game/level/LevelDef.h"
+#include "common/TestSupport.h"
 
 #include <cassert>
 #include <filesystem>
@@ -75,7 +76,7 @@ int main() {
     assert(serialized.find("parent root_mesh") != std::string::npos);
     assert(serialized.find("rotation 0.0 15.0 0.0") != std::string::npos);
 
-    const fs::path tempPath = fs::temp_directory_path() / "gsd_level_roundtrip.scene";
+    const fs::path tempPath = test_support::tempPath("gsd_level_roundtrip.scene");
     saveLevelDef(tempPath.string(), level);
     const LevelDef loaded = loadLevelDef(tempPath.string());
     fs::remove(tempPath);
