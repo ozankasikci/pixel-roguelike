@@ -2,6 +2,8 @@
 
 #include "engine/rendering/lighting/RenderLight.h"
 #include <glm/glm.hpp>
+#include <optional>
+#include <string>
 #include <vector>
 #include "engine/rendering/post/PostProcessParams.h"
 
@@ -13,6 +15,19 @@ class ContentRegistry;
 struct EffectiveEquipmentView;
 struct InventoryMenuState;
 struct RunSession;
+
+enum class ImGuiFontPreset {
+    SystemSans,
+    Verdana,
+    AvenirNext,
+    HelveticaNeue,
+    TrebuchetMS,
+    InterUnity,
+    RobotoUnreal,
+    JetBrainsMonoGodot,
+};
+
+const char* imguiFontPresetLabel(ImGuiFontPreset preset);
 
 struct DebugParams {
     // Post-processing parameters
@@ -68,6 +83,9 @@ public:
     void init(GLFWwindow* window);
     void shutdown();
 
+    void requestFontPreset(ImGuiFontPreset preset);
+    ImGuiFontPreset fontPreset() const { return fontPreset_; }
+
     void beginFrame();
     void endFrame();
 
@@ -79,4 +97,12 @@ public:
                                 const RunSession& session,
                                 const ContentRegistry& content,
                                 const EffectiveEquipmentView& equipment);
+
+private:
+    void applyPendingFontPreset();
+
+    bool initialized_ = false;
+    ImGuiFontPreset fontPreset_ = ImGuiFontPreset::SystemSans;
+    std::optional<ImGuiFontPreset> pendingFontPreset_ = ImGuiFontPreset::SystemSans;
+    std::string activeFontPath_;
 };

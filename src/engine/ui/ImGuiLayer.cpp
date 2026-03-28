@@ -1,4 +1,5 @@
 #include "ImGuiLayer.h"
+#include "engine/core/PathUtils.h"
 #include "engine/rendering/geometry/Renderer.h"
 #include "game/content/ContentRegistry.h"
 #include "game/session/RunSession.h"
@@ -12,51 +13,166 @@
 
 #include <array>
 #include <filesystem>
+#include <string_view>
 
 namespace {
 
-void configureDefaultFont(ImGuiIO& io) {
-    // Prefer a more legible system UI font for menus and dense editor chrome.
-    static constexpr std::array<const char*, 4> kFontCandidates{
-        "/System/Library/Fonts/SFNS.ttf",
-        "/System/Library/Fonts/Supplemental/Verdana.ttf",
-        "/System/Library/Fonts/Supplemental/Trebuchet MS.ttf",
-        "/System/Library/Fonts/Supplemental/Arial.ttf",
+struct FontPresetDefinition {
+    std::string_view label;
+    std::array<const char*, 3> candidates;
+    float size = 17.0f;
+    float rasterizerMultiply = 1.05f;
+};
+
+const FontPresetDefinition& fontPresetDefinition(ImGuiFontPreset preset) {
+    static const FontPresetDefinition kSystemSans{
+        "System Sans",
+        {
+            "/System/Library/Fonts/SFNS.ttf",
+            "/System/Library/Fonts/HelveticaNeue.ttc",
+            "/System/Library/Fonts/Helvetica.ttc",
+        },
+        17.0f,
+        1.05f,
     };
+    static const FontPresetDefinition kVerdana{
+        "Verdana",
+        {
+            "/System/Library/Fonts/Supplemental/Verdana.ttf",
+            "/System/Library/Fonts/Supplemental/Arial.ttf",
+            "/System/Library/Fonts/SFNS.ttf",
+        },
+        16.5f,
+        1.02f,
+    };
+    static const FontPresetDefinition kAvenirNext{
+        "Avenir Next",
+        {
+            "/System/Library/Fonts/Supplemental/Avenir Next.ttc",
+            "/System/Library/Fonts/Supplemental/Avenir.ttc",
+            "/System/Library/Fonts/SFNS.ttf",
+        },
+        17.0f,
+        1.06f,
+    };
+    static const FontPresetDefinition kHelveticaNeue{
+        "Helvetica Neue",
+        {
+            "/System/Library/Fonts/HelveticaNeue.ttc",
+            "/System/Library/Fonts/Helvetica.ttc",
+            "/System/Library/Fonts/SFNS.ttf",
+        },
+        17.0f,
+        1.05f,
+    };
+    static const FontPresetDefinition kTrebuchet{
+        "Trebuchet MS",
+        {
+            "/System/Library/Fonts/Supplemental/Trebuchet MS.ttf",
+            "/System/Library/Fonts/Supplemental/Tahoma.ttf",
+            "/System/Library/Fonts/SFNS.ttf",
+        },
+        16.75f,
+        1.03f,
+    };
+    static const FontPresetDefinition kInterUnity{
+        "Inter (Unity)",
+        {
+            "assets/fonts/editor/Inter-Variable.ttf",
+            "/System/Library/Fonts/SFNS.ttf",
+            "/System/Library/Fonts/HelveticaNeue.ttc",
+        },
+        17.0f,
+        1.05f,
+    };
+    static const FontPresetDefinition kRobotoUnreal{
+        "Roboto (Unreal)",
+        {
+            "assets/fonts/editor/Roboto-Variable.ttf",
+            "/System/Library/Fonts/HelveticaNeue.ttc",
+            "/System/Library/Fonts/SFNS.ttf",
+        },
+        17.0f,
+        1.04f,
+    };
+    static const FontPresetDefinition kJetBrainsMonoGodot{
+        "JetBrains Mono (Godot Code)",
+        {
+            "assets/fonts/editor/JetBrainsMono-Variable.ttf",
+            "/System/Library/Fonts/SFNSMono.ttf",
+            "/System/Library/Fonts/SFNS.ttf",
+        },
+        16.25f,
+        1.02f,
+    };
+
+    switch (preset) {
+    case ImGuiFontPreset::SystemSans:
+        return kSystemSans;
+    case ImGuiFontPreset::Verdana:
+        return kVerdana;
+    case ImGuiFontPreset::AvenirNext:
+        return kAvenirNext;
+    case ImGuiFontPreset::HelveticaNeue:
+        return kHelveticaNeue;
+    case ImGuiFontPreset::TrebuchetMS:
+        return kTrebuchet;
+    case ImGuiFontPreset::InterUnity:
+        return kInterUnity;
+    case ImGuiFontPreset::RobotoUnreal:
+        return kRobotoUnreal;
+    case ImGuiFontPreset::JetBrainsMonoGodot:
+        return kJetBrainsMonoGodot;
+    }
+
+    return kSystemSans;
+}
+
+bool configureFontPreset(ImGuiIO& io, ImGuiFontPreset preset, std::string& loadedFontPath) {
+    const auto& definition = fontPresetDefinition(preset);
 
     ImFontConfig fontConfig;
     fontConfig.OversampleH = 2;
     fontConfig.OversampleV = 2;
-    fontConfig.RasterizerMultiply = 1.05f;
+    fontConfig.RasterizerMultiply = definition.rasterizerMultiply;
 
-    for (const char* fontPath : kFontCandidates) {
-        if (!std::filesystem::exists(fontPath)) {
+    io.Fonts->Clear();
+
+    for (const char* fontPath : definition.candidates) {
+        const std::string resolvedFontPath = resolveProjectPath(fontPath);
+        if (!std::filesystem::exists(resolvedFontPath)) {
             continue;
         }
 
-        if (ImFont* font = io.Fonts->AddFontFromFileTTF(fontPath, 16.5f, &fontConfig)) {
+        if (ImFont* font = io.Fonts->AddFontFromFileTTF(resolvedFontPath.c_str(), definition.size, &fontConfig)) {
             io.FontDefault = font;
-            spdlog::info("Loaded ImGui font '{}'", fontPath);
-            return;
+            loadedFontPath = resolvedFontPath;
+            return true;
         }
     }
 
-    spdlog::warn("Falling back to ImGui default font; no readable system font candidate loaded");
+    io.FontDefault = io.Fonts->AddFontDefault(&fontConfig);
+    loadedFontPath.clear();
+    return false;
 }
 
 } // namespace
+
+const char* imguiFontPresetLabel(ImGuiFontPreset preset) {
+    return fontPresetDefinition(preset).label.data();
+}
 
 void ImGuiLayer::init(GLFWwindow* window) {
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
     ImGuiIO& io = ImGui::GetIO();
     io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
-    configureDefaultFont(io);
 
     ImGui::StyleColorsDark();
 
     ImGui_ImplGlfw_InitForOpenGL(window, true);
     ImGui_ImplOpenGL3_Init("#version 410 core");
+    initialized_ = true;
 
     spdlog::info("ImGuiLayer initialized");
 }
@@ -65,12 +181,45 @@ void ImGuiLayer::shutdown() {
     ImGui_ImplOpenGL3_Shutdown();
     ImGui_ImplGlfw_Shutdown();
     ImGui::DestroyContext();
+    initialized_ = false;
     spdlog::info("ImGuiLayer shutdown");
+}
+
+void ImGuiLayer::requestFontPreset(ImGuiFontPreset preset) {
+    if (preset == fontPreset_) {
+        return;
+    }
+    pendingFontPreset_ = preset;
+}
+
+void ImGuiLayer::applyPendingFontPreset() {
+    if (!pendingFontPreset_.has_value() && initialized_) {
+        return;
+    }
+
+    ImGuiIO& io = ImGui::GetIO();
+    const ImGuiFontPreset targetPreset = pendingFontPreset_.value_or(fontPreset_);
+    std::string loadedFontPath;
+    const bool loaded = configureFontPreset(io, targetPreset, loadedFontPath);
+
+    fontPreset_ = targetPreset;
+    pendingFontPreset_.reset();
+    activeFontPath_ = loadedFontPath;
+
+    if (loaded) {
+        spdlog::info("Loaded ImGui font preset '{}' from '{}'",
+                     imguiFontPresetLabel(fontPreset_),
+                     activeFontPath_);
+    } else {
+        spdlog::warn("Falling back to ImGui default font for preset '{}'",
+                     imguiFontPresetLabel(fontPreset_));
+    }
 }
 
 void ImGuiLayer::beginFrame() {
     ImGui_ImplOpenGL3_NewFrame();
     ImGui_ImplGlfw_NewFrame();
+    applyPendingFontPreset();
     ImGui::NewFrame();
 }
 

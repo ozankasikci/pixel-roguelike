@@ -245,6 +245,7 @@ int main(int argc, char* argv[]) {
     EditorPendingCommand widgetCommand;
     EditorPendingCommand gizmoCommand;
     std::vector<std::filesystem::path> pendingDroppedAssetPaths;
+    ImGuiFontPreset editorFontPreset = imgui.fontPreset();
 
     while (!window.shouldClose()) {
         window.pollEvents();
@@ -403,6 +404,26 @@ int main(int argc, char* argv[]) {
                         const auto mode = static_cast<EditorPreviewMode>(index);
                         if (ImGui::MenuItem(kPreviewModes[index], nullptr, ui.previewMode == mode)) {
                             ui.previewMode = mode;
+                        }
+                    }
+                    ImGui::EndMenu();
+                }
+                if (ImGui::BeginMenu("Interface Font")) {
+                    static constexpr std::array<ImGuiFontPreset, 8> kFontPresets{
+                        ImGuiFontPreset::SystemSans,
+                        ImGuiFontPreset::InterUnity,
+                        ImGuiFontPreset::RobotoUnreal,
+                        ImGuiFontPreset::JetBrainsMonoGodot,
+                        ImGuiFontPreset::Verdana,
+                        ImGuiFontPreset::AvenirNext,
+                        ImGuiFontPreset::HelveticaNeue,
+                        ImGuiFontPreset::TrebuchetMS,
+                    };
+                    for (ImGuiFontPreset preset : kFontPresets) {
+                        const bool selected = (editorFontPreset == preset);
+                        if (ImGui::MenuItem(imguiFontPresetLabel(preset), nullptr, selected)) {
+                            editorFontPreset = preset;
+                            imgui.requestFontPreset(preset);
                         }
                     }
                     ImGui::EndMenu();
@@ -613,6 +634,8 @@ int main(int argc, char* argv[]) {
             ImGui::BulletText("Pan: Middle Drag");
             ImGui::BulletText("Dolly: Alt + Right Drag or mouse wheel");
             ImGui::BulletText("Fly: Right Mouse + WASD / QE");
+            ImGui::Separator();
+            ImGui::Text("Current UI Font: %s", imguiFontPresetLabel(editorFontPreset));
             if (ImGui::Button("Close")) {
                 ImGui::CloseCurrentPopup();
             }
