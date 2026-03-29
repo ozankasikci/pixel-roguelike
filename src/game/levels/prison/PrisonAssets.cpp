@@ -35,19 +35,19 @@ std::unique_ptr<Mesh> createPrisonWall() {
         parts.push_back({cube, makeModel(position, scale, rotation)});
     };
 
-    // Main slab: 2m wide, 2.5m tall, 0.2m thick
+    // Main slab: 2m wide, 3.5m tall, 0.2m thick
     // Origin at bottom-center of the wall panel, Y=0 is floor level
-    addBox(glm::vec3(0.0f, 1.25f, 0.0f), glm::vec3(1.0f, 1.25f, 0.1f));
+    addBox(glm::vec3(0.0f, 1.75f, 0.0f), glm::vec3(1.0f, 1.75f, 0.1f));
 
     // Inset border on front face — thin raised frame 0.04m from edges
     // Top horizontal strip
-    addBox(glm::vec3(0.0f, 2.46f, 0.105f), glm::vec3(0.96f, 0.02f, 0.005f));
+    addBox(glm::vec3(0.0f, 3.46f, 0.105f), glm::vec3(0.96f, 0.02f, 0.005f));
     // Bottom horizontal strip
     addBox(glm::vec3(0.0f, 0.04f, 0.105f), glm::vec3(0.96f, 0.02f, 0.005f));
     // Left vertical strip
-    addBox(glm::vec3(-0.96f, 1.25f, 0.105f), glm::vec3(0.02f, 1.21f, 0.005f));
+    addBox(glm::vec3(-0.96f, 1.75f, 0.105f), glm::vec3(0.02f, 1.71f, 0.005f));
     // Right vertical strip
-    addBox(glm::vec3(0.96f, 1.25f, 0.105f), glm::vec3(0.02f, 1.21f, 0.005f));
+    addBox(glm::vec3(0.96f, 1.75f, 0.105f), glm::vec3(0.02f, 1.71f, 0.005f));
 
     RawMeshData merged = mergeMeshes(parts);
     return std::make_unique<Mesh>(merged.positions, merged.normals, merged.uvs, merged.tangents,
@@ -74,8 +74,8 @@ std::unique_ptr<Mesh> createPrisonWallWindow() {
     // Window opening: 0.6m wide, 0.4m tall, centered at Y=1.8m
     // Bottom section: 0 to 1.6m
     addBox(glm::vec3(0.0f, 0.8f, 0.0f), glm::vec3(1.0f, 0.8f, 0.1f));
-    // Top section: 2.0m to 2.5m
-    addBox(glm::vec3(0.0f, 2.25f, 0.0f), glm::vec3(1.0f, 0.25f, 0.1f));
+    // Top section: 2.0m to 3.5m
+    addBox(glm::vec3(0.0f, 2.75f, 0.0f), glm::vec3(1.0f, 0.75f, 0.1f));
     // Left section: beside window
     addBox(glm::vec3(-0.65f, 1.8f, 0.0f), glm::vec3(0.35f, 0.2f, 0.1f));
     // Right section: beside window
@@ -105,8 +105,8 @@ std::unique_ptr<Mesh> createPrisonWallDoor() {
     };
 
     // Door opening: 0.9m wide, 2.1m tall, bottom at Y=0
-    // Top section: 2.1m to 2.5m (full width)
-    addBox(glm::vec3(0.0f, 2.3f, 0.0f), glm::vec3(1.0f, 0.2f, 0.1f));
+    // Top section: 2.1m to 3.5m (full width)
+    addBox(glm::vec3(0.0f, 2.8f, 0.0f), glm::vec3(1.0f, 0.7f, 0.1f));
     // Left section: beside door
     addBox(glm::vec3(-0.725f, 1.05f, 0.0f), glm::vec3(0.275f, 1.05f, 0.1f));
     // Right section: beside door
