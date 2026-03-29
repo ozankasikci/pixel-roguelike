@@ -36,6 +36,7 @@ add_library(gameplay STATIC
     scenes/SilosCloisterScene.cpp
     scenes/WardenOfficeScene.cpp
     session/EquipmentState.cpp
+    systems/AudioListenerSystem.cpp
     systems/CameraSystem.cpp
     systems/CheckpointSystem.cpp
     systems/DoorSystem.cpp
@@ -48,6 +49,7 @@ target_include_directories(gameplay PUBLIC ${CMAKE_SOURCE_DIR}/src)
 target_link_libraries(gameplay PUBLIC
     game_content
     game_rendering
+    engine_audio
     engine_input
     engine_physics
     EnTT::EnTT

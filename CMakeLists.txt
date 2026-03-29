@@ -68,6 +68,7 @@ target_link_libraries(imgui PRIVATE glfw)
 find_package(glfw3 3.4 REQUIRED)
 find_package(glm REQUIRED)
 find_package(spdlog REQUIRED)
+find_package(OpenAL REQUIRED)
 
 # tinygltf - header-only glTF 2.0 loader/writer
 set(TINYGLTF_BUILD_LOADER_EXAMPLE OFF CACHE BOOL "" FORCE)

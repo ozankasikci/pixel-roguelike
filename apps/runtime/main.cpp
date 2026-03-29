@@ -1,7 +1,9 @@
 #include "engine/core/Application.h"
 #include "engine/scene/SceneManager.h"
+#include "engine/audio/AudioSystem.h"
 #include "engine/input/InputSystem.h"
 #include "engine/physics/PhysicsSystem.h"
+#include "game/systems/AudioListenerSystem.h"
 #include "game/systems/InventorySystem.h"
 #include "game/systems/PlayerMovementSystem.h"
 #include "game/systems/CameraSystem.h"
@@ -48,6 +50,10 @@ int main(int argc, char* argv[]) {
     auto& doors = app.addSystem<DoorSystem>(Application::UpdatePhase::Interaction, input.state());
     auto& checkpoints = app.addSystem<CheckpointSystem>(Application::UpdatePhase::Interaction, input.state());
     auto& physics = app.addSystem<PhysicsSystem>(Application::UpdatePhase::Physics);
+    auto& audio = app.addSystem<AudioSystem>(Application::UpdatePhase::Gameplay);
+    app.emplaceService<AudioSystem*>(&audio);
+    auto& audioListener = app.addSystem<AudioListenerSystem>(Application::UpdatePhase::Gameplay, audio);
+    (void)audioListener;
     auto& inventory = app.addSystem<InventorySystem>(Application::UpdatePhase::Gameplay, input.state());
     auto& movement = app.addSystem<PlayerMovementSystem>(Application::UpdatePhase::Gameplay, input.state(), physics);
     auto& camera = app.addSystem<CameraSystem>(Application::UpdatePhase::Camera, input.state());

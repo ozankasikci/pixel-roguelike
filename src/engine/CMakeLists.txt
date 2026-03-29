@@ -57,3 +57,13 @@ add_library(engine_physics STATIC
 target_include_directories(engine_physics PUBLIC ${CMAKE_SOURCE_DIR}/src)
 target_link_libraries(engine_physics PUBLIC engine_core glm::glm)
 target_link_libraries(engine_physics PRIVATE Jolt)
+
+add_library(engine_audio STATIC
+    audio/AudioSystem.cpp
+    ${CMAKE_SOURCE_DIR}/external/stb_vorbis.c
+)
+target_include_directories(engine_audio PUBLIC ${CMAKE_SOURCE_DIR}/src)
+target_include_directories(engine_audio PRIVATE ${CMAKE_SOURCE_DIR}/external)
+target_link_libraries(engine_audio PUBLIC engine_core glm::glm)
+target_link_libraries(engine_audio PRIVATE OpenAL::OpenAL)
+set_source_files_properties(${CMAKE_SOURCE_DIR}/external/stb_vorbis.c PROPERTIES LANGUAGE C)
