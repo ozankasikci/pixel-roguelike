@@ -862,17 +862,21 @@ int main(int argc, char* argv[]) {
         if (gameplayPreviewCaptured) {
             ImGui::BeginDisabled();
         }
-        const std::vector<std::uint64_t> outlinerDeleteRequests = renderOutliner(document, ui, selectedIds, &ui.showOutliner, commandStack);
-        const InspectorActionResult inspectorActions = renderInspector(ui,
-                                                                       document,
-                                                                       selectedIds,
-                                                                       content,
-                                                                       meshIds,
-                                                                       materialIds,
-                                                                       archetypeIds,
-                                                                       &ui.showInspector,
-                                                                       widgetCommand,
-                                                                       commandStack);
+        const std::vector<std::uint64_t> outlinerDeleteRequests = ui.viewportFullscreen
+            ? std::vector<std::uint64_t>{}
+            : renderOutliner(document, ui, selectedIds, &ui.showOutliner, commandStack);
+        const InspectorActionResult inspectorActions = ui.viewportFullscreen
+            ? InspectorActionResult{}
+            : renderInspector(ui,
+                              document,
+                              selectedIds,
+                              content,
+                              meshIds,
+                              materialIds,
+                              archetypeIds,
+                              &ui.showInspector,
+                              widgetCommand,
+                              commandStack);
         if (inspectorActions.contentReloaded) {
             materialIds = sortedMaterialIds(content);
             archetypeIds = sortedArchetypeIds(content);
@@ -884,20 +888,22 @@ int main(int argc, char* argv[]) {
         if (inspectorActions.previewDirty) {
             previewDirty = true;
         }
-        if (renderEnvironmentPanel(document, content, environmentIds, &ui.showEnvironment, widgetCommand, commandStack)) {
+        if (!ui.viewportFullscreen && renderEnvironmentPanel(document, content, environmentIds, &ui.showEnvironment, widgetCommand, commandStack)) {
             previewDirty = true;
         }
-        const AssetBrowserActionResult assetBrowserActions = renderAssetBrowser(ui,
-                                                                                placementState,
-                                                                                document,
-                                                                                selectedIds,
-                                                                                content,
-                                                                                meshIds,
-                                                                                materialIds,
-                                                                                archetypeIds,
-                                                                                pendingDroppedAssetPaths,
-                                                                                &ui.showAssetBrowser,
-                                                                                commandStack);
+        const AssetBrowserActionResult assetBrowserActions = ui.viewportFullscreen
+            ? AssetBrowserActionResult{}
+            : renderAssetBrowser(ui,
+                                 placementState,
+                                 document,
+                                 selectedIds,
+                                 content,
+                                 meshIds,
+                                 materialIds,
+                                 archetypeIds,
+                                 pendingDroppedAssetPaths,
+                                 &ui.showAssetBrowser,
+                                 commandStack);
         if (gameplayPreviewCaptured) {
             ImGui::EndDisabled();
         }
@@ -948,6 +954,18 @@ int main(int argc, char* argv[]) {
                                                  ImGuiWindowFlags_NoScrollbar
                                                  | ImGuiWindowFlags_NoScrollWithMouse);
             if (viewportWindowVisible) {
+                // Double-click on title bar toggles fullscreen viewport
+                {
+                    const ImVec2 winPos = ImGui::GetWindowPos();
+                    const float titleBarHeight = ImGui::GetFrameHeight();
+                    const float winWidth = ImGui::GetWindowWidth();
+                    const ImVec2 mousePos = io.MousePos;
+                    if (ImGui::IsMouseDoubleClicked(0)
+                        && mousePos.x >= winPos.x && mousePos.x <= winPos.x + winWidth
+                        && mousePos.y >= winPos.y && mousePos.y <= winPos.y + titleBarHeight) {
+                        ui.viewportFullscreen = !ui.viewportFullscreen;
+                    }
+                }
                 viewportState.focused = ImGui::IsWindowFocused();
                 if (!ui.playPreview) {
                     auto renderToolButton = [&](const char* label, EditorTransformTool tool) {
@@ -1619,7 +1637,7 @@ int main(int argc, char* argv[]) {
         }
 
         // Build Output panel
-        if (ui.showBuildOutput) {
+        if (ui.showBuildOutput && !ui.viewportFullscreen) {
             ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(6.0f, 6.0f));
             if (ImGui::Begin(kBuildOutputWindowName, &ui.showBuildOutput)) {
                 // Stop Build button in header (D-14)
