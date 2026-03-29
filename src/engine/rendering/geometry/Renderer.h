@@ -7,14 +7,12 @@
 #include <string>
 #include <vector>
 
-#include "game/rendering/MaterialKind.h"
-
 class Mesh;
 class Shader;
 
 struct RenderMaterialData {
     std::string id;
-    MaterialKind shadingModel = MaterialKind::Stone;
+    int shadingModelIndex = 0;
     glm::vec3 baseColor{1.0f};
     bool useMaterialMaps = false;
     GLuint albedoTexture = 0;

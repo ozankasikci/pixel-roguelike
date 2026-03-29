@@ -136,7 +136,7 @@ const RenderMaterialData& MaterialTextureLibrary::resolve(std::string_view mater
 
     RenderMaterialData renderMaterial;
     renderMaterial.id = resolved.id;
-    renderMaterial.shadingModel = resolved.shadingModel;
+    renderMaterial.shadingModelIndex = static_cast<int>(resolved.shadingModel);
     renderMaterial.baseColor = resolved.baseColor;
     renderMaterial.useMaterialMaps = useMaterialMaps;
     renderMaterial.albedoTexture = (textures != nullptr && textures->albedo.id() != 0) ? textures->albedo.id() : fallbackTextures_.albedo.id();

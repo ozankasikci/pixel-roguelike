@@ -98,7 +98,7 @@ void Renderer::drawScene(const std::vector<RenderObject>& objects,
         glActiveTexture(GL_TEXTURE0);
         shader_->setMat4("uModel", obj.modelMatrix);
         shader_->setVec3("uBaseColor", obj.tint * material.baseColor);
-        shader_->setInt("uMaterialKind", static_cast<int>(material.shadingModel));
+        shader_->setInt("uMaterialKind", material.shadingModelIndex);
         obj.mesh->draw();
     }
 
