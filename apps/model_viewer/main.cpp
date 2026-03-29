@@ -70,6 +70,7 @@ std::vector<ViewerPreset> buildPresets() {
         {"prison_door",        RetroPalette::Iron,  MaterialKind::Metal, glm::vec3(1.0f),                glm::vec3(0.0f),  glm::vec3(0.0f, 1.05f, 0.0f), 3.6f, 90.0f, 8.0f},
         {"prison_desk",        RetroPalette::Iron,  MaterialKind::Metal, glm::vec3(1.0f),                glm::vec3(0.0f),  glm::vec3(0.0f, 0.4f, 0.0f),  3.0f, 60.0f, 20.0f},
         {"prison_chair",       RetroPalette::Iron,  MaterialKind::Metal, glm::vec3(1.0f),                glm::vec3(0.0f),  glm::vec3(0.0f, 0.4f, 0.0f),  2.4f, 60.0f, 20.0f},
+        {"warden_chair",       RetroPalette::OldWood, MaterialKind::Wood, glm::vec3(1.0f),              glm::vec3(0.0f),  glm::vec3(0.0f, 0.42f, 0.0f), 2.6f, 50.0f, 18.0f},
         {"prison_cabinet",     RetroPalette::Iron,  MaterialKind::Metal, glm::vec3(1.0f),                glm::vec3(0.0f),  glm::vec3(0.0f, 0.65f, 0.0f), 3.2f, 60.0f, 15.0f},
         {"prison_shelf",       RetroPalette::Iron,  MaterialKind::Metal, glm::vec3(1.0f),                glm::vec3(0.0f),  glm::vec3(0.0f, 0.0f, 0.0f),  2.0f, 60.0f, 15.0f},
     };
@@ -179,7 +180,7 @@ int main(int argc, char* argv[]) {
     params.enableGrain = false;
     params.enableScanlines = false;
     params.enableSharpen = false;
-    params.exposure = 0.58f;
+    params.exposure = 1.8f;
     params.contrast = 1.0f;
     params.saturation = 0.94f;
 
@@ -306,15 +307,15 @@ int main(int argc, char* argv[]) {
         }
 
         std::vector<RenderLight> lights = {
-            {LightType::Point, preset.target + glm::vec3(2.2f, 2.8f, 3.4f), glm::vec3(0.0f, -1.0f, 0.0f), glm::vec3(1.0f, 0.98f, 0.95f), 14.0f, 0.44f},
-            {LightType::Point, preset.target + glm::vec3(-2.5f, 1.8f, 2.2f), glm::vec3(0.0f, -1.0f, 0.0f), glm::vec3(0.82f, 0.86f, 0.95f), 12.0f, 0.26f},
-            {LightType::Point, preset.target + glm::vec3(0.0f, 2.0f, -3.8f), glm::vec3(0.0f, -1.0f, 0.0f), glm::vec3(0.96f, 0.94f, 1.00f), 10.0f, 0.14f},
-            {LightType::Point, cameraPos + glm::vec3(0.0f, 0.8f, 0.5f), glm::vec3(0.0f, -1.0f, 0.0f), glm::vec3(1.0f), 8.0f, 0.10f}
+            {LightType::Point, preset.target + glm::vec3(2.2f, 2.8f, 3.4f), glm::vec3(0.0f, -1.0f, 0.0f), glm::vec3(1.0f, 0.98f, 0.95f), 14.0f, 4.0f},
+            {LightType::Point, preset.target + glm::vec3(-2.5f, 1.8f, 2.2f), glm::vec3(0.0f, -1.0f, 0.0f), glm::vec3(0.82f, 0.86f, 0.95f), 12.0f, 2.4f},
+            {LightType::Point, preset.target + glm::vec3(0.0f, 2.0f, -3.8f), glm::vec3(0.0f, -1.0f, 0.0f), glm::vec3(0.96f, 0.94f, 1.00f), 10.0f, 1.2f},
+            {LightType::Point, cameraPos + glm::vec3(0.0f, 0.8f, 0.5f), glm::vec3(0.0f, -1.0f, 0.0f), glm::vec3(1.0f), 8.0f, 0.8f}
         };
         LightingEnvironment lighting;
-        lighting.hemisphereSkyColor = glm::vec3(0.18f, 0.19f, 0.22f);
-        lighting.hemisphereGroundColor = glm::vec3(0.07f, 0.07f, 0.08f);
-        lighting.hemisphereStrength = 0.42f;
+        lighting.hemisphereSkyColor = glm::vec3(0.35f, 0.37f, 0.42f);
+        lighting.hemisphereGroundColor = glm::vec3(0.12f, 0.12f, 0.14f);
+        lighting.hemisphereStrength = 0.6f;
         lighting.enableShadows = false;
         ShadowRenderData shadowData;
 

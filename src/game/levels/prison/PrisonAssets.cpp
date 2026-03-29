@@ -333,6 +333,61 @@ std::unique_ptr<Mesh> createPrisonChair() {
                                   merged.indices);
 }
 
+std::unique_ptr<Mesh> createWardenChair() {
+    auto cube = generateCube(2.0f);
+    std::vector<std::pair<RawMeshData, glm::mat4>> parts;
+
+    auto addBox = [&](const glm::vec3& position,
+                      const glm::vec3& scale,
+                      const glm::vec3& rotation = glm::vec3(0.0f)) {
+        parts.push_back({cube, makeModel(position, scale, rotation)});
+    };
+
+    // ── Structural: legs ──
+    // Four legs (0.03m x 0.03m cross-section, 0.45m tall)
+    // Back legs extend up to support backrest (0.85m total)
+    float frontLegH = 0.45f / 2.0f;
+    addBox(glm::vec3(-0.2f, frontLegH, -0.2f), glm::vec3(0.015f, frontLegH, 0.015f));   // Front-left leg
+    addBox(glm::vec3(0.2f, frontLegH, -0.2f), glm::vec3(0.015f, frontLegH, 0.015f));    // Front-right leg
+    float backLegH = 0.85f / 2.0f;
+    addBox(glm::vec3(-0.2f, backLegH, 0.2f), glm::vec3(0.015f, backLegH, 0.015f));      // Back-left leg
+    addBox(glm::vec3(0.2f, backLegH, 0.2f), glm::vec3(0.015f, backLegH, 0.015f));       // Back-right leg
+
+    // ── Structural: seat ──
+    // Seat slab: 0.44m x 0.44m, 0.03m thick, at Y=0.45m
+    addBox(glm::vec3(0.0f, 0.45f, 0.0f), glm::vec3(0.22f, 0.015f, 0.22f));
+
+    // ── Structural: backrest ──
+    // Backrest panel: 0.44m wide, 0.32m tall, 0.02m thick
+    addBox(glm::vec3(0.0f, 0.69f, 0.2f), glm::vec3(0.22f, 0.16f, 0.01f));
+
+    // ── Structural: armrests ──
+    // Left armrest horizontal bar
+    addBox(glm::vec3(-0.2f, 0.62f, 0.0f), glm::vec3(0.015f, 0.01f, 0.2f));
+    // Right armrest horizontal bar
+    addBox(glm::vec3(0.2f, 0.62f, 0.0f), glm::vec3(0.015f, 0.01f, 0.2f));
+    // Left armrest front support (vertical)
+    addBox(glm::vec3(-0.2f, 0.535f, -0.18f), glm::vec3(0.012f, 0.075f, 0.012f));
+    // Right armrest front support (vertical)
+    addBox(glm::vec3(0.2f, 0.535f, -0.18f), glm::vec3(0.012f, 0.075f, 0.012f));
+
+    // ── Detail: cross braces ──
+    // Front cross brace between front legs
+    addBox(glm::vec3(0.0f, 0.12f, -0.19f), glm::vec3(0.185f, 0.008f, 0.008f));
+    // Back cross brace between back legs
+    addBox(glm::vec3(0.0f, 0.12f, 0.19f), glm::vec3(0.185f, 0.008f, 0.008f));
+    // Left side brace
+    addBox(glm::vec3(-0.19f, 0.12f, 0.0f), glm::vec3(0.008f, 0.008f, 0.185f));
+
+    // ── Detail: backrest top rail ──
+    // Slightly wider rail along top of backrest
+    addBox(glm::vec3(0.0f, 0.855f, 0.2f), glm::vec3(0.23f, 0.012f, 0.015f));
+
+    RawMeshData merged = mergeMeshes(parts);
+    return std::make_unique<Mesh>(merged.positions, merged.normals, merged.uvs, merged.tangents,
+                                  merged.indices);
+}
+
 std::unique_ptr<Mesh> createPrisonCabinet() {
     auto cube = generateCube(2.0f);
     std::vector<std::pair<RawMeshData, glm::mat4>> parts;
@@ -409,6 +464,7 @@ void registerPrisonAssets(MeshLibrary& meshLibrary) {
     // Furniture
     meshLibrary.registerMesh("prison_desk", createPrisonDesk());
     meshLibrary.registerMesh("prison_chair", createPrisonChair());
+    meshLibrary.registerMesh("warden_chair", createWardenChair());
     meshLibrary.registerMesh("prison_cabinet", createPrisonCabinet());
     meshLibrary.registerMesh("prison_shelf", createPrisonShelf());
 }
