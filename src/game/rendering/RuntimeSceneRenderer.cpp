@@ -112,10 +112,8 @@ std::size_t RuntimeSceneRenderer::prewarmMaterialResources(entt::registry& regis
     auto meshView = registry.view<MeshComponent>();
     for (auto [entity, mesh] : meshView.each()) {
         (void)entity;
-        (void)materialTextureLibrary_.resolve(mesh.materialId, mesh.material);
-        const std::string key = mesh.materialId.empty()
-            ? std::to_string(static_cast<int>(mesh.material))
-            : mesh.materialId;
+        (void)materialTextureLibrary_.resolve(mesh.materialId);
+        const std::string key = mesh.materialId.empty() ? "stone_default" : mesh.materialId;
         warmedMaterials.insert(key);
     }
     return warmedMaterials.size();
@@ -154,7 +152,7 @@ std::vector<RenderObject> RuntimeSceneRenderer::collectSceneObjects(entt::regist
             mesh.mesh,
             model,
             mesh.tint,
-            materialTextureLibrary_.resolve(mesh.materialId, mesh.material)
+            materialTextureLibrary_.resolve(mesh.materialId)
         });
     }
 
@@ -197,7 +195,7 @@ std::vector<RenderObject> RuntimeSceneRenderer::collectViewmodelObjects(entt::re
             mesh.mesh,
             model,
             mesh.tint,
-            materialTextureLibrary_.resolve(mesh.materialId, mesh.material)
+            materialTextureLibrary_.resolve(mesh.materialId)
         });
     }
 

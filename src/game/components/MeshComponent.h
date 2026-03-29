@@ -1,11 +1,9 @@
 #pragma once
-#include "game/rendering/MaterialKind.h"
 
 #include <glm/glm.hpp>
+#include <string>
 
 class Mesh;
-
-#include <string>
 
 struct MeshComponent {
     std::string meshId;
@@ -13,6 +11,5 @@ struct MeshComponent {
     glm::mat4 modelOverride;  // optional: pre-computed model matrix (for non-standard transforms like arch segments)
     bool useModelOverride = false;
     glm::vec3 tint{1.0f};
-    MaterialKind material = MaterialKind::Stone;
     std::string materialId;
 };

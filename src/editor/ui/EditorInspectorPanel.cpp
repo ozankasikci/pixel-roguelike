@@ -547,10 +547,10 @@ RenderMaterialData buildDraftMaterialPreview(const MaterialDefinition& draft,
         }
     }
 
-    RenderMaterialData material = session.materialLibrary.resolve(previewMaterialId, previewKind);
+    RenderMaterialData material = session.materialLibrary.resolve(previewMaterialId);
     material.id = draft.id;
     if (draft.shadingModel.has_value()) {
-        material.shadingModel = *draft.shadingModel;
+        material.shadingModelIndex = static_cast<int>(*draft.shadingModel);
     }
     if (draft.baseColor.has_value()) {
         material.baseColor = *draft.baseColor;
@@ -859,7 +859,7 @@ void renderMeshAssetInspector(const EditorInspectedAsset& asset, AssetInspectorS
 
     RenderMaterialData material;
     material.id = "mesh_preview";
-    material.shadingModel = MaterialKind::Stone;
+    material.shadingModelIndex = 0; // Stone = 0
     material.baseColor = glm::vec3(0.92f, 0.90f, 0.86f);
     if (session.previewRenderer.drawMeshPreview(asset.absolutePath, material, glm::vec3(0.08f, 0.09f, 0.10f), "mesh_asset_preview")) {
         const EditorPreviewMeshStats stats = session.previewRenderer.currentMeshStats();

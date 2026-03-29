@@ -238,12 +238,10 @@ void EditorPreviewWorld::syncMaterials(const EditorSceneDocument& document,
             continue;
         }
         const auto& placement = std::get<LevelMeshPlacement>(object->payload);
-        MaterialKind resolvedMaterial = placement.material.value_or(MaterialKind::Stone);
         std::string resolvedMaterialId = placement.materialId;
         if (resolvedMaterialId.empty()) {
-            resolvedMaterialId = std::string(defaultMaterialIdForKind(resolvedMaterial));
+            resolvedMaterialId = std::string(defaultMaterialIdForKind(placement.material.value_or(MaterialKind::Stone)));
         }
-        mesh.material = resolvedMaterial;
         mesh.materialId = resolvedMaterialId;
         mesh.tint = placement.tint.value_or(glm::vec3(1.0f));
     }

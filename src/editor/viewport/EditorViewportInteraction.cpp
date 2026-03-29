@@ -41,7 +41,8 @@ glm::mat4 makeModelMatrix(const glm::vec3& position,
 RenderMaterialData resolveHelperMaterial(const MaterialTextureLibrary& materials,
                                          MaterialKind kind,
                                          const std::string& materialId = {}) {
-    return materials.resolve(materialId.empty() ? std::string(defaultMaterialIdForKind(kind)) : materialId, kind);
+    const std::string resolvedId = materialId.empty() ? std::string(defaultMaterialIdForKind(kind)) : materialId;
+    return materials.resolve(resolvedId);
 }
 
 bool isViewportSelectableKind(const EditorSelectionHandle& handle, const EditorUiState& ui) {
@@ -505,7 +506,7 @@ void appendPlacementGhost(std::vector<RenderObject>& objects,
             mesh,
             makeModelMatrix(position, glm::vec3(1.0f)),
             tint,
-            materials.resolve(state.materialId, resolvePlacementMaterialKind(state.materialId, content))
+            materials.resolve(state.materialId.empty() ? std::string(defaultMaterialIdForKind(resolvePlacementMaterialKind(state.materialId, content))) : state.materialId)
         });
         break;
     }

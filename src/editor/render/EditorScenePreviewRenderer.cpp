@@ -46,7 +46,8 @@ glm::mat4 makeModelMatrix(const glm::vec3& position,
 RenderMaterialData resolveHelperMaterial(const MaterialTextureLibrary& materials,
                                          MaterialKind kind,
                                          const std::string& materialId = {}) {
-    return materials.resolve(materialId.empty() ? std::string(defaultMaterialIdForKind(kind)) : materialId, kind);
+    const std::string resolvedId = materialId.empty() ? std::string(defaultMaterialIdForKind(kind)) : materialId;
+    return materials.resolve(resolvedId);
 }
 
 void appendDirectionalLight(std::vector<RenderLight>& lights,
@@ -141,7 +142,7 @@ std::vector<RenderObject> collectRenderObjects(const EditorPreviewWorld& world,
             mesh.mesh,
             mesh.useModelOverride ? mesh.modelOverride : transform.modelMatrix(),
             tint,
-            materials.resolve(mesh.materialId, mesh.material)
+            materials.resolve(mesh.materialId)
         });
     }
     return objects;

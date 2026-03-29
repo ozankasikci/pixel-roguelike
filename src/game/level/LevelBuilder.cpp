@@ -171,7 +171,6 @@ entt::entity LevelBuilder::addMesh(Mesh* mesh,
             glm::mat4(1.0f),
             false,
             tint.value_or(glm::vec3(1.0f)),
-            resolvedMaterial,
             materialId.value_or(std::string(defaultMaterialIdForKind(resolvedMaterial)))
         }
     );

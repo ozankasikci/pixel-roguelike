@@ -48,7 +48,6 @@ entt::entity spawnViewmodelMesh(entt::registry& registry,
             glm::mat4(1.0f),
             false,
             tint,
-            material,
             std::string(defaultMaterialIdForKind(material))
         }
     );

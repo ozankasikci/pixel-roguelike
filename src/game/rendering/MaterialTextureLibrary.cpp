@@ -118,8 +118,8 @@ std::size_t MaterialTextureLibrary::prewarmAllMaterialMaps() const {
     return warmedTextureSets;
 }
 
-const RenderMaterialData& MaterialTextureLibrary::resolve(std::string_view materialId, MaterialKind legacyKind) const {
-    const ResolvedMaterialDefinition& resolved = definitionFor(materialId, legacyKind);
+const RenderMaterialData& MaterialTextureLibrary::resolve(std::string_view materialId) const {
+    const ResolvedMaterialDefinition& resolved = definitionFor(materialId);
     auto cached = materials_.find(resolved.id);
     if (cached != materials_.end()) {
         return cached->second;
@@ -157,18 +157,12 @@ const RenderMaterialData& MaterialTextureLibrary::resolve(std::string_view mater
     return it->second;
 }
 
-const ResolvedMaterialDefinition& MaterialTextureLibrary::definitionFor(std::string_view materialId,
-                                                                        MaterialKind legacyKind) const {
+const ResolvedMaterialDefinition& MaterialTextureLibrary::definitionFor(std::string_view materialId) const {
     if (!materialId.empty()) {
         auto it = resolvedDefinitions_.find(std::string(materialId));
         if (it != resolvedDefinitions_.end()) {
             return it->second;
         }
-    }
-
-    auto fallback = resolvedDefinitions_.find(std::string(defaultMaterialIdForKind(legacyKind)));
-    if (fallback != resolvedDefinitions_.end()) {
-        return fallback->second;
     }
 
     auto stone = resolvedDefinitions_.find("stone_default");
