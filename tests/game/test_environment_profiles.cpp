@@ -44,5 +44,18 @@ int main() {
     assert(test_support::nearlyEqualVec3(cloister.lighting.sun.direction, cloister.sky.sunDirection));
     assert(cloister.post.fogFarColor.g > cloister.post.fogNearColor.g);
 
+    const auto gameReady = makeEnvironmentRenderSettings(EnvironmentProfile::GameReadyNeutral);
+    assert(gameReady.sky.enabled);
+    assert(!gameReady.sky.cloudLayerAPath.empty());
+    assert(gameReady.sky.cubemapFacePaths[0].empty());
+    assert(gameReady.lighting.sun.enabled);
+    assert(gameReady.lighting.fill.enabled);
+    assert(gameReady.lighting.sun.intensity > gameReady.lighting.fill.intensity);
+    assert(gameReady.post.toneMapMode == 1);
+    assert(gameReady.post.paletteVariant == 0);
+    assert(!gameReady.post.enableEdges);
+    assert(!gameReady.post.enableGrain);
+    assert(test_support::nearlyEqualVec3(gameReady.lighting.sun.direction, gameReady.sky.sunDirection));
+
     return 0;
 }

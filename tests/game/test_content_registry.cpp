@@ -86,7 +86,9 @@ int main() {
     assert(registry.findMaterial("cloister_stone") != nullptr);
     assert(registry.findEnvironment("neutral") != nullptr);
     assert(registry.findEnvironment("cloister_daylight") != nullptr);
+    assert(registry.findEnvironment("game_ready_neutral") != nullptr);
     assert(registry.findEnvironmentPath("cloister_daylight") != nullptr);
+    assert(registry.findEnvironmentPath("game_ready_neutral") != nullptr);
 
     EnvironmentDefinition customEnvironment = makeEnvironmentDefinition(EnvironmentProfile::Neutral);
     customEnvironment.id = "editor_custom_test";
@@ -123,6 +125,13 @@ int main() {
     assert(cloister->id == "cloister_daylight");
     assert(cloister->sky.enabled);
     assert(cloister->lighting.sun.enabled);
+
+    const auto* gameReady = registry.findEnvironment("game_ready_neutral");
+    assert(gameReady != nullptr);
+    assert(gameReady->id == "game_ready_neutral");
+    assert(gameReady->lighting.sun.enabled);
+    assert(gameReady->lighting.fill.enabled);
+    assert(!gameReady->post.enableGrain);
 
     EnvironmentDefinition roundtrip;
     roundtrip.id = "editor_roundtrip_test";

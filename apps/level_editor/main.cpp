@@ -292,6 +292,7 @@ int main(int argc, char* argv[]) {
     renderStartupProgress(window, imgui, 1.0f, "Ready", "Opening editor...");
 
     bool previewDirty = true;
+    int startupViewportHandoffFramesRemaining = 1;
     bool savePressed = false;
     bool focusPressed = false;
     bool resetStartPressed = false;
@@ -909,10 +910,11 @@ int main(int argc, char* argv[]) {
             renderViewportState = fitViewportToAspect(viewportState, kRuntimeViewportAspect);
             renderViewportState.hovered = pointInViewport(renderViewportState, io.MousePos);
         }
+        const bool startupViewportHandoffActive = startupViewportHandoffFramesRemaining > 0;
 
         const int targetW = std::max(1, static_cast<int>(std::max(renderViewportState.size.x, 64.0f)));
         const int targetH = std::max(1, static_cast<int>(std::max(renderViewportState.size.y, 64.0f)));
-        if (sceneFbo.width() != targetW || sceneFbo.height() != targetH) {
+        if (!startupViewportHandoffActive && (sceneFbo.width() != targetW || sceneFbo.height() != targetH)) {
             sceneFbo.resize(targetW, targetH);
             compositeFbo.resize(targetW, targetH);
             finalFbo.resize(targetW, targetH);
@@ -951,7 +953,7 @@ int main(int argc, char* argv[]) {
         glm::mat4 projection(1.0f);
         glm::mat4 inverseViewProjection(1.0f);
 
-        if (!ui.playPreview) {
+        if (!ui.playPreview && !startupViewportHandoffActive) {
             updateEditorFlyCamera(editCamera, window.handle(), renderViewportState, deltaTime);
 
             view = editorCameraView(editCamera);
@@ -1043,7 +1045,7 @@ int main(int argc, char* argv[]) {
                               targetW,
                               targetH,
                               finalFbo.framebuffer());
-        } else {
+        } else if (!startupViewportHandoffActive) {
             runtimePreviewSession.updateInput(window.handle(), io);
             runtimePreviewSession.tick(deltaTime, kRuntimeViewportAspect);
             runtimePreviewSession.syncCursor(window.handle());
@@ -1076,11 +1078,34 @@ int main(int argc, char* argv[]) {
             if (ui.playPreview) {
                 ImGui::SetCursorScreenPos(renderViewportState.origin);
             }
-            ImGui::SetNextItemAllowOverlap();
-            ImGui::Image(static_cast<ImTextureID>(static_cast<uintptr_t>(finalFbo.colorTexture())),
-                         renderViewportState.size,
-                         ImVec2(0.0f, 1.0f),
-                         ImVec2(1.0f, 0.0f));
+            if (startupViewportHandoffActive) {
+                ImGui::SetCursorScreenPos(renderViewportState.origin);
+                ImGui::Dummy(renderViewportState.size);
+
+                ImDrawList* drawList = ImGui::GetWindowDrawList();
+                const ImVec2 boxMin = renderViewportState.origin;
+                const ImVec2 boxMax(renderViewportState.origin.x + renderViewportState.size.x,
+                                    renderViewportState.origin.y + renderViewportState.size.y);
+                drawList->AddRectFilled(boxMin, boxMax, IM_COL32(16, 18, 22, 255), 6.0f);
+                drawList->AddRect(boxMin, boxMax, IM_COL32(56, 62, 74, 255), 6.0f);
+
+                const char* title = "Opening workspace...";
+                const char* detail = "Preparing the first editor frame";
+                const ImVec2 titleSize = ImGui::CalcTextSize(title);
+                const ImVec2 detailSize = ImGui::CalcTextSize(detail);
+                const ImVec2 textPos(renderViewportState.origin.x + (renderViewportState.size.x - titleSize.x) * 0.5f,
+                                     renderViewportState.origin.y + (renderViewportState.size.y - (titleSize.y + detailSize.y + 10.0f)) * 0.5f);
+                drawList->AddText(textPos, IM_COL32(232, 236, 244, 255), title);
+                drawList->AddText(ImVec2(textPos.x + (titleSize.x - detailSize.x) * 0.5f, textPos.y + titleSize.y + 10.0f),
+                                  IM_COL32(168, 176, 192, 255),
+                                  detail);
+            } else {
+                ImGui::SetNextItemAllowOverlap();
+                ImGui::Image(static_cast<ImTextureID>(static_cast<uintptr_t>(finalFbo.colorTexture())),
+                             renderViewportState.size,
+                             ImVec2(0.0f, 1.0f),
+                             ImVec2(1.0f, 0.0f));
+            }
 
             {
                 const char* modeLabel = ui.playPreview ? "Game Preview" : "Edit View";
@@ -1096,7 +1121,7 @@ int main(int argc, char* argv[]) {
                                   modeLabel);
             }
 
-            if (ui.playPreview) {
+            if (ui.playPreview && !startupViewportHandoffActive) {
                 ImDrawList* drawList = ImGui::GetWindowDrawList();
                 if (!runtimePreviewSession.captured()) {
                     const char* captureLabel = "Click to Capture";
@@ -1145,7 +1170,7 @@ int main(int argc, char* argv[]) {
                 }
             }
 
-            if (!ui.playPreview && !selectedIds.empty()) {
+            if (!ui.playPreview && !startupViewportHandoffActive && !selectedIds.empty()) {
                 const std::uint64_t activeId = selectedIds.back();
                 std::string label = selectedIds.size() == 1
                     ? "Selected: "
@@ -1167,7 +1192,7 @@ int main(int argc, char* argv[]) {
                 drawList->AddText(textPos, IM_COL32(255, 236, 168, 255), label.c_str());
             }
             const EditorSceneDocumentState gizmoBeforeState = document.captureState();
-            if (!ui.playPreview) {
+            if (!ui.playPreview && !startupViewportHandoffActive) {
                 if (applyGizmoToSelectedObject(document, selectedIds, renderViewportState, view, projection, ui, previewWorld)) {
                     previewDirty = true;
                 }
@@ -1178,7 +1203,7 @@ int main(int argc, char* argv[]) {
                 }
             }
 
-            if (!ui.playPreview) {
+            if (!ui.playPreview && !startupViewportHandoffActive) {
                 if (ImGui::BeginDragDropTarget()) {
                     if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("EDITOR_PLACE", ImGuiDragDropFlags_AcceptBeforeDelivery)) {
                         if (payload->Delivery && placementPoint.has_value() && payload->DataSize == sizeof(EditorDragPayload)) {
@@ -1244,7 +1269,7 @@ int main(int argc, char* argv[]) {
                 }
             }
 
-            if (!ui.playPreview) {
+            if (!ui.playPreview && !startupViewportHandoffActive) {
                 renderSelectionPicker(selectionPicker, document, selectedIds, glfwGetTime());
             }
         }
@@ -1435,6 +1460,9 @@ int main(int argc, char* argv[]) {
 
         imgui.endFrame();
         window.swapBuffers();
+        if (startupViewportHandoffFramesRemaining > 0) {
+            --startupViewportHandoffFramesRemaining;
+        }
     }
 
     runtimePreviewSession.endCapture(window.handle());

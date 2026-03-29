@@ -14,20 +14,7 @@ glm::vec3 safeNormalize(const glm::vec3& value, const glm::vec3& fallback) {
 }
 
 struct PreservedDebugFields {
-    bool enableSky = false;
-    bool enableDither = false;
-    bool enableEdges = false;
-    bool enableFog = false;
-    bool enableToneMap = false;
-    bool enableBloom = false;
-    bool enableVignette = false;
-    bool enableGrain = false;
-    bool enableScanlines = false;
-    bool enableSharpen = false;
     int debugViewMode = 0;
-    int toneMapMode = 0;
-    float patternScale = 0.0f;
-    float depthViewScale = 1.0f;
     float nearPlane = 0.1f;
     float farPlane = 100.0f;
     float timeSeconds = 0.0f;
@@ -35,20 +22,7 @@ struct PreservedDebugFields {
 
 PreservedDebugFields preserveDebugFields(const DebugParams& params) {
     return PreservedDebugFields{
-        params.post.enableSky,
-        params.post.enableDither,
-        params.post.enableEdges,
-        params.post.enableFog,
-        params.post.enableToneMap,
-        params.post.enableBloom,
-        params.post.enableVignette,
-        params.post.enableGrain,
-        params.post.enableScanlines,
-        params.post.enableSharpen,
         params.post.debugViewMode,
-        params.post.toneMapMode,
-        params.post.patternScale,
-        params.post.depthViewScale,
         params.post.nearPlane,
         params.post.farPlane,
         params.post.timeSeconds,
@@ -56,20 +30,7 @@ PreservedDebugFields preserveDebugFields(const DebugParams& params) {
 }
 
 void restoreDebugFields(DebugParams& params, const PreservedDebugFields& preserved) {
-    params.post.enableSky = preserved.enableSky;
-    params.post.enableDither = preserved.enableDither;
-    params.post.enableEdges = preserved.enableEdges;
-    params.post.enableFog = preserved.enableFog;
-    params.post.enableToneMap = preserved.enableToneMap;
-    params.post.enableBloom = preserved.enableBloom;
-    params.post.enableVignette = preserved.enableVignette;
-    params.post.enableGrain = preserved.enableGrain;
-    params.post.enableScanlines = preserved.enableScanlines;
-    params.post.enableSharpen = preserved.enableSharpen;
     params.post.debugViewMode = preserved.debugViewMode;
-    params.post.toneMapMode = preserved.toneMapMode;
-    params.post.patternScale = preserved.patternScale;
-    params.post.depthViewScale = preserved.depthViewScale;
     params.post.nearPlane = preserved.nearPlane;
     params.post.farPlane = preserved.farPlane;
     params.post.timeSeconds = preserved.timeSeconds;

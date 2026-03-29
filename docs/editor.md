@@ -28,6 +28,8 @@ The editor library lives under [`src/editor/`](../src/editor) and is split inter
 
 Saving the document writes back to the shared `.scene` format.
 
+New documents still start from `neutral` for compatibility, but `game_ready_neutral` is the recommended clean daylight baseline when you want a more polished general-purpose environment without scene-specific grading.
+
 ### Preview World
 
 `EditorPreviewWorld` provides the edit-time scene preview used while manipulating content in the viewport.

@@ -162,6 +162,25 @@ SkySettings makeCloisterSky() {
     return sky;
 }
 
+SkySettings makeGameReadyNeutralSky() {
+    SkySettings sky;
+    sky.enabled = true;
+    sky.zenithColor = glm::vec3(0.20f, 0.32f, 0.54f);
+    sky.horizonColor = glm::vec3(0.78f, 0.82f, 0.82f);
+    sky.groundHazeColor = glm::vec3(0.68f, 0.66f, 0.60f);
+    sky.sunDirection = glm::normalize(glm::vec3(0.28f, 0.91f, 0.18f));
+    sky.sunColor = glm::vec3(1.00f, 0.95f, 0.88f);
+    sky.sunSize = 0.014f;
+    sky.sunGlow = 0.10f;
+    sky.cloudLayerAPath = "assets/skies/clouds_soft.tga";
+    sky.cloudTint = glm::vec3(0.98f, 0.99f, 1.00f);
+    sky.cloudScale = 0.95f;
+    sky.cloudSpeed = 0.0018f;
+    sky.cloudCoverage = 0.22f;
+    sky.cloudParallax = 0.016f;
+    return sky;
+}
+
 DirectionalLightSlot makeSunSlot(const SkySettings& sky, float intensity, bool enabled = true) {
     DirectionalLightSlot slot;
     slot.enabled = enabled && intensity > 0.001f;
@@ -429,6 +448,49 @@ EnvironmentRenderSettings makeCloisterDaylightSettings() {
     return settings;
 }
 
+EnvironmentRenderSettings makeGameReadyNeutralSettings() {
+    EnvironmentRenderSettings settings = makeNeutralSettings();
+    settings.profile = EnvironmentProfile::GameReadyNeutral;
+    settings.sky = makeGameReadyNeutralSky();
+    settings.post.paletteVariant = 0;
+    settings.post.enableEdges = false;
+    settings.post.enableToneMap = true;
+    settings.post.enableBloom = true;
+    settings.post.enableVignette = true;
+    settings.post.enableGrain = false;
+    settings.post.enableScanlines = false;
+    settings.post.enableSharpen = false;
+    settings.post.toneMapMode = 1;
+    settings.post.fogDensity = 0.022f;
+    settings.post.fogStart = 22.0f;
+    settings.post.fogNearColor = glm::vec3(0.26f, 0.30f, 0.34f);
+    settings.post.fogFarColor = glm::vec3(0.54f, 0.62f, 0.72f);
+    settings.post.exposure = 0.98f;
+    settings.post.gamma = 1.0f;
+    settings.post.contrast = 1.03f;
+    settings.post.saturation = 0.98f;
+    settings.post.bloomThreshold = 0.72f;
+    settings.post.bloomIntensity = 0.08f;
+    settings.post.bloomRadius = 1.35f;
+    settings.post.vignetteStrength = 0.10f;
+    settings.post.vignetteSoftness = 0.80f;
+    settings.post.splitToneStrength = 0.04f;
+    settings.post.splitToneBalance = 0.52f;
+    settings.post.shadowTint = glm::vec3(0.88f, 0.92f, 0.98f);
+    settings.post.highlightTint = glm::vec3(0.99f, 0.96f, 0.90f);
+
+    settings.lighting.hemisphereSkyColor = glm::vec3(0.36f, 0.44f, 0.52f);
+    settings.lighting.hemisphereGroundColor = glm::vec3(0.10f, 0.09f, 0.08f);
+    settings.lighting.hemisphereStrength = 0.38f;
+    settings.lighting.enableDirectionalLights = true;
+    settings.lighting.enableShadows = true;
+    settings.lighting.sun = makeSunSlot(settings.sky, 1.00f);
+    settings.lighting.fill = makeFillSlot(glm::vec3(-0.18f, 0.78f, -0.42f),
+                                          glm::vec3(0.74f, 0.80f, 0.90f),
+                                          0.10f);
+    return settings;
+}
+
 } // namespace
 
 bool tryParseEnvironmentProfileToken(const std::string& token, EnvironmentProfile& profile) {
@@ -460,6 +522,10 @@ bool tryParseEnvironmentProfileToken(const std::string& token, EnvironmentProfil
         profile = EnvironmentProfile::CloisterDaylight;
         return true;
     }
+    if (token == "game_ready_neutral") {
+        profile = EnvironmentProfile::GameReadyNeutral;
+        return true;
+    }
     return false;
 }
 
@@ -479,6 +545,8 @@ const char* environmentProfileName(EnvironmentProfile profile) {
         return "cathedral_arcade";
     case EnvironmentProfile::CloisterDaylight:
         return "cloister_daylight";
+    case EnvironmentProfile::GameReadyNeutral:
+        return "game_ready_neutral";
     }
     return "neutral";
 }
@@ -497,6 +565,8 @@ EnvironmentRenderSettings makeEnvironmentRenderSettings(EnvironmentProfile profi
         return makeCathedralArcadeSettings();
     case EnvironmentProfile::CloisterDaylight:
         return makeCloisterDaylightSettings();
+    case EnvironmentProfile::GameReadyNeutral:
+        return makeGameReadyNeutralSettings();
     case EnvironmentProfile::Neutral:
     default:
         return makeNeutralSettings();
