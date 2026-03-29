@@ -50,8 +50,8 @@ Requirements for initial playable tech demo. Each maps to roadmap phases.
 
 ### Engine Boundary (added for Phase 4)
 
-- [ ] **ENG-BOUNDARY-01**: Engine rendering layer compiles with zero game-layer includes
-- [ ] **ENG-BOUNDARY-02**: RenderMaterialData uses opaque int instead of game's MaterialKind enum
+- [x] **ENG-BOUNDARY-01**: Engine rendering layer compiles with zero game-layer includes
+- [x] **ENG-BOUNDARY-02**: RenderMaterialData uses opaque int instead of game's MaterialKind enum
 - [ ] **ENG-BOUNDARY-03**: Engine provides generic action mapping system for input bindings
 - [ ] **ENG-BOUNDARY-04**: Engine input layer compiles with zero game-layer includes
 - [ ] **ENG-BOUNDARY-05**: RuntimeSceneRenderer has no hardcoded game-specific constants
@@ -128,8 +128,8 @@ Which phases cover which requirements. Updated during roadmap creation.
 | GSYS-02 | TBD | Pending |
 | GSYS-03 | TBD | Pending |
 | GSYS-04 | TBD | Pending |
-| ENG-BOUNDARY-01 | Phase 4 | Pending |
-| ENG-BOUNDARY-02 | Phase 4 | Pending |
+| ENG-BOUNDARY-01 | Phase 4 | Complete |
+| ENG-BOUNDARY-02 | Phase 4 | Complete |
 | ENG-BOUNDARY-03 | Phase 4 | Pending |
 | ENG-BOUNDARY-04 | Phase 4 | Pending |
 | ENG-BOUNDARY-05 | Phase 4 | Pending |

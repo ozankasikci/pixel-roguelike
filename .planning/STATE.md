@@ -2,14 +2,14 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: Phase complete — ready for verification
-stopped_at: "Checkpoint: 03-02 Task 2 human-verify"
-last_updated: "2026-03-29T09:57:11.888Z"
+status: Ready to execute
+stopped_at: Completed 04-01-PLAN.md
+last_updated: "2026-03-29T16:54:40.620Z"
 progress:
-  total_phases: 5
+  total_phases: 6
   completed_phases: 4
-  total_plans: 10
-  completed_plans: 10
+  total_plans: 13
+  completed_plans: 11
 ---
 
 # Project State
@@ -19,12 +19,12 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-23)
 
 **Core value:** The 1-bit dithered 3D rendering — a visually striking, modern take on retro aesthetics that makes the game instantly recognizable
-**Current focus:** Phase 03 — build-menu-in-editor-macos-build-from-editor-with-progress-and-output
+**Current focus:** Phase 04 — make-engine-fully-generic-clean-engine-game-boundary-remove-hardcoded-game-content-generic-typescript-scripting-generic-editor-and-build-system
 
 ## Current Position
 
-Phase: 03 (build-menu-in-editor-macos-build-from-editor-with-progress-and-output) — EXECUTING
-Plan: 2 of 2
+Phase: 04 (make-engine-fully-generic-clean-engine-game-boundary-remove-hardcoded-game-content-generic-typescript-scripting-generic-editor-and-build-system) — EXECUTING
+Plan: 2 of 3
 
 ## Performance Metrics
 
@@ -55,6 +55,7 @@ Plan: 2 of 2
 | Phase 01.1-project-restructure-ecs-application-class-modular-engine-game-split P04 | 15 | 3 tasks | 3 files |
 | Phase 03-build-menu-in-editor-macos-build-from-editor-with-progress-and-output P01 | 90 | 2 tasks | 7 files |
 | Phase 03-build-menu-in-editor-macos-build-from-editor-with-progress-and-output P02 | 25 | 1 tasks | 5 files |
+| Phase 04-make-engine-fully-generic P01 | 25 | 2 tasks | 13 files |
 
 ## Accumulated Context
 
@@ -89,6 +90,9 @@ Recent decisions affecting current work:
 - [Phase 03-build-menu-in-editor-macos-build-from-editor-with-progress-and-output]: GenericFileScene uses registerCathedralAssets for all scenes -- all current scenes use cathedral asset set
 - [Phase 03-build-menu-in-editor-macos-build-from-editor-with-progress-and-output]: Build Output panel starts hidden and auto-shows on build start; docked to bottomId alongside Asset Browser
 - [Phase 03-build-menu-in-editor-macos-build-from-editor-with-progress-and-output]: Cmd+R Build and Run shortcut includes right-mouse-not-pressed guard to avoid conflict with fly camera R (scale tool)
+- [Phase 04-make-engine-fully-generic]: Engine layer uses int shadingModelIndex=0 as default (0=Stone), game layer casts MaterialKind to int at the engine/game boundary
+- [Phase 04-make-engine-fully-generic]: MaterialTextureLibrary.resolve() takes only materialId string; legacyKind parameter removed; fallback goes directly to stone_default
+- [Phase 04-make-engine-fully-generic]: MeshComponent.material (MaterialKind) removed; materialId string is the sole material identifier in ECS components
 
 ### Pending Todos
 
@@ -99,6 +103,7 @@ None yet.
 - Phase 01.1 inserted after Phase 1: Project Restructure — ECS, Application class, modular engine/game split (URGENT)
 - Phase 02.1 inserted after Phase 2: Equipment Inventory and Carry Weight — weapons are inventory items, no slot-grid inventory, Dark Souls-style carry weight (URGENT)
 - Phase 3 added: Build menu in editor — macOS build from editor with progress and output (Windows support later)
+- Phase 4 added: Make engine fully generic — clean engine/game boundary, remove hardcoded game content, generic TypeScript scripting, generic editor and build system
 
 ### Blockers/Concerns
 
@@ -113,6 +118,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-29T10:34:58Z
-Stopped at: Quick task 260329-imv complete
+Last session: 2026-03-29T16:54:40.617Z
+Stopped at: Completed 04-01-PLAN.md
 Resume file: None

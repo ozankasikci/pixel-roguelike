@@ -101,6 +101,6 @@ Plans:
 **Plans:** 3 plans
 
 Plans:
-- [ ] 04-01-PLAN.md — Decouple material system: replace MaterialKind enum with int shadingModelIndex in engine, remove MaterialKind field from MeshComponent
+- [x] 04-01-PLAN.md — Decouple material system: replace MaterialKind enum with int shadingModelIndex in engine, remove MaterialKind field from MeshComponent
 - [ ] 04-02-PLAN.md — Decouple input system: internalize raw state in InputSystem, remove RuntimeInputState from engine, update all game system callers
 - [ ] 04-03-PLAN.md — Extract player torch to ECS component+system, move game-specific ImGui overlays from engine to game layer
