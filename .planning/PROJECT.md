@@ -2,11 +2,11 @@
 
 ## What This Is
 
-A first-person 3D roguelike with a distinctive 1-bit dithered black-and-white visual style, built on a custom C++ engine. The player explores gothic cathedral-like environments, fighting enemies with melee and ranged weapons, progressing through handcrafted levels with escalating difficulty and boss encounters.
+A first-person 3D psychological horror game built on a custom C++ engine. The player explores a mechanical prison environment, investigating recordings, scratch marks, and environmental clues while manipulating doors, cameras, and control terminals to progress through interconnected cell blocks. Stanley Parable-inspired art style with clean, minimalist environments and warm soft lighting.
 
 ## Core Value
 
-The 1-bit dithered 3D rendering — a visually striking, modern take on retro aesthetics that makes the game instantly recognizable. If the look doesn't land, nothing else matters.
+The Stanley Parable-inspired art style — clean, minimalist environments with warm soft lighting, muted color palette, and stylized realism. Geometric clarity over visual clutter. Institutional/corporate aesthetic applied to a prison setting creates an eerie, liminal atmosphere.
 
 ## Requirements
 
@@ -17,9 +17,9 @@ The 1-bit dithered 3D rendering — a visually striking, modern take on retro ae
 ### Active
 
 - [ ] Custom C++ rendering engine with 3D scene rendering
-- [ ] Post-process 1-bit dithering shader (black and white only)
+- [ ] Post-process stylize pass with edge detection, bloom, and tone mapping
 - [ ] First-person camera with smooth WASD + mouse look controls
-- [ ] Gothic architectural environments (arches, pillars, torches)
+- [ ] Prison/institutional environments (offices, cell blocks, corridors)
 - [ ] Melee combat (swords, axes — swing, hit detection)
 - [ ] Ranged combat (bows, spells — projectiles)
 - [ ] Basic enemy AI (patrol, detect, attack)
@@ -27,7 +27,7 @@ The 1-bit dithered 3D rendering — a visually striking, modern take on retro ae
 - [ ] Multiple enemy types with different behaviors
 - [ ] Boss encounters
 - [ ] Handcrafted level design
-- [ ] Point light sources (torches, glowing effects) that work with the dithering aesthetic
+- [ ] Warm soft lighting with recessed ceiling panels and window daylight
 - [ ] Player health and damage system
 
 ### Out of Scope
@@ -40,25 +40,25 @@ The 1-bit dithered 3D rendering — a visually striking, modern take on retro ae
 
 ## Context
 
-- Visual reference: 1-bit dithered aesthetic similar to Return of the Obra Dinn — full 3D geometry rendered then reduced to pure black and white via ordered dithering
-- The dithering post-process is the defining visual feature; it needs to handle lighting, depth, and atmospheric effects gracefully
-- Gothic cathedral architecture is the primary environmental theme (arched ceilings, stone pillars, wall-mounted torches)
+- Visual reference: The Stanley Parable / Ultra Deluxe — clean surfaces, warm lighting, slightly surreal atmosphere
+- The stylize post-process provides edge detection, bloom, and tone mapping for a polished but not photorealistic look
+- Prison/institutional architecture is the primary environmental theme (offices, cell blocks, corridors, control rooms)
 - Custom engine means building from scratch: windowing, input, rendering pipeline, game loop, physics/collision
 
 ## Constraints
 
 - **Engine**: Custom C++ — no Unity/Unreal/Godot
-- **Graphics API**: To be determined by research (OpenGL vs Vulkan tradeoff)
-- **Visual style**: Strictly 1-bit (black and white) — no grayscale, no color
+- **Graphics API**: OpenGL 4.1 Core Profile (macOS caps at 4.1)
+- **Visual style**: Stanley Parable-inspired — clean, warm, minimalist with muted color palette
 - **Platform**: Desktop (Windows/macOS/Linux)
 
 ## Key Decisions
 
 | Decision | Rationale | Outcome |
 |----------|-----------|---------|
-| Custom C++ engine | Full control over rendering pipeline for the dithering effect | — Pending |
-| Post-process dithering | Render full 3D first, then dither — simpler pipeline, easier to tune | — Pending |
-| First-person perspective | Immersive, matches the gothic dungeon crawling feel | — Pending |
+| Custom C++ engine | Full control over rendering pipeline for the stylized look | — Pending |
+| Post-process stylize pass | Render full 3D first, then apply edge detection + tone mapping | — Pending |
+| First-person perspective | Immersive, matches the eerie institutional exploration feel | — Pending |
 | Handcrafted levels | More control over atmosphere and pacing than procedural | — Pending |
 
 ## Evolution

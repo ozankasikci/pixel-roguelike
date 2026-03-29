@@ -2,7 +2,7 @@
 
 ## Overview
 
-Build a first-person 3D roguelike with a custom C++ engine, starting with the defining 1-bit dithered rendering pipeline and working bottom-up through player movement, combat, enemies, and finally the game systems that make it shippable. Every phase delivers something runnable. The dithering aesthetic is validated first because everything else — lighting tuning, HUD readability, enemy silhouettes — depends on seeing output through the final visual filter.
+Build a first-person 3D psychological horror game with a custom C++ engine, starting with the rendering pipeline and working bottom-up through player movement, combat, enemies, and finally the game systems that make it shippable. Every phase delivers something runnable. The Stanley Parable-inspired visual style (clean surfaces, warm lighting, muted palette) is the foundation that all gameplay builds on.
 
 ## Phases
 
@@ -12,22 +12,22 @@ Build a first-person 3D roguelike with a custom C++ engine, starting with the de
 
 Decimal phases appear between their surrounding integers in numeric order.
 
-- [ ] **Phase 1: Engine and Dithering Pipeline** - Custom C++ engine with OpenGL 4.1, the 1-bit Bayer dither post-process validated with world-space anchoring
+- [ ] **Phase 1: Engine and Rendering Pipeline** - Custom C++ engine with OpenGL 4.1, stylize post-process with edge detection and tone mapping
 - [ ] **Phase 1.1: Project Restructure** - ECS, Application class, modular engine/game split (INSERTED)
-- [ ] **Phase 2: Player, Environment, and Lighting** - Player moves through a lit gothic level with collision; torches affect dither density
+- [ ] **Phase 2: Player, Environment, and Lighting** - Player moves through a lit prison environment with collision; warm lighting and material system
 
 ## Phase Details
 
-### Phase 1: Engine and Dithering Pipeline
-**Goal**: The 1-bit dithered visual identity is working and visually correct — any geometry rendered through the pipeline produces the expected chunky black-and-white ordered dither pattern with no swimming on camera movement
+### Phase 1: Engine and Rendering Pipeline
+**Goal**: The rendering pipeline produces clean, stylized 3D output — geometry renders through the post-process pipeline with edge detection, tone mapping, and smooth lighting
 **Depends on**: Nothing (first phase)
 **Requirements**: RNDR-01, RNDR-02, RNDR-03, RNDR-04, RNDR-05
 **Success Criteria** (what must be TRUE):
-  1. A 3D scene renders to screen in pure black and white through the Bayer dither post-process — no grayscale, no color
-  2. Moving the camera does not cause the dither pattern to crawl or swim — the pattern is anchored to world space
-  3. The scene renders at a reduced internal resolution (403-720p) and upscales with nearest-neighbor, producing chunky visible dither cells rather than sub-pixel noise
-  4. A torch-equivalent point light source visibly increases dither density (brighter region) in its radius compared to unlit geometry
-  5. A Dear ImGui debug overlay lets the developer tune dither threshold and internal resolution at runtime without recompiling
+  1. A 3D scene renders to screen through the stylize post-process with edge detection and tone mapping
+  2. Camera movement is smooth with no visual artifacts
+  3. The scene renders at display resolution with GL_LINEAR filtering for smooth output
+  4. Point light sources produce warm, soft illumination with correct attenuation
+  5. A Dear ImGui debug overlay lets the developer tune post-process parameters at runtime without recompiling
 **Plans**: 2 plans
 
 Plans:
@@ -53,15 +53,15 @@ Plans:
 - [x] 01.1-04-PLAN.md — CathedralScene ECS refactor, new main.cpp, visual verification
 
 ### Phase 2: Player, Environment, and Lighting
-**Goal**: The player can walk through a dithered gothic cathedral room, collide with walls, and see torch lighting that responds correctly through the dither pass
+**Goal**: The player can walk through a prison environment, collide with walls, and see warm lighting that renders correctly through the stylize pass
 **Depends on**: Phase 1.1
 **Requirements**: PLYR-01, PLYR-02, PLYR-03, ENVR-01, ENVR-02, ENVR-03
 **Success Criteria** (what must be TRUE):
   1. The player can move through a gothic cathedral room using WASD and look around with the mouse — movement is smooth with no stutter
   2. The player cannot walk through walls, floors, or pillars — collision holds at edges and corners without getting stuck
-  3. Torch objects placed in the level cast visible point light that affects the dither density, matching the expected 1-bit aesthetic
-  4. A shape-based health indicator is visible on the HUD without using color — it reads clearly in 1-bit output
-  5. Gothic cathedral geometry (arches, pillars, wall torches) loads from a model file and appears correctly dithered
+  3. Light fixtures placed in the level cast visible warm illumination with correct attenuation and soft shadows
+  4. A health indicator is visible on the HUD — it reads clearly against the stylized scene
+  5. Prison environment geometry (walls, doors, furniture) loads from scene files and renders with correct materials
 **Plans**: TBD
 **UI hint**: yes
 
