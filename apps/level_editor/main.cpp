@@ -10,6 +10,7 @@
 #include "engine/rendering/post/PostProcessParams.h"
 #include "engine/rendering/post/StylizePass.h"
 #include "engine/ui/ImGuiLayer.h"
+#include "editor/build/EditorBuildSystem.h"
 #include "editor/core/EditorCommand.h"
 #include "editor/scene/EditorPreviewWorld.h"
 #include "editor/scene/EditorSceneDocument.h"
@@ -70,6 +71,8 @@ constexpr const char* kEnvironmentWindowName = "Environment";
 constexpr float kRuntimeViewportAspect = 1280.0f / 720.0f;
 constexpr const char* kPreviewModes[] = {"Final", "Lighting", "Sky"};
 constexpr const char* kWindowGeometryFile = "editor_window.ini";
+constexpr const char* kBuildOutputWindowName = "Build Output";
+constexpr const char* kBuildConfigFile = "editor_build.ini";
 
 struct WindowGeometry {
     int x = -1;
@@ -344,6 +347,16 @@ int main(int argc, char* argv[]) {
     bool undoPressed = false;
     bool redoPressed = false;
     bool playTogglePressed = false;
+
+    EditorBuildState buildState;
+    EditorBuildConfig buildConfig;
+    BuildOutputLog buildLog;
+    loadBuildConfig(buildConfig, kBuildConfigFile);
+    bool buildPressed = false;
+    bool buildAndRunPressed = false;
+    bool buildConfigurePhase = false;
+    bool buildSaveModalPending = false;
+    bool buildSaveModalRunAfter = false;
     std::uint64_t previewSceneRevision = document.sceneRevision();
     std::uint64_t previewEnvironmentRevision = document.environmentRevision();
     RuntimePreviewDirtyState runtimePreviewDirtyState = RuntimePreviewDirtyState::None;
@@ -398,6 +411,13 @@ int main(int argc, char* argv[]) {
                 if (ImGui::IsKeyPressed(ImGuiKey_W)) ui.tool = EditorTransformTool::Translate;
                 if (ImGui::IsKeyPressed(ImGuiKey_E)) ui.tool = EditorTransformTool::Rotate;
                 if (ImGui::IsKeyPressed(ImGuiKey_R)) ui.tool = EditorTransformTool::Scale;
+            }
+            if (!io.WantTextInput && (io.KeyCtrl || io.KeySuper) && ImGui::IsKeyPressed(ImGuiKey_B)) {
+                buildPressed = true;
+            }
+            if (!io.WantTextInput && (io.KeyCtrl || io.KeySuper) && ImGui::IsKeyPressed(ImGuiKey_R) &&
+                glfwGetMouseButton(window.handle(), GLFW_MOUSE_BUTTON_RIGHT) != GLFW_PRESS) {
+                buildAndRunPressed = true;
             }
             if (ImGui::IsKeyPressed(ImGuiKey_Escape)) {
                 placementState.clear();
@@ -554,6 +574,46 @@ int main(int argc, char* argv[]) {
                 ImGui::EndMenu();
             }
 
+            // Build menu — title shows progress during build (D-10)
+            {
+                std::string buildMenuLabel = "Build";
+                if (buildState.running) {
+                    char pctBuf[32];
+                    std::snprintf(pctBuf, sizeof(pctBuf), "Build [%d%%]", static_cast<int>(buildState.progressPct));
+                    buildMenuLabel = pctBuf;
+                }
+                if (ImGui::BeginMenu(buildMenuLabel.c_str())) {
+                    // Build and Build and Run greyed out during build (D-16)
+                    ImGui::BeginDisabled(buildState.running);
+                    if (ImGui::MenuItem("Build", "Cmd+B")) {
+                        buildPressed = true;
+                    }
+                    if (ImGui::MenuItem("Build and Run", "Cmd+R")) {
+                        buildAndRunPressed = true;
+                    }
+                    ImGui::EndDisabled();
+                    ImGui::Separator();
+                    // Configuration submenu (D-04)
+                    if (ImGui::BeginMenu("Configuration")) {
+                        const char* configs[] = {"Debug", "Release", "RelWithDebInfo"};
+                        for (const char* cfg : configs) {
+                            const bool selected = (buildConfig.buildConfig == cfg);
+                            if (ImGui::MenuItem(cfg, nullptr, selected)) {
+                                if (buildConfig.buildConfig != cfg) {
+                                    buildConfig.buildConfig = cfg;
+                                    // Switching config triggers reconfigure (D-04)
+                                    buildLog.clear();
+                                    ui.showBuildOutput = true;
+                                    startConfigure(buildState, buildConfig);
+                                }
+                            }
+                        }
+                        ImGui::EndMenu();
+                    }
+                    ImGui::EndMenu();
+                }
+            }
+
             if (ImGui::BeginMenu("Window")) {
                 if (ImGui::BeginMenu("Panels")) {
                     ImGui::MenuItem("Outliner", nullptr, &ui.showOutliner);
@@ -561,6 +621,7 @@ int main(int argc, char* argv[]) {
                     ImGui::MenuItem("Asset Browser", nullptr, &ui.showAssetBrowser);
                     ImGui::MenuItem("Environment", nullptr, &ui.showEnvironment);
                     ImGui::MenuItem("Viewport", nullptr, &ui.showViewport);
+                    ImGui::MenuItem("Build Output", nullptr, &ui.showBuildOutput);
                     ImGui::EndMenu();
                 }
                 if (ImGui::BeginMenu("Layouts")) {
@@ -727,6 +788,8 @@ int main(int argc, char* argv[]) {
             ImGui::TextUnformatted("Editor Shortcuts");
             ImGui::Separator();
             ImGui::BulletText("Save: Ctrl/Cmd+S");
+            ImGui::BulletText("Build: Cmd+B");
+            ImGui::BulletText("Build and Run: Cmd+R");
             ImGui::BulletText("Play Preview: Ctrl/Cmd+P");
             ImGui::BulletText("Undo / Redo: Ctrl/Cmd+Z, Ctrl/Cmd+Shift+Z, Ctrl/Cmd+Y");
             ImGui::BulletText("Duplicate / Delete: Ctrl/Cmd+D, Delete");
@@ -763,7 +826,8 @@ int main(int argc, char* argv[]) {
                                          kOutlinerWindowName,
                                          kInspectorWindowName,
                                          kAssetBrowserWindowName,
-                                         kEnvironmentWindowName);
+                                         kEnvironmentWindowName,
+                                         kBuildOutputWindowName);
             dockLayoutResetRequested = false;
         }
         ImGui::DockSpace(dockspaceId, ImVec2(0.0f, 0.0f), ImGuiDockNodeFlags_None);
@@ -1505,6 +1569,147 @@ int main(int argc, char* argv[]) {
             savePressed = false;
         }
 
+        // Build trigger lambda — clears log, shows panel, starts configure or build
+        auto triggerBuild = [&](bool runAfter) {
+            buildLog.clear();
+            ui.showBuildOutput = true;
+            buildState.runAfterBuild = runAfter;
+            buildState.currentScenePath = ui.pendingScenePath;
+            buildState.exitCode = -1;
+            if (needsConfigure(buildConfig)) {
+                buildConfigurePhase = true;
+                startConfigure(buildState, buildConfig);
+            } else {
+                startBuild(buildState, buildConfig, "pixel-roguelike");
+            }
+        };
+
+        // Handle build and build-and-run requests (check unsaved changes first)
+        if ((buildPressed || buildAndRunPressed) && !buildState.running) {
+            const bool runAfter = buildAndRunPressed;
+            if (document.dirty()) {
+                buildSaveModalPending = true;
+                buildSaveModalRunAfter = runAfter;
+            } else {
+                triggerBuild(runAfter);
+            }
+            buildPressed = false;
+            buildAndRunPressed = false;
+        }
+
+        // Build Output panel
+        if (ui.showBuildOutput) {
+            ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(6.0f, 6.0f));
+            if (ImGui::Begin(kBuildOutputWindowName, &ui.showBuildOutput)) {
+                // Stop Build button in header (D-14)
+                if (buildState.running) {
+                    if (ImGui::Button("Stop Build")) {
+                        cancelBuild(buildState);
+                    }
+                    ImGui::SameLine();
+                    ImGui::Text("Building... %d%%", static_cast<int>(buildState.progressPct));
+                } else if (buildState.exitCode == 0 && buildLog.lineCount() > 1) {
+                    ImGui::TextColored(ImVec4(0.3f, 1.0f, 0.3f, 1.0f), "Build Succeeded");
+                } else if (buildState.exitCode > 0) {
+                    ImGui::TextColored(ImVec4(1.0f, 0.3f, 0.3f, 1.0f), "Build Failed (exit code %d)", buildState.exitCode);
+                }
+                ImGui::Separator();
+
+                // Scrollable log area with per-line coloring (D-08/D-09)
+                ImGui::BeginChild("BuildLogScroll", ImVec2(0, 0), ImGuiChildFlags_None, ImGuiWindowFlags_HorizontalScrollbar);
+
+                const char* bufBegin = buildLog.buf.begin();
+                const char* bufEnd = buildLog.buf.end();
+                ImGuiListClipper clipper;
+                clipper.Begin(buildLog.lineOffsets.Size);
+                while (clipper.Step()) {
+                    for (int lineNo = clipper.DisplayStart; lineNo < clipper.DisplayEnd; lineNo++) {
+                        const char* lineStart = bufBegin + buildLog.lineOffsets[lineNo];
+                        const char* lineEnd = (lineNo + 1 < buildLog.lineOffsets.Size)
+                            ? (bufBegin + buildLog.lineOffsets[lineNo + 1] - 1) : bufEnd;
+                        if (lineNo < buildLog.lineKinds.Size) {
+                            BuildLineKind kind = buildLog.lineKinds[lineNo];
+                            if (kind == BuildLineKind::Error) {
+                                ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 0.3f, 0.3f, 1.0f));
+                            } else if (kind == BuildLineKind::Warning) {
+                                ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 0.8f, 0.0f, 1.0f));
+                            }
+                        }
+                        ImGui::TextUnformatted(lineStart, lineEnd);
+                        if (lineNo < buildLog.lineKinds.Size) {
+                            BuildLineKind kind = buildLog.lineKinds[lineNo];
+                            if (kind == BuildLineKind::Error || kind == BuildLineKind::Warning) {
+                                ImGui::PopStyleColor();
+                            }
+                        }
+                    }
+                }
+                clipper.End();
+
+                // Auto-scroll (D-12)
+                if (buildLog.autoScroll && ImGui::GetScrollY() >= ImGui::GetScrollMaxY()) {
+                    ImGui::SetScrollHereY(1.0f);
+                }
+                // Jump to first error (D-12)
+                if (buildLog.scrollToError && buildLog.firstErrorLine >= 0) {
+                    float lineHeight = ImGui::GetTextLineHeightWithSpacing();
+                    ImGui::SetScrollY(static_cast<float>(buildLog.firstErrorLine) * lineHeight);
+                    buildLog.scrollToError = false;
+                }
+
+                ImGui::EndChild();
+            }
+            ImGui::End();
+            ImGui::PopStyleVar();
+        }
+
+        // Poll build process each frame
+        if (buildState.running) {
+            pollBuild(buildState, buildLog);
+        }
+
+        // Handle configure-then-build chaining (D-03)
+        if (!buildState.running && buildConfigurePhase) {
+            if (buildState.exitCode == 0) {
+                buildConfigurePhase = false;
+                startBuild(buildState, buildConfig, "pixel-roguelike");
+            } else {
+                buildConfigurePhase = false; // configure failed, don't build
+            }
+        }
+
+        // Handle build completion: launch game if Build and Run succeeded (D-17)
+        if (!buildState.running && !buildConfigurePhase && buildState.exitCode == 0 && buildState.runAfterBuild) {
+            buildState.runAfterBuild = false;
+            launchGame(buildConfig, buildState.currentScenePath);
+        }
+
+        // Unsaved changes modal (D-15)
+        if (buildSaveModalPending) {
+            ImGui::OpenPopup("Save Before Building?");
+            buildSaveModalPending = false;
+        }
+        if (ImGui::BeginPopupModal("Save Before Building?", nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
+            ImGui::TextUnformatted("The scene has unsaved changes.");
+            ImGui::TextUnformatted("Save before building?");
+            ImGui::Separator();
+            if (ImGui::Button("Save")) {
+                savePressed = true;
+                triggerBuild(buildSaveModalRunAfter);
+                ImGui::CloseCurrentPopup();
+            }
+            ImGui::SameLine();
+            if (ImGui::Button("Don't Save")) {
+                triggerBuild(buildSaveModalRunAfter);
+                ImGui::CloseCurrentPopup();
+            }
+            ImGui::SameLine();
+            if (ImGui::Button("Cancel")) {
+                ImGui::CloseCurrentPopup();
+            }
+            ImGui::EndPopup();
+        }
+
         imgui.endFrame();
         window.swapBuffers();
         if (startupViewportHandoffFramesRemaining > 0) {
@@ -1513,6 +1718,7 @@ int main(int argc, char* argv[]) {
     }
 
     saveWindowGeometry(window.handle());
+    saveBuildConfig(buildConfig, kBuildConfigFile);
     runtimePreviewSession.endCapture(window.handle());
     imgui.shutdown();
     return 0;
