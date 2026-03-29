@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: Phase complete — ready for verification
-stopped_at: Phase 3 context gathered
-last_updated: "2026-03-29T01:45:12.396Z"
+stopped_at: "Checkpoint: 03-02 Task 2 human-verify"
+last_updated: "2026-03-29T09:57:11.888Z"
 progress:
   total_phases: 5
-  completed_phases: 3
-  total_plans: 8
-  completed_plans: 8
+  completed_phases: 4
+  total_plans: 10
+  completed_plans: 10
 ---
 
 # Project State
@@ -19,11 +19,11 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-23)
 
 **Core value:** The 1-bit dithered 3D rendering — a visually striking, modern take on retro aesthetics that makes the game instantly recognizable
-**Current focus:** Phase 02.1 — equipment-inventory-and-carry-weight-weapons-are-inventory-items-no-slot-grid-inventory-dark-souls-style-carry-weight
+**Current focus:** Phase 03 — build-menu-in-editor-macos-build-from-editor-with-progress-and-output
 
 ## Current Position
 
-Phase: 02.1 (equipment-inventory-and-carry-weight-weapons-are-inventory-items-no-slot-grid-inventory-dark-souls-style-carry-weight) — COMPLETE
+Phase: 03 (build-menu-in-editor-macos-build-from-editor-with-progress-and-output) — EXECUTING
 Plan: 2 of 2
 
 ## Performance Metrics
@@ -53,6 +53,8 @@ Plan: 2 of 2
 | Phase 01.1-project-restructure-ecs-application-class-modular-engine-game-split P03 | 3 | 2 tasks | 10 files |
 | Phase 01.1-project-restructure-ecs-application-class-modular-engine-game-split P04 | 10 | 2 tasks | 3 files |
 | Phase 01.1-project-restructure-ecs-application-class-modular-engine-game-split P04 | 15 | 3 tasks | 3 files |
+| Phase 03-build-menu-in-editor-macos-build-from-editor-with-progress-and-output P01 | 90 | 2 tasks | 7 files |
+| Phase 03-build-menu-in-editor-macos-build-from-editor-with-progress-and-output P02 | 25 | 1 tasks | 5 files |
 
 ## Accumulated Context
 
@@ -83,6 +85,10 @@ Recent decisions affecting current work:
 - [Phase 01.1-project-restructure-ecs-application-class-modular-engine-game-split]: CathedralScene uses useModelOverride=true for all mesh entities -- geometry is pre-computed with arbitrary transforms that cannot be decomposed to euler angles
 - [Phase 01.1-project-restructure-ecs-application-class-modular-engine-game-split]: GLM vec3 scalar constructor is explicit -- must use glm::vec3(0.0f) not brace-init {} in aggregate TransformComponent initialization
 - [Phase 01.1-project-restructure-ecs-application-class-modular-engine-game-split]: SceneManager instantiated in main() rather than owned by Application -- keeps Application minimal for this restructure phase
+- [Phase 03-build-menu-in-editor-macos-build-from-editor-with-progress-and-output]: src/editor/build/ directory ignored by gitignore (build/ pattern) -- files added via git add -f to bypass
+- [Phase 03-build-menu-in-editor-macos-build-from-editor-with-progress-and-output]: GenericFileScene uses registerCathedralAssets for all scenes -- all current scenes use cathedral asset set
+- [Phase 03-build-menu-in-editor-macos-build-from-editor-with-progress-and-output]: Build Output panel starts hidden and auto-shows on build start; docked to bottomId alongside Asset Browser
+- [Phase 03-build-menu-in-editor-macos-build-from-editor-with-progress-and-output]: Cmd+R Build and Run shortcut includes right-mouse-not-pressed guard to avoid conflict with fly camera R (scale tool)
 
 ### Pending Todos
 
@@ -100,6 +106,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-29T01:45:12.392Z
-Stopped at: Phase 3 context gathered
-Resume file: .planning/phases/03-build-menu-in-editor-macos-build-from-editor-with-progress-and-output/03-CONTEXT.md
+Last session: 2026-03-29T09:57:11.883Z
+Stopped at: Checkpoint: 03-02 Task 2 human-verify
+Resume file: None
