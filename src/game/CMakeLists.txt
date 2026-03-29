@@ -44,6 +44,7 @@ add_library(gameplay STATIC
     systems/InventorySystem.cpp
     systems/PlayerMovementSystem.cpp
     systems/RenderSystem.cpp
+    ui/GameOverlays.cpp
 )
 target_include_directories(gameplay PUBLIC ${CMAKE_SOURCE_DIR}/src)
 target_link_libraries(gameplay PUBLIC

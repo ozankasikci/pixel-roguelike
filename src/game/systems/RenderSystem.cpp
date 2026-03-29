@@ -8,6 +8,7 @@
 #include "game/content/ContentRegistry.h"
 #include "game/session/EquipmentState.h"
 #include "game/session/RunSession.h"
+#include "game/ui/GameOverlays.h"
 #include "game/ui/InteractionPromptState.h"
 #include "game/ui/InventoryMenuState.h"
 
@@ -50,7 +51,7 @@ void RenderSystem::renderOverlays(Application& app,
         const auto& session = app.getService<RunSession>();
         const auto& content = app.getService<ContentRegistry>();
         const auto equipment = resolveEffectiveEquipment(session, content);
-        ImGuiLayer::renderInventory(menu, session, content, equipment);
+        GameOverlays::renderInventory(menu, session, content, equipment);
     }
 
     if (overlaysVisible_) {
@@ -58,19 +59,19 @@ void RenderSystem::renderOverlays(Application& app,
 
         auto movView = registry.view<PlayerMovementComponent>();
         for (auto [entity, movement] : movView.each()) {
-            ImGuiLayer::renderMovementOverlay(movement, movement.grounded);
+            GameOverlays::renderMovementOverlay(movement, movement.grounded);
             break;
         }
 
         auto vmView = registry.view<MeshComponent, ViewmodelComponent>();
         for (auto [entity, mesh, vm] : vmView.each()) {
-            ImGuiLayer::renderViewmodelOverlay(vm);
+            GameOverlays::renderViewmodelOverlay(vm);
             break;
         }
     }
 
     if (prompt.visible && !inventoryOpen) {
-        ImGuiLayer::renderInteractionPrompt(prompt.text.c_str(), prompt.busy);
+        GameOverlays::renderInteractionPrompt(prompt.text.c_str(), prompt.busy);
     }
 
     imguiLayer_.endFrame();
