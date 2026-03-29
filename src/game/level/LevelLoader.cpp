@@ -16,52 +16,11 @@
 #include "game/components/PlayerSpawnComponent.h"
 #include "game/components/PlayerTag.h"
 #include "game/components/PrimaryCameraTag.h"
-#include "game/components/ViewmodelComponent.h"
-#include "game/rendering/RetroPalette.h"
-
 #include "engine/core/Application.h"
 #include "engine/core/PathUtils.h"
 
 LevelLoader::LevelLoader(LevelBuildContext& context)
     : context_(context) {}
-
-namespace {
-
-entt::entity spawnViewmodelMesh(entt::registry& registry,
-                                MeshLibrary& meshLibrary,
-                                const std::string& meshId,
-                                const glm::vec3& tint,
-                                MaterialKind material,
-                                const glm::vec3& viewOffset,
-                                const glm::vec3& rotation,
-                                const glm::vec3& scale,
-                                const glm::vec3& meshCenter = glm::vec3(0.0f),
-                                float bobAmplitude = 0.002f) {
-    auto entity = registry.create();
-    registry.emplace<MeshComponent>(
-        entity,
-        MeshComponent{
-            meshId,
-            meshLibrary.get(meshId),
-            glm::mat4(1.0f),
-            false,
-            tint,
-            material,
-            std::string(defaultMaterialIdForKind(material))
-        }
-    );
-
-    ViewmodelComponent viewmodel;
-    viewmodel.viewOffset = viewOffset;
-    viewmodel.rotation = rotation;
-    viewmodel.scale = scale;
-    viewmodel.meshCenter = meshCenter;
-    viewmodel.bobAmplitude = bobAmplitude;
-    registry.emplace<ViewmodelComponent>(entity, viewmodel);
-    return entity;
-}
-
-} // namespace
 
 void LevelLoader::load(Application& app, const LevelLoadRequest& request) {
     load(app.getService<ContentRegistry>(),
@@ -154,54 +113,4 @@ void LevelLoader::load(ContentRegistry& content,
     registry.emplace<PlayerInteractionLockComponent>(player);
     registry.emplace<PlayerSpawnComponent>(player, PlayerSpawnComponent{session.respawnPosition, fallRespawnY});
 
-    spawnViewmodelMesh(
-        registry,
-        context_.meshLibrary,
-        "hand",
-        RetroPalette::Bone,
-        MaterialKind::Viewmodel,
-        glm::vec3(0.090f, -0.255f, -0.395f),
-        glm::vec3(-40.5f, -53.5f, 215.5f),
-        glm::vec3(0.003f),
-        glm::vec3(-136.5f, -363.5f, -0.6f)
-    );
-
-    spawnViewmodelMesh(
-        registry,
-        context_.meshLibrary,
-        "cylinder",
-        RetroPalette::OldWoodDark,
-        MaterialKind::Wood,
-        glm::vec3(-0.225f, -0.245f, -0.365f),
-        glm::vec3(14.0f, -18.0f, -26.0f),
-        glm::vec3(0.022f, 0.165f, 0.022f),
-        glm::vec3(0.0f),
-        0.0012f
-    );
-
-    spawnViewmodelMesh(
-        registry,
-        context_.meshLibrary,
-        "cube",
-        glm::vec3(0.97f, 0.55f, 0.16f),
-        MaterialKind::Wax,
-        glm::vec3(-0.182f, -0.118f, -0.347f),
-        glm::vec3(10.0f, -16.0f, -22.0f),
-        glm::vec3(0.055f, 0.072f, 0.055f),
-        glm::vec3(0.0f),
-        0.0010f
-    );
-
-    spawnViewmodelMesh(
-        registry,
-        context_.meshLibrary,
-        "cube",
-        glm::vec3(1.00f, 0.83f, 0.40f),
-        MaterialKind::Wax,
-        glm::vec3(-0.174f, -0.050f, -0.338f),
-        glm::vec3(4.0f, -10.0f, -18.0f),
-        glm::vec3(0.026f, 0.034f, 0.026f),
-        glm::vec3(0.0f),
-        0.0014f
-    );
 }

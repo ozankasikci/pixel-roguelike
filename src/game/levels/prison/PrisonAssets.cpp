@@ -35,9 +35,9 @@ std::unique_ptr<Mesh> createPrisonWall() {
         parts.push_back({cube, makeModel(position, scale, rotation)});
     };
 
-    // Main slab: 2m wide, 3.5m tall, 0.2m thick
+    // Main slab: 2m wide, 4.0m tall, 0.2m thick
     // Origin at bottom-center of the wall panel, Y=0 is floor level
-    addBox(glm::vec3(0.0f, 1.75f, 0.0f), glm::vec3(1.0f, 1.75f, 0.1f));
+    addBox(glm::vec3(0.0f, 2.0f, 0.0f), glm::vec3(1.0f, 2.0f, 0.1f));
 
     RawMeshData merged = mergeMeshes(parts);
     return std::make_unique<Mesh>(merged.positions, merged.normals, merged.uvs, merged.tangents,
@@ -64,8 +64,8 @@ std::unique_ptr<Mesh> createPrisonWallWindow() {
     // Window opening: 0.6m wide, 0.4m tall, centered at Y=1.8m
     // Bottom section: 0 to 1.6m
     addBox(glm::vec3(0.0f, 0.8f, 0.0f), glm::vec3(1.0f, 0.8f, 0.1f));
-    // Top section: 2.0m to 3.5m
-    addBox(glm::vec3(0.0f, 2.75f, 0.0f), glm::vec3(1.0f, 0.75f, 0.1f));
+    // Top section: 2.0m to 4.0m
+    addBox(glm::vec3(0.0f, 3.0f, 0.0f), glm::vec3(1.0f, 1.0f, 0.1f));
     // Left section: beside window
     addBox(glm::vec3(-0.65f, 1.8f, 0.0f), glm::vec3(0.35f, 0.2f, 0.1f));
     // Right section: beside window
@@ -95,8 +95,8 @@ std::unique_ptr<Mesh> createPrisonWallDoor() {
     };
 
     // Door opening: 0.9m wide, 2.1m tall, bottom at Y=0
-    // Top section: 2.1m to 3.5m (full width)
-    addBox(glm::vec3(0.0f, 2.8f, 0.0f), glm::vec3(1.0f, 0.7f, 0.1f));
+    // Top section: 2.1m to 4.0m (full width)
+    addBox(glm::vec3(0.0f, 3.05f, 0.0f), glm::vec3(1.0f, 0.95f, 0.1f));
     // Left section: beside door
     addBox(glm::vec3(-0.725f, 1.05f, 0.0f), glm::vec3(0.275f, 1.05f, 0.1f));
     // Right section: beside door
@@ -149,12 +149,6 @@ std::unique_ptr<Mesh> createPrisonCeiling() {
 
     // Main slab: 2m × 2m, 0.1m thick, bottom surface at Y=0
     addBox(glm::vec3(0.0f, 0.05f, 0.0f), glm::vec3(1.0f, 0.05f, 1.0f));
-
-    // Recessed border lines on underside
-    addBox(glm::vec3(0.0f, -0.003f, -0.95f), glm::vec3(0.95f, 0.003f, 0.015f));
-    addBox(glm::vec3(0.0f, -0.003f, 0.95f), glm::vec3(0.95f, 0.003f, 0.015f));
-    addBox(glm::vec3(-0.95f, -0.003f, 0.0f), glm::vec3(0.015f, 0.003f, 0.95f));
-    addBox(glm::vec3(0.95f, -0.003f, 0.0f), glm::vec3(0.015f, 0.003f, 0.95f));
 
     RawMeshData merged = mergeMeshes(parts);
     return std::make_unique<Mesh>(merged.positions, merged.normals, merged.uvs, merged.tangents,
@@ -474,12 +468,12 @@ std::unique_ptr<Mesh> createPrisonWallLargeWindow() {
         parts.push_back({cube, makeModel(position, scale, rotation)});
     };
 
-    // Large office window wall: 2m wide, 3.5m tall, 0.2m thick
+    // Large office window wall: 2m wide, 4.0m tall, 0.2m thick
     // Window opening: 1.4m wide, 1.2m tall, centered at Y=1.8m (eye to above-head)
     // Bottom section: 0 to 1.2m
     addBox(glm::vec3(0.0f, 0.6f, 0.0f), glm::vec3(1.0f, 0.6f, 0.1f));
-    // Top section: 2.4m to 3.5m
-    addBox(glm::vec3(0.0f, 2.95f, 0.0f), glm::vec3(1.0f, 0.55f, 0.1f));
+    // Top section: 2.4m to 4.0m
+    addBox(glm::vec3(0.0f, 3.2f, 0.0f), glm::vec3(1.0f, 0.8f, 0.1f));
     // Left section beside window (0.3m wide strip)
     addBox(glm::vec3(-0.85f, 1.8f, 0.0f), glm::vec3(0.15f, 0.6f, 0.1f));
     // Right section beside window (0.3m wide strip)
