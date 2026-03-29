@@ -46,6 +46,7 @@ add_library(gameplay STATIC
     prefabs/GameplayPrefabs.cpp
     runtime/RuntimeGameplay.cpp
     runtime/RuntimeGameSession.cpp
+    runtime/RuntimeInputState.cpp
     scenes/CathedralScene.cpp
     scenes/GenericFileScene.cpp
     scenes/SilosCloisterScene.cpp

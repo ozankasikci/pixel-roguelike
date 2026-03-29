@@ -45,7 +45,7 @@ target_link_libraries(engine_scene PUBLIC engine_core)
 
 add_library(engine_input STATIC
     input/InputSystem.cpp
-    ${CMAKE_SOURCE_DIR}/src/game/runtime/RuntimeInputState.cpp
+    input/ActionMap.cpp
 )
 target_include_directories(engine_input PUBLIC ${CMAKE_SOURCE_DIR}/src)
 target_link_libraries(engine_input PUBLIC engine_core imgui glm::glm)
