@@ -141,6 +141,7 @@ const RenderMaterialData& MaterialTextureLibrary::resolve(std::string_view mater
     renderMaterial.shadingModel = resolved.shadingModel;
     renderMaterial.baseColor = resolved.baseColor;
     renderMaterial.useMaterialMaps = useMaterialMaps;
+    renderMaterial.useProceduralDetail = resolved.proceduralSource != MaterialProceduralSource::None;
     renderMaterial.albedoTexture = (textures != nullptr && textures->albedo.id() != 0) ? textures->albedo.id() : fallbackTextures_.albedo.id();
     renderMaterial.normalTexture = (textures != nullptr && textures->normal.id() != 0) ? textures->normal.id() : fallbackTextures_.normal.id();
     renderMaterial.roughnessTexture = (textures != nullptr && textures->roughness.id() != 0) ? textures->roughness.id() : fallbackTextures_.roughness.id();

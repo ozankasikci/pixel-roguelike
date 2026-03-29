@@ -79,6 +79,7 @@ void Renderer::drawScene(const std::vector<RenderObject>& objects,
         const RenderMaterialData& material = obj.material;
         shader_->setInt("uUnlit", obj.unlit ? 1 : 0);
         shader_->setInt("uUseMaterialMaps", material.useMaterialMaps ? 1 : 0);
+        shader_->setInt("uUseProceduralDetail", material.useProceduralDetail ? 1 : 0);
         shader_->setInt("uMaterialUvMode", material.uvMode);
         shader_->setVec2("uMaterialUvScale", material.uvScale);
         shader_->setFloat("uMaterialNormalStrength", material.normalStrength);

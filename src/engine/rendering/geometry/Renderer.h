@@ -17,6 +17,7 @@ struct RenderMaterialData {
     MaterialKind shadingModel = MaterialKind::Stone;
     glm::vec3 baseColor{1.0f};
     bool useMaterialMaps = false;
+    bool useProceduralDetail = false;
     GLuint albedoTexture = 0;
     GLuint normalTexture = 0;
     GLuint roughnessTexture = 0;

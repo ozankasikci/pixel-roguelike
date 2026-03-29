@@ -44,6 +44,7 @@ uniform sampler2D uNormalMap;
 uniform sampler2D uRoughnessMap;
 uniform sampler2D uAoMap;
 uniform int uUseMaterialMaps;
+uniform int uUseProceduralDetail;
 uniform int uMaterialUvMode;
 uniform vec2 uMaterialUvScale;
 uniform float uMaterialNormalStrength;
@@ -175,8 +176,7 @@ vec3 sampleBrickNormalTangent(vec2 uv, vec4 macro);
 
 vec2 materialUv(vec3 N) {
     if (uMaterialUvMode == 2) {
-        vec3 projectionSource = (uMaterialKind == MATERIAL_BRICK) ? vWorldPos : vObjectPos;
-        return dominantProjection(projectionSource, N) * uMaterialUvScale;
+        return dominantProjection(vWorldPos, N) * uMaterialUvScale;
     }
     return vTexCoord * uMaterialUvScale;
 }
@@ -231,6 +231,18 @@ float sampleBrickAo(vec2 uv, vec4 macro) {
 
 vec3 sampleBrickNormalTangent(vec2 uv, vec4 macro) {
     return texture(uNormalMap, uv).xyz * 2.0 - 1.0;
+}
+
+vec3 applyMacroVariation(vec3 baseColor, vec3 N) {
+    float macro = fbm(vWorldPos * vec3(0.28, 0.20, 0.28));
+    float micro = fbm(vWorldPos * 1.9 + N * 0.8);
+    float heightWear = clamp((vWorldPos.y + 0.5) * 0.18, 0.0, 1.0);
+    float dampMask = smoothstep(1.2, -0.3, vWorldPos.y) * smoothstep(0.45, 0.82, macro);
+
+    vec3 detail = baseColor * (0.94 + macro * 0.10 + heightWear * 0.04);
+    detail *= 0.96 + micro * 0.08;
+    detail = mix(detail, detail * vec3(0.92, 0.94, 0.96), dampMask * 0.12);
+    return detail;
 }
 
 vec3 detailStone(vec3 baseColor, vec3 N) {
@@ -660,7 +672,9 @@ void main() {
     if (uUseMaterialMaps != 0 && uMaterialKind != MATERIAL_BRICK) {
         materialBaseColor = clamp(baseColor * texture(uAlbedoMap, uv).rgb, 0.0, 1.0);
     }
-    vec3 albedo = applyMaterialDetail(materialBaseColor, geometricNormal);
+    vec3 albedo = (uUseProceduralDetail != 0 || uUseMaterialMaps == 0)
+        ? applyMaterialDetail(materialBaseColor, geometricNormal)
+        : applyMacroVariation(materialBaseColor, geometricNormal);
 
     float roughness = clamp(materialRoughness() * uMaterialRoughnessScale + uMaterialRoughnessBias, 0.08, 0.98);
     float metalness = clamp(uMaterialMetalness, 0.0, 1.0);
