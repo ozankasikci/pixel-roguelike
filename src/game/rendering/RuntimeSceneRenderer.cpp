@@ -34,6 +34,8 @@ constexpr float kPlayerTorchSpillIntensity = 2.5f;
 constexpr float kPlayerTorchHaloRadius = 5.4f;
 constexpr float kPlayerTorchHaloIntensity = 1.2f;
 constexpr glm::vec3 kPlayerTorchHaloColor{1.00f, 0.84f, 0.58f};
+constexpr float kPlayerTorchInnerConeDegrees = 58.0f;
+constexpr float kPlayerTorchOuterConeDegrees = 82.0f;
 constexpr glm::vec3 kPlayerHandGlowColor{0.98f, 0.91f, 0.82f};
 constexpr float kPlayerHandGlowRadius = 1.10f;
 constexpr float kPlayerHandGlowIntensity = 0.08f;
@@ -253,8 +255,8 @@ std::vector<RenderLight> RuntimeSceneRenderer::collectLights(entt::registry& reg
         torchLight.color = kPlayerTorchColor * (0.95f + lightFlicker * 0.04f);
         torchLight.radius = kPlayerTorchRadius * (0.98f + lightFlicker * 0.05f);
         torchLight.intensity = kPlayerTorchIntensity * lightFlicker;
-        torchLight.innerConeDegrees = clampInnerCone(params.playerTorchInnerConeDegrees, params.playerTorchOuterConeDegrees);
-        torchLight.outerConeDegrees = clampOuterCone(torchLight.innerConeDegrees, params.playerTorchOuterConeDegrees);
+        torchLight.innerConeDegrees = clampInnerCone(kPlayerTorchInnerConeDegrees, kPlayerTorchOuterConeDegrees);
+        torchLight.outerConeDegrees = clampOuterCone(torchLight.innerConeDegrees, kPlayerTorchOuterConeDegrees);
         torchLight.castsShadows = true;
         lights.push_back(torchLight);
 

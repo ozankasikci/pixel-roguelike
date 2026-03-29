@@ -65,5 +65,6 @@ add_library(engine_audio STATIC
 target_include_directories(engine_audio PUBLIC ${CMAKE_SOURCE_DIR}/src)
 target_include_directories(engine_audio PRIVATE ${CMAKE_SOURCE_DIR}/external)
 target_link_libraries(engine_audio PUBLIC engine_core glm::glm)
-target_link_libraries(engine_audio PRIVATE OpenAL::OpenAL)
+target_include_directories(engine_audio PRIVATE ${OPENAL_INCLUDE_DIR})
+target_link_libraries(engine_audio PRIVATE ${OPENAL_LIBRARY})
 set_source_files_properties(${CMAKE_SOURCE_DIR}/external/stb_vorbis.c PROPERTIES LANGUAGE C)

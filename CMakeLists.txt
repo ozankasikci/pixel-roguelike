@@ -68,6 +68,11 @@ target_link_libraries(imgui PRIVATE glfw)
 find_package(glfw3 3.4 REQUIRED)
 find_package(glm REQUIRED)
 find_package(spdlog REQUIRED)
+# OpenAL Soft via Homebrew — prefer the keg-only package over macOS system framework
+if(APPLE AND EXISTS "/opt/homebrew/opt/openal-soft")
+    set(OPENAL_INCLUDE_DIR "/opt/homebrew/opt/openal-soft/include" CACHE PATH "" FORCE)
+    set(OPENAL_LIBRARY "/opt/homebrew/opt/openal-soft/lib/libopenal.dylib" CACHE FILEPATH "" FORCE)
+endif()
 find_package(OpenAL REQUIRED)
 
 # tinygltf - header-only glTF 2.0 loader/writer

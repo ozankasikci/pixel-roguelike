@@ -10,6 +10,7 @@
 #include "engine/rendering/post/PostProcessParams.h"
 #include "engine/rendering/post/StylizePass.h"
 #include "engine/ui/ImGuiLayer.h"
+#include "game/ui/GameOverlays.h"
 #include "editor/build/EditorBuildSystem.h"
 #include "editor/core/EditorCommand.h"
 #include "editor/scene/EditorPreviewWorld.h"
@@ -1433,12 +1434,12 @@ int main(int argc, char* argv[]) {
             if (inventoryOpen) {
                 auto& menu = previewRegistry.ctx().get<InventoryMenuState>();
                 const auto equipment = resolveEffectiveEquipment(runtimePreviewSession.runSession(), content);
-                ImGuiLayer::renderInventory(menu, runtimePreviewSession.runSession(), content, equipment);
+                GameOverlays::renderInventory(menu, runtimePreviewSession.runSession(), content, equipment);
             }
             if (previewRegistry.ctx().contains<InteractionPromptState>()) {
                 const auto& prompt = previewRegistry.ctx().get<InteractionPromptState>();
                 if (prompt.visible && !inventoryOpen) {
-                    ImGuiLayer::renderInteractionPrompt(prompt.text.c_str(), prompt.busy);
+                    GameOverlays::renderInteractionPrompt(prompt.text.c_str(), prompt.busy);
                 }
             }
         }
