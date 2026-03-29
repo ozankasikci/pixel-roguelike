@@ -16,7 +16,7 @@ int main() {
     params.post.nearPlane = 0.25f;
     params.post.farPlane = 250.0f;
 
-    EnvironmentDefinition definition = makeEnvironmentDefinition(EnvironmentProfile::GameReadyNeutral);
+    EnvironmentDefinition definition = makeEnvironmentDefinition(EnvironmentProfile::Default);
     definition.post.exposure = 1.37f;
     definition.post.enableEdges = false;
     definition.post.enableGrain = false;

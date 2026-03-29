@@ -116,7 +116,7 @@ void syncEnvironmentFromRegistry(entt::registry& registry,
         } else {
             active.levelId = "runtime_preview";
             active.environmentId = ctx.get<RuntimeEnvironmentOverride>().definition.id;
-            active.profile = EnvironmentProfile::Neutral;
+            active.profile = EnvironmentProfile::Default;
         }
         if (shouldApply(syncState, true, active)) {
             applyEnvironmentDefinition(params, ctx.get<RuntimeEnvironmentOverride>().definition, preserveDebugOverrides);
@@ -128,9 +128,9 @@ void syncEnvironmentFromRegistry(entt::registry& registry,
     if (!ctx.contains<ActiveEnvironmentProfile>()) {
         ActiveEnvironmentProfile neutral{};
         neutral.environmentId = "neutral";
-        neutral.profile = EnvironmentProfile::Neutral;
+        neutral.profile = EnvironmentProfile::Default;
         if (shouldApply(syncState, false, neutral)) {
-            applyEnvironmentProfile(params, EnvironmentProfile::Neutral, preserveDebugOverrides);
+            applyEnvironmentProfile(params, EnvironmentProfile::Default, preserveDebugOverrides);
             storeApplied(syncState, false, neutral);
         }
         return;

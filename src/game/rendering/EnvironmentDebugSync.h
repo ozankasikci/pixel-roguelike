@@ -11,24 +11,29 @@ struct RuntimeEnvironmentOverride {
     EnvironmentDefinition definition;
 };
 
+struct ActiveEnvironmentState {
+    std::string levelId;
+    std::string environmentId;
+};
+
 struct RuntimeEnvironmentSyncState {
     bool hasApplied = false;
     bool usedOverride = false;
     std::string levelId;
     std::string environmentId;
-    EnvironmentProfile profile = EnvironmentProfile::Neutral;
+    EnvironmentProfile profile = EnvironmentProfile::Default;
 };
 
 void syncSkySunFromDirectional(DebugParams& params);
 void applyEnvironmentSettings(DebugParams& params,
                               const EnvironmentRenderSettings& settings,
                               bool preserveDebugOverrides);
-void applyEnvironmentDefinition(DebugParams& params,
-                                const EnvironmentDefinition& definition,
-                                bool preserveDebugOverrides);
 void applyEnvironmentProfile(DebugParams& params,
                              EnvironmentProfile profile,
                              bool preserveDebugOverrides);
+void applyEnvironmentDefinition(DebugParams& params,
+                                const EnvironmentDefinition& definition,
+                                bool preserveDebugOverrides);
 void syncEnvironmentFromRegistry(entt::registry& registry,
                                  DebugParams& params,
                                  RuntimeEnvironmentSyncState* syncState = nullptr,

@@ -147,23 +147,22 @@ void writeCubemapFaces(std::ostream& out, const std::array<std::string, 6>& face
 
 } // namespace
 
-EnvironmentDefinition makeEnvironmentDefinition(EnvironmentProfile profile) {
-    const EnvironmentRenderSettings settings = makeEnvironmentRenderSettings(profile);
+EnvironmentDefinition makeDefaultEnvironmentDefinition() {
+    const EnvironmentRenderSettings settings = makeDefaultEnvironmentRenderSettings();
     EnvironmentDefinition definition;
-    definition.id = environmentProfileName(profile);
+    definition.id = "default";
     definition.post = settings.post;
     definition.sky = settings.sky;
     definition.lighting = settings.lighting;
     return definition;
 }
 
+EnvironmentDefinition makeEnvironmentDefinition(EnvironmentProfile /*profile*/) {
+    return makeDefaultEnvironmentDefinition();
+}
+
 EnvironmentRenderSettings makeEnvironmentRenderSettings(const EnvironmentDefinition& definition) {
     EnvironmentRenderSettings settings;
-    settings.profile = EnvironmentProfile::Neutral;
-    EnvironmentProfile parsedProfile = EnvironmentProfile::Neutral;
-    if (tryParseEnvironmentProfileToken(definition.id, parsedProfile)) {
-        settings.profile = parsedProfile;
-    }
     settings.post = definition.post;
     settings.sky = definition.sky;
     settings.lighting = definition.lighting;
@@ -176,7 +175,7 @@ EnvironmentDefinition loadEnvironmentDefinitionAsset(const std::string& path) {
         throw std::runtime_error("Failed to open environment definition: " + path);
     }
 
-    EnvironmentDefinition definition = makeEnvironmentDefinition(EnvironmentProfile::Neutral);
+    EnvironmentDefinition definition = makeDefaultEnvironmentDefinition();
     std::string line;
     int lineNumber = 0;
 
@@ -194,11 +193,6 @@ EnvironmentDefinition loadEnvironmentDefinitionAsset(const std::string& path) {
         const std::string& key = tokens[0];
         if (key == "id" && tokens.size() == 2) {
             definition.id = tokens[1];
-            EnvironmentProfile builtInProfile = EnvironmentProfile::Neutral;
-            if (tryParseEnvironmentProfileToken(definition.id, builtInProfile)) {
-                definition = makeEnvironmentDefinition(builtInProfile);
-                definition.id = tokens[1];
-            }
             continue;
         }
 

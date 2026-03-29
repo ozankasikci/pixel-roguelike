@@ -90,7 +90,7 @@ int main() {
     assert(registry.findEnvironmentPath("cloister_daylight") != nullptr);
     assert(registry.findEnvironmentPath("game_ready_neutral") != nullptr);
 
-    EnvironmentDefinition customEnvironment = makeEnvironmentDefinition(EnvironmentProfile::Neutral);
+    EnvironmentDefinition customEnvironment = makeEnvironmentDefinition(EnvironmentProfile::Default);
     customEnvironment.id = "editor_custom_test";
     customEnvironment.post.exposure = 1.23f;
     const auto customEnvironmentPath =

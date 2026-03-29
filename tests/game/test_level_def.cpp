@@ -6,7 +6,7 @@
 int main() {
     const auto data = loadLevelDef(CATHEDRAL_SCENE_FILE);
 
-    assert(data.environmentProfile == EnvironmentProfile::CathedralArcade);
+    assert(data.environmentProfile == EnvironmentProfile::Default);
     assert(data.meshes.size() == 126);
     assert(data.lights.size() == 13);
     assert(data.boxColliders.size() == 25);

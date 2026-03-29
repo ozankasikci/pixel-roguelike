@@ -70,7 +70,7 @@ struct LevelArchetypePlacement {
 
 struct LevelDef {
     std::string environmentId = "neutral";
-    EnvironmentProfile environmentProfile = EnvironmentProfile::Neutral;
+    EnvironmentProfile environmentProfile = EnvironmentProfile::Default;
     std::vector<LevelMeshPlacement> meshes;
     std::vector<LevelLightPlacement> lights;
     std::vector<LevelBoxColliderPlacement> boxColliders;

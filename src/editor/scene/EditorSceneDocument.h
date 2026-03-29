@@ -38,7 +38,7 @@ struct EditorSceneDocumentState {
     std::string scenePath;
     std::vector<EditorSceneObject> objects;
     EnvironmentDefinition environment;
-    EnvironmentProfile legacyEnvironmentProfile = EnvironmentProfile::Neutral;
+    EnvironmentProfile legacyEnvironmentProfile = EnvironmentProfile::Default;
     std::uint64_t nextObjectId = 1;
     bool sceneDirty = false;
     bool environmentDirty = false;
@@ -128,7 +128,7 @@ private:
     std::string scenePath_;
     std::vector<EditorSceneObject> objects_;
     EnvironmentDefinition environment_;
-    EnvironmentProfile legacyEnvironmentProfile_ = EnvironmentProfile::Neutral;
+    EnvironmentProfile legacyEnvironmentProfile_ = EnvironmentProfile::Default;
     std::uint64_t nextObjectId_ = 1;
     std::uint64_t sceneRevision_ = 0;
     std::uint64_t environmentRevision_ = 0;

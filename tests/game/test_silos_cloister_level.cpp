@@ -6,7 +6,7 @@
 int main() {
     const auto data = loadLevelDef(SILOS_CLOISTER_SCENE_FILE);
 
-    assert(data.environmentProfile == EnvironmentProfile::CloisterDaylight);
+    assert(data.environmentProfile == EnvironmentProfile::Default);
     assert(data.hasPlayerSpawn);
     assert(data.playerSpawn.position == glm::vec3(0.0f, 1.6f, 10.1f));
     assert(data.lights.size() == 4);

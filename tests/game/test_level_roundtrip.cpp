@@ -10,7 +10,7 @@ int main() {
 
     LevelDef level;
     level.environmentId = "cloister_daylight";
-    level.environmentProfile = EnvironmentProfile::CloisterDaylight;
+    level.environmentProfile = EnvironmentProfile::Default;
     level.meshes.push_back(LevelMeshPlacement{
         .meshId = "cube",
         .position = glm::vec3(1.0f, 2.0f, 3.0f),
@@ -82,7 +82,7 @@ int main() {
     fs::remove(tempPath);
 
     assert(loaded.environmentId == "cloister_daylight");
-    assert(loaded.environmentProfile == EnvironmentProfile::CloisterDaylight);
+    assert(loaded.environmentProfile == EnvironmentProfile::Default);
     assert(loaded.meshes.size() == 2);
     assert(loaded.meshes.front().materialId == "brick_default");
     assert(loaded.meshes.front().tint.has_value());
@@ -122,18 +122,18 @@ int main() {
     assert(resolved.meshes.size() == 2);
     assert(glm::distance(resolved.meshes[1].position, glm::vec3(10.0f, 0.0f, -2.0f)) < 0.001f);
 
-    LevelDef gameReadyLevel;
-    gameReadyLevel.environmentId = "game_ready_neutral";
-    gameReadyLevel.environmentProfile = EnvironmentProfile::GameReadyNeutral;
-    const std::string gameReadySerialized = serializeLevelDef(gameReadyLevel);
-    assert(gameReadySerialized.find("environment_profile game_ready_neutral") != std::string::npos);
+    LevelDef defaultLevel;
+    defaultLevel.environmentId = "game_ready_neutral";
+    defaultLevel.environmentProfile = EnvironmentProfile::Default;
+    const std::string defaultSerialized = serializeLevelDef(defaultLevel);
+    assert(defaultSerialized.find("environment_profile game_ready_neutral") != std::string::npos);
 
-    const fs::path gameReadyPath = test_support::tempPath("gsd_game_ready_level.scene");
-    saveLevelDef(gameReadyPath.string(), gameReadyLevel);
-    const LevelDef loadedGameReady = loadLevelDef(gameReadyPath.string());
-    fs::remove(gameReadyPath);
-    assert(loadedGameReady.environmentId == "game_ready_neutral");
-    assert(loadedGameReady.environmentProfile == EnvironmentProfile::GameReadyNeutral);
+    const fs::path defaultPath = test_support::tempPath("gsd_default_level.scene");
+    saveLevelDef(defaultPath.string(), defaultLevel);
+    const LevelDef loadedDefault = loadLevelDef(defaultPath.string());
+    fs::remove(defaultPath);
+    assert(loadedDefault.environmentId == "game_ready_neutral");
+    assert(loadedDefault.environmentProfile == EnvironmentProfile::Default);
 
     return 0;
 }

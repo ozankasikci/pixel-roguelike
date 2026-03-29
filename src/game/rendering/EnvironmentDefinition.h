@@ -12,6 +12,7 @@ struct EnvironmentDefinition {
     LightingEnvironment lighting;
 };
 
+EnvironmentDefinition makeDefaultEnvironmentDefinition();
 EnvironmentDefinition makeEnvironmentDefinition(EnvironmentProfile profile);
 EnvironmentRenderSettings makeEnvironmentRenderSettings(const EnvironmentDefinition& definition);
 

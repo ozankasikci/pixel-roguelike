@@ -67,8 +67,8 @@ glm::vec3 safeNormalize(const glm::vec3& value, const glm::vec3& fallback) {
 void EditorSceneDocument::clear() {
     scenePath_.clear();
     objects_.clear();
-    environment_ = makeEnvironmentDefinition(EnvironmentProfile::Neutral);
-    legacyEnvironmentProfile_ = EnvironmentProfile::Neutral;
+    environment_ = makeEnvironmentDefinition(EnvironmentProfile::Default);
+    legacyEnvironmentProfile_ = EnvironmentProfile::Default;
     nextObjectId_ = 1;
     sceneRevision_ = 0;
     environmentRevision_ = 0;
@@ -128,17 +128,17 @@ void EditorSceneDocument::setEnvironmentId(const std::string& environmentId, con
     if (definition != nullptr) {
         environment_ = *definition;
     } else {
-        EnvironmentProfile builtIn = EnvironmentProfile::Neutral;
+        EnvironmentProfile builtIn = EnvironmentProfile::Default;
         environment_ = makeEnvironmentDefinition(tryParseEnvironmentProfileToken(environmentId, builtIn)
             ? builtIn
-            : EnvironmentProfile::Neutral);
+            : EnvironmentProfile::Default);
         environment_.id = environmentId;
     }
     environment_.id = environmentId;
     if (tryParseEnvironmentProfileToken(environmentId, legacyEnvironmentProfile_)) {
         // keep parsed legacy profile for backward-compatible defaults and tests
     } else {
-        legacyEnvironmentProfile_ = EnvironmentProfile::Neutral;
+        legacyEnvironmentProfile_ = EnvironmentProfile::Default;
     }
     markSceneDirty();
     markEnvironmentDirty();
@@ -152,7 +152,7 @@ void EditorSceneDocument::renameEnvironmentId(std::string environmentId) {
     if (tryParseEnvironmentProfileToken(environment_.id, legacyEnvironmentProfile_)) {
         // keep parsed legacy profile for backward-compatible defaults and tests
     } else {
-        legacyEnvironmentProfile_ = EnvironmentProfile::Neutral;
+        legacyEnvironmentProfile_ = EnvironmentProfile::Default;
     }
     markSceneDirty();
     markEnvironmentDirty();
@@ -167,17 +167,17 @@ bool EditorSceneDocument::reloadEnvironmentFromRegistry(const ContentRegistry& c
     if (const EnvironmentDefinition* definition = content.findEnvironment(environmentId)) {
         environment_ = *definition;
     } else {
-        EnvironmentProfile builtIn = EnvironmentProfile::Neutral;
+        EnvironmentProfile builtIn = EnvironmentProfile::Default;
         environment_ = makeEnvironmentDefinition(tryParseEnvironmentProfileToken(environmentId, builtIn)
             ? builtIn
-            : EnvironmentProfile::Neutral);
+            : EnvironmentProfile::Default);
         environment_.id = environmentId;
     }
 
     if (tryParseEnvironmentProfileToken(environmentId, legacyEnvironmentProfile_)) {
         // keep parsed legacy profile for backward-compatible defaults and tests
     } else {
-        legacyEnvironmentProfile_ = EnvironmentProfile::Neutral;
+        legacyEnvironmentProfile_ = EnvironmentProfile::Default;
     }
     markEnvironmentDirty();
     return true;

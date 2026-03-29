@@ -2,7 +2,6 @@
 
 #include "game/components/LightComponent.h"
 #include "game/components/MeshComponent.h"
-#include "game/rendering/EnvironmentProfile.h"
 #include "game/rendering/MaterialDefinition.h"
 #include "game/rendering/RetroPalette.h"
 #include "game/components/StaticColliderComponent.h"
@@ -14,14 +13,6 @@
 #include <string_view>
 
 namespace {
-
-EnvironmentProfile activeEnvironmentProfile(entt::registry& registry) {
-    auto& ctx = registry.ctx();
-    if (ctx.contains<ActiveEnvironmentProfile>()) {
-        return ctx.get<ActiveEnvironmentProfile>().profile;
-    }
-    return EnvironmentProfile::Neutral;
-}
 
 glm::mat4 makeModel(const glm::vec3& position,
                     const glm::vec3& scale,
@@ -36,8 +27,7 @@ glm::mat4 makeModel(const glm::vec3& position,
 
 glm::vec3 defaultTintForMesh(std::string_view meshName,
                              const glm::vec3& position,
-                             const glm::vec3& scale,
-                             EnvironmentProfile profile) {
+                             const glm::vec3& scale) {
     if (meshName == "door_leaf_left" || meshName == "door_leaf_right") {
         return RetroPalette::OldWood;
     }
@@ -51,30 +41,12 @@ glm::vec3 defaultTintForMesh(std::string_view meshName,
         return RetroPalette::Bone;
     }
     if (meshName == "plane") {
-        if (profile == EnvironmentProfile::CathedralArcade) {
-            if (scale.y < 0.0f) {
-                return glm::vec3(0.44f, 0.43f, 0.40f);
-            }
-            return glm::vec3(0.24f, 0.23f, 0.21f);
-        }
         if (scale.y < 0.0f) {
             return RetroPalette::CarvedStone;
         }
         return RetroPalette::LimestoneLight;
     }
     if (meshName == "cube") {
-        if (profile == EnvironmentProfile::CathedralArcade) {
-            if (scale.y <= 0.24f && (scale.x >= 1.0f || scale.z >= 1.0f)) {
-                return glm::vec3(0.20f, 0.19f, 0.18f);
-            }
-            if ((scale.x <= 0.28f || scale.z <= 0.28f) && scale.y >= 1.5f) {
-                return glm::vec3(0.42f, 0.40f, 0.38f);
-            }
-            if (position.y >= 7.0f) {
-                return glm::vec3(0.38f, 0.37f, 0.35f);
-            }
-            return glm::vec3(0.30f, 0.29f, 0.27f);
-        }
         if (scale.y <= 0.24f && (scale.x >= 1.0f || scale.z >= 1.0f)) {
             return RetroPalette::Flagstone;
         }
@@ -87,15 +59,9 @@ glm::vec3 defaultTintForMesh(std::string_view meshName,
         return RetroPalette::Sandstone;
     }
     if (meshName == "pillar" || meshName == "arch") {
-        if (profile == EnvironmentProfile::CathedralArcade) {
-            return glm::vec3(0.46f, 0.45f, 0.42f);
-        }
         return RetroPalette::CarvedStone;
     }
     if (meshName == "cylinder" || meshName == "cylinder_wide" || meshName == "cylinder_cap") {
-        if (profile == EnvironmentProfile::CathedralArcade) {
-            return glm::vec3(0.32f, 0.29f, 0.24f);
-        }
         return RetroPalette::Stone;
     }
     return glm::vec3(1.0f);
@@ -196,7 +162,7 @@ entt::entity LevelBuilder::addMesh(const std::string& meshName,
         position,
         scale,
         rotation,
-        tint.value_or(defaultTintForMesh(meshName, position, scale, activeEnvironmentProfile(context_.registry))),
+        tint.value_or(defaultTintForMesh(meshName, position, scale)),
         resolvedMaterial,
         materialId.value_or(
             material.has_value()

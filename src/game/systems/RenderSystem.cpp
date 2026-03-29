@@ -21,7 +21,7 @@ constexpr int RenderSystem::RES_H[];
 void RenderSystem::init(Application& app) {
     runtimeRenderer_.init(app.getService<ContentRegistry>());
     imguiLayer_.init(app.window().handle());
-    applyEnvironmentProfile(debugParams_, EnvironmentProfile::Neutral, true);
+    applyEnvironmentProfile(debugParams_, EnvironmentProfile::Default, true);
 }
 
 InteractionPromptState& RenderSystem::ensurePromptState(entt::registry& registry) const {
