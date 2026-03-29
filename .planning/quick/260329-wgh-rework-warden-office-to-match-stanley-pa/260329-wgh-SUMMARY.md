@@ -22,9 +22,9 @@ decisions:
   - Desk switched from metal_default to wood_default to match office feel
   - Baseboards switched from metal_default to metal_default (kept) but tint made warmer brown
 metrics:
-  duration: ~8min
+  duration: ~20min
   completed: 2026-03-29
-  tasks_completed: 1
+  tasks_completed: 2
   files_changed: 3
 ---
 
@@ -37,6 +37,7 @@ metrics:
 | Task | Name | Commit | Files |
 |------|------|--------|-------|
 | 1 | Add ceiling light panel + large window meshes, rework scene geometry and lighting | 64afd51 | PrisonAssets.cpp, warden_office.scene, default.environment |
+| 2 | Visual fixes: taller room, clean ceiling seams, wood door, wood desk, remove viewmodels | 29b43ff | PrisonAssets.cpp, warden_office.scene, LevelLoader.cpp |
 
 ## Changes Made
 
@@ -70,6 +71,32 @@ Office-style window wall replacing the barred prison window. 1.4m wide x 1.2m ta
 - `lighting_hemi_sky_color 0.50 0.48 0.44` (warm hemisphere ambient)
 - `lighting_hemi_strength 0.35`
 
+## Continuation Fixes (Task 2)
+
+### Room Height: 3.5m → 4.0m
+- Wall meshes (`createPrisonWall`, `createPrisonWallDoor`, `createPrisonWallWindow`, `createPrisonWallLargeWindow`) all increased from 3.5m to 4.0m height by updating their slab geometry
+- All 12 ceiling tile placements raised from Y=3.5 to Y=4.0 in scene
+- All 6 ceiling light panel placements raised from Y=3.49 to Y=3.99
+- All 6 ceiling point lights raised from Y=3.2 to Y=3.7
+- Wall colliders updated: Y center 1.75 → 2.0, halfExtent 1.75 → 2.0
+- Door wall collider above opening: center 2.8 → 3.05, halfExtent 0.7 → 0.95
+- Ceiling collider raised from Y=3.5 to Y=4.0
+
+### Ceiling Seam Fix: Remove z-fighting border strips
+Removed 4 decorative border line strips from `createPrisonCeiling()`. The strips had their top face at exactly Y=0 (coplanar with the bottom face of the main slab), causing z-fighting that produced black outlines at tile seams. Clean slab only now — seamless tiling.
+
+### Door Material: metal_default → wood_default
+Changed `prison_door` entity in scene from `material metal_default tint 0.40 0.38 0.34` to `material wood_default tint 0.50 0.38 0.24`. Warm wood appearance matches Stanley Parable office door aesthetic.
+
+### Desk Tint Adjusted
+Changed `prison_desk` tint from `0.52 0.42 0.28` to `0.55 0.40 0.22` for a richer, more distinct warm wood tone.
+
+### Remove Hand/Torch Viewmodels
+Removed 4 hardcoded `spawnViewmodelMesh` calls from `LevelLoader.cpp` (hand, cylinder torch, and two candle flame cubes). These were unconditionally spawned for every level load, not just warden office. Also removed the now-unused `spawnViewmodelMesh` helper function and its related includes (`ViewmodelComponent.h`, `RetroPalette.h`).
+
+### Furniture Proportions
+All furniture geometry was already at correct dimensions per spec (door: 0.9m x 2.1m, desk: 1.2m x 0.75m x 0.6m, chair: 0.45m seat height). No changes needed — the taller walls make them read correctly proportioned.
+
 ## Deviations from Plan
 
 None — plan executed exactly as written.
@@ -84,5 +111,8 @@ Files exist:
 - src/game/levels/prison/PrisonAssets.cpp: FOUND
 - assets/scenes/warden_office.scene: FOUND
 - assets/defs/environments/default.environment: FOUND
+- src/game/level/LevelLoader.cpp: FOUND
 
-Commit exists: 64afd51 — FOUND
+Commits exist:
+- 64afd51 — FOUND (task 1)
+- 29b43ff — FOUND (task 2)
