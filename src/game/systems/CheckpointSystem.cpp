@@ -1,11 +1,11 @@
 #include "game/systems/CheckpointSystem.h"
 
 #include "engine/core/Application.h"
+#include "engine/input/InputSystem.h"
 #include "game/runtime/RuntimeGameplay.h"
-#include "game/runtime/RuntimeInputState.h"
 #include "game/session/RunSession.h"
 
-CheckpointSystem::CheckpointSystem(RuntimeInputState& input)
+CheckpointSystem::CheckpointSystem(InputSystem& input)
     : input_(input)
 {}
 

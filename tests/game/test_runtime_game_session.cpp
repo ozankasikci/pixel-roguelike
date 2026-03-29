@@ -1,3 +1,4 @@
+#include "engine/input/InputSystem.h"
 #include "engine/physics/PhysicsSystem.h"
 #include "game/components/CameraComponent.h"
 #include "game/components/CharacterControllerComponent.h"
@@ -11,7 +12,6 @@
 #include "game/components/TransformComponent.h"
 #include "game/content/ContentRegistry.h"
 #include "game/runtime/RuntimeGameplay.h"
-#include "game/runtime/RuntimeInputState.h"
 #include "game/session/RunSession.h"
 #include "game/ui/InventoryMenuState.h"
 
@@ -45,7 +45,7 @@ int main() {
     physics.init(registry);
     physics.update(registry, 0.0f);
 
-    RuntimeInputState input;
+    InputSystem input;
     RunSession session;
     ContentRegistry content;
     initializeRuntimeInventory(registry);

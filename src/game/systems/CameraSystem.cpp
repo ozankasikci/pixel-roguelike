@@ -1,10 +1,10 @@
 #include "game/systems/CameraSystem.h"
 
 #include "engine/core/Application.h"
+#include "engine/input/InputSystem.h"
 #include "game/runtime/RuntimeGameplay.h"
-#include "game/runtime/RuntimeInputState.h"
 
-CameraSystem::CameraSystem(RuntimeInputState& input)
+CameraSystem::CameraSystem(InputSystem& input)
     : input_(input)
 {}
 

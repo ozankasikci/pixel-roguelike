@@ -1,10 +1,10 @@
 #include "game/systems/DoorSystem.h"
 
 #include "engine/core/Application.h"
+#include "engine/input/InputSystem.h"
 #include "game/runtime/RuntimeGameplay.h"
-#include "game/runtime/RuntimeInputState.h"
 
-DoorSystem::DoorSystem(RuntimeInputState& input)
+DoorSystem::DoorSystem(InputSystem& input)
     : input_(input)
 {}
 
