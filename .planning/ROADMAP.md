@@ -81,3 +81,14 @@ Plans:
 Plans:
 - [x] 02.1-01-PLAN.md — Define authored weapon metadata, owned-vs-equipped session state, and burden/equipment helper tests
 - [x] 02.1-02-PLAN.md — Integrate the paused inventory system, list-based ImGui screen, and in-game verification
+
+### Phase 3: Build menu in editor - macOS build from editor with progress and output
+
+**Goal:** The level editor has a Build menu that invokes CMake to build the game executable, streams output to a dockable Build Output panel with progress and error highlighting, supports cancellation, and can build-and-run the game with the currently edited scene
+**Requirements**: None (editor tooling phase; not mapped to REQUIREMENTS.md IDs)
+**Depends on:** Phase 02.1
+**Plans:** 2 plans
+
+Plans:
+- [ ] 03-01-PLAN.md — EditorBuildSystem backend module (fork/exec, pipe, thread, SIGTERM) and runtime --scene argument
+- [ ] 03-02-PLAN.md — Wire Build menu, Build Output panel, keyboard shortcuts, unsaved-changes modal, and preferences into editor
