@@ -72,7 +72,7 @@ const float PI = 3.14159265359;
 float attenuation(float dist, float radius) {
     float x = clamp(1.0 - pow(dist / max(radius, 0.001), 4.0), 0.0, 1.0);
     float window = x * x;
-    float invSq = 1.0 / (dist * dist + 0.01);
+    float invSq = 1.0 / (dist * dist + 1.0);
     return window * invSq;
 }
 
