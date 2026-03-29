@@ -6,7 +6,7 @@ Sky assets used by the renderer.
 - License: CC0 1.0 / Poly Haven
 - Local processing: resized to 2048x1024 for runtime use
 
-`overcast_soil_puresky_cube/*.jpg`
+`overcast_soil_puresky_cube/*.png`
 - Derived locally from `overcast_soil_puresky.jpg`
 - Face order in engine: `px`, `nx`, `py`, `ny`, `pz`, `nz`
 - Local processing: equirectangular panorama projected to 512x512 cubemap faces for true `samplerCube` sky rendering
@@ -17,7 +17,7 @@ Sky assets used by the renderer.
 - License: CC0 1.0 / Poly Haven
 - Local processing: resized to 2048x1024 for runtime use
 
-`syferfontein_0d_clear_puresky_cube/*.jpg`
+`syferfontein_0d_clear_puresky_cube/*.png`
 - Derived locally from `syferfontein_0d_clear_puresky.jpg`
 - Face order in engine: `px`, `nx`, `py`, `ny`, `pz`, `nz`
 - Local processing: equirectangular panorama projected to 512x512 cubemap faces for true `samplerCube` sky rendering

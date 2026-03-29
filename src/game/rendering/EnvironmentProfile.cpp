@@ -141,12 +141,12 @@ SkySettings makeCloisterSky() {
     sky.sunSize = 0.012f;
     sky.sunGlow = 0.06f;
     sky.cubemapFacePaths = {
-        "assets/skies/syferfontein_0d_clear_puresky_cube/px.jpg",
-        "assets/skies/syferfontein_0d_clear_puresky_cube/nx.jpg",
-        "assets/skies/syferfontein_0d_clear_puresky_cube/py.jpg",
-        "assets/skies/syferfontein_0d_clear_puresky_cube/ny.jpg",
-        "assets/skies/syferfontein_0d_clear_puresky_cube/pz.jpg",
-        "assets/skies/syferfontein_0d_clear_puresky_cube/nz.jpg",
+        "assets/skies/syferfontein_0d_clear_puresky_cube/px.png",
+        "assets/skies/syferfontein_0d_clear_puresky_cube/nx.png",
+        "assets/skies/syferfontein_0d_clear_puresky_cube/py.png",
+        "assets/skies/syferfontein_0d_clear_puresky_cube/ny.png",
+        "assets/skies/syferfontein_0d_clear_puresky_cube/pz.png",
+        "assets/skies/syferfontein_0d_clear_puresky_cube/nz.png",
     };
     sky.cubemapTint = glm::vec3(1.00f);
     sky.cubemapStrength = 1.00f;

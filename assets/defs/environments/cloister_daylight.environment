@@ -47,7 +47,7 @@ sky_sun_glow 0.06
 sky_panorama_tint 1.0 1.0 1.0
 sky_panorama_strength 0.0
 sky_panorama_yaw_offset 0.0
-sky_cubemap_faces assets/skies/syferfontein_0d_clear_puresky_cube/px.jpg assets/skies/syferfontein_0d_clear_puresky_cube/nx.jpg assets/skies/syferfontein_0d_clear_puresky_cube/py.jpg assets/skies/syferfontein_0d_clear_puresky_cube/ny.jpg assets/skies/syferfontein_0d_clear_puresky_cube/pz.jpg assets/skies/syferfontein_0d_clear_puresky_cube/nz.jpg
+sky_cubemap_faces assets/skies/syferfontein_0d_clear_puresky_cube/px.png assets/skies/syferfontein_0d_clear_puresky_cube/nx.png assets/skies/syferfontein_0d_clear_puresky_cube/py.png assets/skies/syferfontein_0d_clear_puresky_cube/ny.png assets/skies/syferfontein_0d_clear_puresky_cube/pz.png assets/skies/syferfontein_0d_clear_puresky_cube/nz.png
 sky_cubemap_tint 1.0 1.0 1.0
 sky_cubemap_strength 1.0
 sky_moon_enabled false

@@ -45,8 +45,9 @@
 #include <cmath>
 #include <cstdint>
 #include <cstdio>
-#include <filesystem>
 #include <cstring>
+#include <filesystem>
+#include <fstream>
 #include <memory>
 #include <optional>
 #include <set>
@@ -68,6 +69,45 @@ constexpr const char* kAssetBrowserWindowName = "Asset Browser";
 constexpr const char* kEnvironmentWindowName = "Environment";
 constexpr float kRuntimeViewportAspect = 1280.0f / 720.0f;
 constexpr const char* kPreviewModes[] = {"Final", "Lighting", "Sky"};
+constexpr const char* kWindowGeometryFile = "editor_window.ini";
+
+struct WindowGeometry {
+    int x = -1;
+    int y = -1;
+    int width = 1600;
+    int height = 960;
+};
+
+WindowGeometry loadWindowGeometry() {
+    WindowGeometry geo;
+    std::ifstream file(kWindowGeometryFile);
+    if (!file.is_open()) {
+        return geo;
+    }
+    std::string line;
+    while (std::getline(file, line)) {
+        if (std::sscanf(line.c_str(), "x=%d", &geo.x) == 1) continue;
+        if (std::sscanf(line.c_str(), "y=%d", &geo.y) == 1) continue;
+        if (std::sscanf(line.c_str(), "width=%d", &geo.width) == 1) continue;
+        if (std::sscanf(line.c_str(), "height=%d", &geo.height) == 1) continue;
+    }
+    return geo;
+}
+
+void saveWindowGeometry(GLFWwindow* window) {
+    int x = 0, y = 0;
+    glfwGetWindowPos(window, &x, &y);
+    int w = 0, h = 0;
+    glfwGetWindowSize(window, &w, &h);
+    std::ofstream file(kWindowGeometryFile);
+    if (!file.is_open()) {
+        return;
+    }
+    file << "x=" << x << "\n";
+    file << "y=" << y << "\n";
+    file << "width=" << w << "\n";
+    file << "height=" << h << "\n";
+}
 
 enum class RuntimePreviewDirtyState {
     None,
@@ -196,7 +236,11 @@ int main(int argc, char* argv[]) {
 
     const std::string initialScene = argc > 1 ? argv[1] : "assets/scenes/silos_cloister.scene";
 
-    Window window(1600, 960, "Level Editor");
+    const WindowGeometry savedGeo = loadWindowGeometry();
+    Window window(savedGeo.width, savedGeo.height, "Level Editor");
+    if (savedGeo.x >= 0 && savedGeo.y >= 0) {
+        glfwSetWindowPos(window.handle(), savedGeo.x, savedGeo.y);
+    }
     glfwSwapInterval(1);
 
     ImGuiLayer imgui;
@@ -1464,6 +1508,7 @@ int main(int argc, char* argv[]) {
         }
     }
 
+    saveWindowGeometry(window.handle());
     runtimePreviewSession.endCapture(window.handle());
     imgui.shutdown();
     return 0;
