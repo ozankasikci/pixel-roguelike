@@ -71,7 +71,9 @@ const float PI = 3.14159265359;
 
 float attenuation(float dist, float radius) {
     float x = clamp(1.0 - pow(dist / max(radius, 0.001), 4.0), 0.0, 1.0);
-    return x * x;
+    float window = x * x;
+    float invSq = 1.0 / (dist * dist + 0.01);
+    return window * invSq;
 }
 
 float hash13(vec3 p) {
@@ -723,7 +725,7 @@ void main() {
         vec3 F = fresnelSchlick(max(dot(H, V), 0.0), F0);
         float D = distributionGGX(N, H, roughness);
         float G = geometrySmith(N, V, L, roughness);
-        vec3 specular = (D * G * F) / max(4.0 * NdotV * NdotL, 0.001);
+        vec3 specular = (D * G * F) / max(4.0 * NdotV * NdotL, 0.01);
         vec3 kD = (vec3(1.0) - F) * (1.0 - metalness);
 
         vec3 radiance = light.color * light.intensity * falloff;
