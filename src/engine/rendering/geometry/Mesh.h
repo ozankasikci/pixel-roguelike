@@ -12,6 +12,15 @@ public:
          const std::vector<glm::vec2>& uvs,
          const std::vector<glm::vec3>& tangents,
          const std::vector<uint32_t>& indices);
+
+    // Construct from pre-interleaved vertex data (from disk cache).
+    // interleavedVertices: 11 floats per vertex (pos3 + norm3 + uv2 + tangent3)
+    // AABB is provided externally (already computed).
+    Mesh(const std::vector<float>& interleavedVertices,
+         const std::vector<uint32_t>& indices,
+         const glm::vec3& aabbMin,
+         const glm::vec3& aabbMax);
+
     ~Mesh();
 
     // Non-copyable

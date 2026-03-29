@@ -94,6 +94,55 @@ Mesh::Mesh(const std::vector<glm::vec3>& positions,
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 }
 
+Mesh::Mesh(const std::vector<float>& interleavedVertices,
+           const std::vector<uint32_t>& indices,
+           const glm::vec3& aabbMin,
+           const glm::vec3& aabbMax) {
+    indexCount_ = static_cast<GLsizei>(indices.size());
+    vertexCount_ = interleavedVertices.size() / 11;
+    aabbMin_ = aabbMin;
+    aabbMax_ = aabbMax;
+
+    glGenVertexArrays(1, &vao_);
+    glGenBuffers(1, &vbo_);
+    glGenBuffers(1, &ebo_);
+
+    glBindVertexArray(vao_);
+
+    glBindBuffer(GL_ARRAY_BUFFER, vbo_);
+    glBufferData(GL_ARRAY_BUFFER,
+                 static_cast<GLsizeiptr>(interleavedVertices.size() * sizeof(float)),
+                 interleavedVertices.data(), GL_STATIC_DRAW);
+
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo_);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER,
+                 static_cast<GLsizeiptr>(indices.size() * sizeof(uint32_t)),
+                 indices.data(), GL_STATIC_DRAW);
+
+    // location 0: position (vec3)
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 11 * sizeof(float), (void*)0);
+
+    // location 1: normal (vec3)
+    glEnableVertexAttribArray(1);
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 11 * sizeof(float),
+                          (void*)(3 * sizeof(float)));
+
+    // location 2: uv (vec2)
+    glEnableVertexAttribArray(2);
+    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 11 * sizeof(float),
+                          (void*)(6 * sizeof(float)));
+
+    // location 3: tangent (vec3)
+    glEnableVertexAttribArray(3);
+    glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, 11 * sizeof(float),
+                          (void*)(8 * sizeof(float)));
+
+    glBindVertexArray(0);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+}
+
 Mesh::~Mesh() {
     if (vao_) glDeleteVertexArrays(1, &vao_);
     if (vbo_) glDeleteBuffers(1, &vbo_);

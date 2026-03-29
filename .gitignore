@@ -16,3 +16,4 @@ __pycache__/
 .worktrees/
 .claude/
 editor_build.ini
+.cache/
