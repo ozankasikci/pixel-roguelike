@@ -1,41 +1,37 @@
 id default
-palette_variant 0
 enable_sky true
-enable_dither true
 enable_edges false
-enable_fog true
+enable_fog false
 enable_tone_map true
 enable_bloom true
 enable_vignette true
-enable_grain true
+enable_grain false
 enable_scanlines false
 enable_sharpen false
 tone_map_mode 1
-threshold_bias 0.024
-pattern_scale 0.0
 edge_threshold 0.17
-fog_density 0.022
-fog_start 22.0
+fog_density 0.005
+fog_start 30.0
 depth_view_scale 0.08
-exposure 0.96
+exposure 1.0
 gamma 1.0
-contrast 1.05
-saturation 0.92
-bloom_threshold 0.72
-bloom_intensity 0.08
-bloom_radius 1.35
-vignette_strength 0.14
+contrast 1.02
+saturation 0.88
+bloom_threshold 0.80
+bloom_intensity 0.06
+bloom_radius 1.5
+vignette_strength 0.08
 vignette_softness 0.78
 grain_amount 0.035
 scanline_amount 0.08
 scanline_density 1.0
 sharpen_amount 0.18
-split_tone_strength 0.05
+split_tone_strength 0.03
 split_tone_balance 0.56
 fog_near_color 0.3 0.3 0.28
 fog_far_color 0.56 0.58 0.54
-shadow_tint 0.86 0.88 0.84
-highlight_tint 0.93 0.9 0.82
+shadow_tint 0.90 0.88 0.84
+highlight_tint 0.98 0.96 0.90
 sky_enabled true
 sky_zenith_color 0.24 0.38 0.62
 sky_horizon_color 0.84 0.82 0.74
@@ -64,9 +60,9 @@ sky_cloud_parallax 0.024
 sky_horizon_tint 1.0 1.0 1.0
 sky_horizon_height 0.55
 sky_horizon_fade 0.22
-lighting_hemi_sky_color 0.42 0.46 0.5
-lighting_hemi_ground_color 0.1 0.09 0.08
-lighting_hemi_strength 0.32
+lighting_hemi_sky_color 0.50 0.48 0.44
+lighting_hemi_ground_color 0.15 0.13 0.10
+lighting_hemi_strength 0.35
 lighting_enable_directional true
 lighting_enable_shadows true
 lighting_shadow_bias 0.0018

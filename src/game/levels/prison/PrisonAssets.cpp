@@ -39,16 +39,6 @@ std::unique_ptr<Mesh> createPrisonWall() {
     // Origin at bottom-center of the wall panel, Y=0 is floor level
     addBox(glm::vec3(0.0f, 1.75f, 0.0f), glm::vec3(1.0f, 1.75f, 0.1f));
 
-    // Inset border on front face — thin raised frame 0.04m from edges
-    // Top horizontal strip
-    addBox(glm::vec3(0.0f, 3.46f, 0.105f), glm::vec3(0.96f, 0.02f, 0.005f));
-    // Bottom horizontal strip
-    addBox(glm::vec3(0.0f, 0.04f, 0.105f), glm::vec3(0.96f, 0.02f, 0.005f));
-    // Left vertical strip
-    addBox(glm::vec3(-0.96f, 1.75f, 0.105f), glm::vec3(0.02f, 1.71f, 0.005f));
-    // Right vertical strip
-    addBox(glm::vec3(0.96f, 1.75f, 0.105f), glm::vec3(0.02f, 1.71f, 0.005f));
-
     RawMeshData merged = mergeMeshes(parts);
     return std::make_unique<Mesh>(merged.positions, merged.normals, merged.uvs, merged.tangents,
                                   merged.indices);
@@ -141,12 +131,6 @@ std::unique_ptr<Mesh> createPrisonFloor() {
 
     // Main slab: 2m × 2m, 0.1m thick, top surface at Y=0
     addBox(glm::vec3(0.0f, -0.05f, 0.0f), glm::vec3(1.0f, 0.05f, 1.0f));
-
-    // Recessed border lines on top face (thin raised strips 0.05m from edges)
-    addBox(glm::vec3(0.0f, 0.003f, -0.95f), glm::vec3(0.95f, 0.003f, 0.015f));
-    addBox(glm::vec3(0.0f, 0.003f, 0.95f), glm::vec3(0.95f, 0.003f, 0.015f));
-    addBox(glm::vec3(-0.95f, 0.003f, 0.0f), glm::vec3(0.015f, 0.003f, 0.95f));
-    addBox(glm::vec3(0.95f, 0.003f, 0.0f), glm::vec3(0.015f, 0.003f, 0.95f));
 
     RawMeshData merged = mergeMeshes(parts);
     return std::make_unique<Mesh>(merged.positions, merged.normals, merged.uvs, merged.tangents,
@@ -447,6 +431,71 @@ std::unique_ptr<Mesh> createPrisonShelf() {
                                   merged.indices);
 }
 
+// ---------------------------------------------------------------------------
+// Task: Stanley Parable office additions
+// ---------------------------------------------------------------------------
+
+std::unique_ptr<Mesh> createCeilingLightPanel() {
+    auto cube = generateCube(2.0f);
+    std::vector<std::pair<RawMeshData, glm::mat4>> parts;
+
+    auto addBox = [&](const glm::vec3& position,
+                      const glm::vec3& scale,
+                      const glm::vec3& rotation = glm::vec3(0.0f)) {
+        parts.push_back({cube, makeModel(position, scale, rotation)});
+    };
+
+    // Recessed rectangular fluorescent ceiling panel: 0.9m long x 0.3m wide
+    // Origin at center of panel; Y=0 is ceiling surface level, panel hangs below.
+    // Outer frame: 0.015m wide strips, 0.01m thick forming the border
+    // Long sides (along X axis)
+    addBox(glm::vec3(0.0f, -0.005f, -0.15f), glm::vec3(0.45f, 0.005f, 0.015f));  // Front long frame strip
+    addBox(glm::vec3(0.0f, -0.005f, 0.15f), glm::vec3(0.45f, 0.005f, 0.015f));   // Back long frame strip
+    // Short sides (along Z axis)
+    addBox(glm::vec3(-0.45f, -0.005f, 0.0f), glm::vec3(0.015f, 0.005f, 0.135f)); // Left short frame strip
+    addBox(glm::vec3(0.45f, -0.005f, 0.0f), glm::vec3(0.015f, 0.005f, 0.135f));  // Right short frame strip
+
+    // Panel surface: translucent light diffuser, recessed 0.035m above frame level
+    // 0.9m x 0.3m, 0.005m thick, sits at Y=-0.035m
+    addBox(glm::vec3(0.0f, -0.035f, 0.0f), glm::vec3(0.435f, 0.0025f, 0.12f));   // Diffuser panel
+
+    RawMeshData merged = mergeMeshes(parts);
+    return std::make_unique<Mesh>(merged.positions, merged.normals, merged.uvs, merged.tangents,
+                                  merged.indices);
+}
+
+std::unique_ptr<Mesh> createPrisonWallLargeWindow() {
+    auto cube = generateCube(2.0f);
+    std::vector<std::pair<RawMeshData, glm::mat4>> parts;
+
+    auto addBox = [&](const glm::vec3& position,
+                      const glm::vec3& scale,
+                      const glm::vec3& rotation = glm::vec3(0.0f)) {
+        parts.push_back({cube, makeModel(position, scale, rotation)});
+    };
+
+    // Large office window wall: 2m wide, 3.5m tall, 0.2m thick
+    // Window opening: 1.4m wide, 1.2m tall, centered at Y=1.8m (eye to above-head)
+    // Bottom section: 0 to 1.2m
+    addBox(glm::vec3(0.0f, 0.6f, 0.0f), glm::vec3(1.0f, 0.6f, 0.1f));
+    // Top section: 2.4m to 3.5m
+    addBox(glm::vec3(0.0f, 2.95f, 0.0f), glm::vec3(1.0f, 0.55f, 0.1f));
+    // Left section beside window (0.3m wide strip)
+    addBox(glm::vec3(-0.85f, 1.8f, 0.0f), glm::vec3(0.15f, 0.6f, 0.1f));
+    // Right section beside window (0.3m wide strip)
+    addBox(glm::vec3(0.85f, 1.8f, 0.0f), glm::vec3(0.15f, 0.6f, 0.1f));
+
+    // Window sill: thin ledge at bottom of opening, 0.01m thick, 0.06m deep
+    addBox(glm::vec3(0.0f, 1.205f, 0.06f), glm::vec3(0.7f, 0.005f, 0.06f));
+
+    // Single thin mullion: vertical center divider (0.02m wide) for visual interest
+    addBox(glm::vec3(0.0f, 1.8f, 0.0f), glm::vec3(0.01f, 0.6f, 0.105f));
+
+    RawMeshData merged = mergeMeshes(parts);
+    return std::make_unique<Mesh>(merged.positions, merged.normals, merged.uvs, merged.tangents,
+                                  merged.indices);
+}
+
 } // namespace
 
 void registerPrisonAssets(MeshLibrary& meshLibrary) {
@@ -467,4 +516,7 @@ void registerPrisonAssets(MeshLibrary& meshLibrary) {
     meshLibrary.registerMesh("warden_chair", createWardenChair());
     meshLibrary.registerMesh("prison_cabinet", createPrisonCabinet());
     meshLibrary.registerMesh("prison_shelf", createPrisonShelf());
+    // Stanley Parable office additions
+    meshLibrary.registerMesh("ceiling_light_panel", createCeilingLightPanel());
+    meshLibrary.registerMesh("prison_wall_large_window", createPrisonWallLargeWindow());
 }
