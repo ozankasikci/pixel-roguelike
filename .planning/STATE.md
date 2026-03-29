@@ -18,7 +18,7 @@ progress:
 
 See: .planning/PROJECT.md (updated 2026-03-23)
 
-**Core value:** The 1-bit dithered 3D rendering — a visually striking, modern take on retro aesthetics that makes the game instantly recognizable
+**Core value:** The Stanley Parable-inspired art style — clean, minimalist environments with warm soft lighting, muted color palette, and stylized realism
 **Current focus:** Phase 03 — build-menu-in-editor-macos-build-from-editor-with-progress-and-output
 
 ## Current Position
@@ -67,7 +67,7 @@ Recent decisions affecting current work:
 - Dithering approach: Post-process fullscreen quad with Bayer matrix; world-space pattern anchoring is non-negotiable from Phase 1
 - [Phase 01-engine-and-dithering-pipeline]: GLAD 2 requires LANGUAGES C CXX in CMakeLists.txt project() and jinja2 Python package in venv for code generation
 - [Phase 01-engine-and-dithering-pipeline]: uInverseView (pure rotation inverse-view) passed per frame to dither.frag for sphere-map world-space anchoring
-- [Phase 01-engine-and-dithering-pipeline]: GL_NEAREST filter on FBO color texture critical to prevent interpolation in dither pass input
+- [Phase 01-engine-and-dithering-pipeline]: GL_LINEAR filter on FBO color texture for smooth rendering (changed from GL_NEAREST when dither pass was removed)
 - [Phase 01-engine-and-dithering-pipeline]: DitherPass::apply() updated to accept patternScale float parameter so ImGui slider can tune it at runtime
 - [Phase 01-engine-and-dithering-pipeline]: Dear ImGui v1.92.6 integrated via CMake FetchContent (GLFW + OpenGL3 backends); ImGui::GetIO().WantCaptureMouse gates camera mouse-look vs UI interaction
 - [Phase 01-engine-and-dithering-pipeline]: Quartic attenuation (Pitfall 6 from RESEARCH.md): clamp(1 - pow(dist/radius,4))^2 eliminates hard ring artifacts in Bayer dither output
@@ -111,10 +111,11 @@ None yet.
 | 260329-t50 | Fix lighting attenuation and intensity | 2026-03-29 | 459e34f | [260329-t50-fix-lighting-attenuation-and-intensity](./quick/260329-t50-fix-lighting-attenuation-and-intensity/) |
 | 260329-uom | Raise warden office ceiling from 2.5m to 3.5m | 2026-03-29 | 97c3880 | [260329-uom-fix-warden-office-room-being-too-small-i](./quick/260329-uom-fix-warden-office-room-being-too-small-i/) |
 | 260329-uy6 | Match Stanley Parable lighting and color palette | 2026-03-29 | 0a1f494 | [260329-uy6-match-stanley-parable-lighting-and-color](./quick/260329-uy6-match-stanley-parable-lighting-and-color/) |
+| 260329-x0q | Fix pixelated rendering and clean up old dither artifacts | 2026-03-29 | a5fa67a | [260329-x0q-fix-pixelated-low-resolution-rendering-i](./quick/260329-x0q-fix-pixelated-low-resolution-rendering-i/) |
 
 ## Session Continuity
 
-Last activity: 2026-03-29 - Completed quick task 260329-uy6: Match Stanley Parable lighting and color palette
+Last activity: 2026-03-29 - Completed quick task 260329-x0q: Fix pixelated rendering and clean up old dither artifacts
 Last session: 2026-03-29T09:57:11.883Z
 Stopped at: Checkpoint: 03-02 Task 2 human-verify
 Resume file: None
