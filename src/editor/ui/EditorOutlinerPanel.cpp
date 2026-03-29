@@ -47,7 +47,25 @@ std::vector<std::uint64_t> renderOutliner(EditorSceneDocument& document,
         ImGui::End();
         return deleteRequests;
     }
-    const bool additive = ImGui::GetIO().KeyShift;
+    const bool shiftHeld = ImGui::GetIO().KeyShift;
+    const bool ctrlHeld = ImGui::GetIO().KeyMods & ImGuiMod_Super
+                        || ImGui::GetIO().KeyMods & ImGuiMod_Ctrl;
+
+    // Build flat visible-order list for shift-range selection.
+    std::vector<std::uint64_t> flatOrder;
+    std::function<void(std::uint64_t)> collectOrder = [&](std::uint64_t objectId) {
+        const EditorSceneObject* object = document.findObject(objectId);
+        if (object == nullptr) {
+            return;
+        }
+        flatOrder.push_back(objectId);
+        for (const auto childId : document.childObjectIds(objectId)) {
+            collectOrder(childId);
+        }
+    };
+    for (const auto rootId : document.rootObjectIds()) {
+        collectOrder(rootId);
+    }
 
     ImGui::BeginDisabled(selectedIds.empty());
     if (ImGui::Button("Delete Selected")) {
@@ -86,7 +104,26 @@ std::vector<std::uint64_t> renderOutliner(EditorSceneDocument& document,
                                                 "%s",
                                                 editorSceneObjectLabel(*object).c_str());
         if (ImGui::IsItemClicked(ImGuiMouseButton_Left) && !ImGui::IsItemToggledOpen()) {
-            toggleSelection(selectedIds, objectId, additive);
+            if (shiftHeld && ui.outlinerAnchorId != 0) {
+                // Range selection: select all items between anchor and clicked item.
+                auto anchorIt = std::find(flatOrder.begin(), flatOrder.end(), ui.outlinerAnchorId);
+                auto clickIt = std::find(flatOrder.begin(), flatOrder.end(), objectId);
+                if (anchorIt != flatOrder.end() && clickIt != flatOrder.end()) {
+                    if (anchorIt > clickIt) {
+                        std::swap(anchorIt, clickIt);
+                    }
+                    selectedIds.clear();
+                    for (auto it = anchorIt; it <= clickIt; ++it) {
+                        selectedIds.push_back(*it);
+                    }
+                } else {
+                    selectedIds = {objectId};
+                    ui.outlinerAnchorId = objectId;
+                }
+            } else {
+                toggleSelection(selectedIds, objectId, ctrlHeld);
+                ui.outlinerAnchorId = objectId;
+            }
             ui.inspectorContext = EditorInspectorContext::SceneSelection;
             if (ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left)) {
                 ui.frameSelectionRequested = true;

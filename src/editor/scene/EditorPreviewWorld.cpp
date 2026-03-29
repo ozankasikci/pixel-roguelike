@@ -9,6 +9,7 @@
 #include "game/content/ContentRegistry.h"
 #include "game/level/LevelBuilder.h"
 #include "game/levels/cathedral/CathedralAssets.h"
+#include "game/levels/prison/PrisonAssets.h"
 #include "game/prefabs/GameplayPrefabs.h"
 #include "game/rendering/EnvironmentProfile.h"
 #include "game/rendering/MaterialDefinition.h"
@@ -116,6 +117,7 @@ void EditorObjectBounds::expand(const EditorObjectBounds& other) {
 
 EditorPreviewWorld::EditorPreviewWorld() {
     registerCathedralAssets(meshLibrary_);
+    registerPrisonAssets(meshLibrary_);
     reloadMeshAssets();
 }
 

@@ -296,7 +296,6 @@ AssetBrowserActionResult renderAssetBrowser(EditorUiState& ui,
                 beforeState,
                 document.captureState(),
                 document);
-            result.previewDirty = true;
         }
     };
 

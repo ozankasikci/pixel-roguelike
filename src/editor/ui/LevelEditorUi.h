@@ -77,6 +77,7 @@ struct EditorUiState {
     EditorInspectorContext inspectorContext = EditorInspectorContext::None;
     EditorInspectedAsset inspectedAsset{};
     bool frameSelectionRequested = false;
+    std::uint64_t outlinerAnchorId = 0;
     char layoutNameBuffer[64] = "default";
 };
 

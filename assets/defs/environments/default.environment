@@ -55,6 +55,7 @@ sky_moon_direction -0.3 0.85 -0.22
 sky_moon_color 0.72 0.82 1.0
 sky_moon_size 0.018
 sky_moon_glow 0.12
+sky_cloud_layer_a assets/skies/clouds_soft.tga
 sky_cloud_tint 1.0 1.0 1.0
 sky_cloud_scale 0.9
 sky_cloud_speed 0.0
