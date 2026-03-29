@@ -1900,32 +1900,29 @@ int main(int argc, char* argv[]) {
                     }
                 }
 
-                // Scrollable log area with clipper
-                ImGui::BeginChild("ConsoleLogScroll", ImVec2(0, 0), ImGuiChildFlags_None,
-                                  ImGuiWindowFlags_HorizontalScrollbar);
-                ImGuiListClipper clipper;
-                clipper.Begin(static_cast<int>(visibleIndices.size()));
-                while (clipper.Step()) {
-                    for (int lineNo = clipper.DisplayStart; lineNo < clipper.DisplayEnd; ++lineNo) {
-                        const auto entry = consoleLogStore->getEntry(visibleIndices[lineNo]);
-                        if (entry.level >= spdlog::level::err) {
-                            ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 0.3f, 0.3f, 1.0f));
-                        } else if (entry.level == spdlog::level::warn) {
-                            ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 0.8f, 0.0f, 1.0f));
-                        }
-                        ImGui::TextUnformatted(entry.message.c_str());
-                        if (entry.level >= spdlog::level::err || entry.level == spdlog::level::warn) {
-                            ImGui::PopStyleColor();
-                        }
+                // Build visible log text for the read-only text input
+                static std::string consoleTextBuffer;
+                static size_t lastVisibleCount = 0;
+                static size_t lastTotalEntries = 0;
+                if (visibleIndices.size() != lastVisibleCount || totalEntries != lastTotalEntries) {
+                    consoleTextBuffer.clear();
+                    for (size_t idx : visibleIndices) {
+                        const auto e = consoleLogStore->getEntry(idx);
+                        consoleTextBuffer += e.message;
+                        consoleTextBuffer += '\n';
                     }
+                    lastVisibleCount = visibleIndices.size();
+                    lastTotalEntries = totalEntries;
                 }
-                clipper.End();
 
-                // Auto-scroll to bottom
-                if (ImGui::GetScrollY() >= ImGui::GetScrollMaxY()) {
-                    ImGui::SetScrollHereY(1.0f);
-                }
-                ImGui::EndChild();
+                // Read-only multiline text input with full mouse text selection and Cmd+C
+                const ImVec2 available = ImGui::GetContentRegionAvail();
+                ImGui::PushStyleColor(ImGuiCol_FrameBg, ImGui::GetStyleColorVec4(ImGuiCol_WindowBg));
+                ImGui::InputTextMultiline("##ConsoleLog", &consoleTextBuffer[0],
+                                          consoleTextBuffer.size() + 1,
+                                          available,
+                                          ImGuiInputTextFlags_ReadOnly);
+                ImGui::PopStyleColor();
             }
             ImGui::End();
             ImGui::PopStyleVar();
