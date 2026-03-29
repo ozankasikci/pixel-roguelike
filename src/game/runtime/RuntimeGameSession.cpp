@@ -10,6 +10,8 @@
 #include "game/components/PlayerMovementComponent.h"
 #include "game/components/PlayerSpawnComponent.h"
 #include "game/components/PlayerTag.h"
+#include "game/components/PlayerTorchComponent.h"
+#include "game/components/PrimaryCameraTag.h"
 #include "game/components/TransformComponent.h"
 #include "game/content/ContentRegistry.h"
 #include "game/levels/cathedral/CathedralAssets.h"
@@ -17,6 +19,7 @@
 #include "game/rendering/MeshAssetProvider.h"
 #include "game/runtime/RuntimeGameplay.h"
 #include "game/session/RunSession.h"
+#include "game/systems/PlayerTorchSystem.h"
 #include "game/ui/InteractionFocusState.h"
 #include "game/ui/InteractionPromptState.h"
 #include "game/ui/InventoryMenuState.h"
@@ -148,6 +151,16 @@ void RuntimeGameSession::rebuild(const LevelDef& level,
     initializeRuntimeDoors(registry_);
     initializeRuntimeCheckpoints(registry_);
     scriptRuntime_.rebuild(registry_, content);
+
+    // Attach PlayerTorchComponent to the primary camera entity
+    auto cameraView = registry_.view<PrimaryCameraTag>();
+    for (auto entity : cameraView) {
+        if (!registry_.all_of<PlayerTorchComponent>(entity)) {
+            registry_.emplace<PlayerTorchComponent>(entity);
+        }
+        break;
+    }
+
     physics_.update(registry_, 0.0f);
     captureBaselineState();
     performanceStats_.rebuildMs = elapsedMilliseconds(start, Clock::now());
@@ -202,6 +215,7 @@ void RuntimeGameSession::tick(float deltaTime, float aspect) {
     }
     updateRuntimePlayerMovement(registry_, inputSystem_, physics_, deltaTime);
     updateRuntimeCamera(registry_, inputSystem_, aspect, deltaTime);
+    updatePlayerTorch(registry_, deltaTime);
 }
 
 void RuntimeGameSession::prewarmRenderer(ContentRegistry& content) {

@@ -57,6 +57,7 @@ add_library(gameplay STATIC
     systems/InteractionSystem.cpp
     systems/InventorySystem.cpp
     systems/PlayerMovementSystem.cpp
+    systems/PlayerTorchSystem.cpp
     systems/RenderSystem.cpp
 )
 target_include_directories(gameplay PUBLIC ${CMAKE_SOURCE_DIR}/src)
