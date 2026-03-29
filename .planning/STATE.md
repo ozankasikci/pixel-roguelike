@@ -110,10 +110,11 @@ None yet.
 |---|-------------|------|--------|-----------|
 | 260329-t50 | Fix lighting attenuation and intensity | 2026-03-29 | 459e34f | [260329-t50-fix-lighting-attenuation-and-intensity](./quick/260329-t50-fix-lighting-attenuation-and-intensity/) |
 | 260329-uom | Raise warden office ceiling from 2.5m to 3.5m | 2026-03-29 | 97c3880 | [260329-uom-fix-warden-office-room-being-too-small-i](./quick/260329-uom-fix-warden-office-room-being-too-small-i/) |
+| 260329-uy6 | Match Stanley Parable lighting and color palette | 2026-03-29 | 0a1f494 | [260329-uy6-match-stanley-parable-lighting-and-color](./quick/260329-uy6-match-stanley-parable-lighting-and-color/) |
 
 ## Session Continuity
 
-Last activity: 2026-03-29 - Completed quick task 260329-uom: Raise warden office ceiling from 2.5m to 3.5m
+Last activity: 2026-03-29 - Completed quick task 260329-uy6: Match Stanley Parable lighting and color palette
 Last session: 2026-03-29T09:57:11.883Z
 Stopped at: Checkpoint: 03-02 Task 2 human-verify
 Resume file: None
