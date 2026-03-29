@@ -3,15 +3,23 @@
 
 **3D Roguelike**
 
-A first-person 3D roguelike with a distinctive 1-bit dithered black-and-white visual style, built on a custom C++ engine. The player explores gothic cathedral-like environments, fighting enemies with melee and ranged weapons, progressing through handcrafted levels with escalating difficulty and boss encounters.
+A first-person 3D psychological horror game built on a custom C++ engine. The player explores a mechanical prison environment, investigating recordings, scratch marks, and environmental clues while manipulating doors, cameras, and control terminals to progress through interconnected cell blocks.
 
-**Core Value:** The 1-bit dithered 3D rendering — a visually striking, modern take on retro aesthetics that makes the game instantly recognizable. If the look doesn't land, nothing else matters.
+**Core Value:** The Stanley Parable-inspired art style — clean, minimalist environments with warm soft lighting, muted color palette, and stylized realism. Geometric clarity over visual clutter. Institutional/corporate aesthetic applied to a prison setting creates an eerie, liminal atmosphere.
+
+### Art Direction
+
+- **Style reference**: The Stanley Parable / Ultra Deluxe — clean surfaces, warm lighting, slightly surreal atmosphere
+- **Color palette**: Muted warm tones — beiges, warm grays, soft yellows, desaturated accents
+- **Lighting**: Soft, warm, atmospheric — not harsh or dramatic. Subtle shadows, ambient occlusion
+- **Textures**: Clean and readable — procedural patterns (stone, wood, brick, metal) without heavy grunge
+- **Geometry**: Clear shapes, clean lines, moderate detail — stylized realism, not photorealistic
+- **Mood**: Slightly eerie liminal space quality — institutional, oppressive but not dark
 
 ### Constraints
 
 - **Engine**: Custom C++ — no Unity/Unreal/Godot
 - **Graphics API**: OpenGL 4.1 Core Profile (macOS caps at 4.1; all shaders target GLSL 4.10)
-- **Visual style**: Strictly 1-bit (black and white) — no grayscale, no color
 - **Platform**: Desktop (Windows/macOS/Linux)
 <!-- GSD:project-end -->
 
@@ -24,15 +32,15 @@ A first-person 3D roguelike with a distinctive 1-bit dithered black-and-white vi
 |------------|---------|---------|-----------------|
 | C++20 | C++20 standard | Implementation language | `std::span`, concepts, designated initializers, and constexpr improvements pay off in engine code; EnTT 3.x requires C++20; broadly supported on all target compilers (MSVC 2019+, GCC 10+, Clang 12+) |
 | CMake | 3.28+ | Build system | De-facto standard for cross-platform C++ projects; best ecosystem support for GLFW, Jolt, EnTT; FetchContent simplifies vendoring; VS Code and CLion integration is first-class |
-| OpenGL 4.1 Core Profile | 4.1 | Graphics API | Practical ceiling set by macOS (Apple deprecated OpenGL at 4.1); custom 1-bit post-process shader is a simple fullscreen quad blit; Vulkan complexity would dominate the schedule without improving the dithered aesthetic |
+| OpenGL 4.1 Core Profile | 4.1 | Graphics API | Practical ceiling set by macOS (Apple deprecated OpenGL at 4.1); HDR scene rendering with ACES tonemapping via fullscreen post-process passes; Vulkan complexity would dominate the schedule without visual benefit |
 | GLFW | 3.4 (released Feb 2024) | Window creation, OpenGL context, input | Focused and minimal — exactly what a custom engine needs; callback-based input maps cleanly to an event bus architecture; 12ms window creation vs SDL's 45ms; no audio/networking bloat; 3.4 adds runtime platform selection and Wayland support |
 | GLAD 2 | v2.0.8 (released Sep 2025) | OpenGL function loader | Modern replacement for GLEW; generates only the extension set you request; supports OpenGL Core profile natively without the `glewExperimental` workaround GLEW needs; GLAD 2 adds Vulkan/EGL support if the API is ever extended |
 | GLM | 1.0.3 (released Dec 2025) | Math: vectors, matrices, quaternions | Header-only; syntax mirrors GLSL exactly, which matters when writing shader-side math alongside CPU-side transforms; the only maintained C++ math lib with full GLSL spec coverage; 1.0.x branch supports C++17/20 |
-| EnTT | v3.16.0 (released Nov 2025) | Entity-Component System (ECS) | Used in Minecraft; header-only; archetype-sparse-set hybrid delivers cache-friendly iteration; component queries are composable at compile time; forces clean separation between game state and rendering that makes the dithering post-pass trivial to layer on top |
+| EnTT | v3.16.0 (released Nov 2025) | Entity-Component System (ECS) | Used in Minecraft; header-only; archetype-sparse-set hybrid delivers cache-friendly iteration; component queries are composable at compile time; forces clean separation between game state and rendering |
 ### Post-Processing / Rendering Support
 | Technology | Version | Purpose | Why Recommended |
 |------------|---------|---------|-----------------|
-| GLSL (via OpenGL) | 4.10 | Shader language | All shaders use `#version 410 core` (macOS ceiling); the 1-bit dithering shader is a fragment shader operating on a fullscreen texture; GLSL is the only choice when targeting OpenGL |
+| GLSL (via OpenGL) | 4.10 | Shader language | All shaders use `#version 410 core` (macOS ceiling); scene rendering + post-process passes as fullscreen fragment shaders; GLSL is the only choice when targeting OpenGL |
 | stb_image | 2.30 (latest as of master, 2024-07) | PNG/JPG texture loading | Single-header, zero-dependency, public domain; the standard choice for loading textures in custom engines; stb_image.h + STB_IMAGE_IMPLEMENTATION is all that is needed |
 | stb_truetype | latest master | Font rasterization for HUD/debug text | Same family as stb_image; renders TTF glyphs to a bitmap atlas at startup; sufficient for in-game UI text in a roguelike |
 ### Physics / Collision
@@ -46,9 +54,8 @@ A first-person 3D roguelike with a distinctive 1-bit dithered black-and-white vi
 ### Development / Debugging
 | Technology | Version | Purpose | Why Recommended |
 |------------|---------|---------|-----------------|
-| Dear ImGui | v1.92.6 (released Feb 2025) | In-engine debug UI | Industry standard debug overlay; integrates with any OpenGL+GLFW setup via provided backends; invaluable for tweaking dither threshold values, inspecting ECS component state, and visualizing AI patrol paths at runtime |
+| Dear ImGui | v1.92.6 (released Feb 2025) | In-engine debug UI | Industry standard debug overlay; integrates with any OpenGL+GLFW setup via provided backends; invaluable for inspecting ECS component state, tweaking material parameters, and visualizing AI patrol paths at runtime |
 | spdlog | v1.x latest | Structured logging | Header-only fast logger; fmt-backed formatting; used everywhere in the C++ gamedev community; category sinks let you filter rendering vs AI vs audio logs separately |
-## The 1-Bit Dithering Shader (Key Technical Decision)
 ## Installation
 # System dependencies (macOS with Homebrew)
 # System dependencies (Ubuntu/Debian)
@@ -74,14 +81,14 @@ A first-person 3D roguelike with a distinctive 1-bit dithered black-and-white vi
 | OpenAL Soft | miniaudio | miniaudio is a simpler single-header solution; choose it if you need audio at all but want zero dependencies; OpenAL Soft wins when 3D positional audio matters, which it does for dungeon atmosphere |
 | EnTT | Flecs | Flecs has a richer query language and built-in pipeline scheduling; switch to it if the ECS becomes the architectural bottleneck; EnTT is simpler to start with |
 | CMake | xmake | xmake is cleaner syntax and includes package management; switch if CMake's verbosity becomes intolerable; xmake has a smaller ecosystem and some libraries don't yet provide native xmake support |
-| Dear ImGui (debug only) | No in-game UI | For the final shipped game, ImGui is stripped out; the 1-bit aesthetic means any HUD is custom-rendered using stb_truetype glyphs — keep it minimal |
+| Dear ImGui (debug only) | No in-game UI | For the final shipped game, ImGui is stripped out; any in-game HUD is custom-rendered using stb_truetype glyphs — keep it minimal |
 ## What NOT to Use
 | Avoid | Why | Use Instead |
 |-------|-----|-------------|
 | GLEW | Stagnant since 2.2.0 (2017); requires `glewExperimental = GL_TRUE` for Core profile contexts; no GLAD 2-era features | GLAD v2 |
 | SDL2 audio subsystem | Mixed audio quality; audio is not SDL2's strength | OpenAL Soft |
 | Assimp (for new code) | Already used (v6.0.4) for FBX import and multi-format support, but prefer tinygltf for new glTF-only loading paths — Assimp is heavy (1M+ lines) and fragile to build | tinygltf for new glTF paths; keep Assimp for FBX/legacy |
-| Unity / Unreal / Godot | Explicitly out of scope per project requirements; the dithering post-pass needs direct FBO control that is difficult or impossible to achieve in managed pipelines | Custom C++ + OpenGL (as specified) |
+| Unity / Unreal / Godot | Explicitly out of scope per project requirements; custom engine gives direct FBO and shader control needed for the rendering pipeline | Custom C++ + OpenGL (as specified) |
 | Bullet3 | Last meaningful update was 2022; development is effectively frozen; Jolt Physics is its modern successor | Jolt Physics v5 |
 | OpenGL compatibility profile | Allows deprecated immediate-mode calls to leak in; makes porting to Vulkan harder; produces driver-specific behavior differences | OpenGL 4.1 Core Profile only |
 | Boost | Enormous dependency for utility functions that C++20 STL now provides; adds significant compile time | C++20 STL (`std::span`, `std::ranges`, `std::format`) |
@@ -92,9 +99,6 @@ A first-person 3D roguelike with a distinctive 1-bit dithered black-and-white vi
 - Replace OpenGL 4.1 + GLFW with WebGPU (Emscripten's built-in WebGPU support)
 - Replace OpenAL Soft with the Web Audio API via Emscripten
 - EnTT, GLM, and Jolt all have WASM-compatible builds
-- Pass the view-projection matrix to the dither shader
-- Reconstruct world-space position from depth buffer in the post-pass fragment shader
-- Use world-space XY (or XZ) coordinates modulo the Bayer matrix size as the threshold index
 ## Version Compatibility
 | Package | Requires | Notes |
 |---------|----------|-------|
@@ -112,8 +116,6 @@ A first-person 3D roguelike with a distinctive 1-bit dithered black-and-white vi
 - Dear ImGui GitHub releases — https://github.com/ocornut/imgui/releases — v1.92.6 confirmed (Feb 2025) — HIGH confidence
 - OpenAL Soft GitHub releases — https://github.com/kcat/openal-soft/releases — v1.25.1 confirmed (Jan 2025) — HIGH confidence
 - EnTT GitHub releases — https://github.com/skypjack/entt/releases — v3.16.0 confirmed (Nov 2025) — HIGH confidence
-- Obra Dinn dithering devlog — https://dukope.com/devlogs/obra-dinn/tig-32/ — post-process technique confirmed — HIGH confidence
-- Daniel Ilett dither tutorial — https://danielilett.com/2020-02-26-tut3-9-obra-dithering/ — Bayer matrix GLSL approach confirmed — MEDIUM confidence
 - OpenGL vs Vulkan comparison — https://thatonegamedev.com/cpp/opengl-vs-vulkan/ — recommendation reasoning — MEDIUM confidence
 - GLAD vs GLEW — https://community.khronos.org/t/glad-vs-glew-for-extension-loading/111911 — GLAD recommendation confirmed — MEDIUM confidence
 - Jolt vs Bullet comparison — https://forum.revolutionarygamesstudio.com/t/picking-a-physics-engine-for-thrive/1031 — MEDIUM confidence

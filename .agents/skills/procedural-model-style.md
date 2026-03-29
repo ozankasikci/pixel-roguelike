@@ -5,11 +5,11 @@ description: Style guide and construction rules for procedural 3D models. Use wh
 
 # Procedural Model Style Guide
 
-Use this skill whenever creating or modifying procedural mesh functions in this project. Every model must follow these rules to maintain visual consistency under the 1-bit dithered rendering pipeline.
+Use this skill whenever creating or modifying procedural mesh functions in this project. Every model must follow these rules to maintain visual consistency across the game's clean, Stanley Parable-inspired aesthetic.
 
 ## Core Principle
 
-All models are **constructive assemblies of boxes and cylinders**. No smooth curves, no subdivisions, no organic shapes. The 1-bit dithered post-process turns sharp edges into strong visual reads — lean into that.
+All models are **constructive assemblies of boxes and cylinders**. No smooth curves, no subdivisions, no organic shapes. The clean, minimalist aesthetic relies on clear geometric forms with sharp edges.
 
 ## Primitives
 
@@ -26,7 +26,7 @@ Only two base primitives exist:
 - Large columns, barrels (r > 0.1m): 16-20 segments
 - Decorative arches, capitals: 20-24 segments
 
-**Never** use more than 24 segments. The dither shader hides polygon edges — high segment counts waste triangles for no visual benefit.
+**Never** use more than 24 segments. The stylized aesthetic doesn't benefit from perfectly smooth curves — keep polygon counts reasonable.
 
 ## Scale and Units
 
@@ -45,7 +45,7 @@ All measurements are in **meters**. Models are built at real-world scale.
 
 ## Detail Levels
 
-Detail is created by **layering boxes at different depths**, not by adding geometry complexity. The 1-bit dither shader needs silhouette variation and depth cues, not surface detail.
+Detail is created by **layering boxes at different depths**, not by adding geometry complexity. The clean aesthetic relies on silhouette variation and depth cues rather than surface noise.
 
 ### Architectural (walls, floors, ceilings)
 - **Main volume**: single box at the correct real-world dimensions
@@ -74,7 +74,7 @@ Detail is created by **layering boxes at different depths**, not by adding geome
 
 ## Bevels and Edges
 
-**No bevels.** All edges are sharp 90-degree box/cylinder edges. The 1-bit dithered rendering makes sharp edges read as strong lines — this is the visual signature of the game.
+**No bevels.** All edges are sharp 90-degree box/cylinder edges. The clean geometric style relies on crisp edges for visual clarity.
 
 To suggest edge softness without actual bevels:
 - Use **chamfer strips**: a thin box (0.005m thick) placed at 45 degrees along an edge
@@ -182,7 +182,7 @@ Vary tints slightly (+-0.02) between adjacent tiles/panels to break visual monot
 After creating any new mesh:
 1. Add a `ViewerPreset` to `apps/model_viewer/main.cpp`
 2. View with `procedural-model-viewer --mesh your_mesh_name`
-3. Toggle stylized mode (`TAB`) to verify 1-bit dither reads correctly
+3. Toggle stylized mode (`TAB`) to verify post-processing reads correctly
 4. Check that silhouette edges are clear and detail features cast visible shadows
 5. Rotate (`SPACE` for auto-spin) to verify the mesh reads well from all angles
 
@@ -191,7 +191,7 @@ After creating any new mesh:
 **Never do these:**
 - Subdivide geometry for smoothness — use cylinders instead
 - Add more than 25 parts to a single mesh — split into separate meshes
-- Use scale values smaller than 0.003m — they disappear under dithering
+- Use scale values smaller than 0.003m — they're too small to read visually
 - Create floating geometry with no visual connection to the main volume
 - Use `generateCube(1.0f)` — always use `generateCube(2.0f)` for half-extent scale convention
 - Add texture coordinates manually — `generateCube`/`generateCylinder` provide UVs, `mergeMeshes` preserves them
