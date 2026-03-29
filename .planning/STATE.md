@@ -114,10 +114,11 @@ None yet.
 | 260329-x0q | Fix pixelated rendering and clean up old dither artifacts | 2026-03-29 | a5fa67a | [260329-x0q-fix-pixelated-low-resolution-rendering-i](./quick/260329-x0q-fix-pixelated-low-resolution-rendering-i/) |
 | 260330-0fz | Implement disk-based asset cache for meshes and procedural textures | 2026-03-30 | a2b1c1e | [260330-0fz-implement-disk-based-asset-cache-for-mes](./quick/260330-0fz-implement-disk-based-asset-cache-for-mes/) |
 | 260330-171 | Comprehensive AssetCache test suite for invalidation, binary format, and edge cases | 2026-03-30 | 0ed7241 | [260330-171-comprehensive-assetcache-test-suite-for-](./quick/260330-171-comprehensive-assetcache-test-suite-for-/) |
+| 260330-222 | Port AudioSystem, ActionMap/InputSystem, GameOverlays, EditorConsoleSink from codex/scripting-v1 | 2026-03-30 | ecc270a | [260330-222-port-audiosystem-actionmap-inputsystem-g](./quick/260330-222-port-audiosystem-actionmap-inputsystem-g/) |
 
 ## Session Continuity
 
-Last activity: 2026-03-30 - Completed quick task 260330-171: Comprehensive AssetCache test suite
+Last activity: 2026-03-30 - Completed quick task 260330-222: Port features from codex/scripting-v1
 Last session: 2026-03-29T21:46:27.773Z
 Stopped at: Completed quick/260330-0fz
 Resume file: None
