@@ -1037,8 +1037,9 @@ int main(int argc, char* argv[]) {
         }
         const bool startupViewportHandoffActive = startupViewportHandoffFramesRemaining > 0;
 
-        const int targetW = std::max(1, static_cast<int>(std::max(renderViewportState.size.x, 64.0f)));
-        const int targetH = std::max(1, static_cast<int>(std::max(renderViewportState.size.y, 64.0f)));
+        const ImVec2 fbScale = io.DisplayFramebufferScale;
+        const int targetW = std::max(1, static_cast<int>(std::max(renderViewportState.size.x, 64.0f) * fbScale.x));
+        const int targetH = std::max(1, static_cast<int>(std::max(renderViewportState.size.y, 64.0f) * fbScale.y));
         if (!startupViewportHandoffActive && (sceneFbo.width() != targetW || sceneFbo.height() != targetH)) {
             sceneFbo.resize(targetW, targetH);
             compositeFbo.resize(targetW, targetH);
