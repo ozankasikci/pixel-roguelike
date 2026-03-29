@@ -26,7 +26,7 @@ glm::mat4 makeModel(const glm::vec3& position,
 // ---------------------------------------------------------------------------
 
 std::unique_ptr<Mesh> createPrisonWall() {
-    auto cube = generateCube(1.0f);
+    auto cube = generateCube(2.0f);
     std::vector<std::pair<RawMeshData, glm::mat4>> parts;
 
     auto addBox = [&](const glm::vec3& position,
@@ -55,7 +55,7 @@ std::unique_ptr<Mesh> createPrisonWall() {
 }
 
 std::unique_ptr<Mesh> createPrisonWallWindow() {
-    auto cube = generateCube(1.0f);
+    auto cube = generateCube(2.0f);
     auto cylinder = generateCylinder(1.0f, 1.0f, 12);
     std::vector<std::pair<RawMeshData, glm::mat4>> parts;
 
@@ -95,7 +95,7 @@ std::unique_ptr<Mesh> createPrisonWallWindow() {
 }
 
 std::unique_ptr<Mesh> createPrisonWallDoor() {
-    auto cube = generateCube(1.0f);
+    auto cube = generateCube(2.0f);
     std::vector<std::pair<RawMeshData, glm::mat4>> parts;
 
     auto addBox = [&](const glm::vec3& position,
@@ -130,7 +130,7 @@ std::unique_ptr<Mesh> createPrisonWallDoor() {
 // ---------------------------------------------------------------------------
 
 std::unique_ptr<Mesh> createPrisonFloor() {
-    auto cube = generateCube(1.0f);
+    auto cube = generateCube(2.0f);
     std::vector<std::pair<RawMeshData, glm::mat4>> parts;
 
     auto addBox = [&](const glm::vec3& position,
@@ -154,7 +154,7 @@ std::unique_ptr<Mesh> createPrisonFloor() {
 }
 
 std::unique_ptr<Mesh> createPrisonCeiling() {
-    auto cube = generateCube(1.0f);
+    auto cube = generateCube(2.0f);
     std::vector<std::pair<RawMeshData, glm::mat4>> parts;
 
     auto addBox = [&](const glm::vec3& position,
@@ -178,7 +178,7 @@ std::unique_ptr<Mesh> createPrisonCeiling() {
 }
 
 std::unique_ptr<Mesh> createPrisonBaseboard() {
-    auto cube = generateCube(1.0f);
+    auto cube = generateCube(2.0f);
     std::vector<std::pair<RawMeshData, glm::mat4>> parts;
 
     auto addBox = [&](const glm::vec3& position,
@@ -204,7 +204,7 @@ std::unique_ptr<Mesh> createPrisonBaseboard() {
 // ---------------------------------------------------------------------------
 
 std::unique_ptr<Mesh> createPrisonDoor() {
-    auto cube = generateCube(1.0f);
+    auto cube = generateCube(2.0f);
     auto cylinder = generateCylinder(1.0f, 1.0f, 12);
     std::vector<std::pair<RawMeshData, glm::mat4>> parts;
 
@@ -270,7 +270,7 @@ std::unique_ptr<Mesh> createPrisonDoor() {
 // ---------------------------------------------------------------------------
 
 std::unique_ptr<Mesh> createPrisonDesk() {
-    auto cube = generateCube(1.0f);
+    auto cube = generateCube(2.0f);
     std::vector<std::pair<RawMeshData, glm::mat4>> parts;
 
     auto addBox = [&](const glm::vec3& position,
@@ -303,7 +303,7 @@ std::unique_ptr<Mesh> createPrisonDesk() {
 }
 
 std::unique_ptr<Mesh> createPrisonChair() {
-    auto cube = generateCube(1.0f);
+    auto cube = generateCube(2.0f);
     std::vector<std::pair<RawMeshData, glm::mat4>> parts;
 
     auto addBox = [&](const glm::vec3& position,
@@ -334,7 +334,7 @@ std::unique_ptr<Mesh> createPrisonChair() {
 }
 
 std::unique_ptr<Mesh> createPrisonCabinet() {
-    auto cube = generateCube(1.0f);
+    auto cube = generateCube(2.0f);
     std::vector<std::pair<RawMeshData, glm::mat4>> parts;
 
     auto addBox = [&](const glm::vec3& position,
@@ -366,7 +366,7 @@ std::unique_ptr<Mesh> createPrisonCabinet() {
 }
 
 std::unique_ptr<Mesh> createPrisonShelf() {
-    auto cube = generateCube(1.0f);
+    auto cube = generateCube(2.0f);
     std::vector<std::pair<RawMeshData, glm::mat4>> parts;
 
     auto addBox = [&](const glm::vec3& position,

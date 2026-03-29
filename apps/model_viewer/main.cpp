@@ -8,6 +8,7 @@
 #include "engine/rendering/post/StylizePass.h"
 #include "engine/ui/Screenshot.h"
 #include "game/levels/cathedral/CathedralAssets.h"
+#include "game/levels/prison/PrisonAssets.h"
 #include "game/rendering/MaterialDefinition.h"
 #include "game/rendering/RetroPalette.h"
 
@@ -60,6 +61,17 @@ std::vector<ViewerPreset> buildPresets() {
         {"cylinder",        RetroPalette::Stone,            MaterialKind::Stone, glm::vec3(1.6f, 3.0f, 1.6f),   glm::vec3(0.0f),  glm::vec3(0.0f, 1.5f, 0.0f), 5.2f, 45.0f, 10.0f},
         {"cylinder_wide",   RetroPalette::Stone,            MaterialKind::Stone, glm::vec3(1.1f, 1.4f, 1.1f),   glm::vec3(0.0f),  glm::vec3(0.0f, 0.7f, 0.0f), 4.2f, 45.0f, 16.0f},
         {"cylinder_cap",    RetroPalette::Stone,            MaterialKind::Stone, glm::vec3(1.1f, 1.0f, 1.1f),   glm::vec3(0.0f),  glm::vec3(0.0f, 0.5f, 0.0f), 4.2f, 45.0f, 16.0f},
+        {"prison_wall",        RetroPalette::Stone, MaterialKind::Stone, glm::vec3(1.0f),                glm::vec3(0.0f),  glm::vec3(0.0f, 1.25f, 0.0f), 4.0f, 90.0f, 10.0f},
+        {"prison_wall_window", RetroPalette::Stone, MaterialKind::Stone, glm::vec3(1.0f),                glm::vec3(0.0f),  glm::vec3(0.0f, 1.25f, 0.0f), 4.0f, 90.0f, 10.0f},
+        {"prison_wall_door",   RetroPalette::Stone, MaterialKind::Stone, glm::vec3(1.0f),                glm::vec3(0.0f),  glm::vec3(0.0f, 1.25f, 0.0f), 4.0f, 90.0f, 10.0f},
+        {"prison_floor",       RetroPalette::Stone, MaterialKind::Stone, glm::vec3(1.0f),                glm::vec3(0.0f),  glm::vec3(0.0f),              3.6f, 60.0f, 50.0f},
+        {"prison_ceiling",     RetroPalette::Stone, MaterialKind::Stone, glm::vec3(1.0f),                glm::vec3(0.0f),  glm::vec3(0.0f),              3.6f, 60.0f, -50.0f},
+        {"prison_baseboard",   RetroPalette::Iron,  MaterialKind::Metal, glm::vec3(1.0f),                glm::vec3(0.0f),  glm::vec3(0.0f, 0.075f, 0.0f), 2.0f, 90.0f, 10.0f},
+        {"prison_door",        RetroPalette::Iron,  MaterialKind::Metal, glm::vec3(1.0f),                glm::vec3(0.0f),  glm::vec3(0.0f, 1.05f, 0.0f), 3.6f, 90.0f, 8.0f},
+        {"prison_desk",        RetroPalette::Iron,  MaterialKind::Metal, glm::vec3(1.0f),                glm::vec3(0.0f),  glm::vec3(0.0f, 0.4f, 0.0f),  3.0f, 60.0f, 20.0f},
+        {"prison_chair",       RetroPalette::Iron,  MaterialKind::Metal, glm::vec3(1.0f),                glm::vec3(0.0f),  glm::vec3(0.0f, 0.4f, 0.0f),  2.4f, 60.0f, 20.0f},
+        {"prison_cabinet",     RetroPalette::Iron,  MaterialKind::Metal, glm::vec3(1.0f),                glm::vec3(0.0f),  glm::vec3(0.0f, 0.65f, 0.0f), 3.2f, 60.0f, 15.0f},
+        {"prison_shelf",       RetroPalette::Iron,  MaterialKind::Metal, glm::vec3(1.0f),                glm::vec3(0.0f),  glm::vec3(0.0f, 0.0f, 0.0f),  2.0f, 60.0f, 15.0f},
     };
 }
 
@@ -143,6 +155,7 @@ int main(int argc, char* argv[]) {
 
     MeshLibrary meshLibrary;
     registerCathedralAssets(meshLibrary);
+    registerPrisonAssets(meshLibrary);
     meshLibrary.loadFromFile("gothic_door_static", "assets/meshes/gothic_door_static.glb");
 
     std::unique_ptr<Shader> sceneShader = std::make_unique<Shader>(
