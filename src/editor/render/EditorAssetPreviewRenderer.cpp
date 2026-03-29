@@ -163,8 +163,8 @@ void EditorAssetPreviewRenderer::renderPreviewMesh(Mesh* mesh,
         std::cos(pitch) * std::cos(yaw),
         std::sin(pitch),
         std::cos(pitch) * std::sin(yaw));
-    const glm::vec3 cameraPos = center + forward * (radius * orbitDistance_ + 0.8f);
-    const glm::mat4 view = glm::lookAt(cameraPos, center, glm::vec3(0.0f, 1.0f, 0.0f));
+    const glm::vec3 cameraPos = forward * (radius * orbitDistance_ + 0.8f);
+    const glm::mat4 view = glm::lookAt(cameraPos, glm::vec3(0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
     const glm::mat4 projection = glm::perspective(glm::radians(40.0f),
                                                   static_cast<float>(framebuffer_.width()) / static_cast<float>(framebuffer_.height()),
                                                   0.05f,
