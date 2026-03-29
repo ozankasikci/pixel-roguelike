@@ -17,6 +17,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <unordered_set>
 
 namespace {
 
@@ -104,6 +105,20 @@ void RuntimeSceneRenderer::shutdown() {
 
 void RuntimeSceneRenderer::reloadContent(const ContentRegistry& content) {
     materialTextureLibrary_.init(content);
+}
+
+std::size_t RuntimeSceneRenderer::prewarmMaterialResources(entt::registry& registry) {
+    std::unordered_set<std::string> warmedMaterials;
+    auto meshView = registry.view<MeshComponent>();
+    for (auto [entity, mesh] : meshView.each()) {
+        (void)entity;
+        (void)materialTextureLibrary_.resolve(mesh.materialId, mesh.material);
+        const std::string key = mesh.materialId.empty()
+            ? std::to_string(static_cast<int>(mesh.material))
+            : mesh.materialId;
+        warmedMaterials.insert(key);
+    }
+    return warmedMaterials.size();
 }
 
 RuntimeSceneRenderer::CameraState RuntimeSceneRenderer::captureCamera(entt::registry& registry, float aspect) const {

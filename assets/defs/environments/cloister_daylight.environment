@@ -2,7 +2,7 @@ id cloister_daylight
 palette_variant 0
 enable_sky true
 enable_dither true
-enable_edges true
+enable_edges false
 enable_fog true
 enable_tone_map true
 enable_bloom true
@@ -10,10 +10,13 @@ enable_vignette true
 enable_grain true
 enable_scanlines false
 enable_sharpen false
+tone_map_mode 1
 threshold_bias 0.024
+pattern_scale 0.0
 edge_threshold 0.17
 fog_density 0.022
 fog_start 22.0
+depth_view_scale 0.08
 exposure 0.96
 gamma 1.0
 contrast 1.05

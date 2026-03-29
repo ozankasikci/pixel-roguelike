@@ -13,6 +13,7 @@ enum class EnvironmentProfile {
     ArcaneField = 4,
     CathedralArcade = 5,
     CloisterDaylight = 6,
+    GameReadyNeutral = 7,
 };
 
 struct EnvironmentRenderSettings {

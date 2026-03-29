@@ -82,6 +82,12 @@ pixel_roguelike_add_test(test_environment_profiles
     LABELS game
 )
 
+pixel_roguelike_add_test(test_environment_debug_sync
+    SOURCES test_environment_debug_sync.cpp
+    LIBRARIES game_rendering
+    LABELS game
+)
+
 pixel_roguelike_add_test(test_runtime_game_session
     SOURCES test_runtime_game_session.cpp
     LIBRARIES gameplay

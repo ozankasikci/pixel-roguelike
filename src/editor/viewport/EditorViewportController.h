@@ -13,12 +13,15 @@ enum class EditorTransformTool {
 
 struct EditorCamera {
     glm::vec3 position{0.0f, 1.8f, 8.0f};
+    glm::vec3 orbitPivot{0.0f, 1.8f, 0.0f};
     float yawDegrees = -90.0f;
     float pitchDegrees = -8.0f;
     float fovDegrees = 70.0f;
     float moveSpeed = 8.0f;
     float nearPlane = 0.1f;
     float farPlane = 100.0f;
+    float orbitDistance = 8.0f;
+    bool orbitPivotValid = false;
 };
 
 struct EditorViewportState {

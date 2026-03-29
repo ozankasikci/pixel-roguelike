@@ -1,6 +1,6 @@
 #include "editor/render/EditorAssetPreviewRenderer.h"
 
-#include "engine/rendering/assets/GltfLoader.h"
+#include "engine/rendering/assets/ModelLoader.h"
 #include "engine/rendering/core/Shader.h"
 #include "engine/rendering/lighting/RenderLight.h"
 
@@ -104,7 +104,7 @@ bool EditorAssetPreviewRenderer::ensurePreviewMeshLoaded(const std::string& abso
         return true;
     }
 
-    previewMesh_ = GltfLoader::load(absolutePath);
+    previewMesh_ = ModelLoader::load(absolutePath);
     loadedMeshPath_ = absolutePath;
     meshPreviewDirty_ = true;
     if (!previewMesh_) {

@@ -1,6 +1,7 @@
 #include "editor/scene/EditorPreviewWorld.h"
 
 #include "engine/core/PathUtils.h"
+#include "engine/rendering/assets/ModelLoader.h"
 #include "game/components/LightComponent.h"
 #include "game/components/MeshComponent.h"
 #include "game/components/StaticColliderComponent.h"
@@ -82,6 +83,15 @@ bool decomposeTransformMatrix(const glm::mat4& matrix,
     return true;
 }
 
+void registerDiscoveredMeshAssets(MeshLibrary& meshLibrary) {
+    const std::filesystem::path meshDirectory(resolveProjectPath("assets/meshes"));
+    for (const auto& asset : ModelLoader::discoverProjectAssets(meshDirectory, std::filesystem::current_path())) {
+        if (!meshLibrary.has(asset.meshId)) {
+            meshLibrary.registerFileAlias(asset.meshId, asset.relativePath);
+        }
+    }
+}
+
 } // namespace
 
 void EditorObjectBounds::expand(const glm::vec3& point) {
@@ -105,26 +115,11 @@ void EditorObjectBounds::expand(const EditorObjectBounds& other) {
 
 EditorPreviewWorld::EditorPreviewWorld() {
     registerCathedralAssets(meshLibrary_);
-    const std::filesystem::path meshDirectory(resolveProjectPath("assets/meshes"));
-    if (std::filesystem::exists(meshDirectory)) {
-        for (const auto& entry : std::filesystem::directory_iterator(meshDirectory)) {
-            if (!entry.is_regular_file()) {
-                continue;
-            }
-            const std::string extension = entry.path().extension().string();
-            if (extension != ".glb" && extension != ".gltf") {
-                continue;
-            }
-            const std::string meshId = entry.path().stem().string();
-            if (!meshLibrary_.has(meshId)) {
-                meshLibrary_.loadFromFile(meshId, std::filesystem::relative(entry.path(), std::filesystem::current_path()).generic_string());
-            }
-        }
-    }
-    const std::string staticDoorPath = resolveProjectPath("assets/meshes/gothic_door_static.glb");
-    if (std::filesystem::exists(staticDoorPath) && !meshLibrary_.has("gothic_door_static")) {
-        meshLibrary_.loadFromFile("gothic_door_static", "assets/meshes/gothic_door_static.glb");
-    }
+    reloadMeshAssets();
+}
+
+void EditorPreviewWorld::reloadMeshAssets() {
+    registerDiscoveredMeshAssets(meshLibrary_);
 }
 
 void EditorPreviewWorld::rebuild(const EditorSceneDocument& document, const ContentRegistry& content) {

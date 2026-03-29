@@ -38,7 +38,7 @@ public:
     //   "cylinder_cap"  - wide cylinder (radius=1.4, height=1, 12 segments) for pillar capitals
     void registerDefaults();
 
-    // Load a mesh from a .glb/.gltf file and register it under the given name
+    // Load a supported model file and register it under the given name
     void loadFromFile(const std::string& name, const std::string& filepath);
 
     // Clear all registered meshes (destroys GL resources)

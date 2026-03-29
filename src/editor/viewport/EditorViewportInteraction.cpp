@@ -239,7 +239,7 @@ void renderSelectionPicker(EditorSelectionPickerState& picker,
     }
 
     ImGui::SetNextWindowBgAlpha(0.94f);
-    ImGui::SetNextWindowPos(ImVec2(picker.anchorScreen.x + 14.0f, picker.anchorScreen.y + 14.0f), ImGuiCond_Always);
+    ImGui::SetNextWindowPos(ImVec2(picker.anchorScreen.x + 14.0f, picker.anchorScreen.y + 14.0f), ImGuiCond_Appearing);
     if (!ImGui::Begin("##SelectionPicker",
                       nullptr,
                       ImGuiWindowFlags_NoDecoration

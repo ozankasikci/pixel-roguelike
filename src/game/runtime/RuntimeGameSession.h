@@ -13,11 +13,21 @@
 
 #include <entt/entt.hpp>
 
+#include <memory>
 #include <string>
 #include <vector>
 
 class ContentRegistry;
 struct LevelDef;
+struct RuntimeMutableSnapshot;
+
+struct RuntimeSessionPerformanceStats {
+    double rebuildMs = 0.0;
+    double resetForPlayMs = 0.0;
+    double rendererInitMs = 0.0;
+    double rendererPrewarmMs = 0.0;
+    double lastRenderMs = 0.0;
+};
 
 class RuntimeGameSession {
 public:
@@ -30,8 +40,11 @@ public:
                  ContentRegistry& content,
                  const LevelLoadRequest& request = {});
     void clear();
+    void resetForPlay();
     void tick(float deltaTime, float aspect);
     void prewarmRenderer(ContentRegistry& content);
+    void setEnvironmentOverride(const EnvironmentDefinition& definition);
+    void clearEnvironmentOverride();
     RuntimeSceneRenderOutput render(float deltaTime,
                                     int internalWidth,
                                     int internalHeight,
@@ -49,10 +62,14 @@ public:
     const RuntimeInputState& input() const { return input_; }
     DebugParams& debugParams() { return debugParams_; }
     const DebugParams& debugParams() const { return debugParams_; }
+    const RuntimeSessionPerformanceStats& performanceStats() const { return performanceStats_; }
 
 private:
     void ensureInitialized();
     void ensureRendererInitialized();
+    void captureBaselineState();
+    void restoreBaselineState();
+    void resetTransientRuntimeState();
     void clearEntities();
 
     entt::registry registry_;
@@ -64,6 +81,8 @@ private:
     DebugParams debugParams_;
     RuntimeSceneRenderer renderer_;
     RuntimeEnvironmentSyncState environmentSyncState_;
+    RuntimeSessionPerformanceStats performanceStats_;
+    std::unique_ptr<RuntimeMutableSnapshot> baselineSnapshot_;
     ContentRegistry* content_ = nullptr;
     bool physicsInitialized_ = false;
     bool rendererInitialized_ = false;

@@ -14,6 +14,61 @@ float safeDelta(float value) {
 
 constexpr float kScrollZoomSpeed = 2.5f;
 constexpr float kFastMoveMultiplier = 3.0f;
+constexpr float kOrbitSensitivity = 0.20f;
+constexpr float kPanSensitivity = 0.0025f;
+constexpr float kDollySensitivity = 0.02f;
+constexpr float kMinOrbitDistance = 0.5f;
+constexpr float kDefaultOrbitDistance = 6.0f;
+
+bool altPressed(GLFWwindow* window, const ImGuiIO& io) {
+    return io.KeyAlt
+        || glfwGetKey(window, GLFW_KEY_LEFT_ALT) == GLFW_PRESS
+        || glfwGetKey(window, GLFW_KEY_RIGHT_ALT) == GLFW_PRESS;
+}
+
+bool shiftPressed(GLFWwindow* window) {
+    return glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS
+        || glfwGetKey(window, GLFW_KEY_RIGHT_SHIFT) == GLFW_PRESS;
+}
+
+void ensureOrbitPivot(EditorCamera& camera) {
+    if (!camera.orbitPivotValid) {
+        const float distance = std::max(camera.orbitDistance, kDefaultOrbitDistance);
+        camera.orbitPivot = camera.position + editorCameraForward(camera) * distance;
+        camera.orbitDistance = distance;
+        camera.orbitPivotValid = true;
+        return;
+    }
+
+    camera.orbitDistance = std::max(glm::length(camera.orbitPivot - camera.position), kMinOrbitDistance);
+}
+
+void orbitCamera(EditorCamera& camera, const ImVec2& mouseDelta) {
+    ensureOrbitPivot(camera);
+    camera.yawDegrees += mouseDelta.x * kOrbitSensitivity;
+    camera.pitchDegrees = glm::clamp(camera.pitchDegrees - mouseDelta.y * kOrbitSensitivity, -89.0f, 89.0f);
+    camera.position = camera.orbitPivot - editorCameraForward(camera) * camera.orbitDistance;
+}
+
+void panCamera(EditorCamera& camera, const ImVec2& mouseDelta, bool fastPan) {
+    ensureOrbitPivot(camera);
+
+    float panScale = std::max(camera.orbitDistance, 1.0f) * kPanSensitivity;
+    if (fastPan) {
+        panScale *= kFastMoveMultiplier;
+    }
+
+    const glm::vec3 delta = (-editorCameraRight(camera) * mouseDelta.x + editorCameraUp(camera) * mouseDelta.y) * panScale;
+    camera.position += delta;
+    camera.orbitPivot += delta;
+}
+
+void dollyCamera(EditorCamera& camera, const ImVec2& mouseDelta) {
+    ensureOrbitPivot(camera);
+    camera.orbitDistance = std::max(camera.orbitDistance + mouseDelta.y * std::max(camera.orbitDistance, 1.0f) * kDollySensitivity,
+                                    kMinOrbitDistance);
+    camera.position = camera.orbitPivot - editorCameraForward(camera) * camera.orbitDistance;
+}
 
 } // namespace
 
@@ -54,21 +109,43 @@ void updateEditorFlyCamera(EditorCamera& camera,
     }
 
     if (std::abs(io.MouseWheel) > 0.0001f) {
-        camera.position += editorCameraForward(camera) * (io.MouseWheel * camera.moveSpeed * kScrollZoomSpeed * safeDelta(deltaTime));
+        const float zoomDistance = io.MouseWheel * camera.moveSpeed * kScrollZoomSpeed * safeDelta(deltaTime);
+        if (camera.orbitPivotValid) {
+            camera.orbitDistance = std::max(camera.orbitDistance - zoomDistance, kMinOrbitDistance);
+            camera.position = camera.orbitPivot - editorCameraForward(camera) * camera.orbitDistance;
+        } else {
+            camera.position += editorCameraForward(camera) * zoomDistance;
+        }
     }
 
-    if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_RIGHT) != GLFW_PRESS) {
+    const bool altDown = altPressed(window, io);
+    const bool middleMouseDown = glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_MIDDLE) == GLFW_PRESS;
+    const bool rightMouseDown = glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_RIGHT) == GLFW_PRESS;
+    if (altDown && glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS) {
+        orbitCamera(camera, io.MouseDelta);
+        return;
+    }
+    if (middleMouseDown) {
+        panCamera(camera, io.MouseDelta, shiftPressed(window));
+        return;
+    }
+    if (altDown && rightMouseDown) {
+        dollyCamera(camera, io.MouseDelta);
+        return;
+    }
+
+    if (!rightMouseDown) {
         return;
     }
 
     float moveSpeed = camera.moveSpeed;
-    if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS
-        || glfwGetKey(window, GLFW_KEY_RIGHT_SHIFT) == GLFW_PRESS) {
+    if (shiftPressed(window)) {
         moveSpeed *= kFastMoveMultiplier;
     }
 
-    camera.yawDegrees += io.MouseDelta.x * 0.20f;
-    camera.pitchDegrees = glm::clamp(camera.pitchDegrees - io.MouseDelta.y * 0.20f, -89.0f, 89.0f);
+    camera.orbitPivotValid = false;
+    camera.yawDegrees += io.MouseDelta.x * kOrbitSensitivity;
+    camera.pitchDegrees = glm::clamp(camera.pitchDegrees - io.MouseDelta.y * kOrbitSensitivity, -89.0f, 89.0f);
 
     const glm::vec3 forward = editorCameraForward(camera);
     const glm::vec3 right = editorCameraRight(camera);
@@ -88,11 +165,17 @@ void updateEditorFlyCamera(EditorCamera& camera,
 void focusEditorCameraOnPoint(EditorCamera& camera, const glm::vec3& point) {
     const glm::vec3 toTarget = point - camera.position;
     if (glm::dot(toTarget, toTarget) <= 0.0001f) {
+        camera.orbitPivot = point;
+        camera.orbitDistance = kMinOrbitDistance;
+        camera.orbitPivotValid = true;
         return;
     }
     const glm::vec3 dir = glm::normalize(toTarget);
     camera.pitchDegrees = glm::degrees(std::asin(glm::clamp(dir.y, -1.0f, 1.0f)));
     camera.yawDegrees = glm::degrees(std::atan2(dir.z, dir.x));
+    camera.orbitPivot = point;
+    camera.orbitDistance = std::max(glm::length(toTarget), kMinOrbitDistance);
+    camera.orbitPivotValid = true;
 }
 
 void focusEditorCameraOnBounds(EditorCamera& camera,

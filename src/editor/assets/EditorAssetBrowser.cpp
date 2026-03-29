@@ -1,11 +1,14 @@
 #include "editor/assets/EditorAssetBrowser.h"
 
 #include "engine/core/PathUtils.h"
+#include "engine/rendering/assets/ModelLoader.h"
 
 #include <algorithm>
 #include <cctype>
+#include <filesystem>
 #include <fstream>
 #include <sstream>
+#include <system_error>
 
 namespace {
 
@@ -40,7 +43,7 @@ EditorAssetBrowserKind classifyAssetPath(const std::filesystem::path& path) {
     if (ext == ".scene") {
         return EditorAssetBrowserKind::Scene;
     }
-    if (ext == ".glb" || ext == ".gltf") {
+    if (ModelLoader::supportsPath(path)) {
         return EditorAssetBrowserKind::Mesh;
     }
     if (ext == ".material") {
@@ -112,6 +115,43 @@ std::string trim(const std::string& value) {
     return value.substr(start, end - start);
 }
 
+std::filesystem::path safeCanonical(const std::filesystem::path& path) {
+    std::error_code errorCode;
+    const std::filesystem::path canonical = std::filesystem::weakly_canonical(path, errorCode);
+    if (!errorCode) {
+        return canonical;
+    }
+    return path.lexically_normal();
+}
+
+bool isPathWithin(const std::filesystem::path& candidate, const std::filesystem::path& root) {
+    const std::filesystem::path normalizedCandidate = safeCanonical(candidate);
+    const std::filesystem::path normalizedRoot = safeCanonical(root);
+
+    auto candidateIt = normalizedCandidate.begin();
+    auto rootIt = normalizedRoot.begin();
+    for (; rootIt != normalizedRoot.end(); ++rootIt, ++candidateIt) {
+        if (candidateIt == normalizedCandidate.end() || *candidateIt != *rootIt) {
+            return false;
+        }
+    }
+    return true;
+}
+
+std::filesystem::path makeUniqueImportPath(const std::filesystem::path& directory,
+                                           const std::filesystem::path& filename) {
+    const std::string stem = filename.stem().string();
+    const std::string extension = filename.extension().string();
+
+    std::filesystem::path candidate = directory / filename.filename();
+    int suffix = 1;
+    while (std::filesystem::exists(candidate)) {
+        candidate = directory / std::filesystem::path(stem + "_" + std::to_string(suffix) + extension);
+        ++suffix;
+    }
+    return candidate;
+}
+
 } // namespace
 
 std::vector<EditorAssetBrowserNode> buildEditorAssetBrowserTree(const std::filesystem::path& rootPath,
@@ -150,9 +190,78 @@ std::optional<std::string> readEditorAssetDeclaredId(const std::filesystem::path
 }
 
 std::string editorMeshIdForAssetPath(const std::filesystem::path& path) {
-    return path.stem().string();
+    return ModelLoader::meshIdForPath(path);
 }
 
 bool editorAssetKindUsesDeclaredId(EditorAssetBrowserKind kind) {
     return kindUsesDeclaredId(kind);
+}
+
+bool editorAssetSupportsExternalImport(const std::filesystem::path& path) {
+    return ModelLoader::supportsPath(path);
+}
+
+std::filesystem::path editorAssetImportDirectory(const std::filesystem::path& assetsRoot,
+                                                 const std::string& selectedRelativePath,
+                                                 bool selectedIsDirectory) {
+    const std::filesystem::path defaultDirectory = assetsRoot / "meshes";
+    if (selectedRelativePath.empty()) {
+        return defaultDirectory;
+    }
+
+    const std::filesystem::path projectRoot = assetsRoot.parent_path();
+    std::filesystem::path selectedPath = projectRoot / std::filesystem::path(selectedRelativePath);
+    if (!selectedIsDirectory) {
+        selectedPath = selectedPath.parent_path();
+    }
+
+    const std::filesystem::path meshesRoot = assetsRoot / "meshes";
+    if (std::filesystem::exists(selectedPath) && std::filesystem::is_directory(selectedPath) && isPathWithin(selectedPath, meshesRoot)) {
+        return selectedPath;
+    }
+    return defaultDirectory;
+}
+
+std::vector<EditorImportedAsset> importEditorExternalAssets(const std::vector<std::filesystem::path>& sourcePaths,
+                                                            const std::filesystem::path& assetsRoot,
+                                                            const std::string& selectedRelativePath,
+                                                            bool selectedIsDirectory) {
+    std::vector<EditorImportedAsset> importedAssets;
+    if (sourcePaths.empty()) {
+        return importedAssets;
+    }
+
+    const std::filesystem::path projectRoot = assetsRoot.parent_path();
+    const std::filesystem::path destinationDirectory = editorAssetImportDirectory(assetsRoot,
+                                                                                  selectedRelativePath,
+                                                                                  selectedIsDirectory);
+    std::filesystem::create_directories(destinationDirectory);
+
+    for (const auto& sourcePath : sourcePaths) {
+        if (!editorAssetSupportsExternalImport(sourcePath) || !std::filesystem::exists(sourcePath) || std::filesystem::is_directory(sourcePath)) {
+            continue;
+        }
+
+        std::filesystem::path destinationPath;
+        if (isPathWithin(sourcePath, assetsRoot)) {
+            destinationPath = sourcePath;
+        } else {
+            destinationPath = makeUniqueImportPath(destinationDirectory, sourcePath.filename());
+            std::filesystem::copy_file(sourcePath, destinationPath, std::filesystem::copy_options::none);
+        }
+
+        EditorImportedAsset asset;
+        asset.absolutePath = destinationPath.lexically_normal().string();
+        asset.relativePath = std::filesystem::relative(destinationPath, projectRoot).generic_string();
+        asset.kind = classifyAssetPath(destinationPath);
+        asset.directory = std::filesystem::is_directory(destinationPath);
+        if (asset.kind == EditorAssetBrowserKind::Mesh) {
+            asset.meshId = editorMeshIdForAssetPath(destinationPath);
+        } else if (kindUsesDeclaredId(asset.kind)) {
+            asset.declaredId = readEditorAssetDeclaredId(destinationPath).value_or("");
+        }
+        importedAssets.push_back(std::move(asset));
+    }
+
+    return importedAssets;
 }

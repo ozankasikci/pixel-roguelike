@@ -1,6 +1,7 @@
 #include "editor/ui/EditorPanels.h"
 
 #include "editor/assets/EditorAssetBrowser.h"
+#include "engine/core/PathUtils.h"
 #include "game/content/ContentRegistry.h"
 
 #include <algorithm>
@@ -21,6 +22,7 @@ struct AssetBrowserVisibleRow {
 struct AssetBrowserSession {
     std::vector<EditorAssetBrowserNode> cachedNodes;
     bool cacheValid = false;
+    std::string pendingScrollPath;
 };
 
 AssetBrowserSession& assetBrowserSession() {
@@ -37,6 +39,19 @@ const std::vector<EditorAssetBrowserNode>& cachedAssetNodes(bool forceRefresh = 
     return session.cachedNodes;
 }
 
+void requestAssetScroll(const std::string& path) {
+    assetBrowserSession().pendingScrollPath = path;
+}
+
+bool consumeAssetScrollRequest(const std::string& path) {
+    AssetBrowserSession& session = assetBrowserSession();
+    if (session.pendingScrollPath != path) {
+        return false;
+    }
+    session.pendingScrollPath.clear();
+    return true;
+}
+
 void setSelectedAsset(EditorUiState& ui, const EditorAssetBrowserNode& node) {
     if (ui.selectedAssetPath == node.relativePath
         && ui.inspectedAsset.absolutePath == node.absolutePath
@@ -47,6 +62,7 @@ void setSelectedAsset(EditorUiState& ui, const EditorAssetBrowserNode& node) {
     }
 
     ui.selectedAssetPath = node.relativePath;
+    requestAssetScroll(ui.selectedAssetPath);
     ui.inspectorContext = EditorInspectorContext::AssetSelection;
     ui.inspectedAsset.relativePath = node.relativePath;
     ui.inspectedAsset.absolutePath = node.absolutePath;
@@ -101,6 +117,7 @@ void ensureValidAssetSelection(EditorUiState& ui, const std::vector<AssetBrowser
         return;
     }
     ui.selectedAssetPath = rows.front().path;
+    requestAssetScroll(ui.selectedAssetPath);
 }
 
 bool shouldHandleAssetBrowserKeys() {
@@ -119,6 +136,7 @@ void selectAdjacentAsset(EditorUiState& ui,
     int index = findVisibleRowIndex(rows, ui.selectedAssetPath);
     if (index < 0) {
         ui.selectedAssetPath = rows.front().path;
+        requestAssetScroll(ui.selectedAssetPath);
         return;
     }
     index = std::clamp(index + delta, 0, static_cast<int>(rows.size()) - 1);
@@ -205,6 +223,7 @@ AssetBrowserActionResult renderAssetBrowser(EditorUiState& ui,
                                             const std::vector<std::string>& meshIds,
                                             const std::vector<std::string>& materialIds,
                                             const std::vector<std::string>& archetypeIds,
+                                            const std::vector<std::filesystem::path>& externalDropPaths,
                                             bool* open,
                                             EditorCommandStack& commandStack) {
     AssetBrowserActionResult result;
@@ -226,16 +245,45 @@ AssetBrowserActionResult renderAssetBrowser(EditorUiState& ui,
     if (ImGui::IsWindowFocused(ImGuiFocusedFlags_RootAndChildWindows) && ImGui::IsKeyPressed(ImGuiKey_F5)) {
         refreshAssetTree = true;
     }
+    ImGui::SameLine();
+    ImGui::TextDisabled("Drop .glb/.gltf/.fbx here to import");
     ImGui::Separator();
+
+    if (!externalDropPaths.empty()) {
+        const bool selectedIsDirectory = ui.inspectorContext == EditorInspectorContext::AssetSelection
+            ? ui.inspectedAsset.directory
+            : (ui.selectedAssetPath == "assets");
+        const auto importedAssets = importEditorExternalAssets(externalDropPaths,
+                                                               resolveProjectPath("assets"),
+                                                               ui.selectedAssetPath,
+                                                               selectedIsDirectory);
+        result.consumedExternalDrops = true;
+        if (!importedAssets.empty()) {
+            refreshAssetTree = true;
+            result.assetCatalogChanged = true;
+            const EditorImportedAsset& imported = importedAssets.back();
+            ui.selectedAssetPath = imported.relativePath;
+            requestAssetScroll(ui.selectedAssetPath);
+            ui.inspectorContext = EditorInspectorContext::AssetSelection;
+            ui.inspectedAsset.relativePath = imported.relativePath;
+            ui.inspectedAsset.absolutePath = imported.absolutePath;
+            ui.inspectedAsset.kind = imported.kind;
+            ui.inspectedAsset.directory = imported.directory;
+            ui.inspectedAsset.declaredId = imported.declaredId;
+            ui.inspectedAsset.meshId = imported.meshId;
+        }
+    }
 
     const auto& assetNodes = cachedAssetNodes(refreshAssetTree);
     std::vector<AssetBrowserVisibleRow> visibleRows;
     visibleRows.reserve(128);
     buildVisibleRows(assetNodes, ui.expandedAssetPaths, visibleRows, "assets", 1);
     ensureValidAssetSelection(ui, visibleRows);
-    if (const AssetBrowserVisibleRow* selected = findVisibleRow(visibleRows, ui.selectedAssetPath)) {
-        if (selected->node != nullptr) {
-            setSelectedAsset(ui, *selected->node);
+    if (ui.inspectorContext == EditorInspectorContext::AssetSelection) {
+        if (const AssetBrowserVisibleRow* selected = findVisibleRow(visibleRows, ui.selectedAssetPath)) {
+            if (selected->node != nullptr) {
+                setSelectedAsset(ui, *selected->node);
+            }
         }
     }
 
@@ -271,7 +319,7 @@ AssetBrowserActionResult renderAssetBrowser(EditorUiState& ui,
                     ui.expandedAssetPaths.erase(node.relativePath);
                 }
             }
-            if (ui.selectedAssetPath == node.relativePath) {
+            if (consumeAssetScrollRequest(node.relativePath)) {
                 ImGui::SetScrollHereY(0.5f);
             }
             if (ImGui::BeginPopupContextItem("AssetFolderContext")) {
@@ -293,7 +341,7 @@ AssetBrowserActionResult renderAssetBrowser(EditorUiState& ui,
         if (ImGui::Selectable(node.name.c_str(), selected)) {
             setSelectedAsset(ui, node);
         }
-        if (selected) {
+        if (consumeAssetScrollRequest(node.relativePath)) {
             ImGui::SetScrollHereY(0.5f);
         }
 
@@ -441,6 +489,7 @@ AssetBrowserActionResult renderAssetBrowser(EditorUiState& ui,
         }
     }
 
+    result.assetCatalogChanged = result.assetCatalogChanged || refreshAssetTree;
     ImGui::End();
     return result;
 }

@@ -93,6 +93,7 @@ Conventions:
 - place environment files under `assets/defs/environments/`
 - give each file an `id` that matches how scenes and the editor refer to it
 - keep reusable lighting/post-process profiles here instead of baking them into scenes
+- prefer `game_ready_neutral` as the clean daylight starting point for new reusable environment presets; keep `neutral` as the compatibility baseline
 
 ### Weapons, enemies, items, skills
 

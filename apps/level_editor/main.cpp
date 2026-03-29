@@ -41,6 +41,7 @@
 
 #include <algorithm>
 #include <array>
+#include <chrono>
 #include <cmath>
 #include <cstdint>
 #include <cstdio>
@@ -55,6 +56,8 @@
 
 namespace {
 
+using Clock = std::chrono::steady_clock;
+
 constexpr int kMaxShadowedSpotLightsLocal = 2;
 constexpr int kShadowResolutions[] = {512, 1024, 2048};
 constexpr const char* kEditorRootWindowName = "Level Editor Root";
@@ -64,6 +67,52 @@ constexpr const char* kInspectorWindowName = "Inspector";
 constexpr const char* kAssetBrowserWindowName = "Asset Browser";
 constexpr const char* kEnvironmentWindowName = "Environment";
 constexpr float kRuntimeViewportAspect = 1280.0f / 720.0f;
+constexpr const char* kPreviewModes[] = {"Final", "Lighting", "Sky"};
+
+enum class RuntimePreviewDirtyState {
+    None,
+    EnvironmentOnly,
+    GameplayStateReset,
+    FullWorldRebuild,
+};
+
+struct PlayEnterTraceState {
+    bool pending = false;
+    Clock::time_point startedAt{};
+    RuntimePreviewDirtyState dirtyState = RuntimePreviewDirtyState::None;
+    double rebuildMs = 0.0;
+    double resetForPlayMs = 0.0;
+    double rendererInitMs = 0.0;
+    double rendererPrewarmMs = 0.0;
+};
+
+double elapsedMilliseconds(Clock::time_point start, Clock::time_point end) {
+    return std::chrono::duration<double, std::milli>(end - start).count();
+}
+
+RuntimePreviewDirtyState mergeRuntimePreviewDirtyState(RuntimePreviewDirtyState current,
+                                                       RuntimePreviewDirtyState incoming) {
+    return static_cast<int>(incoming) > static_cast<int>(current) ? incoming : current;
+}
+
+const char* runtimePreviewDirtyStateLabel(RuntimePreviewDirtyState state) {
+    switch (state) {
+    case RuntimePreviewDirtyState::None:
+        return "none";
+    case RuntimePreviewDirtyState::EnvironmentOnly:
+        return "environment";
+    case RuntimePreviewDirtyState::GameplayStateReset:
+        return "reset";
+    case RuntimePreviewDirtyState::FullWorldRebuild:
+        return "rebuild";
+    }
+    return "unknown";
+}
+
+const char* previewModeLabel(EditorPreviewMode mode) {
+    const int index = std::clamp(static_cast<int>(mode), 0, 2);
+    return kPreviewModes[index];
+}
 
 glm::vec3 safeNormalize(const glm::vec3& value, const glm::vec3& fallback) {
     if (glm::dot(value, value) <= 0.0001f) {
@@ -89,6 +138,58 @@ EditorViewportState fitViewportToAspect(const EditorViewportState& viewport, flo
     return fitted;
 }
 
+void renderStartupProgress(Window& window,
+                           ImGuiLayer& imgui,
+                           float progress,
+                           const char* stageTitle,
+                           const char* stageDetail) {
+    window.pollEvents();
+
+    glViewport(0, 0, window.width(), window.height());
+    glDisable(GL_DEPTH_TEST);
+    glClearColor(0.045f, 0.047f, 0.055f, 1.0f);
+    glClear(GL_COLOR_BUFFER_BIT);
+
+    imgui.beginFrame();
+
+    ImGuiViewport* mainViewport = ImGui::GetMainViewport();
+    ImGui::SetNextWindowPos(mainViewport->WorkPos);
+    ImGui::SetNextWindowSize(mainViewport->WorkSize);
+    ImGui::SetNextWindowViewport(mainViewport->ID);
+    ImGui::Begin("##StartupLoadingScreen",
+                 nullptr,
+                 ImGuiWindowFlags_NoDecoration
+                     | ImGuiWindowFlags_NoMove
+                     | ImGuiWindowFlags_NoResize
+                     | ImGuiWindowFlags_NoSavedSettings
+                     | ImGuiWindowFlags_NoDocking
+                     | ImGuiWindowFlags_NoNav
+                     | ImGuiWindowFlags_NoBringToFrontOnFocus);
+
+    const ImVec2 contentArea = ImGui::GetContentRegionAvail();
+    const ImVec2 panelSize(520.0f, 140.0f);
+    ImGui::SetCursorPos(ImVec2(std::max(0.0f, (contentArea.x - panelSize.x) * 0.5f),
+                               std::max(0.0f, (contentArea.y - panelSize.y) * 0.5f)));
+
+    ImGui::BeginChild("##StartupLoadingPanel",
+                      panelSize,
+                      true,
+                      ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
+    ImGui::TextUnformatted("Level Editor");
+    ImGui::Spacing();
+    ImGui::TextUnformatted(stageTitle);
+    ImGui::TextDisabled("%s", stageDetail);
+    ImGui::Spacing();
+    ImGui::ProgressBar(std::clamp(progress, 0.0f, 1.0f), ImVec2(-1.0f, 0.0f));
+    ImGui::TextDisabled("%d%%", static_cast<int>(std::round(std::clamp(progress, 0.0f, 1.0f) * 100.0f)));
+    ImGui::EndChild();
+
+    ImGui::End();
+
+    imgui.endFrame();
+    window.swapBuffers();
+}
+
 } // namespace
 
 int main(int argc, char* argv[]) {
@@ -104,21 +205,29 @@ int main(int argc, char* argv[]) {
     ImGui::GetIO().ConfigWindowsMoveFromTitleBarOnly = true;
 
     ContentRegistry content;
+    renderStartupProgress(window, imgui, 0.05f, "Loading content registry", "Reading materials, archetypes, and definitions...");
     content.loadDefaults();
 
     MaterialTextureLibrary materialTextures;
+    renderStartupProgress(window, imgui, 0.16f, "Preparing materials", "Uploading material texture data...");
     materialTextures.init(content);
 
     EditorSceneDocument document;
+    renderStartupProgress(window, imgui, 0.28f, "Opening scene", initialScene.c_str());
     document.loadFromSceneFile(initialScene, content);
     EditorCommandStack commandStack;
     commandStack.reset(document);
 
     EditorPreviewWorld previewWorld;
+    renderStartupProgress(window, imgui, 0.42f, "Building edit preview", "Creating preview meshes and helpers...");
     previewWorld.rebuild(document, content);
     EditorRuntimePreviewSession runtimePreviewSession;
+    renderStartupProgress(window, imgui, 0.56f, "Building play preview", "Creating the runtime preview session...");
     runtimePreviewSession.rebuild(document, content);
+    renderStartupProgress(window, imgui, 0.70f, "Warming renderer", "Compiling shaders and preloading preview resources...");
+    runtimePreviewSession.prewarmRenderer(content);
 
+    renderStartupProgress(window, imgui, 0.80f, "Creating render pipeline", "Preparing the editor renderer...");
     std::unique_ptr<Shader> sceneShader = std::make_unique<Shader>(
         "assets/shaders/game/scene.vert",
         "assets/shaders/game/scene.frag"
@@ -158,6 +267,8 @@ int main(int argc, char* argv[]) {
     auto layoutPresetNames = listEditorLayoutPresetNames();
     bool dockLayoutResetRequested = false;
 
+    renderStartupProgress(window, imgui, 0.92f, "Finalizing workspace", "Loading layouts, assets, and editor state...");
+
     if (!materialIds.empty()) {
         ui.selectedMaterialId = materialIds.front();
     }
@@ -178,7 +289,10 @@ int main(int argc, char* argv[]) {
         dockLayoutResetRequested = true;
     }
 
+    renderStartupProgress(window, imgui, 1.0f, "Ready", "Opening editor...");
+
     bool previewDirty = true;
+    int startupViewportHandoffFramesRemaining = 1;
     bool savePressed = false;
     bool focusPressed = false;
     bool resetStartPressed = false;
@@ -188,12 +302,26 @@ int main(int argc, char* argv[]) {
     bool redoPressed = false;
     bool playTogglePressed = false;
     std::uint64_t previewSceneRevision = document.sceneRevision();
-    bool runtimePreviewNeedsRebuild = false;
+    std::uint64_t previewEnvironmentRevision = document.environmentRevision();
+    RuntimePreviewDirtyState runtimePreviewDirtyState = RuntimePreviewDirtyState::None;
+    double lastRuntimePreviewStructuralChangeTime = glfwGetTime();
+    PlayEnterTraceState playEnterTrace;
     EditorPendingCommand widgetCommand;
     EditorPendingCommand gizmoCommand;
+    std::vector<std::filesystem::path> pendingDroppedAssetPaths;
+    ImGuiFontPreset editorFontPreset = imgui.fontPreset();
 
     while (!window.shouldClose()) {
         window.pollEvents();
+        {
+            auto droppedPaths = window.takeDroppedPaths();
+            pendingDroppedAssetPaths.insert(pendingDroppedAssetPaths.end(),
+                                            std::make_move_iterator(droppedPaths.begin()),
+                                            std::make_move_iterator(droppedPaths.end()));
+            if (!pendingDroppedAssetPaths.empty()) {
+                ui.showAssetBrowser = true;
+            }
+        }
         if (ui.playPreview && runtimePreviewSession.captured() && glfwGetWindowAttrib(window.handle(), GLFW_FOCUSED) == 0) {
             runtimePreviewSession.endCapture(window.handle());
         }
@@ -204,6 +332,10 @@ int main(int argc, char* argv[]) {
         const float deltaTime = 1.0f / std::max(ImGui::GetIO().Framerate, 1.0f);
         ImGuiIO& io = ImGui::GetIO();
         const bool gameplayPreviewCaptured = ui.playPreview && runtimePreviewSession.captured();
+
+        if (!io.WantTextInput && (io.KeyCtrl || io.KeySuper) && ImGui::IsKeyPressed(ImGuiKey_P)) {
+            playTogglePressed = true;
+        }
 
         if (!gameplayPreviewCaptured) {
             if (ImGui::IsKeyPressed(ImGuiKey_F)) focusPressed = true;
@@ -231,6 +363,9 @@ int main(int argc, char* argv[]) {
             }
         }
 
+        std::optional<std::string> requestedScenePath;
+        std::optional<std::string> requestedLayoutPresetName;
+
         ImGuiViewport* mainViewport = ImGui::GetMainViewport();
         ImGui::SetNextWindowPos(mainViewport->WorkPos);
         ImGui::SetNextWindowSize(mainViewport->WorkSize);
@@ -241,11 +376,185 @@ int main(int argc, char* argv[]) {
                      | ImGuiWindowFlags_NoResize
                      | ImGuiWindowFlags_NoBringToFrontOnFocus
                      | ImGuiWindowFlags_NoNavFocus
-                     | ImGuiWindowFlags_NoDocking);
+                     | ImGuiWindowFlags_NoDocking
+                     | ImGuiWindowFlags_MenuBar);
 
         if (gameplayPreviewCaptured) {
             ImGui::BeginDisabled();
         }
+
+        auto renderCreateCommands = [&]() {
+            if (ImGui::MenuItem("Place Mesh")) {
+                beginPlacement(placementState, EditorPlacementKind::Mesh, ui.selectedMeshId, ui.selectedMaterialId);
+            }
+            if (ImGui::MenuItem("Place Archetype")) {
+                beginPlacement(placementState, EditorPlacementKind::Archetype, ui.selectedArchetypeId);
+            }
+            ImGui::Separator();
+            if (ImGui::MenuItem("Add Point Light")) {
+                beginPlacement(placementState, EditorPlacementKind::PointLight);
+            }
+            if (ImGui::MenuItem("Add Spot Light")) {
+                beginPlacement(placementState, EditorPlacementKind::SpotLight);
+            }
+            if (ImGui::MenuItem("Add Directional Light")) {
+                beginPlacement(placementState, EditorPlacementKind::DirectionalLight);
+            }
+            ImGui::Separator();
+            if (ImGui::MenuItem("Place Box Collider")) {
+                beginPlacement(placementState, EditorPlacementKind::BoxCollider);
+            }
+            if (ImGui::MenuItem("Place Cylinder Collider")) {
+                beginPlacement(placementState, EditorPlacementKind::CylinderCollider);
+            }
+            if (ImGui::MenuItem("Place Player Spawn")) {
+                beginPlacement(placementState, EditorPlacementKind::PlayerSpawn);
+            }
+        };
+        auto renderLayoutMenuItems = [&]() {
+            for (const auto& layoutName : layoutPresetNames) {
+                const bool selected = (layoutName == ui.activeLayoutPreset);
+                if (ImGui::MenuItem(layoutName.c_str(), nullptr, selected)) {
+                    requestedLayoutPresetName = layoutName;
+                }
+            }
+        };
+
+        if (ImGui::BeginMenuBar()) {
+            if (ImGui::BeginMenu("File")) {
+                if (ImGui::MenuItem("Save", "Ctrl/Cmd+S")) {
+                    savePressed = true;
+                }
+                if (ImGui::BeginMenu("Open Scene")) {
+                    for (const auto& scenePath : scenePaths) {
+                        const bool selected = (scenePath == ui.pendingScenePath);
+                        if (ImGui::MenuItem(scenePath.c_str(), nullptr, selected)) {
+                            requestedScenePath = scenePath;
+                        }
+                    }
+                    ImGui::EndMenu();
+                }
+                ImGui::EndMenu();
+            }
+
+            if (ImGui::BeginMenu("Edit")) {
+                if (ImGui::MenuItem("Undo", "Ctrl/Cmd+Z", false, commandStack.canUndo())) {
+                    undoPressed = true;
+                }
+                if (ImGui::MenuItem("Redo", "Ctrl/Cmd+Shift+Z / Ctrl/Cmd+Y", false, commandStack.canRedo())) {
+                    redoPressed = true;
+                }
+                ImGui::Separator();
+                if (ImGui::MenuItem("Duplicate", "Ctrl/Cmd+D", false, !selectedIds.empty())) {
+                    duplicatePressed = true;
+                }
+                if (ImGui::MenuItem("Delete", "Delete", false, !selectedIds.empty())) {
+                    deletePressed = true;
+                }
+                if (ImGui::MenuItem("Focus Selected", "F", false, selectedIds.size() == 1)) {
+                    focusPressed = true;
+                }
+                ImGui::EndMenu();
+            }
+
+            if (ImGui::BeginMenu("Create")) {
+                renderCreateCommands();
+                ImGui::EndMenu();
+            }
+
+            if (ImGui::BeginMenu("View")) {
+                if (ImGui::BeginMenu("Preview Mode")) {
+                    for (int index = 0; index < 3; ++index) {
+                        const auto mode = static_cast<EditorPreviewMode>(index);
+                        if (ImGui::MenuItem(kPreviewModes[index], nullptr, ui.previewMode == mode)) {
+                            ui.previewMode = mode;
+                        }
+                    }
+                    ImGui::EndMenu();
+                }
+                if (ImGui::BeginMenu("Interface Font")) {
+                    static constexpr std::array<ImGuiFontPreset, 8> kFontPresets{
+                        ImGuiFontPreset::SystemSans,
+                        ImGuiFontPreset::InterUnity,
+                        ImGuiFontPreset::RobotoUnreal,
+                        ImGuiFontPreset::JetBrainsMonoGodot,
+                        ImGuiFontPreset::Verdana,
+                        ImGuiFontPreset::AvenirNext,
+                        ImGuiFontPreset::HelveticaNeue,
+                        ImGuiFontPreset::TrebuchetMS,
+                    };
+                    for (ImGuiFontPreset preset : kFontPresets) {
+                        const bool selected = (editorFontPreset == preset);
+                        if (ImGui::MenuItem(imguiFontPresetLabel(preset), nullptr, selected)) {
+                            editorFontPreset = preset;
+                            imgui.requestFontPreset(preset);
+                        }
+                    }
+                    ImGui::EndMenu();
+                }
+                if (ImGui::BeginMenu("Snapping")) {
+                    ImGui::MenuItem("Enable Snapping", nullptr, &ui.snappingEnabled);
+                    ImGui::SetNextItemWidth(120.0f);
+                    ImGui::DragFloat("Move", &ui.moveSnap, 0.05f, 0.05f, 10.0f, "%.2f");
+                    ImGui::SetNextItemWidth(120.0f);
+                    ImGui::DragFloat("Rotate", &ui.rotateSnap, 1.0f, 1.0f, 90.0f, "%.1f");
+                    ImGui::SetNextItemWidth(120.0f);
+                    ImGui::DragFloat("Scale", &ui.scaleSnap, 0.01f, 0.01f, 2.0f, "%.2f");
+                    ImGui::EndMenu();
+                }
+                if (ImGui::BeginMenu("Helpers")) {
+                    ImGui::MenuItem("Show Colliders", nullptr, &ui.showColliders);
+                    ImGui::MenuItem("Show Light Helpers", nullptr, &ui.showLightHelpers);
+                    ImGui::MenuItem("Show Spawn Marker", nullptr, &ui.showSpawnMarker);
+                    ImGui::EndMenu();
+                }
+                ImGui::EndMenu();
+            }
+
+            if (ImGui::BeginMenu("Window")) {
+                if (ImGui::BeginMenu("Panels")) {
+                    ImGui::MenuItem("Outliner", nullptr, &ui.showOutliner);
+                    ImGui::MenuItem("Inspector", nullptr, &ui.showInspector);
+                    ImGui::MenuItem("Asset Browser", nullptr, &ui.showAssetBrowser);
+                    ImGui::MenuItem("Environment", nullptr, &ui.showEnvironment);
+                    ImGui::MenuItem("Viewport", nullptr, &ui.showViewport);
+                    ImGui::EndMenu();
+                }
+                if (ImGui::BeginMenu("Layouts")) {
+                    renderLayoutMenuItems();
+                    ImGui::Separator();
+                    if (ImGui::MenuItem("Save Current Layout As...")) {
+                        ImGui::OpenPopup("Save Layout As");
+                    }
+                    if (ImGui::MenuItem("Reload Current Layout")) {
+                        requestedLayoutPresetName = ui.activeLayoutPreset;
+                    }
+                    if (ImGui::MenuItem("Reset Dock Layout")) {
+                        dockLayoutResetRequested = true;
+                    }
+                    ImGui::EndMenu();
+                }
+                ImGui::EndMenu();
+            }
+
+            if (ImGui::BeginMenu("Help")) {
+                if (ImGui::MenuItem("Shortcuts and Controls")) {
+                    ImGui::OpenPopup("Editor Shortcuts");
+                }
+                ImGui::EndMenu();
+            }
+
+            ImGui::EndMenuBar();
+        }
+
+        const float toolbarWidth = ImGui::GetContentRegionAvail().x;
+        const bool collapseLayoutToMore = toolbarWidth < 900.0f;
+        const bool collapseResetToMore = toolbarWidth < 760.0f;
+        const float sceneComboWidth = toolbarWidth < 860.0f ? 170.0f : 220.0f;
+        const float layoutComboWidth = toolbarWidth < 980.0f ? 130.0f : 150.0f;
+        const std::string sceneToolbarLabel = std::filesystem::path(ui.pendingScenePath).filename().string().empty()
+            ? ui.pendingScenePath
+            : std::filesystem::path(ui.pendingScenePath).filename().string();
 
         if (ImGui::Button("Save")) {
             savePressed = true;
@@ -263,108 +572,12 @@ int main(int argc, char* argv[]) {
         }
         ImGui::EndDisabled();
         ImGui::SameLine();
-        if (ImGui::Button(ui.playPreview ? "Stop Preview" : "Play Preview")) {
-            playTogglePressed = true;
-        }
-        ImGui::SameLine();
-        if (ImGui::Button("Reset Start")) {
-            resetStartPressed = true;
-        }
-        ImGui::SameLine();
-        if (ImGui::Button("Focus")) {
-            focusPressed = true;
-        }
-        ImGui::SameLine();
-        if (ImGui::Button("Duplicate")) {
-            duplicatePressed = true;
-        }
-        ImGui::SameLine();
-        if (ImGui::Button("Delete")) {
-            deletePressed = true;
-        }
-        ImGui::SameLine();
-        ImGui::TextUnformatted(document.dirty() ? "* Unsaved" : "Saved");
-        ImGui::SameLine();
-        ImGui::SetNextItemWidth(160.0f);
-        if (ImGui::BeginCombo("Layout", ui.activeLayoutPreset.c_str())) {
-            for (const auto& layoutName : layoutPresetNames) {
-                const bool selected = (layoutName == ui.activeLayoutPreset);
-                if (ImGui::Selectable(layoutName.c_str(), selected)) {
-                    try {
-                        loadLayoutPresetIntoUi(ui, layoutName);
-                    } catch (const std::exception& ex) {
-                        spdlog::error("Layout load failed: {}", ex.what());
-                    }
-                }
-                if (selected) {
-                    ImGui::SetItemDefaultFocus();
-                }
-            }
-            ImGui::EndCombo();
-        }
-        ImGui::SameLine();
-        ImGui::SetNextItemWidth(120.0f);
-        ImGui::InputText("Layout Name", ui.layoutNameBuffer, sizeof(ui.layoutNameBuffer));
-        ImGui::SameLine();
-        if (ImGui::Button("Save Layout")) {
-            try {
-                const std::string layoutName(ui.layoutNameBuffer);
-                if (saveLayoutPresetFromUi(ui, layoutName)) {
-                    ui.activeLayoutPreset = std::filesystem::path(editorLayoutPresetPath(layoutName)).stem().string();
-                    layoutPresetNames = listEditorLayoutPresetNames();
-                }
-            } catch (const std::exception& ex) {
-                spdlog::error("Layout save failed: {}", ex.what());
-            }
-        }
-        ImGui::SameLine();
-        if (ImGui::Button("Reload Layout")) {
-            try {
-                loadLayoutPresetIntoUi(ui, ui.activeLayoutPreset);
-            } catch (const std::exception& ex) {
-                spdlog::error("Layout reload failed: {}", ex.what());
-            }
-        }
-        ImGui::SameLine();
-        if (ImGui::Button("Reset Dock Layout")) {
-            dockLayoutResetRequested = true;
-        }
-        ImGui::SameLine();
-        if (ImGui::Button("Panels")) {
-            ImGui::OpenPopup("PanelVisibility");
-        }
-        if (ImGui::BeginPopup("PanelVisibility")) {
-            ImGui::Checkbox("Outliner", &ui.showOutliner);
-            ImGui::Checkbox("Inspector", &ui.showInspector);
-            ImGui::Checkbox("Asset Browser", &ui.showAssetBrowser);
-            ImGui::Checkbox("Environment", &ui.showEnvironment);
-            ImGui::Checkbox("Viewport", &ui.showViewport);
-            ImGui::EndPopup();
-        }
-
-        ImGui::SetNextItemWidth(220.0f);
-        if (ImGui::BeginCombo("Scene", ui.pendingScenePath.c_str())) {
+        ImGui::SetNextItemWidth(sceneComboWidth);
+        if (ImGui::BeginCombo("Scene", sceneToolbarLabel.c_str())) {
             for (const auto& scenePath : scenePaths) {
                 const bool selected = (scenePath == ui.pendingScenePath);
                 if (ImGui::Selectable(scenePath.c_str(), selected)) {
-                    loadSceneIntoEditor(scenePath,
-                                        ui,
-                                        document,
-                                        content,
-                                        commandStack,
-                                        selectedIds,
-                                        selectionPicker,
-                                        placementState,
-                                        widgetCommand,
-                                        gizmoCommand,
-                                        previewDirty,
-                                        editCamera,
-                                        previewWorld,
-                                        previewSceneRevision);
-                    runtimePreviewNeedsRebuild = true;
-                    if (ui.playPreview) {
-                        runtimePreviewSession.endCapture(window.handle());
-                    }
+                    requestedScenePath = scenePath;
                 }
                 if (selected) {
                     ImGui::SetItemDefaultFocus();
@@ -372,58 +585,126 @@ int main(int argc, char* argv[]) {
             }
             ImGui::EndCombo();
         }
-
         ImGui::SameLine();
-        const char* toolLabel = ui.tool == EditorTransformTool::Translate ? "Translate"
-            : ui.tool == EditorTransformTool::Rotate ? "Rotate"
-            : "Scale";
-        ImGui::Text("Tool: %s", toolLabel);
-        ImGui::SameLine();
-        if (ImGui::Button("W")) ui.tool = EditorTransformTool::Translate;
-        ImGui::SameLine();
-        if (ImGui::Button("E")) ui.tool = EditorTransformTool::Rotate;
-        ImGui::SameLine();
-        if (ImGui::Button("R")) ui.tool = EditorTransformTool::Scale;
-        ImGui::SameLine();
-        const char* previewModes[] = {"Final", "Lighting", "Sky"};
-        int previewModeIndex = static_cast<int>(ui.previewMode);
-        ImGui::SetNextItemWidth(110.0f);
-        if (ImGui::Combo("##previewmode", &previewModeIndex, previewModes, 3)) {
-            ui.previewMode = static_cast<EditorPreviewMode>(previewModeIndex);
+        if (ImGui::Button(ui.playPreview ? "Stop Preview" : "Play Preview")) {
+            playTogglePressed = true;
         }
-        ImGui::SameLine();
-        ImGui::Checkbox("Snap", &ui.snappingEnabled);
-        ImGui::SameLine();
-        ImGui::SetNextItemWidth(70.0f);
-        ImGui::DragFloat("Move", &ui.moveSnap, 0.05f, 0.05f, 10.0f, "%.2f");
-        ImGui::SameLine();
-        ImGui::SetNextItemWidth(70.0f);
-        ImGui::DragFloat("Rot", &ui.rotateSnap, 1.0f, 1.0f, 90.0f, "%.1f");
-        ImGui::SameLine();
-        ImGui::SetNextItemWidth(70.0f);
-        ImGui::DragFloat("Scale", &ui.scaleSnap, 0.01f, 0.01f, 2.0f, "%.2f");
-        ImGui::SameLine();
-        ImGui::Checkbox("Colliders", &ui.showColliders);
-        ImGui::SameLine();
-        ImGui::Checkbox("Light Helpers", &ui.showLightHelpers);
-        ImGui::SameLine();
-        ImGui::Checkbox("Spawn Marker", &ui.showSpawnMarker);
-        ImGui::SameLine();
-        if (ImGui::Button("Mesh")) beginPlacement(placementState, EditorPlacementKind::Mesh, ui.selectedMeshId, ui.selectedMaterialId);
-        ImGui::SameLine();
-        if (ImGui::Button("Point")) beginPlacement(placementState, EditorPlacementKind::PointLight);
-        ImGui::SameLine();
-        if (ImGui::Button("Spot")) beginPlacement(placementState, EditorPlacementKind::SpotLight);
-        ImGui::SameLine();
-        if (ImGui::Button("Dir")) beginPlacement(placementState, EditorPlacementKind::DirectionalLight);
-        ImGui::SameLine();
-        if (ImGui::Button("Box")) beginPlacement(placementState, EditorPlacementKind::BoxCollider);
-        ImGui::SameLine();
-        if (ImGui::Button("Cyl")) beginPlacement(placementState, EditorPlacementKind::CylinderCollider);
-        ImGui::SameLine();
-        if (ImGui::Button("Spawn")) beginPlacement(placementState, EditorPlacementKind::PlayerSpawn);
-        ImGui::SameLine();
-        if (ImGui::Button("Archetype")) beginPlacement(placementState, EditorPlacementKind::Archetype, ui.selectedArchetypeId);
+        if (!collapseResetToMore) {
+            ImGui::SameLine();
+            if (ImGui::Button("Reset Start")) {
+                resetStartPressed = true;
+            }
+        }
+        if (collapseResetToMore || collapseLayoutToMore) {
+            ImGui::SameLine();
+            if (ImGui::Button("More")) {
+                ImGui::OpenPopup("GlobalToolbarMore");
+            }
+            if (ImGui::BeginPopup("GlobalToolbarMore")) {
+                if (collapseResetToMore && ImGui::MenuItem("Reset Start")) {
+                    resetStartPressed = true;
+                }
+                if (collapseLayoutToMore && ImGui::BeginMenu("Layouts")) {
+                    renderLayoutMenuItems();
+                    ImGui::Separator();
+                    if (ImGui::MenuItem("Save Current Layout As...")) {
+                        ImGui::OpenPopup("Save Layout As");
+                    }
+                    if (ImGui::MenuItem("Reload Current Layout")) {
+                        requestedLayoutPresetName = ui.activeLayoutPreset;
+                    }
+                    ImGui::EndMenu();
+                }
+                ImGui::EndPopup();
+            }
+        }
+
+        const float currentCursorX = ImGui::GetCursorPosX();
+        const float contentMaxX = ImGui::GetWindowContentRegionMax().x;
+        const ImGuiStyle& style = ImGui::GetStyle();
+        const char* layoutLabelText = "Layout";
+        const float layoutLabelWidth = ImGui::CalcTextSize(layoutLabelText).x;
+        const float layoutGroupWidth = collapseLayoutToMore ? 0.0f : (layoutLabelWidth + style.ItemInnerSpacing.x + layoutComboWidth);
+        const float rightGroupWidth = layoutGroupWidth;
+        const float targetX = std::max(currentCursorX, contentMaxX - rightGroupWidth);
+        if (targetX > currentCursorX) {
+            ImGui::SameLine();
+            ImGui::SetCursorPosX(targetX);
+        }
+        if (!collapseLayoutToMore) {
+            ImGui::TextUnformatted(layoutLabelText);
+            ImGui::SameLine(0.0f, style.ItemInnerSpacing.x);
+            ImGui::SetNextItemWidth(layoutComboWidth);
+            if (ImGui::BeginCombo("##layout_toolbar", ui.activeLayoutPreset.c_str())) {
+                for (const auto& layoutName : layoutPresetNames) {
+                    const bool selected = (layoutName == ui.activeLayoutPreset);
+                    if (ImGui::Selectable(layoutName.c_str(), selected)) {
+                        requestedLayoutPresetName = layoutName;
+                    }
+                    if (selected) {
+                        ImGui::SetItemDefaultFocus();
+                    }
+                }
+                ImGui::EndCombo();
+            }
+        }
+
+        ImGui::SetNextWindowSize(ImVec2(420.0f, 0.0f), ImGuiCond_Appearing);
+        if (ImGui::BeginPopupModal("Save Layout As", nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
+            if (ImGui::IsWindowAppearing()) {
+                ImGui::SetKeyboardFocusHere();
+            }
+            ImGui::TextUnformatted("Save the current panel arrangement as a reusable layout preset.");
+            ImGui::Separator();
+            ImGui::InputText("Layout Name", ui.layoutNameBuffer, sizeof(ui.layoutNameBuffer));
+            const bool hasLayoutName = std::strlen(ui.layoutNameBuffer) > 0;
+            ImGui::BeginDisabled(!hasLayoutName);
+            if (ImGui::Button("Save")) {
+                try {
+                    const std::string layoutName(ui.layoutNameBuffer);
+                    if (saveLayoutPresetFromUi(ui, layoutName)) {
+                        ui.activeLayoutPreset = std::filesystem::path(editorLayoutPresetPath(layoutName)).stem().string();
+                        layoutPresetNames = listEditorLayoutPresetNames();
+                    }
+                    ImGui::CloseCurrentPopup();
+                } catch (const std::exception& ex) {
+                    spdlog::error("Layout save failed: {}", ex.what());
+                }
+            }
+            ImGui::EndDisabled();
+            ImGui::SameLine();
+            if (ImGui::Button("Cancel")) {
+                ImGui::CloseCurrentPopup();
+            }
+            ImGui::EndPopup();
+        }
+
+        ImGui::SetNextWindowSize(ImVec2(460.0f, 0.0f), ImGuiCond_Appearing);
+        if (ImGui::BeginPopupModal("Editor Shortcuts", nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
+            ImGui::TextUnformatted("Editor Shortcuts");
+            ImGui::Separator();
+            ImGui::BulletText("Save: Ctrl/Cmd+S");
+            ImGui::BulletText("Play Preview: Ctrl/Cmd+P");
+            ImGui::BulletText("Undo / Redo: Ctrl/Cmd+Z, Ctrl/Cmd+Shift+Z, Ctrl/Cmd+Y");
+            ImGui::BulletText("Duplicate / Delete: Ctrl/Cmd+D, Delete");
+            ImGui::BulletText("Focus Selected: F");
+            ImGui::BulletText("Transform Tools: W / E / R");
+            ImGui::BulletText("Cancel Placement or Release Preview Capture: Esc");
+            ImGui::Separator();
+            ImGui::TextUnformatted("Viewport Controls");
+            ImGui::BulletText("Select: Left Click");
+            ImGui::BulletText("Frame Selected: Double-click an object or press F");
+            ImGui::BulletText("Orbit: Alt + Left Drag");
+            ImGui::BulletText("Pan: Middle Drag");
+            ImGui::BulletText("Dolly: Alt + Right Drag or mouse wheel");
+            ImGui::BulletText("Fly: Right Mouse + WASD / QE");
+            ImGui::Separator();
+            ImGui::Text("Current UI Font: %s", imguiFontPresetLabel(editorFontPreset));
+            if (ImGui::Button("Close")) {
+                ImGui::CloseCurrentPopup();
+            }
+            ImGui::EndPopup();
+        }
 
         if (gameplayPreviewCaptured) {
             ImGui::EndDisabled();
@@ -445,6 +726,14 @@ int main(int argc, char* argv[]) {
         ImGui::DockSpace(dockspaceId, ImVec2(0.0f, 0.0f), ImGuiDockNodeFlags_None);
         ImGui::End();
 
+        if (requestedLayoutPresetName.has_value()) {
+            try {
+                loadLayoutPresetIntoUi(ui, *requestedLayoutPresetName);
+            } catch (const std::exception& ex) {
+                spdlog::error("Layout load failed: {}", ex.what());
+            }
+        }
+
         if (gameplayPreviewCaptured) {
             ImGui::BeginDisabled();
         }
@@ -464,6 +753,7 @@ int main(int argc, char* argv[]) {
             archetypeIds = sortedArchetypeIds(content);
             environmentIds = sortedEnvironmentIds(content);
             materialTextures.init(content);
+            runtimePreviewSession.prewarmRenderer(content);
             previewDirty = true;
         }
         if (inspectorActions.previewDirty) {
@@ -480,13 +770,28 @@ int main(int argc, char* argv[]) {
                                                                                 meshIds,
                                                                                 materialIds,
                                                                                 archetypeIds,
+                                                                                pendingDroppedAssetPaths,
                                                                                 &ui.showAssetBrowser,
                                                                                 commandStack);
         if (gameplayPreviewCaptured) {
             ImGui::EndDisabled();
         }
         if (assetBrowserActions.openScenePath.has_value()) {
-            loadSceneIntoEditor(*assetBrowserActions.openScenePath,
+            requestedScenePath = *assetBrowserActions.openScenePath;
+        }
+        if (assetBrowserActions.previewDirty) {
+            previewDirty = true;
+        }
+        if (assetBrowserActions.assetCatalogChanged) {
+            previewWorld.reloadMeshAssets();
+            meshIds = sortedMeshNames(previewWorld.meshLibrary());
+            previewDirty = true;
+        }
+        if (assetBrowserActions.consumedExternalDrops) {
+            pendingDroppedAssetPaths.clear();
+        }
+        if (requestedScenePath.has_value()) {
+            loadSceneIntoEditor(*requestedScenePath,
                                 ui,
                                 document,
                                 content,
@@ -500,13 +805,12 @@ int main(int argc, char* argv[]) {
                                 editCamera,
                                 previewWorld,
                                 previewSceneRevision);
-            runtimePreviewNeedsRebuild = true;
+            previewEnvironmentRevision = document.environmentRevision();
+            runtimePreviewDirtyState = RuntimePreviewDirtyState::FullWorldRebuild;
+            lastRuntimePreviewStructuralChangeTime = glfwGetTime();
             if (ui.playPreview) {
                 runtimePreviewSession.endCapture(window.handle());
             }
-        }
-        if (assetBrowserActions.previewDirty) {
-            previewDirty = true;
         }
 
         EditorViewportState viewportState;
@@ -520,6 +824,80 @@ int main(int argc, char* argv[]) {
                                                  | ImGuiWindowFlags_NoScrollWithMouse);
             if (viewportWindowVisible) {
                 viewportState.focused = ImGui::IsWindowFocused();
+                if (!ui.playPreview) {
+                    auto renderToolButton = [&](const char* label, EditorTransformTool tool) {
+                        if (ui.tool == tool) {
+                            ImGui::PushStyleColor(ImGuiCol_Button, IM_COL32(72, 92, 124, 255));
+                            ImGui::PushStyleColor(ImGuiCol_ButtonHovered, IM_COL32(86, 108, 142, 255));
+                            ImGui::PushStyleColor(ImGuiCol_ButtonActive, IM_COL32(62, 82, 112, 255));
+                        }
+                        const bool pressed = ImGui::Button(label);
+                        if (ui.tool == tool) {
+                            ImGui::PopStyleColor(3);
+                        }
+                        if (pressed) {
+                            ui.tool = tool;
+                        }
+                    };
+
+                    if (ImGui::Button("Add")) {
+                        ImGui::OpenPopup("ViewportCreateMenu");
+                    }
+                    if (ImGui::BeginPopup("ViewportCreateMenu")) {
+                        renderCreateCommands();
+                        ImGui::EndPopup();
+                    }
+                    if (placementState.active()) {
+                        ImGui::SameLine();
+                        if (ImGui::Button("Cancel Placement")) {
+                            placementState.clear();
+                        }
+                    }
+                    ImGui::SameLine();
+                    renderToolButton("W", EditorTransformTool::Translate);
+                    ImGui::SameLine();
+                    renderToolButton("E", EditorTransformTool::Rotate);
+                    ImGui::SameLine();
+                    renderToolButton("R", EditorTransformTool::Scale);
+                    ImGui::SameLine();
+                    int previewModeIndex = static_cast<int>(ui.previewMode);
+                    ImGui::SetNextItemWidth(110.0f);
+                    if (ImGui::Combo("##viewport_previewmode", &previewModeIndex, kPreviewModes, 3)) {
+                        ui.previewMode = static_cast<EditorPreviewMode>(previewModeIndex);
+                    }
+                    ImGui::SameLine();
+                    ImGui::Checkbox("Snap", &ui.snappingEnabled);
+                    ImGui::SameLine();
+                    if (ImGui::Button("Snap Settings")) {
+                        ImGui::OpenPopup("ViewportSnapSettings");
+                    }
+                    if (ImGui::BeginPopup("ViewportSnapSettings")) {
+                        ImGui::SetNextItemWidth(110.0f);
+                        ImGui::DragFloat("Move", &ui.moveSnap, 0.05f, 0.05f, 10.0f, "%.2f");
+                        ImGui::SetNextItemWidth(110.0f);
+                        ImGui::DragFloat("Rotate", &ui.rotateSnap, 1.0f, 1.0f, 90.0f, "%.1f");
+                        ImGui::SetNextItemWidth(110.0f);
+                        ImGui::DragFloat("Scale", &ui.scaleSnap, 0.01f, 0.01f, 2.0f, "%.2f");
+                        ImGui::EndPopup();
+                    }
+                    ImGui::SameLine();
+                    if (ImGui::Button("Helpers")) {
+                        ImGui::OpenPopup("ViewportHelpers");
+                    }
+                    if (ImGui::BeginPopup("ViewportHelpers")) {
+                        ImGui::Checkbox("Show Colliders", &ui.showColliders);
+                        ImGui::Checkbox("Show Light Helpers", &ui.showLightHelpers);
+                        ImGui::Checkbox("Show Spawn Marker", &ui.showSpawnMarker);
+                        ImGui::EndPopup();
+                    }
+                    ImGui::SameLine();
+                    ImGui::BeginDisabled(selectedIds.size() != 1);
+                    if (ImGui::Button("Focus")) {
+                        focusPressed = true;
+                    }
+                    ImGui::EndDisabled();
+                    ImGui::Separator();
+                }
                 const ImVec2 avail = ImGui::GetContentRegionAvail();
                 viewportState.size = ImVec2(std::max(avail.x, 64.0f), std::max(avail.y, 64.0f));
                 viewportState.origin = ImGui::GetCursorScreenPos();
@@ -532,10 +910,11 @@ int main(int argc, char* argv[]) {
             renderViewportState = fitViewportToAspect(viewportState, kRuntimeViewportAspect);
             renderViewportState.hovered = pointInViewport(renderViewportState, io.MousePos);
         }
+        const bool startupViewportHandoffActive = startupViewportHandoffFramesRemaining > 0;
 
         const int targetW = std::max(1, static_cast<int>(std::max(renderViewportState.size.x, 64.0f)));
         const int targetH = std::max(1, static_cast<int>(std::max(renderViewportState.size.y, 64.0f)));
-        if (sceneFbo.width() != targetW || sceneFbo.height() != targetH) {
+        if (!startupViewportHandoffActive && (sceneFbo.width() != targetW || sceneFbo.height() != targetH)) {
             sceneFbo.resize(targetW, targetH);
             compositeFbo.resize(targetW, targetH);
             finalFbo.resize(targetW, targetH);
@@ -545,7 +924,27 @@ int main(int argc, char* argv[]) {
             previewWorld.rebuild(document, content);
             previewDirty = false;
             previewSceneRevision = document.sceneRevision();
-            runtimePreviewNeedsRebuild = true;
+            runtimePreviewDirtyState = RuntimePreviewDirtyState::FullWorldRebuild;
+            lastRuntimePreviewStructuralChangeTime = glfwGetTime();
+        }
+        if (previewEnvironmentRevision != document.environmentRevision()) {
+            previewEnvironmentRevision = document.environmentRevision();
+            runtimePreviewDirtyState = mergeRuntimePreviewDirtyState(runtimePreviewDirtyState,
+                                                                     RuntimePreviewDirtyState::EnvironmentOnly);
+            runtimePreviewSession.syncEnvironment(document);
+            if (runtimePreviewDirtyState == RuntimePreviewDirtyState::EnvironmentOnly) {
+                runtimePreviewDirtyState = RuntimePreviewDirtyState::None;
+            }
+        }
+        if (!ui.playPreview
+            && runtimePreviewDirtyState == RuntimePreviewDirtyState::FullWorldRebuild
+            && !editorGizmoIsHot()
+            && !widgetCommand.active
+            && !gizmoCommand.active
+            && glfwGetTime() - lastRuntimePreviewStructuralChangeTime >= 0.20) {
+            runtimePreviewSession.rebuild(document, content);
+            runtimePreviewSession.prewarmRenderer(content);
+            runtimePreviewDirtyState = RuntimePreviewDirtyState::None;
         }
         const auto selectionHandles = buildEditorSelectionHandles(document, previewWorld);
         const auto viewportSelectionHandles = buildViewportSelectionHandles(selectionHandles, ui);
@@ -554,7 +953,7 @@ int main(int argc, char* argv[]) {
         glm::mat4 projection(1.0f);
         glm::mat4 inverseViewProjection(1.0f);
 
-        if (!ui.playPreview) {
+        if (!ui.playPreview && !startupViewportHandoffActive) {
             updateEditorFlyCamera(editCamera, window.handle(), renderViewportState, deltaTime);
 
             view = editorCameraView(editCamera);
@@ -646,7 +1045,7 @@ int main(int argc, char* argv[]) {
                               targetW,
                               targetH,
                               finalFbo.framebuffer());
-        } else {
+        } else if (!startupViewportHandoffActive) {
             runtimePreviewSession.updateInput(window.handle(), io);
             runtimePreviewSession.tick(deltaTime, kRuntimeViewportAspect);
             runtimePreviewSession.syncCursor(window.handle());
@@ -659,17 +1058,54 @@ int main(int argc, char* argv[]) {
                                          targetW,
                                          targetH,
                                          finalFbo.framebuffer());
+            if (playEnterTrace.pending) {
+                const RuntimeSessionPerformanceStats& stats = runtimePreviewSession.performanceStats();
+                const double totalMs = elapsedMilliseconds(playEnterTrace.startedAt, Clock::now());
+                spdlog::info(
+                    "Play preview ready in {:.1f} ms (mode={}, rebuild={:.1f} ms, reset={:.1f} ms, renderer init={:.1f} ms, renderer prewarm={:.1f} ms, first render={:.1f} ms)",
+                    totalMs,
+                    runtimePreviewDirtyStateLabel(playEnterTrace.dirtyState),
+                    playEnterTrace.rebuildMs,
+                    playEnterTrace.resetForPlayMs,
+                    playEnterTrace.rendererInitMs,
+                    playEnterTrace.rendererPrewarmMs,
+                    stats.lastRenderMs);
+                playEnterTrace.pending = false;
+            }
         }
 
         if (viewportWindowVisible) {
             if (ui.playPreview) {
                 ImGui::SetCursorScreenPos(renderViewportState.origin);
             }
-            ImGui::SetNextItemAllowOverlap();
-            ImGui::Image(static_cast<ImTextureID>(static_cast<uintptr_t>(finalFbo.colorTexture())),
-                         renderViewportState.size,
-                         ImVec2(0.0f, 1.0f),
-                         ImVec2(1.0f, 0.0f));
+            if (startupViewportHandoffActive) {
+                ImGui::SetCursorScreenPos(renderViewportState.origin);
+                ImGui::Dummy(renderViewportState.size);
+
+                ImDrawList* drawList = ImGui::GetWindowDrawList();
+                const ImVec2 boxMin = renderViewportState.origin;
+                const ImVec2 boxMax(renderViewportState.origin.x + renderViewportState.size.x,
+                                    renderViewportState.origin.y + renderViewportState.size.y);
+                drawList->AddRectFilled(boxMin, boxMax, IM_COL32(16, 18, 22, 255), 6.0f);
+                drawList->AddRect(boxMin, boxMax, IM_COL32(56, 62, 74, 255), 6.0f);
+
+                const char* title = "Opening workspace...";
+                const char* detail = "Preparing the first editor frame";
+                const ImVec2 titleSize = ImGui::CalcTextSize(title);
+                const ImVec2 detailSize = ImGui::CalcTextSize(detail);
+                const ImVec2 textPos(renderViewportState.origin.x + (renderViewportState.size.x - titleSize.x) * 0.5f,
+                                     renderViewportState.origin.y + (renderViewportState.size.y - (titleSize.y + detailSize.y + 10.0f)) * 0.5f);
+                drawList->AddText(textPos, IM_COL32(232, 236, 244, 255), title);
+                drawList->AddText(ImVec2(textPos.x + (titleSize.x - detailSize.x) * 0.5f, textPos.y + titleSize.y + 10.0f),
+                                  IM_COL32(168, 176, 192, 255),
+                                  detail);
+            } else {
+                ImGui::SetNextItemAllowOverlap();
+                ImGui::Image(static_cast<ImTextureID>(static_cast<uintptr_t>(finalFbo.colorTexture())),
+                             renderViewportState.size,
+                             ImVec2(0.0f, 1.0f),
+                             ImVec2(1.0f, 0.0f));
+            }
 
             {
                 const char* modeLabel = ui.playPreview ? "Game Preview" : "Edit View";
@@ -685,7 +1121,7 @@ int main(int argc, char* argv[]) {
                                   modeLabel);
             }
 
-            if (ui.playPreview) {
+            if (ui.playPreview && !startupViewportHandoffActive) {
                 ImDrawList* drawList = ImGui::GetWindowDrawList();
                 if (!runtimePreviewSession.captured()) {
                     const char* captureLabel = "Click to Capture";
@@ -715,7 +1151,7 @@ int main(int argc, char* argv[]) {
                     drawList->AddText(releasePos, IM_COL32(230, 236, 255, 255), releaseLabel);
                 }
 
-                if (runtimePreviewNeedsRebuild) {
+                if (runtimePreviewDirtyState == RuntimePreviewDirtyState::FullWorldRebuild) {
                     const char* rebuildLabel = "Scene changes pending: Reset Start to apply";
                     const ImVec2 textSize = ImGui::CalcTextSize(rebuildLabel);
                     const ImVec2 textPos(renderViewportState.origin.x + renderViewportState.size.x - textSize.x - 22.0f,
@@ -734,7 +1170,7 @@ int main(int argc, char* argv[]) {
                 }
             }
 
-            if (!ui.playPreview && !selectedIds.empty()) {
+            if (!ui.playPreview && !startupViewportHandoffActive && !selectedIds.empty()) {
                 const std::uint64_t activeId = selectedIds.back();
                 std::string label = selectedIds.size() == 1
                     ? "Selected: "
@@ -755,9 +1191,8 @@ int main(int argc, char* argv[]) {
                                         4.0f);
                 drawList->AddText(textPos, IM_COL32(255, 236, 168, 255), label.c_str());
             }
-
             const EditorSceneDocumentState gizmoBeforeState = document.captureState();
-            if (!ui.playPreview) {
+            if (!ui.playPreview && !startupViewportHandoffActive) {
                 if (applyGizmoToSelectedObject(document, selectedIds, renderViewportState, view, projection, ui, previewWorld)) {
                     previewDirty = true;
                 }
@@ -768,7 +1203,7 @@ int main(int argc, char* argv[]) {
                 }
             }
 
-            if (!ui.playPreview) {
+            if (!ui.playPreview && !startupViewportHandoffActive) {
                 if (ImGui::BeginDragDropTarget()) {
                     if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("EDITOR_PLACE", ImGuiDragDropFlags_AcceptBeforeDelivery)) {
                         if (payload->Delivery && placementPoint.has_value() && payload->DataSize == sizeof(EditorDragPayload)) {
@@ -787,7 +1222,13 @@ int main(int argc, char* argv[]) {
                     ImGui::EndDragDropTarget();
                 }
 
-                if (placementState.active() && placementPoint.has_value() && renderViewportState.hovered && ImGui::IsMouseClicked(ImGuiMouseButton_Left) && !editorGizmoIsHot()) {
+                const bool orbitModifierActive = io.KeyAlt;
+                if (placementState.active()
+                    && placementPoint.has_value()
+                    && renderViewportState.hovered
+                    && ImGui::IsMouseClicked(ImGuiMouseButton_Left)
+                    && !orbitModifierActive
+                    && !editorGizmoIsHot()) {
                     const EditorSceneDocumentState beforeState = document.captureState();
                     commitPlacement(document, placementState, *placementPoint, content, editCamera);
                     commandStack.pushDocumentStateCommand(
@@ -798,7 +1239,10 @@ int main(int argc, char* argv[]) {
                     placementState.clear();
                     selectionPicker.clear();
                     previewDirty = true;
-                } else if (renderViewportState.hovered && ImGui::IsMouseClicked(ImGuiMouseButton_Left) && !editorGizmoIsHot()) {
+                } else if (renderViewportState.hovered
+                           && ImGui::IsMouseClicked(ImGuiMouseButton_Left)
+                           && !orbitModifierActive
+                           && !editorGizmoIsHot()) {
                     const EditorRay ray = buildEditorRay(inverseViewProjection,
                                                          glm::vec2(renderViewportState.origin.x, renderViewportState.origin.y),
                                                          glm::vec2(renderViewportState.size.x, renderViewportState.size.y),
@@ -812,6 +1256,9 @@ int main(int argc, char* argv[]) {
                                                hits.size() > 1);
                         applySelectionHit(selectedIds, selectionPicker, io.KeyShift);
                         ui.inspectorContext = EditorInspectorContext::SceneSelection;
+                        if (ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left)) {
+                            ui.frameSelectionRequested = true;
+                        }
                     } else {
                         selectionPicker.clear();
                         if (!io.KeyShift) {
@@ -822,7 +1269,7 @@ int main(int argc, char* argv[]) {
                 }
             }
 
-            if (!ui.playPreview) {
+            if (!ui.playPreview && !startupViewportHandoffActive) {
                 renderSelectionPicker(selectionPicker, document, selectedIds, glfwGetTime());
             }
         }
@@ -854,13 +1301,36 @@ int main(int argc, char* argv[]) {
             ui.playPreview = !ui.playPreview;
             if (ui.playPreview) {
                 runtimePreviewSession.endCapture(window.handle());
-                if (runtimePreviewNeedsRebuild) {
+                const RuntimePreviewDirtyState requestedDirtyState = runtimePreviewDirtyState;
+                if (runtimePreviewDirtyState == RuntimePreviewDirtyState::FullWorldRebuild) {
                     runtimePreviewSession.rebuild(document, content);
-                    runtimePreviewNeedsRebuild = false;
+                    runtimePreviewDirtyState = RuntimePreviewDirtyState::None;
+                } else if (runtimePreviewDirtyState == RuntimePreviewDirtyState::GameplayStateReset) {
+                    runtimePreviewSession.resetForPlay();
+                    runtimePreviewDirtyState = RuntimePreviewDirtyState::None;
+                } else if (runtimePreviewDirtyState == RuntimePreviewDirtyState::EnvironmentOnly) {
+                    runtimePreviewSession.syncEnvironment(document);
+                    runtimePreviewDirtyState = RuntimePreviewDirtyState::None;
+                }
+                const RuntimeSessionPerformanceStats& stats = runtimePreviewSession.performanceStats();
+                playEnterTrace.pending = true;
+                playEnterTrace.startedAt = Clock::now();
+                playEnterTrace.dirtyState = requestedDirtyState;
+                playEnterTrace.rebuildMs = requestedDirtyState == RuntimePreviewDirtyState::FullWorldRebuild
+                    ? stats.rebuildMs
+                    : 0.0;
+                playEnterTrace.resetForPlayMs = requestedDirtyState == RuntimePreviewDirtyState::GameplayStateReset
+                    ? stats.resetForPlayMs
+                    : 0.0;
+                playEnterTrace.rendererInitMs = stats.rendererInitMs;
+                playEnterTrace.rendererPrewarmMs = stats.rendererPrewarmMs;
+                if (ui.showViewport) {
+                    runtimePreviewSession.beginCapture(window.handle());
                 }
             } else {
                 runtimePreviewSession.endCapture(window.handle());
-                runtimePreviewNeedsRebuild = true;
+                runtimePreviewDirtyState = mergeRuntimePreviewDirtyState(runtimePreviewDirtyState,
+                                                                        RuntimePreviewDirtyState::GameplayStateReset);
             }
             playTogglePressed = false;
         }
@@ -869,11 +1339,17 @@ int main(int argc, char* argv[]) {
             if (ui.playPreview) {
                 runtimePreviewSession.endCapture(window.handle());
                 runtimePreviewSession.rebuild(document, content);
-                runtimePreviewNeedsRebuild = false;
+                runtimePreviewSession.prewarmRenderer(content);
+                runtimePreviewDirtyState = RuntimePreviewDirtyState::None;
             } else if (!syncEditorCameraToRuntimeStart(document, editCamera) && previewWorld.sceneBounds().valid) {
                 focusEditorCameraOnBounds(editCamera, previewWorld.sceneBounds().min, previewWorld.sceneBounds().max);
             }
             resetStartPressed = false;
+        }
+
+        if (ui.frameSelectionRequested) {
+            focusPressed = true;
+            ui.frameSelectionRequested = false;
         }
 
         if (focusPressed && selectedIds.size() == 1) {
@@ -969,6 +1445,7 @@ int main(int argc, char* argv[]) {
                 document.save(content);
                 content.loadDefaults();
                 materialTextures.init(content);
+                runtimePreviewSession.prewarmRenderer(content);
                 commandStack.markSaved(document);
                 scenePaths = sortedScenePaths();
                 materialIds = sortedMaterialIds(content);
@@ -983,6 +1460,9 @@ int main(int argc, char* argv[]) {
 
         imgui.endFrame();
         window.swapBuffers();
+        if (startupViewportHandoffFramesRemaining > 0) {
+            --startupViewportHandoffFramesRemaining;
+        }
     }
 
     runtimePreviewSession.endCapture(window.handle());

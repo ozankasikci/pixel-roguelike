@@ -1,5 +1,5 @@
 # mesh <mesh_name> px py pz sx sy sz rx ry rz [legacy_material] [tint_r tint_g tint_b] | [material <material_id>] [tint r g b]
-# environment_profile <neutral|dungeon_torch|sunlit_meadow|mountain_dusk|arcane_field|cathedral_arcade>
+# environment_profile <neutral|dungeon_torch|sunlit_meadow|mountain_dusk|arcane_field|cathedral_arcade|cloister_daylight|game_ready_neutral>
 # light px py pz r g b radius intensity
 # spot_light px py pz dx dy dz r g b radius intensity inner_deg outer_deg shadow_flag
 # dir_light dx dy dz r g b intensity

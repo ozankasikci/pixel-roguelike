@@ -122,5 +122,18 @@ int main() {
     assert(resolved.meshes.size() == 2);
     assert(glm::distance(resolved.meshes[1].position, glm::vec3(10.0f, 0.0f, -2.0f)) < 0.001f);
 
+    LevelDef gameReadyLevel;
+    gameReadyLevel.environmentId = "game_ready_neutral";
+    gameReadyLevel.environmentProfile = EnvironmentProfile::GameReadyNeutral;
+    const std::string gameReadySerialized = serializeLevelDef(gameReadyLevel);
+    assert(gameReadySerialized.find("environment_profile game_ready_neutral") != std::string::npos);
+
+    const fs::path gameReadyPath = test_support::tempPath("gsd_game_ready_level.scene");
+    saveLevelDef(gameReadyPath.string(), gameReadyLevel);
+    const LevelDef loadedGameReady = loadLevelDef(gameReadyPath.string());
+    fs::remove(gameReadyPath);
+    assert(loadedGameReady.environmentId == "game_ready_neutral");
+    assert(loadedGameReady.environmentProfile == EnvironmentProfile::GameReadyNeutral);
+
     return 0;
 }

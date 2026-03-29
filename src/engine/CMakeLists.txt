@@ -17,13 +17,15 @@ add_library(engine_rendering STATIC
     rendering/geometry/MeshLibrary.cpp
     rendering/geometry/Renderer.cpp
     rendering/post/StylizePass.cpp
+    rendering/assets/AssimpLoader.cpp
     rendering/assets/GltfLoader.cpp
+    rendering/assets/ModelLoader.cpp
     rendering/assets/Texture2D.cpp
     rendering/assets/TextureCube.cpp
 )
 target_include_directories(engine_rendering PUBLIC ${CMAKE_SOURCE_DIR}/src)
 target_link_libraries(engine_rendering PUBLIC engine_core glm::glm)
-target_link_libraries(engine_rendering PRIVATE tinygltf)
+target_link_libraries(engine_rendering PRIVATE tinygltf assimp)
 
 add_library(engine_ui STATIC
     ui/ImGuiLayer.cpp

@@ -81,6 +81,40 @@ FetchContent_Declare(tinygltf
 )
 FetchContent_MakeAvailable(tinygltf)
 
+# Assimp v6.0.4 - multi-format model importer (FBX, glTF, and more)
+set(ASSIMP_BUILD_ASSIMP_TOOLS OFF CACHE BOOL "" FORCE)
+set(ASSIMP_BUILD_DOCS OFF CACHE BOOL "" FORCE)
+set(ASSIMP_BUILD_SAMPLES OFF CACHE BOOL "" FORCE)
+set(ASSIMP_BUILD_TESTS OFF CACHE BOOL "" FORCE)
+set(ASSIMP_BUILD_ZLIB OFF CACHE BOOL "" FORCE)
+set(ASSIMP_INSTALL OFF CACHE BOOL "" FORCE)
+set(ASSIMP_NO_EXPORT OFF CACHE BOOL "" FORCE)
+set(ASSIMP_WARNINGS_AS_ERRORS OFF CACHE BOOL "" FORCE)
+set(ASSIMP_INJECT_DEBUG_POSTFIX OFF CACHE BOOL "" FORCE)
+if(APPLE AND EXISTS "/opt/homebrew/opt/zlib")
+    list(PREPEND CMAKE_PREFIX_PATH "/opt/homebrew/opt/zlib")
+    set(ZLIB_ROOT "/opt/homebrew/opt/zlib" CACHE PATH "" FORCE)
+endif()
+if(DEFINED BUILD_SHARED_LIBS)
+    set(_pixel_roguelike_saved_build_shared_libs "${BUILD_SHARED_LIBS}")
+    set(_pixel_roguelike_had_build_shared_libs TRUE)
+else()
+    set(_pixel_roguelike_had_build_shared_libs FALSE)
+endif()
+set(BUILD_SHARED_LIBS OFF CACHE BOOL "" FORCE)
+FetchContent_Declare(assimp
+    GIT_REPOSITORY https://github.com/assimp/assimp.git
+    GIT_TAG        v6.0.4
+    GIT_PROGRESS   TRUE
+    GIT_SHALLOW    TRUE
+)
+FetchContent_MakeAvailable(assimp)
+if(_pixel_roguelike_had_build_shared_libs)
+    set(BUILD_SHARED_LIBS "${_pixel_roguelike_saved_build_shared_libs}" CACHE BOOL "" FORCE)
+else()
+    unset(BUILD_SHARED_LIBS CACHE)
+endif()
+
 enable_testing()
 
 add_subdirectory(src/engine)

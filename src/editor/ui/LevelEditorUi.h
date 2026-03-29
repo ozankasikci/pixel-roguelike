@@ -7,6 +7,7 @@
 #include "game/rendering/MaterialDefinition.h"
 
 #include <cstdint>
+#include <filesystem>
 #include <glm/vec3.hpp>
 #include <optional>
 #include <string>
@@ -74,6 +75,7 @@ struct EditorUiState {
     std::unordered_set<std::string> expandedAssetPaths{"assets"};
     EditorInspectorContext inspectorContext = EditorInspectorContext::None;
     EditorInspectedAsset inspectedAsset{};
+    bool frameSelectionRequested = false;
     char layoutNameBuffer[64] = "default";
 };
 
@@ -113,6 +115,8 @@ struct EditorPendingCommand {
 struct AssetBrowserActionResult {
     std::optional<std::string> openScenePath;
     bool previewDirty = false;
+    bool assetCatalogChanged = false;
+    bool consumedExternalDrops = false;
 };
 
 struct InspectorActionResult {

@@ -25,6 +25,15 @@ void EditorRuntimePreviewSession::rebuild(const EditorSceneDocument& document, C
     request.levelId = document.scenePath().empty() ? "editor_runtime_preview" : document.scenePath();
     request.levelPath = document.scenePath();
     session_.rebuild(document.toLevelDef(), request.levelId, request.levelPath, content, request);
+    syncEnvironment(document);
+}
+
+void EditorRuntimePreviewSession::resetForPlay() {
+    session_.resetForPlay();
+}
+
+void EditorRuntimePreviewSession::syncEnvironment(const EditorSceneDocument& document) {
+    session_.setEnvironmentOverride(document.environment());
 }
 
 void EditorRuntimePreviewSession::clear() {
