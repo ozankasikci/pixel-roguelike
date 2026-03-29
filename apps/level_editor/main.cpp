@@ -1571,15 +1571,8 @@ int main(int argc, char* argv[]) {
         if (savePressed) {
             try {
                 document.save(content);
-                content.loadDefaults();
-                materialTextures.init(content);
-                runtimePreviewSession.prewarmRenderer(content);
                 commandStack.markSaved(document);
                 scenePaths = sortedScenePaths();
-                materialIds = sortedMaterialIds(content);
-                archetypeIds = sortedArchetypeIds(content);
-                environmentIds = sortedEnvironmentIds(content);
-                previewDirty = true;
             } catch (const std::exception& ex) {
                 spdlog::error("Save failed: {}", ex.what());
             }
