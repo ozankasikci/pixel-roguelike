@@ -16,12 +16,12 @@
 #include "game/rendering/EnvironmentProfile.h"
 #include "game/rendering/MeshAssetProvider.h"
 #include "game/runtime/RuntimeGameplay.h"
-#include "game/runtime/RuntimeInputState.h"
 #include "game/session/RunSession.h"
 #include "game/ui/InteractionFocusState.h"
 #include "game/ui/InteractionPromptState.h"
 #include "game/ui/InventoryMenuState.h"
 
+#include <GLFW/glfw3.h>
 #include <chrono>
 #include <filesystem>
 
@@ -61,10 +61,25 @@ void bootstrapRuntimeMeshLibrary(MeshLibrary& meshLibrary) {
     }
 }
 
+void registerGameActions(InputSystem& input) {
+    auto& actions = input.actionMap();
+    actions.bind("move_forward",  ActionBinding{.keys = {GLFW_KEY_W}});
+    actions.bind("move_backward", ActionBinding{.keys = {GLFW_KEY_S}});
+    actions.bind("strafe_left",   ActionBinding{.keys = {GLFW_KEY_A}});
+    actions.bind("strafe_right",  ActionBinding{.keys = {GLFW_KEY_D}});
+    actions.bind("sprint",        ActionBinding{.keys = {GLFW_KEY_LEFT_SHIFT}});
+    actions.bind("jump",          ActionBinding{.keys = {GLFW_KEY_SPACE}});
+    actions.bind("interact",      ActionBinding{.keys = {GLFW_KEY_E}});
+    actions.bind("inventory",     ActionBinding{.keys = {GLFW_KEY_I}});
+    actions.bind("attack",        ActionBinding{.mouseButtons = {GLFW_MOUSE_BUTTON_LEFT}});
+    actions.bind("screenshot",    ActionBinding{.keys = {GLFW_KEY_R}});
+}
+
 } // namespace
 
 RuntimeGameSession::RuntimeGameSession() {
     bootstrapRuntimeMeshLibrary(meshLibrary_);
+    registerGameActions(inputSystem_);
 }
 
 RuntimeGameSession::~RuntimeGameSession() {
@@ -112,7 +127,7 @@ void RuntimeGameSession::rebuild(const LevelDef& level,
     bootstrapRuntimeMeshLibrary(meshLibrary_);
     clearEntities();
     runSession_ = RunSession{};
-    input_.reset();
+    inputSystem_.reset();
 
     registry_.ctx().insert_or_assign<ContentRegistry*>(&content);
     registry_.ctx().insert_or_assign<RunSession*>(&runSession_);
@@ -141,7 +156,7 @@ void RuntimeGameSession::rebuild(const LevelDef& level,
 void RuntimeGameSession::clear() {
     scriptRuntime_.clear();
     clearEntities();
-    input_.reset();
+    inputSystem_.reset();
 }
 
 void RuntimeGameSession::resetForPlay() {
@@ -172,7 +187,7 @@ void RuntimeGameSession::tick(float deltaTime, float aspect) {
     if (!physicsInitialized_) {
         return;
     }
-    updateRuntimeInteraction(registry_, input_);
+    updateRuntimeInteraction(registry_, inputSystem_);
     updateRuntimeDoors(registry_, deltaTime);
     updateRuntimeCheckpoints(registry_, deltaTime, runSession_);
     scriptRuntime_.tick(deltaTime);
@@ -183,10 +198,10 @@ void RuntimeGameSession::tick(float deltaTime, float aspect) {
         content = registry_.ctx().get<ContentRegistry*>();
     }
     if (content != nullptr) {
-        updateRuntimeInventory(registry_, input_, runSession_, *content);
+        updateRuntimeInventory(registry_, inputSystem_, runSession_, *content);
     }
-    updateRuntimePlayerMovement(registry_, input_, physics_, deltaTime);
-    updateRuntimeCamera(registry_, input_, aspect, deltaTime);
+    updateRuntimePlayerMovement(registry_, inputSystem_, physics_, deltaTime);
+    updateRuntimeCamera(registry_, inputSystem_, aspect, deltaTime);
 }
 
 void RuntimeGameSession::prewarmRenderer(ContentRegistry& content) {
@@ -284,7 +299,7 @@ void RuntimeGameSession::restoreBaselineState() {
 
     runSession_ = baselineSnapshot_->runSession;
     registry_.ctx().insert_or_assign<RunSession*>(&runSession_);
-    input_.reset();
+    inputSystem_.reset();
     environmentSyncState_ = RuntimeEnvironmentSyncState{};
 
     if (baselineSnapshot_->player.valid && registry_.valid(baselineSnapshot_->player.entity)) {

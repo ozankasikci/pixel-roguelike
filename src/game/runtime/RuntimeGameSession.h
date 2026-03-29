@@ -1,5 +1,6 @@
 #pragma once
 
+#include "engine/input/InputSystem.h"
 #include "engine/physics/PhysicsSystem.h"
 #include "engine/rendering/geometry/MeshLibrary.h"
 #include "engine/ui/ImGuiLayer.h"
@@ -8,7 +9,6 @@
 #include "game/rendering/EnvironmentDebugSync.h"
 #include "game/rendering/RuntimeSceneRenderer.h"
 #include "game/runtime/RuntimeGameplay.h"
-#include "game/runtime/RuntimeInputState.h"
 #include "game/scripting/ScriptRuntime.h"
 #include "game/session/RunSession.h"
 
@@ -59,8 +59,8 @@ public:
     const MeshLibrary& meshLibrary() const { return meshLibrary_; }
     RunSession& runSession() { return runSession_; }
     const RunSession& runSession() const { return runSession_; }
-    RuntimeInputState& input() { return input_; }
-    const RuntimeInputState& input() const { return input_; }
+    InputSystem& input() { return inputSystem_; }
+    const InputSystem& input() const { return inputSystem_; }
     DebugParams& debugParams() { return debugParams_; }
     const DebugParams& debugParams() const { return debugParams_; }
     const RuntimeSessionPerformanceStats& performanceStats() const { return performanceStats_; }
@@ -77,7 +77,7 @@ private:
     MeshLibrary meshLibrary_;
     std::vector<entt::entity> entities_;
     RunSession runSession_;
-    RuntimeInputState input_;
+    InputSystem inputSystem_;
     PhysicsSystem physics_;
     DebugParams debugParams_;
     RuntimeSceneRenderer renderer_;
