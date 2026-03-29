@@ -1,123 +1,72 @@
 environment_profile default
 
-# ── Floor (3×4 grid of 2m tiles) ──
-mesh prison_floor -2.0 0.0 1.0 1.0 1.0 1.0 0.0 0.0 0.0 material stone_default tint 0.32 0.30 0.28
-mesh prison_floor  0.0 0.0 1.0 1.0 1.0 1.0 0.0 0.0 0.0 material stone_default tint 0.30 0.28 0.26
-mesh prison_floor  2.0 0.0 1.0 1.0 1.0 1.0 0.0 0.0 0.0 material stone_default tint 0.31 0.29 0.27
-mesh prison_floor -2.0 0.0 3.0 1.0 1.0 1.0 0.0 0.0 0.0 material stone_default tint 0.30 0.28 0.26
-mesh prison_floor  0.0 0.0 3.0 1.0 1.0 1.0 0.0 0.0 0.0 material stone_default tint 0.32 0.30 0.28
-mesh prison_floor  2.0 0.0 3.0 1.0 1.0 1.0 0.0 0.0 0.0 material stone_default tint 0.30 0.28 0.26
-mesh prison_floor -2.0 0.0 5.0 1.0 1.0 1.0 0.0 0.0 0.0 material stone_default tint 0.31 0.29 0.27
-mesh prison_floor  0.0 0.0 5.0 1.0 1.0 1.0 0.0 0.0 0.0 material stone_default tint 0.30 0.28 0.26
-mesh prison_floor  2.0 0.0 5.0 1.0 1.0 1.0 0.0 0.0 0.0 material stone_default tint 0.32 0.30 0.28
-mesh prison_floor -2.0 0.0 7.0 1.0 1.0 1.0 0.0 0.0 0.0 material stone_default tint 0.30 0.28 0.26
-mesh prison_floor  0.0 0.0 7.0 1.0 1.0 1.0 0.0 0.0 0.0 material stone_default tint 0.31 0.29 0.27
-mesh prison_floor  2.0 0.0 7.0 1.0 1.0 1.0 0.0 0.0 0.0 material stone_default tint 0.30 0.28 0.26
-
-# ── Ceiling (3×4 grid at Y=2.5) ──
-mesh prison_ceiling -2.0 2.5 1.0 1.0 1.0 1.0 0.0 0.0 0.0 material stone_default tint 0.28 0.26 0.24
-mesh prison_ceiling  0.0 2.5 1.0 1.0 1.0 1.0 0.0 0.0 0.0 material stone_default tint 0.27 0.25 0.23
-mesh prison_ceiling  2.0 2.5 1.0 1.0 1.0 1.0 0.0 0.0 0.0 material stone_default tint 0.28 0.26 0.24
-mesh prison_ceiling -2.0 2.5 3.0 1.0 1.0 1.0 0.0 0.0 0.0 material stone_default tint 0.27 0.25 0.23
-mesh prison_ceiling  0.0 2.5 3.0 1.0 1.0 1.0 0.0 0.0 0.0 material stone_default tint 0.28 0.26 0.24
-mesh prison_ceiling  2.0 2.5 3.0 1.0 1.0 1.0 0.0 0.0 0.0 material stone_default tint 0.27 0.25 0.23
-mesh prison_ceiling -2.0 2.5 5.0 1.0 1.0 1.0 0.0 0.0 0.0 material stone_default tint 0.28 0.26 0.24
-mesh prison_ceiling  0.0 2.5 5.0 1.0 1.0 1.0 0.0 0.0 0.0 material stone_default tint 0.27 0.25 0.23
-mesh prison_ceiling  2.0 2.5 5.0 1.0 1.0 1.0 0.0 0.0 0.0 material stone_default tint 0.28 0.26 0.24
-mesh prison_ceiling -2.0 2.5 7.0 1.0 1.0 1.0 0.0 0.0 0.0 material stone_default tint 0.27 0.25 0.23
-mesh prison_ceiling  0.0 2.5 7.0 1.0 1.0 1.0 0.0 0.0 0.0 material stone_default tint 0.28 0.26 0.24
-mesh prison_ceiling  2.0 2.5 7.0 1.0 1.0 1.0 0.0 0.0 0.0 material stone_default tint 0.27 0.25 0.23
-
-# ── Back wall (Z=8, rotated 180° to face inward) ──
-mesh prison_wall         -2.0 0.0 8.0 1.0 1.0 1.0 0.0 180.0 0.0 material stone_default tint 0.35 0.33 0.30
-mesh prison_wall_window   0.0 0.0 8.0 1.0 1.0 1.0 0.0 180.0 0.0 material stone_default tint 0.34 0.32 0.29
-mesh prison_wall          2.0 0.0 8.0 1.0 1.0 1.0 0.0 180.0 0.0 material stone_default tint 0.36 0.34 0.31
-
-# ── Front wall (Z=0, faces +Z inward) ──
-mesh prison_wall         -2.0 0.0 0.0 1.0 1.0 1.0 0.0 0.0 0.0 material stone_default tint 0.35 0.33 0.30
-mesh prison_wall_door     0.0 0.0 0.0 1.0 1.0 1.0 0.0 0.0 0.0 material stone_default tint 0.34 0.32 0.29
-mesh prison_wall          2.0 0.0 0.0 1.0 1.0 1.0 0.0 0.0 0.0 material stone_default tint 0.36 0.34 0.31
-
-# ── Left wall (X=-3, rotated 90° to face +X inward) ──
-mesh prison_wall -3.0 0.0 1.0 1.0 1.0 1.0 0.0 90.0 0.0 material stone_default tint 0.33 0.31 0.28
-mesh prison_wall -3.0 0.0 3.0 1.0 1.0 1.0 0.0 90.0 0.0 material stone_default tint 0.34 0.32 0.29
-mesh prison_wall -3.0 0.0 5.0 1.0 1.0 1.0 0.0 90.0 0.0 material stone_default tint 0.33 0.31 0.28
-mesh prison_wall -3.0 0.0 7.0 1.0 1.0 1.0 0.0 90.0 0.0 material stone_default tint 0.34 0.32 0.29
-
-# ── Right wall (X=3, rotated -90° to face -X inward) ──
-mesh prison_wall 3.0 0.0 1.0 1.0 1.0 1.0 0.0 -90.0 0.0 material stone_default tint 0.34 0.32 0.29
-mesh prison_wall 3.0 0.0 3.0 1.0 1.0 1.0 0.0 -90.0 0.0 material stone_default tint 0.33 0.31 0.28
-mesh prison_wall 3.0 0.0 5.0 1.0 1.0 1.0 0.0 -90.0 0.0 material stone_default tint 0.34 0.32 0.29
-mesh prison_wall 3.0 0.0 7.0 1.0 1.0 1.0 0.0 -90.0 0.0 material stone_default tint 0.33 0.31 0.28
-
-# ── Prison door (in the door frame, front wall center) ──
-mesh prison_door 0.0 0.0 0.05 1.0 1.0 1.0 0.0 0.0 0.0 material metal_default tint 0.12 0.10 0.08
-
-# ── Furniture ──
-# Desk: centered in room at roughly (0, 0, 4.5)
-mesh prison_desk 0.0 0.0 4.5 1.0 1.0 1.0 0.0 180.0 0.0 material metal_default tint 0.14 0.12 0.10
-
-# Chair: south of desk, facing north (toward desk)
-mesh prison_chair 0.0 0.0 3.6 1.0 1.0 1.0 0.0 0.0 0.0 material metal_default tint 0.12 0.10 0.08
-
-# Filing cabinet: back-right corner
-mesh prison_cabinet 2.2 0.0 7.4 1.0 1.0 1.0 0.0 180.0 0.0 material metal_default tint 0.15 0.13 0.10
-
-# Wall shelf: back-left wall (mounted at Y=1.6)
-mesh prison_shelf -2.85 1.6 6.5 1.0 1.0 1.0 0.0 -90.0 0.0 material metal_default tint 0.13 0.11 0.09
-
-# ── Baseboards (along all walls) ──
-# Back wall baseboards
-mesh prison_baseboard -2.0 0.0 7.9 1.0 1.0 1.0 0.0 180.0 0.0 material metal_default tint 0.10 0.08 0.06
-mesh prison_baseboard  0.0 0.0 7.9 1.0 1.0 1.0 0.0 180.0 0.0 material metal_default tint 0.10 0.08 0.06
-mesh prison_baseboard  2.0 0.0 7.9 1.0 1.0 1.0 0.0 180.0 0.0 material metal_default tint 0.10 0.08 0.06
-# Front wall baseboards (skip center — door frame)
-mesh prison_baseboard -2.0 0.0 0.1 1.0 1.0 1.0 0.0 0.0 0.0 material metal_default tint 0.10 0.08 0.06
-mesh prison_baseboard  2.0 0.0 0.1 1.0 1.0 1.0 0.0 0.0 0.0 material metal_default tint 0.10 0.08 0.06
-# Left wall baseboards
-mesh prison_baseboard -2.9 0.0 1.0 1.0 1.0 1.0 0.0 90.0 0.0 material metal_default tint 0.10 0.08 0.06
-mesh prison_baseboard -2.9 0.0 3.0 1.0 1.0 1.0 0.0 90.0 0.0 material metal_default tint 0.10 0.08 0.06
-mesh prison_baseboard -2.9 0.0 5.0 1.0 1.0 1.0 0.0 90.0 0.0 material metal_default tint 0.10 0.08 0.06
-mesh prison_baseboard -2.9 0.0 7.0 1.0 1.0 1.0 0.0 90.0 0.0 material metal_default tint 0.10 0.08 0.06
-# Right wall baseboards
-mesh prison_baseboard 2.9 0.0 1.0 1.0 1.0 1.0 0.0 -90.0 0.0 material metal_default tint 0.10 0.08 0.06
-mesh prison_baseboard 2.9 0.0 3.0 1.0 1.0 1.0 0.0 -90.0 0.0 material metal_default tint 0.10 0.08 0.06
-mesh prison_baseboard 2.9 0.0 5.0 1.0 1.0 1.0 0.0 -90.0 0.0 material metal_default tint 0.10 0.08 0.06
-mesh prison_baseboard 2.9 0.0 7.0 1.0 1.0 1.0 0.0 -90.0 0.0 material metal_default tint 0.10 0.08 0.06
-
-# ── Lighting ──
-# Harsh desk lamp — spot light pointing down at the desk
-spot_light 0.0 2.4 4.5 0.0 -1.0 0.0 1.0 0.95 0.85 8.0 2.0 40.0 55.0 0
-
-# Dim window glow — faint exterior light through barred window
-light 0.0 1.8 7.8 0.8 0.85 0.95 6.0 0.6
-
-# Ambient fill from ceiling
-light 0.0 2.0 4.0 1.0 0.95 0.9 10.0 0.5
-
-# Additional fill near door
-light 0.0 2.0 1.0 0.9 0.9 0.95 8.0 0.3
-
-# ── Colliders ──
-# Floor
-collider_box 0.0 -0.05 4.0 3.0 0.05 4.0
-# Back wall
-collider_box 0.0 1.25 8.0 3.0 1.25 0.1
-# Front wall left
-collider_box -2.0 1.25 0.0 1.0 1.25 0.1
-# Front wall right
-collider_box 2.0 1.25 0.0 1.0 1.25 0.1
-# Front wall top (above door)
-collider_box 0.0 2.3 0.0 1.0 0.2 0.1
-# Left wall
-collider_box -3.0 1.25 4.0 0.1 1.25 4.0
-# Right wall
-collider_box 3.0 1.25 4.0 0.1 1.25 4.0
-# Desk
-collider_box 0.0 0.375 4.5 0.6 0.375 0.3
-# Filing cabinet
-collider_box 2.2 0.65 7.4 0.225 0.65 0.3
-
-# ── Player spawn ──
-# Spawn at chair position, facing south toward the door
-player_spawn 0.0 0.0 3.6 -2.0
+mesh prison_floor -2.0 0.0 1.0 1.0 1.0 1.0 0.0 0.0 0.0 material floor_default tint 0.32 0.3 0.28 node node_1
+mesh prison_floor 0.0 0.0 1.0 1.0 1.0 1.0 0.0 0.0 0.0 material floor_default tint 0.3 0.28 0.26 node node_2
+mesh prison_floor 2.0 0.0 1.0 1.0 1.0 1.0 0.0 0.0 0.0 material floor_default tint 0.31 0.29 0.27 node node_3
+mesh prison_floor -2.0 0.0 3.0 1.0 1.0 1.0 0.0 0.0 0.0 material floor_default tint 0.3 0.28 0.26 node node_4
+mesh prison_floor 0.0 0.0 3.0 1.0 1.0 1.0 0.0 0.0 0.0 material floor_default tint 0.32 0.3 0.28 node node_5
+mesh prison_floor 2.0 0.0 3.0 1.0 1.0 1.0 0.0 0.0 0.0 material floor_default tint 0.3 0.28 0.26 node node_6
+mesh prison_floor -2.0 0.0 5.0 1.0 1.0 1.0 0.0 0.0 0.0 material floor_default tint 0.31 0.29 0.27 node node_7
+mesh prison_floor 0.0 0.0 5.0 1.0 1.0 1.0 0.0 0.0 0.0 material floor_default tint 0.3 0.28 0.26 node node_8
+mesh prison_floor 2.0 0.0 5.0 1.0 1.0 1.0 0.0 0.0 0.0 material floor_default tint 0.32 0.3 0.28 node node_9
+mesh prison_floor -2.0 0.0 7.0 1.0 1.0 1.0 0.0 0.0 0.0 material floor_default tint 0.3 0.28 0.26 node node_10
+mesh prison_floor 0.0 0.0 7.0 1.0 1.0 1.0 0.0 0.0 0.0 material floor_default tint 0.31 0.29 0.27 node node_11
+mesh prison_floor 2.0 0.0 7.0 1.0 1.0 1.0 0.0 0.0 0.0 material floor_default tint 0.3 0.28 0.26 node node_12
+mesh prison_ceiling -2.0 2.5 1.0 1.0 1.0 1.0 0.0 0.0 0.0 material stone_default tint 0.28 0.26 0.24 node node_13
+mesh prison_ceiling 0.0 2.5 1.0 1.0 1.0 1.0 0.0 0.0 0.0 material stone_default tint 0.27 0.25 0.23 node node_14
+mesh prison_ceiling 2.0 2.5 1.0 1.0 1.0 1.0 0.0 0.0 0.0 material stone_default tint 0.28 0.26 0.24 node node_15
+mesh prison_ceiling -2.0 2.5 3.0 1.0 1.0 1.0 0.0 0.0 0.0 material stone_default tint 0.27 0.25 0.23 node node_16
+mesh prison_ceiling 0.0 2.5 3.0 1.0 1.0 1.0 0.0 0.0 0.0 material stone_default tint 0.28 0.26 0.24 node node_17
+mesh prison_ceiling 2.0 2.5 3.0 1.0 1.0 1.0 0.0 0.0 0.0 material stone_default tint 0.27 0.25 0.23 node node_18
+mesh prison_ceiling -2.0 2.5 5.0 1.0 1.0 1.0 0.0 0.0 0.0 material stone_default tint 0.28 0.26 0.24 node node_19
+mesh prison_ceiling 0.0 2.5 5.0 1.0 1.0 1.0 0.0 0.0 0.0 material stone_default tint 0.27 0.25 0.23 node node_20
+mesh prison_ceiling 2.0 2.5 5.0 1.0 1.0 1.0 0.0 0.0 0.0 material stone_default tint 0.28 0.26 0.24 node node_21
+mesh prison_ceiling -2.0 2.5 7.0 1.0 1.0 1.0 0.0 0.0 0.0 material stone_default tint 0.27 0.25 0.23 node node_22
+mesh prison_ceiling 0.0 2.5 7.0 1.0 1.0 1.0 0.0 0.0 0.0 material stone_default tint 0.28 0.26 0.24 node node_23
+mesh prison_ceiling 2.0 2.5 7.0 1.0 1.0 1.0 0.0 0.0 0.0 material stone_default tint 0.27 0.25 0.23 node node_24
+mesh prison_wall -2.0 0.0 8.0 1.0 1.0 1.0 0.0 180.0 0.0 material stone_default tint 0.35 0.33 0.3 node node_25
+mesh prison_wall_window 0.0 0.0 8.0 1.0 1.0 1.0 0.0 180.0 0.0 material stone_default tint 0.34 0.32 0.29 node node_26
+mesh prison_wall 2.0 0.0 8.0 1.0 1.0 1.0 0.0 180.0 0.0 material stone_default tint 0.36 0.34 0.31 node node_27
+mesh prison_wall -2.0 0.0 0.0 1.0 1.0 1.0 0.0 0.0 0.0 material stone_default tint 0.35 0.33 0.3 node node_28
+mesh prison_wall_door 0.0 0.0 0.0 1.0 1.0 1.0 0.0 0.0 0.0 material stone_default tint 0.34 0.32 0.29 node node_29
+mesh prison_wall 2.0 0.0 0.0 1.0 1.0 1.0 0.0 0.0 0.0 material stone_default tint 0.36 0.34 0.31 node node_30
+mesh prison_wall -3.0 0.0 1.0 1.0 1.0 1.0 0.0 90.0 0.0 material stone_default tint 0.33 0.31 0.28 node node_31
+mesh prison_wall -3.0 0.0 3.0 1.0 1.0 1.0 0.0 90.0 0.0 material stone_default tint 0.34 0.32 0.29 node node_32
+mesh prison_wall -3.0 0.0 5.0 1.0 1.0 1.0 0.0 90.0 0.0 material stone_default tint 0.33 0.31 0.28 node node_33
+mesh prison_wall -3.0 0.0 7.0 1.0 1.0 1.0 0.0 90.0 0.0 material stone_default tint 0.34 0.32 0.29 node node_34
+mesh prison_wall 3.0 0.0 1.0 1.0 1.0 1.0 0.0 -90.0 0.0 material stone_default tint 0.34 0.32 0.29 node node_35
+mesh prison_wall 3.0 0.0 3.0 1.0 1.0 1.0 0.0 -90.0 0.0 material stone_default tint 0.33 0.31 0.28 node node_36
+mesh prison_wall 3.0 0.0 5.0 1.0 1.0 1.0 0.0 -90.0 0.0 material stone_default tint 0.34 0.32 0.29 node node_37
+mesh prison_wall 3.0 0.0 7.0 1.0 1.0 1.0 0.0 -90.0 0.0 material stone_default tint 0.33 0.31 0.28 node node_38
+mesh prison_door 0.0 0.0 0.05 1.0 1.0 1.0 0.0 0.0 0.0 material metal_default tint 0.12 0.1 0.08 node node_39
+mesh prison_desk 0.0 0.0 4.5 1.0 1.0 1.0 0.0 180.0 0.0 material metal_default tint 0.14 0.12 0.1 node node_40
+mesh prison_chair 0.0 0.0 3.6 1.0 1.0 1.0 0.0 0.0 0.0 material metal_default tint 0.12 0.1 0.08 node node_41
+mesh prison_cabinet 2.2 0.0 7.4 1.0 1.0 1.0 0.0 180.0 0.0 material metal_default tint 0.15 0.13 0.1 node node_42
+mesh prison_shelf -2.85 1.6 6.5 1.0 1.0 1.0 0.0 -90.0 0.0 material metal_default tint 0.13 0.11 0.09 node node_43
+mesh prison_baseboard -2.0 0.0 7.9 1.0 1.0 1.0 0.0 180.0 0.0 material metal_default tint 0.1 0.08 0.06 node node_44
+mesh prison_baseboard 0.0 0.0 7.9 1.0 1.0 1.0 0.0 180.0 0.0 material metal_default tint 0.1 0.08 0.06 node node_45
+mesh prison_baseboard 2.0 0.0 7.9 1.0 1.0 1.0 0.0 180.0 0.0 material metal_default tint 0.1 0.08 0.06 node node_46
+mesh prison_baseboard -2.0 0.0 0.1 1.0 1.0 1.0 0.0 0.0 0.0 material metal_default tint 0.1 0.08 0.06 node node_47
+mesh prison_baseboard 2.0 0.0 0.1 1.0 1.0 1.0 0.0 0.0 0.0 material metal_default tint 0.1 0.08 0.06 node node_48
+mesh prison_baseboard -2.9 0.0 1.0 1.0 1.0 1.0 0.0 90.0 0.0 material metal_default tint 0.1 0.08 0.06 node node_49
+mesh prison_baseboard -2.9 0.0 3.0 1.0 1.0 1.0 0.0 90.0 0.0 material metal_default tint 0.1 0.08 0.06 node node_50
+mesh prison_baseboard -2.9 0.0 5.0 1.0 1.0 1.0 0.0 90.0 0.0 material metal_default tint 0.1 0.08 0.06 node node_51
+mesh prison_baseboard -2.9 0.0 7.0 1.0 1.0 1.0 0.0 90.0 0.0 material metal_default tint 0.1 0.08 0.06 node node_52
+mesh prison_baseboard 2.9 0.0 1.0 1.0 1.0 1.0 0.0 -90.0 0.0 material metal_default tint 0.1 0.08 0.06 node node_53
+mesh prison_baseboard 2.9 0.0 3.0 1.0 1.0 1.0 0.0 -90.0 0.0 material metal_default tint 0.1 0.08 0.06 node node_54
+mesh prison_baseboard 2.9 0.0 5.0 1.0 1.0 1.0 0.0 -90.0 0.0 material metal_default tint 0.1 0.08 0.06 node node_55
+mesh prison_baseboard 2.9 0.0 7.0 1.0 1.0 1.0 0.0 -90.0 0.0 material metal_default tint 0.1 0.08 0.06 node node_56
+spot_light 0.0 2.4 4.5 0.0 -1.0 0.0 1.0 0.95 0.85 8.0 14.0 40.0 55.0 false node node_57
+light 0.0 1.8 7.8 0.8 0.85 0.95 6.0 4.2 node node_58
+light 0.0 2.0 4.0 1.0 0.95 0.9 10.0 3.5 node node_59
+light 0.0 2.0 1.0 0.9 0.9 0.95 8.0 2.1 node node_60
+collider_box 0.0 -0.05 4.0 3.0 0.05 4.0 node node_61
+collider_box 0.0 1.25 8.0 3.0 1.25 0.1 node node_62
+collider_box -2.0 1.25 0.0 1.0 1.25 0.1 node node_63
+collider_box 2.0 1.25 0.0 1.0 1.25 0.1 node node_64
+collider_box 0.0 2.3 0.0 1.0 0.2 0.1 node node_65
+collider_box -3.0 1.25 4.0 0.1 1.25 4.0 node node_66
+collider_box 3.0 1.25 4.0 0.1 1.25 4.0 node node_67
+collider_box 0.0 0.375 4.5 0.6 0.375 0.3 node node_68
+collider_box 2.2 0.65 7.4 0.225 0.65 0.3 node node_69
+player_spawn 0.0 1.0 3.1 -2.0 node node_70

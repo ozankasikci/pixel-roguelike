@@ -24,7 +24,7 @@ struct PostProcessParams {
     float fogDensity      = 0.040f;
     float fogStart        = 14.0f;
     float depthViewScale  = 0.080f;
-    float exposure        = 1.02f;
+    float exposure        = 1.4f;
     float gamma           = 1.00f;
     float contrast        = 1.06f;
     float saturation      = 0.96f;
