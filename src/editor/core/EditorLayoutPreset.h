@@ -9,6 +9,7 @@ struct EditorLayoutVisibility {
     bool showAssetBrowser = true;
     bool showEnvironment = true;
     bool showViewport = true;
+    bool showBuildOutput = false;
 };
 
 struct EditorLayoutPreset {

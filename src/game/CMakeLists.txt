@@ -31,6 +31,7 @@ add_library(gameplay STATIC
     runtime/RuntimeGameplay.cpp
     runtime/RuntimeGameSession.cpp
     scenes/CathedralScene.cpp
+    scenes/GenericFileScene.cpp
     scenes/SilosCloisterScene.cpp
     session/EquipmentState.cpp
     systems/CameraSystem.cpp

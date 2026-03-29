@@ -17,6 +17,7 @@ public:
     EditorRuntimePreviewSession() = default;
 
     void rebuild(const EditorSceneDocument& document, ContentRegistry& content);
+    void syncMaterials(const EditorSceneDocument& document, const ContentRegistry& content);
     void resetForPlay();
     void syncEnvironment(const EditorSceneDocument& document);
     void clear();
