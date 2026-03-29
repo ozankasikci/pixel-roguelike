@@ -135,30 +135,13 @@ bool renderEnvironmentPanel(EditorSceneDocument& document,
             trackLastItemCommand(beforeState, label, pendingCommand, commandStack, document);
         };
 
-        static constexpr const char* kPaletteVariants[] = {
-            "Neutral",
-            "Dungeon",
-            "Meadow",
-            "Dusk",
-            "Arcane",
-            "Cathedral",
-        };
         static constexpr const char* kToneMapModes[] = {
             "Linear",
             "ACES Fitted",
         };
 
         auto beforeState = document.captureState();
-        int paletteVariant = environment.post.paletteVariant;
-        const bool paletteChanged = ImGui::Combo("Palette Variant", &paletteVariant, kPaletteVariants, 6);
-        if (paletteChanged) {
-            environment.post.paletteVariant = paletteVariant;
-        }
-        trackEnvItem(beforeState, "Change Palette Variant", paletteChanged);
-        beforeState = document.captureState();
         trackEnvItem(beforeState, "Toggle Sky In Post", ImGui::Checkbox("Enable Sky", &environment.post.enableSky));
-        beforeState = document.captureState();
-        trackEnvItem(beforeState, "Toggle Dither", ImGui::Checkbox("Enable Dither", &environment.post.enableDither));
         beforeState = document.captureState();
         trackEnvItem(beforeState, "Toggle Edges", ImGui::Checkbox("Enable Edges", &environment.post.enableEdges));
         beforeState = document.captureState();
@@ -182,13 +165,6 @@ bool renderEnvironmentPanel(EditorSceneDocument& document,
             environment.post.toneMapMode = toneMapMode;
         }
         trackEnvItem(beforeState, "Change Tone Mapper", toneMapChanged);
-        beforeState = document.captureState();
-        trackEnvItem(beforeState, "Adjust Threshold Bias", ImGui::DragFloat("Threshold Bias", &environment.post.thresholdBias, 0.002f, -0.5f, 0.5f, "%.3f"));
-        beforeState = document.captureState();
-        trackEnvItem(beforeState, "Adjust Pattern Scale", ImGui::DragFloat("Pattern Scale", &environment.post.patternScale, 1.0f, 0.0f, 512.0f, "%.1f"));
-        if (environment.post.patternScale <= 1.0f) {
-            ImGui::TextDisabled("Pattern Scale: Auto");
-        }
         beforeState = document.captureState();
         trackEnvItem(beforeState, "Adjust Edge Threshold", ImGui::DragFloat("Edge Threshold", &environment.post.edgeThreshold, 0.005f, 0.0f, 1.0f, "%.3f"));
         beforeState = document.captureState();

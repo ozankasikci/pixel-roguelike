@@ -116,7 +116,6 @@ glm::vec3 orbitOffset(float yawDeg, float pitchDeg, float distance) {
 
 std::string modeLabel(bool stylized, const PostProcessParams& params, bool autoRotate) {
     return std::string(stylized ? "stylized" : "debug")
-        + (params.enableDither ? " +dither" : " -dither")
         + (params.enableEdges ? " +edges" : " -edges")
         + (autoRotate ? " +spin" : "");
 }
@@ -173,7 +172,6 @@ int main(int argc, char* argv[]) {
 
     PostProcessParams params;
     params.enableFog = false;
-    params.enableDither = false;
     params.enableEdges = false;
     params.enableBloom = false;
     params.enableVignette = false;
@@ -212,7 +210,7 @@ int main(int argc, char* argv[]) {
     spdlog::info("Procedural Model Viewer controls:");
     spdlog::info("  [ / ]  previous/next mesh");
     spdlog::info("  arrows orbit camera, =/- zoom, R reset camera");
-    spdlog::info("  TAB toggles debug/stylized preview, D toggles dither, E toggles edges, SPACE toggles spin");
+    spdlog::info("  TAB toggles debug/stylized preview, E toggles edges, SPACE toggles spin");
     spdlog::info("  F12 saves screenshot, ESC quits");
 
     while (!window.shouldClose()) {
@@ -242,14 +240,10 @@ int main(int argc, char* argv[]) {
         }
         if (isJustPressed(GLFW_KEY_TAB)) {
             stylizedPreview = !stylizedPreview;
-            params.enableDither = stylizedPreview;
             params.enableEdges = stylizedPreview;
             params.enableBloom = stylizedPreview;
             params.enableVignette = stylizedPreview;
             params.enableGrain = stylizedPreview;
-        }
-        if (isJustPressed(GLFW_KEY_D)) {
-            params.enableDither = !params.enableDither;
         }
         if (isJustPressed(GLFW_KEY_E)) {
             params.enableEdges = !params.enableEdges;

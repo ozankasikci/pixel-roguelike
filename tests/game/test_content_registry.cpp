@@ -136,7 +136,6 @@ int main() {
     EnvironmentDefinition roundtrip;
     roundtrip.id = "editor_roundtrip_test";
     roundtrip.post.toneMapMode = 0;
-    roundtrip.post.patternScale = 96.0f;
     roundtrip.post.depthViewScale = 0.133f;
     roundtrip.post.edgeThreshold = 0.27f;
     roundtrip.sky.enabled = true;
@@ -167,7 +166,6 @@ int main() {
 
     assert(loadedRoundtrip.id == roundtrip.id);
     assert(loadedRoundtrip.post.toneMapMode == 0);
-    assert(test_support::nearlyEqual(loadedRoundtrip.post.patternScale, 96.0f));
     assert(test_support::nearlyEqual(loadedRoundtrip.post.depthViewScale, 0.133f));
     assert(test_support::nearlyEqual(loadedRoundtrip.post.edgeThreshold, 0.27f));
     assert(loadedRoundtrip.sky.panoramaPath == roundtrip.sky.panoramaPath);

@@ -290,12 +290,9 @@ bool renderEnvironmentDraftFields(EnvironmentDefinition& environment) {
     bool dirty = false;
 
     if (ImGui::CollapsingHeader("Post", ImGuiTreeNodeFlags_DefaultOpen)) {
-        static constexpr const char* kPaletteVariants[] = {"Neutral", "Dungeon", "Meadow", "Dusk", "Arcane", "Cathedral"};
         static constexpr const char* kToneMapModes[] = {"Linear", "ACES Fitted"};
         dirty |= editString("Id", environment.id);
-        dirty |= ImGui::Combo("Palette Variant", &environment.post.paletteVariant, kPaletteVariants, 6);
         dirty |= ImGui::Checkbox("Enable Sky", &environment.post.enableSky);
-        dirty |= ImGui::Checkbox("Enable Dither", &environment.post.enableDither);
         dirty |= ImGui::Checkbox("Enable Edges", &environment.post.enableEdges);
         dirty |= ImGui::Checkbox("Enable Fog", &environment.post.enableFog);
         dirty |= ImGui::Checkbox("Enable Tone Map", &environment.post.enableToneMap);
@@ -305,8 +302,6 @@ bool renderEnvironmentDraftFields(EnvironmentDefinition& environment) {
         dirty |= ImGui::Checkbox("Enable Scanlines", &environment.post.enableScanlines);
         dirty |= ImGui::Checkbox("Enable Sharpen", &environment.post.enableSharpen);
         dirty |= ImGui::Combo("Tone Mapper", &environment.post.toneMapMode, kToneMapModes, 2);
-        dirty |= ImGui::DragFloat("Threshold Bias", &environment.post.thresholdBias, 0.002f, -0.5f, 0.5f, "%.3f");
-        dirty |= ImGui::DragFloat("Pattern Scale", &environment.post.patternScale, 1.0f, 0.0f, 512.0f, "%.1f");
         dirty |= ImGui::DragFloat("Edge Threshold", &environment.post.edgeThreshold, 0.005f, 0.0f, 1.0f, "%.3f");
         dirty |= ImGui::DragFloat("Fog Density", &environment.post.fogDensity, 0.001f, 0.0f, 0.5f, "%.3f");
         dirty |= ImGui::DragFloat("Fog Start", &environment.post.fogStart, 0.1f, 0.0f, 80.0f, "%.1f");

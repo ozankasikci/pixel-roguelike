@@ -14,7 +14,6 @@ int main() {
     assert(settings.lighting.fill.enabled);
     assert(settings.lighting.sun.intensity > settings.lighting.fill.intensity);
     assert(settings.post.toneMapMode == 1);
-    assert(settings.post.paletteVariant == 0);
     assert(!settings.post.enableEdges);
     assert(!settings.post.enableGrain);
     assert(test_support::nearlyEqualVec3(settings.lighting.sun.direction, settings.sky.sunDirection));

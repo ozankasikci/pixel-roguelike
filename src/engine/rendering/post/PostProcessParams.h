@@ -5,10 +5,8 @@
 #include <glm/glm.hpp>
 
 struct PostProcessParams {
-    int  paletteVariant  = 0;      // 0=neutral, 1=dungeon, 2=meadow, 3=dusk, 4=arcane, 5=cathedral_arcade
     bool enableSky       = true;
-    bool enableDither    = true;
-    bool enableEdges     = true;
+    bool enableEdges     = false;
     bool enableFog       = true;
     bool enableToneMap   = true;
     bool enableBloom     = true;
@@ -18,8 +16,6 @@ struct PostProcessParams {
     bool enableSharpen   = false;
     int  debugViewMode   = 0;      // 0=final, 1=scene color, 2=normals, 3=depth, 4=sky
     int  toneMapMode     = 1;      // 0=linear, 1=aces fitted
-    float thresholdBias   = 0.024f;
-    float patternScale    = 0.0f;  // 0 = match internal resolution grid
     float edgeThreshold   = 0.17f;
     float fogDensity      = 0.040f;
     float fogStart        = 14.0f;

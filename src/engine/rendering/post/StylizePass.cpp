@@ -74,12 +74,8 @@ void StylizePass::apply(GLuint compositeColorTex,
     glBindTexture(GL_TEXTURE_2D, sceneNormalTex);
     shader_->setInt("sceneNormal", 3);
 
-    shader_->setInt("uEnableDither", params.enableDither ? 1 : 0);
     shader_->setInt("uEnableEdges", params.enableEdges ? 1 : 0);
     shader_->setInt("uDebugViewMode", params.debugViewMode);
-    shader_->setInt("uPaletteVariant", params.paletteVariant);
-    shader_->setFloat("uThresholdBias", params.thresholdBias);
-    shader_->setFloat("uPatternScale", params.patternScale);
     shader_->setFloat("uEdgeThreshold", params.edgeThreshold);
     shader_->setFloat("uDepthViewScale", params.depthViewScale);
     shader_->setFloat("uFogStart", params.fogStart);

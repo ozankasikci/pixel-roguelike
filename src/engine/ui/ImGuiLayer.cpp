@@ -236,7 +236,6 @@ void ImGuiLayer::renderOverlay(DebugParams& params, std::vector<RenderLight>& li
         const char* toneMapModes[] = {"Linear", "ACES Fitted"};
         ImGui::Combo("View Mode", &params.post.debugViewMode, viewModes, 5);
         ImGui::Checkbox("Enable Sky", &params.post.enableSky);
-        ImGui::Checkbox("Enable Dither", &params.post.enableDither);
         ImGui::Checkbox("Enable Edges", &params.post.enableEdges);
         ImGui::Checkbox("Enable Fog", &params.post.enableFog);
         ImGui::Checkbox("Enable Tone Map", &params.post.enableToneMap);
@@ -249,14 +248,9 @@ void ImGuiLayer::renderOverlay(DebugParams& params, std::vector<RenderLight>& li
     }
 
     // ------------------------------------------------------------------
-    // Dither section
+    // Display section
     // ------------------------------------------------------------------
-    if (ImGui::CollapsingHeader("Dither", ImGuiTreeNodeFlags_DefaultOpen)) {
-        ImGui::SliderFloat("Threshold Bias", &params.post.thresholdBias, -0.5f, 0.5f);
-        ImGui::SliderFloat("Pattern Scale", &params.post.patternScale, 0.0f, 512.0f, "%.1f");
-        if (params.post.patternScale <= 1.0f) {
-            ImGui::TextUnformatted("Pattern Scale: Auto (matches internal resolution)");
-        }
+    if (ImGui::CollapsingHeader("Display", ImGuiTreeNodeFlags_DefaultOpen)) {
         if (params.post.debugViewMode == 3) {
             ImGui::SliderFloat("Depth View Scale", &params.post.depthViewScale, 0.01f, 0.30f, "%.3f");
         }
