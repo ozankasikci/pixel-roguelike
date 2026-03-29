@@ -13,3 +13,6 @@ compile_commands.json
 .vscode/
 .codex/
 __pycache__/
+.worktrees/
+.claude/
+editor_build.ini
