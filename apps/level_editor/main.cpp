@@ -181,7 +181,6 @@ void renderStartupProgress(Window& window,
     ImGui::TextDisabled("%s", stageDetail);
     ImGui::Spacing();
     ImGui::ProgressBar(std::clamp(progress, 0.0f, 1.0f), ImVec2(-1.0f, 0.0f));
-    ImGui::TextDisabled("%d%%", static_cast<int>(std::round(std::clamp(progress, 0.0f, 1.0f) * 100.0f)));
     ImGui::EndChild();
 
     ImGui::End();
@@ -292,7 +291,7 @@ int main(int argc, char* argv[]) {
     renderStartupProgress(window, imgui, 1.0f, "Ready", "Opening editor...");
 
     bool previewDirty = true;
-    int startupViewportHandoffFramesRemaining = 1;
+    int startupViewportHandoffFramesRemaining = 3;
     bool savePressed = false;
     bool focusPressed = false;
     bool resetStartPressed = false;
