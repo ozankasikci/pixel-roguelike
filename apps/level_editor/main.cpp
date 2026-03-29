@@ -51,6 +51,7 @@
 #include <cstring>
 #include <filesystem>
 #include <fstream>
+#include <functional>
 #include <memory>
 #include <optional>
 #include <set>
@@ -76,6 +77,18 @@ constexpr const char* kWindowGeometryFile = "editor_window.ini";
 constexpr const char* kBuildOutputWindowName = "Build Output";
 constexpr const char* kConsoleWindowName = "Console";
 constexpr const char* kBuildConfigFile = "editor_build.ini";
+
+// Live resize support: on macOS, glfwPollEvents blocks during a resize
+// drag.  We store a pointer to the editor's full-frame render lambda and
+// call it from the window-refresh callback so the UI re-layouts at the
+// new size in real time.
+static std::function<void()>* g_editorRenderFrame = nullptr;
+
+void windowRefreshCallback(GLFWwindow*) {
+    if (g_editorRenderFrame) {
+        (*g_editorRenderFrame)();
+    }
+}
 
 struct WindowGeometry {
     int x = -1;
@@ -341,6 +354,7 @@ int main(int argc, char* argv[]) {
     if (savedGeo.x >= 0 && savedGeo.y >= 0) {
         glfwSetWindowPos(window.handle(), savedGeo.x, savedGeo.y);
     }
+    glfwSetWindowRefreshCallback(window.handle(), windowRefreshCallback);
     glfwSwapInterval(1);
 
     ImGuiLayer imgui;
@@ -466,8 +480,9 @@ int main(int argc, char* argv[]) {
     bool buildScriptsPressed = false;
     bool showScriptsBlockedPopup = false;
 
-    while (!window.shouldClose()) {
-        window.pollEvents();
+    // Full-frame render lambda — called from the main loop and from
+    // windowRefreshCallback during live resize on macOS.
+    auto renderFrame = [&]() {
         {
             auto droppedPaths = window.takeDroppedPaths();
             pendingDroppedAssetPaths.insert(pendingDroppedAssetPaths.end(),
@@ -587,7 +602,7 @@ int main(int argc, char* argv[]) {
 
         if (ImGui::BeginMenuBar()) {
             if (ImGui::BeginMenu("File")) {
-                if (ImGui::MenuItem("Save", "Ctrl/Cmd+S")) {
+                if (ImGui::MenuItem("Save", "Ctrl/Cmd+S", false, document.dirty())) {
                     savePressed = true;
                 }
                 if (ImGui::BeginMenu("Open Scene")) {
@@ -783,9 +798,11 @@ int main(int argc, char* argv[]) {
             ? ui.pendingScenePath
             : std::filesystem::path(ui.pendingScenePath).filename().string();
 
+        ImGui::BeginDisabled(!document.dirty());
         if (ImGui::Button("Save")) {
             savePressed = true;
         }
+        ImGui::EndDisabled();
         ImGui::SameLine();
         ImGui::BeginDisabled(!commandStack.canUndo());
         if (ImGui::Button("Undo")) {
@@ -1744,6 +1761,15 @@ int main(int argc, char* argv[]) {
             savePressed = false;
         }
 
+        // Update window title with dirty indicator
+        {
+            const std::string sceneFile = std::filesystem::path(ui.pendingScenePath).filename().string();
+            const std::string title = document.dirty()
+                ? "Level Editor — " + sceneFile + " *"
+                : "Level Editor — " + sceneFile;
+            glfwSetWindowTitle(window.handle(), title.c_str());
+        }
+
         // Build trigger lambda — clears log, shows panel, starts configure or build
         auto triggerBuild = [&](bool runAfter) {
             buildLog.clear();
@@ -1980,8 +2006,17 @@ int main(int argc, char* argv[]) {
         if (startupViewportHandoffFramesRemaining > 0) {
             --startupViewportHandoffFramesRemaining;
         }
+    };
+
+    std::function<void()> renderFrameFn = renderFrame;
+    g_editorRenderFrame = &renderFrameFn;
+
+    while (!window.shouldClose()) {
+        window.pollEvents();
+        renderFrame();
     }
 
+    g_editorRenderFrame = nullptr;
     saveWindowGeometry(window.handle());
     saveBuildConfig(buildConfig, kBuildConfigFile);
     runtimePreviewSession.endCapture(window.handle());
