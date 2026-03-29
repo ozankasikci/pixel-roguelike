@@ -30,7 +30,8 @@ void buildDefaultEditorDockLayout(ImGuiID dockspaceId,
                                   const char* inspectorWindowName,
                                   const char* assetBrowserWindowName,
                                   const char* environmentWindowName,
-                                  const char* buildOutputWindowName);
+                                  const char* buildOutputWindowName,
+                                  const char* consoleWindowName);
 void resetEditorCameraToRuntimeDefaults(EditorCamera& camera);
 bool syncEditorCameraToRuntimeStart(const EditorSceneDocument& document, EditorCamera& camera);
 

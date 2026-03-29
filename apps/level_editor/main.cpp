@@ -10,6 +10,7 @@
 #include "engine/rendering/post/PostProcessParams.h"
 #include "engine/rendering/post/StylizePass.h"
 #include "engine/ui/ImGuiLayer.h"
+#include "engine/core/EditorConsoleSink.h"
 #include "editor/build/EditorBuildSystem.h"
 #include "editor/core/EditorCommand.h"
 #include "editor/scene/EditorPreviewWorld.h"
@@ -44,6 +45,7 @@
 #include <array>
 #include <chrono>
 #include <cmath>
+#include <cstdlib>
 #include <cstdint>
 #include <cstdio>
 #include <cstring>
@@ -72,6 +74,7 @@ constexpr float kRuntimeViewportAspect = 1280.0f / 720.0f;
 constexpr const char* kPreviewModes[] = {"Final", "Lighting", "Sky"};
 constexpr const char* kWindowGeometryFile = "editor_window.ini";
 constexpr const char* kBuildOutputWindowName = "Build Output";
+constexpr const char* kConsoleWindowName = "Console";
 constexpr const char* kBuildConfigFile = "editor_build.ini";
 
 struct WindowGeometry {
@@ -164,6 +167,91 @@ glm::vec3 safeNormalize(const glm::vec3& value, const glm::vec3& fallback) {
     return glm::normalize(value);
 }
 
+void collectScriptAttachmentProblems(const std::vector<ScriptAttachment>& attachments,
+                                     const ContentRegistry& content,
+                                     const std::string& ownerLabel,
+                                     std::vector<std::string>& problems) {
+    for (const auto& attachment : attachments) {
+        const ScriptDefinition* definition = content.findScript(attachment.scriptId);
+        if (definition == nullptr) {
+            problems.push_back(ownerLabel + ": missing script '" + attachment.scriptId + "'");
+            continue;
+        }
+        if (definition->stale) {
+            problems.push_back(ownerLabel + ": stale script '" + attachment.scriptId + "'");
+        }
+    }
+}
+
+bool containsScriptAttachment(const std::vector<ScriptAttachment>& attachments, const std::string& scriptId) {
+    for (const auto& attachment : attachments) {
+        if (attachment.scriptId == scriptId) {
+            return true;
+        }
+    }
+    return false;
+}
+
+std::vector<std::string> collectBlockingScriptProblems(const EditorSceneDocument& document,
+                                                       const ContentRegistry& content) {
+    std::vector<std::string> problems;
+    for (const auto& object : document.objects()) {
+        switch (object.kind) {
+        case EditorSceneObjectKind::Mesh: {
+            const auto& mesh = std::get<LevelMeshPlacement>(object.payload);
+            collectScriptAttachmentProblems(mesh.scripts, content, mesh.nodeId.empty() ? "Mesh" : mesh.nodeId, problems);
+            break;
+        }
+        case EditorSceneObjectKind::Light: {
+            const auto& light = std::get<LevelLightPlacement>(object.payload);
+            collectScriptAttachmentProblems(light.scripts, content, light.nodeId.empty() ? "Light" : light.nodeId, problems);
+            break;
+        }
+        case EditorSceneObjectKind::BoxCollider: {
+            const auto& collider = std::get<LevelBoxColliderPlacement>(object.payload);
+            collectScriptAttachmentProblems(collider.scripts,
+                                            content,
+                                            collider.nodeId.empty() ? "Box Collider" : collider.nodeId,
+                                            problems);
+            break;
+        }
+        case EditorSceneObjectKind::CylinderCollider: {
+            const auto& collider = std::get<LevelCylinderColliderPlacement>(object.payload);
+            collectScriptAttachmentProblems(collider.scripts,
+                                            content,
+                                            collider.nodeId.empty() ? "Cylinder Collider" : collider.nodeId,
+                                            problems);
+            break;
+        }
+        case EditorSceneObjectKind::Archetype: {
+            const auto& archetype = std::get<LevelArchetypePlacement>(object.payload);
+            const GameplayArchetypeDefinition* definition = content.findArchetype(archetype.archetypeId);
+            const std::string owner = archetype.nodeId.empty() ? archetype.archetypeId : archetype.nodeId;
+            if (definition == nullptr) {
+                problems.push_back(owner + ": missing archetype '" + archetype.archetypeId + "'");
+                break;
+            }
+            collectScriptAttachmentProblems(definition->scripts, content, owner, problems);
+            for (const auto& overrideAttachment : archetype.scriptOverrides) {
+                if (!containsScriptAttachment(definition->scripts, overrideAttachment.scriptId)) {
+                    problems.push_back(owner + ": script override without prefab base '" + overrideAttachment.scriptId + "'");
+                }
+            }
+            break;
+        }
+        case EditorSceneObjectKind::PlayerSpawn:
+            break;
+        }
+    }
+    return problems;
+}
+
+bool runScriptPipelineBuild() {
+    const std::string pipelineDirectory = resolveProjectPath("tools/script_pipeline");
+    const std::string command = "cd \"" + pipelineDirectory + "\" && npm run build";
+    return std::system(command.c_str()) == 0;
+}
+
 EditorViewportState fitViewportToAspect(const EditorViewportState& viewport, float aspect) {
     EditorViewportState fitted = viewport;
     if (viewport.size.x <= 1.0f || viewport.size.y <= 1.0f || aspect <= 0.0f) {
@@ -236,6 +324,15 @@ void renderStartupProgress(Window& window,
 
 int main(int argc, char* argv[]) {
     spdlog::set_level(spdlog::level::info);
+
+    auto consoleLogStore = std::make_shared<ConsoleLogStore>();
+    auto consoleSink = std::make_shared<EditorConsoleSink<std::mutex>>(consoleLogStore);
+    {
+        auto defaultSink = spdlog::default_logger()->sinks().front();
+        spdlog::default_logger()->sinks().clear();
+        spdlog::default_logger()->sinks().push_back(defaultSink);
+        spdlog::default_logger()->sinks().push_back(consoleSink);
+    }
 
     const std::string initialScene = argc > 1 ? argv[1] : "assets/scenes/silos_cloister.scene";
 
@@ -366,6 +463,8 @@ int main(int argc, char* argv[]) {
     EditorPendingCommand gizmoCommand;
     std::vector<std::filesystem::path> pendingDroppedAssetPaths;
     ImGuiFontPreset editorFontPreset = imgui.fontPreset();
+    bool buildScriptsPressed = false;
+    bool showScriptsBlockedPopup = false;
 
     while (!window.shouldClose()) {
         window.pollEvents();
@@ -425,6 +524,9 @@ int main(int argc, char* argv[]) {
                 gizmoCommand.clear();
             }
         }
+
+        const std::vector<std::string> blockingScriptProblems = collectBlockingScriptProblems(document, content);
+        const bool scriptsBlocked = !blockingScriptProblems.empty();
 
         std::optional<std::string> requestedScenePath;
         std::optional<std::string> requestedLayoutPresetName;
@@ -614,6 +716,26 @@ int main(int argc, char* argv[]) {
                 }
             }
 
+            if (ImGui::BeginMenu("Scripts")) {
+                if (ImGui::MenuItem("Build & Reload")) {
+                    buildScriptsPressed = true;
+                }
+                if (scriptsBlocked) {
+                    ImGui::Separator();
+                    ImGui::TextDisabled("Play preview is blocked until scripts are rebuilt.");
+                    const std::size_t problemCount = std::min<std::size_t>(blockingScriptProblems.size(), 5);
+                    for (std::size_t index = 0; index < problemCount; ++index) {
+                        ImGui::TextWrapped("- %s", blockingScriptProblems[index].c_str());
+                    }
+                    if (blockingScriptProblems.size() > problemCount) {
+                        ImGui::TextDisabled("...and %zu more", blockingScriptProblems.size() - problemCount);
+                    }
+                } else {
+                    ImGui::TextDisabled("All attached scripts are up to date.");
+                }
+                ImGui::EndMenu();
+            }
+
             if (ImGui::BeginMenu("Window")) {
                 if (ImGui::BeginMenu("Panels")) {
                     ImGui::MenuItem("Outliner", nullptr, &ui.showOutliner);
@@ -622,6 +744,7 @@ int main(int argc, char* argv[]) {
                     ImGui::MenuItem("Environment", nullptr, &ui.showEnvironment);
                     ImGui::MenuItem("Viewport", nullptr, &ui.showViewport);
                     ImGui::MenuItem("Build Output", nullptr, &ui.showBuildOutput);
+                    ImGui::MenuItem("Console", nullptr, &ui.showConsole);
                     ImGui::EndMenu();
                 }
                 if (ImGui::BeginMenu("Layouts")) {
@@ -812,6 +935,28 @@ int main(int argc, char* argv[]) {
             ImGui::EndPopup();
         }
 
+        ImGui::SetNextWindowSize(ImVec2(500.0f, 0.0f), ImGuiCond_Appearing);
+        if (showScriptsBlockedPopup) {
+            ImGui::OpenPopup("Scripts Need Build");
+            showScriptsBlockedPopup = false;
+        }
+        if (ImGui::BeginPopupModal("Scripts Need Build", nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
+            ImGui::TextWrapped("Play preview is blocked because one or more attached scripts are missing a current build.");
+            ImGui::Separator();
+            for (const auto& problem : blockingScriptProblems) {
+                ImGui::BulletText("%s", problem.c_str());
+            }
+            if (ImGui::Button("Build & Reload")) {
+                buildScriptsPressed = true;
+                ImGui::CloseCurrentPopup();
+            }
+            ImGui::SameLine();
+            if (ImGui::Button("Close")) {
+                ImGui::CloseCurrentPopup();
+            }
+            ImGui::EndPopup();
+        }
+
         if (gameplayPreviewCaptured) {
             ImGui::EndDisabled();
         }
@@ -827,7 +972,8 @@ int main(int argc, char* argv[]) {
                                          kInspectorWindowName,
                                          kAssetBrowserWindowName,
                                          kEnvironmentWindowName,
-                                         kBuildOutputWindowName);
+                                         kBuildOutputWindowName,
+                                         kConsoleWindowName);
             dockLayoutResetRequested = false;
         }
         ImGui::DockSpace(dockspaceId, ImVec2(0.0f, 0.0f), ImGuiDockNodeFlags_None);
@@ -1409,41 +1555,70 @@ int main(int argc, char* argv[]) {
         if (playTogglePressed) {
             widgetCommand.clear();
             gizmoCommand.clear();
-            ui.playPreview = !ui.playPreview;
-            if (ui.playPreview) {
-                runtimePreviewSession.endCapture(window.handle());
-                const RuntimePreviewDirtyState requestedDirtyState = runtimePreviewDirtyState;
-                if (runtimePreviewDirtyState == RuntimePreviewDirtyState::FullWorldRebuild) {
-                    runtimePreviewSession.rebuild(document, content);
-                    runtimePreviewDirtyState = RuntimePreviewDirtyState::None;
-                } else if (runtimePreviewDirtyState == RuntimePreviewDirtyState::GameplayStateReset) {
-                    runtimePreviewSession.resetForPlay();
-                    runtimePreviewDirtyState = RuntimePreviewDirtyState::None;
-                } else if (runtimePreviewDirtyState == RuntimePreviewDirtyState::EnvironmentOnly) {
-                    runtimePreviewSession.syncEnvironment(document);
-                    runtimePreviewDirtyState = RuntimePreviewDirtyState::None;
-                }
-                const RuntimeSessionPerformanceStats& stats = runtimePreviewSession.performanceStats();
-                playEnterTrace.pending = true;
-                playEnterTrace.startedAt = Clock::now();
-                playEnterTrace.dirtyState = requestedDirtyState;
-                playEnterTrace.rebuildMs = requestedDirtyState == RuntimePreviewDirtyState::FullWorldRebuild
-                    ? stats.rebuildMs
-                    : 0.0;
-                playEnterTrace.resetForPlayMs = requestedDirtyState == RuntimePreviewDirtyState::GameplayStateReset
-                    ? stats.resetForPlayMs
-                    : 0.0;
-                playEnterTrace.rendererInitMs = stats.rendererInitMs;
-                playEnterTrace.rendererPrewarmMs = stats.rendererPrewarmMs;
-                if (ui.showViewport) {
-                    runtimePreviewSession.beginCapture(window.handle());
-                }
+            if (!ui.playPreview && scriptsBlocked) {
+                showScriptsBlockedPopup = true;
             } else {
-                runtimePreviewSession.endCapture(window.handle());
-                runtimePreviewDirtyState = mergeRuntimePreviewDirtyState(runtimePreviewDirtyState,
-                                                                        RuntimePreviewDirtyState::GameplayStateReset);
+                ui.playPreview = !ui.playPreview;
+                if (ui.playPreview) {
+                    runtimePreviewSession.endCapture(window.handle());
+                    const RuntimePreviewDirtyState requestedDirtyState = runtimePreviewDirtyState;
+                    if (runtimePreviewDirtyState == RuntimePreviewDirtyState::FullWorldRebuild) {
+                        runtimePreviewSession.rebuild(document, content);
+                        runtimePreviewDirtyState = RuntimePreviewDirtyState::None;
+                    } else if (runtimePreviewDirtyState == RuntimePreviewDirtyState::GameplayStateReset) {
+                        runtimePreviewSession.resetForPlay();
+                        runtimePreviewDirtyState = RuntimePreviewDirtyState::None;
+                    } else if (runtimePreviewDirtyState == RuntimePreviewDirtyState::EnvironmentOnly) {
+                        runtimePreviewSession.syncEnvironment(document);
+                        runtimePreviewDirtyState = RuntimePreviewDirtyState::None;
+                    }
+                    const RuntimeSessionPerformanceStats& stats = runtimePreviewSession.performanceStats();
+                    playEnterTrace.pending = true;
+                    playEnterTrace.startedAt = Clock::now();
+                    playEnterTrace.dirtyState = requestedDirtyState;
+                    playEnterTrace.rebuildMs = requestedDirtyState == RuntimePreviewDirtyState::FullWorldRebuild
+                        ? stats.rebuildMs
+                        : 0.0;
+                    playEnterTrace.resetForPlayMs = requestedDirtyState == RuntimePreviewDirtyState::GameplayStateReset
+                        ? stats.resetForPlayMs
+                        : 0.0;
+                    playEnterTrace.rendererInitMs = stats.rendererInitMs;
+                    playEnterTrace.rendererPrewarmMs = stats.rendererPrewarmMs;
+                    if (ui.showViewport) {
+                        runtimePreviewSession.beginCapture(window.handle());
+                    }
+                } else {
+                    runtimePreviewSession.endCapture(window.handle());
+                    runtimePreviewDirtyState = mergeRuntimePreviewDirtyState(runtimePreviewDirtyState,
+                                                                            RuntimePreviewDirtyState::GameplayStateReset);
+                }
             }
             playTogglePressed = false;
+        }
+
+        if (buildScriptsPressed) {
+            const bool recapturePreview = ui.playPreview && runtimePreviewSession.captured();
+            if (recapturePreview) {
+                runtimePreviewSession.endCapture(window.handle());
+            }
+
+            if (runScriptPipelineBuild()) {
+                content.loadDefaults();
+                materialIds = sortedMaterialIds(content);
+                archetypeIds = sortedArchetypeIds(content);
+                environmentIds = sortedEnvironmentIds(content);
+                runtimePreviewSession.resetForPlay();
+                runtimePreviewSession.prewarmRenderer(content);
+                spdlog::info("Scripts built and reloaded.");
+            } else {
+                spdlog::error("Script build failed.");
+                showScriptsBlockedPopup = true;
+            }
+
+            if (recapturePreview && ui.showViewport) {
+                runtimePreviewSession.beginCapture(window.handle());
+            }
+            buildScriptsPressed = false;
         }
 
         if (resetStartPressed) {
@@ -1657,6 +1832,99 @@ int main(int argc, char* argv[]) {
                     buildLog.scrollToError = false;
                 }
 
+                ImGui::EndChild();
+            }
+            ImGui::End();
+            ImGui::PopStyleVar();
+        }
+
+        // Console panel
+        if (ui.showConsole) {
+            ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(6.0f, 6.0f));
+            if (ImGui::Begin(kConsoleWindowName, &ui.showConsole)) {
+                // Filter buttons
+                static bool showInfo = true;
+                static bool showWarnings = true;
+                static bool showErrors = true;
+
+                // Count entries by severity for button labels
+                int infoCount = 0;
+                int warnCount = 0;
+                int errorCount = 0;
+                const size_t totalEntries = consoleLogStore->count();
+                for (size_t i = 0; i < totalEntries; ++i) {
+                    const auto entry = consoleLogStore->getEntry(i);
+                    if (entry.level <= spdlog::level::info) {
+                        ++infoCount;
+                    } else if (entry.level == spdlog::level::warn) {
+                        ++warnCount;
+                    } else if (entry.level >= spdlog::level::err) {
+                        ++errorCount;
+                    }
+                }
+
+                if (ImGui::Button(showInfo ? "Info ON" : "Info OFF")) {
+                    showInfo = !showInfo;
+                }
+                ImGui::SameLine();
+                ImGui::TextDisabled("(%d)", infoCount);
+                ImGui::SameLine();
+                if (ImGui::Button(showWarnings ? "Warn ON" : "Warn OFF")) {
+                    showWarnings = !showWarnings;
+                }
+                ImGui::SameLine();
+                ImGui::TextDisabled("(%d)", warnCount);
+                ImGui::SameLine();
+                if (ImGui::Button(showErrors ? "Error ON" : "Error OFF")) {
+                    showErrors = !showErrors;
+                }
+                ImGui::SameLine();
+                ImGui::TextDisabled("(%d)", errorCount);
+                ImGui::SameLine();
+                if (ImGui::Button("Clear")) {
+                    consoleLogStore->clear();
+                }
+                ImGui::Separator();
+
+                // Build filtered entry list
+                std::vector<size_t> visibleIndices;
+                visibleIndices.reserve(totalEntries);
+                for (size_t i = 0; i < totalEntries; ++i) {
+                    const auto entry = consoleLogStore->getEntry(i);
+                    if (entry.level <= spdlog::level::info && showInfo) {
+                        visibleIndices.push_back(i);
+                    } else if (entry.level == spdlog::level::warn && showWarnings) {
+                        visibleIndices.push_back(i);
+                    } else if (entry.level >= spdlog::level::err && showErrors) {
+                        visibleIndices.push_back(i);
+                    }
+                }
+
+                // Scrollable log area with clipper
+                ImGui::BeginChild("ConsoleLogScroll", ImVec2(0, 0), ImGuiChildFlags_None,
+                                  ImGuiWindowFlags_HorizontalScrollbar);
+                ImGuiListClipper clipper;
+                clipper.Begin(static_cast<int>(visibleIndices.size()));
+                while (clipper.Step()) {
+                    for (int lineNo = clipper.DisplayStart; lineNo < clipper.DisplayEnd; ++lineNo) {
+                        const auto entry = consoleLogStore->getEntry(visibleIndices[lineNo]);
+                        if (entry.level >= spdlog::level::err) {
+                            ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 0.3f, 0.3f, 1.0f));
+                        } else if (entry.level == spdlog::level::warn) {
+                            ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 0.8f, 0.0f, 1.0f));
+                        }
+                        ImGui::TextUnformatted(entry.message.c_str());
+                        if (entry.level >= spdlog::level::err || entry.level == spdlog::level::warn) {
+                            ImGui::PopStyleColor();
+                        }
+                    }
+                }
+                clipper.End();
+
+                // Auto-scroll to bottom
+                if (ImGui::GetScrollY() >= ImGui::GetScrollMaxY()) {
+                    ImGui::SetScrollHereY(1.0f);
+                }
                 ImGui::EndChild();
             }
             ImGui::End();

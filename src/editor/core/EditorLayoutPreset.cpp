@@ -139,6 +139,10 @@ EditorLayoutPreset loadEditorLayoutPreset(const std::string& path) {
             preset.visibility.showEnvironment = parseBool(value);
         } else if (key == "show_viewport") {
             preset.visibility.showViewport = parseBool(value);
+        } else if (key == "show_build_output") {
+            preset.visibility.showBuildOutput = parseBool(value);
+        } else if (key == "show_console") {
+            preset.visibility.showConsole = parseBool(value);
         }
     }
 
@@ -161,6 +165,8 @@ void saveEditorLayoutPreset(const std::string& path, const EditorLayoutPreset& p
     file << "show_asset_browser " << (preset.visibility.showAssetBrowser ? 1 : 0) << '\n';
     file << "show_environment " << (preset.visibility.showEnvironment ? 1 : 0) << '\n';
     file << "show_viewport " << (preset.visibility.showViewport ? 1 : 0) << '\n';
+    file << "show_build_output " << (preset.visibility.showBuildOutput ? 1 : 0) << '\n';
+    file << "show_console " << (preset.visibility.showConsole ? 1 : 0) << '\n';
     file << kImguiIniBegin << '\n';
     file << preset.imguiIni;
     if (!preset.imguiIni.empty() && preset.imguiIni.back() != '\n') {

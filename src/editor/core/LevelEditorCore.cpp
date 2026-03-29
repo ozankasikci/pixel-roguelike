@@ -22,6 +22,7 @@ EditorLayoutVisibility captureLayoutVisibility(const EditorUiState& ui) {
         ui.showEnvironment,
         ui.showViewport,
         ui.showBuildOutput,
+        ui.showConsole,
     };
 }
 
@@ -32,6 +33,7 @@ void applyLayoutVisibility(EditorUiState& ui, const EditorLayoutVisibility& visi
     ui.showEnvironment = visibility.showEnvironment;
     ui.showViewport = visibility.showViewport;
     ui.showBuildOutput = visibility.showBuildOutput;
+    ui.showConsole = visibility.showConsole;
 }
 
 bool saveLayoutPresetFromUi(const EditorUiState& ui, const std::string& layoutName) {
@@ -69,7 +71,8 @@ void buildDefaultEditorDockLayout(ImGuiID dockspaceId,
                                   const char* inspectorWindowName,
                                   const char* assetBrowserWindowName,
                                   const char* environmentWindowName,
-                                  const char* buildOutputWindowName) {
+                                  const char* buildOutputWindowName,
+                                  const char* consoleWindowName) {
     if (dockspaceSize.x <= 0.0f || dockspaceSize.y <= 0.0f) {
         return;
     }
@@ -89,6 +92,7 @@ void buildDefaultEditorDockLayout(ImGuiID dockspaceId,
     ImGui::DockBuilderDockWindow(environmentWindowName, rightId);
     ImGui::DockBuilderDockWindow(assetBrowserWindowName, bottomId);
     ImGui::DockBuilderDockWindow(buildOutputWindowName, bottomId);
+    ImGui::DockBuilderDockWindow(consoleWindowName, bottomId);
     ImGui::DockBuilderFinish(dockspaceId);
 }
 
