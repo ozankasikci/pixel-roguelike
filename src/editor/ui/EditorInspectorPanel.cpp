@@ -15,6 +15,7 @@
 #include <optional>
 #include <sstream>
 #include <string>
+#include <algorithm>
 
 namespace {
 
@@ -51,6 +52,8 @@ const char* assetKindLabel(EditorAssetBrowserKind kind) {
         return "Environment";
     case EditorAssetBrowserKind::Prefab:
         return "Prefab";
+    case EditorAssetBrowserKind::Script:
+        return "Script";
     case EditorAssetBrowserKind::Sky:
         return "Sky";
     case EditorAssetBrowserKind::Shader:
@@ -63,6 +66,375 @@ const char* assetKindLabel(EditorAssetBrowserKind kind) {
 
 std::string optionalString(const std::optional<std::string>& value) {
     return value.value_or("<none>");
+}
+
+std::vector<std::string> sortedScriptIds(const ContentRegistry& content) {
+    std::vector<std::string> ids;
+    ids.reserve(content.scripts().size());
+    for (const auto& [id, definition] : content.scripts()) {
+        (void)definition;
+        ids.push_back(id);
+    }
+    std::sort(ids.begin(), ids.end());
+    return ids;
+}
+
+std::string scriptIdFromAsset(const EditorInspectedAsset& asset) {
+    namespace fs = std::filesystem;
+    const fs::path scriptsRoot("assets/scripts");
+    const fs::path assetPath(asset.relativePath);
+    if (assetPath.string().starts_with(scriptsRoot.generic_string())) {
+        return fs::relative(assetPath, scriptsRoot).replace_extension().generic_string();
+    }
+    return assetPath.stem().generic_string();
+}
+
+bool scriptPropertyMatchesType(const ScriptPropertyValue& value, ScriptPropertyType type) {
+    switch (type) {
+    case ScriptPropertyType::Number:
+        return std::holds_alternative<double>(value);
+    case ScriptPropertyType::Boolean:
+        return std::holds_alternative<bool>(value);
+    case ScriptPropertyType::String:
+        return std::holds_alternative<std::string>(value);
+    case ScriptPropertyType::Vec3:
+        return std::holds_alternative<glm::vec3>(value);
+    }
+    return false;
+}
+
+ScriptPropertyValue resolvedScriptPropertyValue(const ScriptAttachment& attachment,
+                                                const ScriptPropertyDefinition& property) {
+    const auto it = attachment.propertyValues.find(property.name);
+    if (it != attachment.propertyValues.end() && scriptPropertyMatchesType(it->second, property.type)) {
+        return it->second;
+    }
+    return property.defaultValue;
+}
+
+bool editScriptPropertyValue(const std::string& label, ScriptPropertyType type, ScriptPropertyValue& value) {
+    switch (type) {
+    case ScriptPropertyType::Number: {
+        double number = std::get<double>(value);
+        if (ImGui::InputDouble(label.c_str(), &number, 0.0, 0.0, "%.3f")) {
+            value = number;
+            return true;
+        }
+        return false;
+    }
+    case ScriptPropertyType::Boolean: {
+        bool flag = std::get<bool>(value);
+        if (ImGui::Checkbox(label.c_str(), &flag)) {
+            value = flag;
+            return true;
+        }
+        return false;
+    }
+    case ScriptPropertyType::String: {
+        std::string text = std::get<std::string>(value);
+        if (editString(label.c_str(), text)) {
+            value = text;
+            return true;
+        }
+        return false;
+    }
+    case ScriptPropertyType::Vec3: {
+        glm::vec3 vector = std::get<glm::vec3>(value);
+        if (editVec3(label.c_str(), vector, 0.05f)) {
+            value = vector;
+            return true;
+        }
+        return false;
+    }
+    }
+    return false;
+}
+
+ScriptAttachment* findScriptAttachment(std::vector<ScriptAttachment>& attachments, const std::string& scriptId) {
+    for (auto& attachment : attachments) {
+        if (attachment.scriptId == scriptId) {
+            return &attachment;
+        }
+    }
+    return nullptr;
+}
+
+const ScriptAttachment* findScriptAttachment(const std::vector<ScriptAttachment>& attachments, const std::string& scriptId) {
+    for (const auto& attachment : attachments) {
+        if (attachment.scriptId == scriptId) {
+            return &attachment;
+        }
+    }
+    return nullptr;
+}
+
+std::vector<ScriptAttachment>* sceneObjectScripts(EditorSceneObject& object) {
+    switch (object.kind) {
+    case EditorSceneObjectKind::Mesh:
+        return &std::get<LevelMeshPlacement>(object.payload).scripts;
+    case EditorSceneObjectKind::Light:
+        return &std::get<LevelLightPlacement>(object.payload).scripts;
+    case EditorSceneObjectKind::BoxCollider:
+        return &std::get<LevelBoxColliderPlacement>(object.payload).scripts;
+    case EditorSceneObjectKind::CylinderCollider:
+        return &std::get<LevelCylinderColliderPlacement>(object.payload).scripts;
+    case EditorSceneObjectKind::PlayerSpawn:
+    case EditorSceneObjectKind::Archetype:
+        return nullptr;
+    }
+    return nullptr;
+}
+
+const std::vector<ScriptAttachment>* sceneObjectScripts(const EditorSceneObject& object) {
+    switch (object.kind) {
+    case EditorSceneObjectKind::Mesh:
+        return &std::get<LevelMeshPlacement>(object.payload).scripts;
+    case EditorSceneObjectKind::Light:
+        return &std::get<LevelLightPlacement>(object.payload).scripts;
+    case EditorSceneObjectKind::BoxCollider:
+        return &std::get<LevelBoxColliderPlacement>(object.payload).scripts;
+    case EditorSceneObjectKind::CylinderCollider:
+        return &std::get<LevelCylinderColliderPlacement>(object.payload).scripts;
+    case EditorSceneObjectKind::PlayerSpawn:
+    case EditorSceneObjectKind::Archetype:
+        return nullptr;
+    }
+    return nullptr;
+}
+
+bool attachmentListHasBlockingScriptIssues(const std::vector<ScriptAttachment>& attachments,
+                                           const ContentRegistry& content) {
+    for (const auto& attachment : attachments) {
+        const ScriptDefinition* definition = content.findScript(attachment.scriptId);
+        if (definition == nullptr || definition->stale) {
+            return true;
+        }
+    }
+    return false;
+}
+
+bool renderScriptAttachmentListEditor(const char* sectionLabel,
+                                      std::vector<ScriptAttachment>& attachments,
+                                      const ContentRegistry& content,
+                                      const char* popupId,
+                                      bool readOnly = false) {
+    if (!ImGui::CollapsingHeader(sectionLabel, ImGuiTreeNodeFlags_DefaultOpen)) {
+        return false;
+    }
+
+    bool changed = false;
+    const bool blockingIssues = attachmentListHasBlockingScriptIssues(attachments, content);
+    const bool disableEditing = readOnly || blockingIssues;
+    if (blockingIssues) {
+        ImGui::TextColored(ImVec4(0.96f, 0.72f, 0.38f, 1.0f),
+                           "Build and reload scripts before editing these attachments.");
+    }
+
+    ImGui::BeginDisabled(disableEditing);
+    if (ImGui::Button("Add Script")) {
+        ImGui::OpenPopup(popupId);
+    }
+    if (ImGui::BeginPopup(popupId)) {
+        const auto scriptIds = sortedScriptIds(content);
+        bool anyAvailable = false;
+        for (const auto& scriptId : scriptIds) {
+            if (findScriptAttachment(attachments, scriptId) != nullptr) {
+                continue;
+            }
+            anyAvailable = true;
+            const ScriptDefinition* definition = content.findScript(scriptId);
+            std::string label = scriptId;
+            if (definition != nullptr && definition->stale) {
+                label += " (stale)";
+            }
+            if (ImGui::Selectable(label.c_str())) {
+                ScriptAttachment attachment;
+                attachment.scriptId = scriptId;
+                attachments.push_back(std::move(attachment));
+                changed = true;
+                ImGui::CloseCurrentPopup();
+            }
+        }
+        if (!anyAvailable) {
+            ImGui::TextDisabled("No unassigned scripts found.");
+        }
+        ImGui::EndPopup();
+    }
+    ImGui::EndDisabled();
+
+    if (attachments.empty()) {
+        ImGui::TextDisabled("No scripts attached.");
+        return changed;
+    }
+
+    for (std::size_t index = 0; index < attachments.size(); ++index) {
+        auto& attachment = attachments[index];
+        const ScriptDefinition* definition = content.findScript(attachment.scriptId);
+
+        ImGui::PushID(static_cast<int>(index));
+        ImGui::Separator();
+        ImGui::TextUnformatted(attachment.scriptId.c_str());
+        ImGui::SameLine();
+        ImGui::BeginDisabled(disableEditing || index == 0);
+        if (ImGui::ArrowButton("up", ImGuiDir_Up)) {
+            std::swap(attachments[index], attachments[index - 1]);
+            changed = true;
+        }
+        ImGui::EndDisabled();
+        ImGui::SameLine();
+        ImGui::BeginDisabled(disableEditing || index + 1 >= attachments.size());
+        if (ImGui::ArrowButton("down", ImGuiDir_Down)) {
+            std::swap(attachments[index], attachments[index + 1]);
+            changed = true;
+        }
+        ImGui::EndDisabled();
+        ImGui::SameLine();
+        ImGui::BeginDisabled(disableEditing);
+        if (ImGui::Button("Remove")) {
+            attachments.erase(attachments.begin() + static_cast<std::ptrdiff_t>(index));
+            changed = true;
+            ImGui::EndDisabled();
+            ImGui::PopID();
+            break;
+        }
+        ImGui::EndDisabled();
+
+        if (definition == nullptr) {
+            ImGui::TextColored(ImVec4(0.96f, 0.50f, 0.50f, 1.0f), "Missing script manifest entry.");
+            ImGui::PopID();
+            continue;
+        }
+        if (definition->stale) {
+            ImGui::TextColored(ImVec4(0.96f, 0.72f, 0.38f, 1.0f), "Script build is stale.");
+        }
+
+        ImGui::BeginDisabled(disableEditing);
+        bool enabled = attachment.enabled;
+        if (ImGui::Checkbox("Enabled", &enabled)) {
+            attachment.enabled = enabled;
+            changed = true;
+        }
+        bool hasVisibleProperties = false;
+        for (const auto& property : definition->properties) {
+            if (!property.inspector) {
+                continue;
+            }
+            hasVisibleProperties = true;
+            ScriptPropertyValue value = resolvedScriptPropertyValue(attachment, property);
+            const std::string label = property.name + "##script_prop";
+            if (editScriptPropertyValue(label, property.type, value)) {
+                attachment.propertyValues[property.name] = std::move(value);
+                changed = true;
+            }
+        }
+        if (!hasVisibleProperties) {
+            ImGui::TextDisabled("No inspector-visible properties.");
+        }
+        ImGui::EndDisabled();
+        ImGui::PopID();
+    }
+
+    return changed;
+}
+
+bool renderArchetypeScriptOverrideEditor(LevelArchetypePlacement& placement,
+                                         const GameplayArchetypeDefinition* prefab,
+                                         const ContentRegistry& content) {
+    if (!ImGui::CollapsingHeader("Scripts", ImGuiTreeNodeFlags_DefaultOpen)) {
+        return false;
+    }
+
+    if (prefab == nullptr) {
+        ImGui::TextDisabled("Prefab metadata unavailable.");
+        return false;
+    }
+    if (prefab->scripts.empty()) {
+        ImGui::TextDisabled("Prefab has no scripts.");
+        return false;
+    }
+
+    const bool blockingIssues = attachmentListHasBlockingScriptIssues(prefab->scripts, content);
+    if (blockingIssues) {
+        ImGui::TextColored(ImVec4(0.96f, 0.72f, 0.38f, 1.0f),
+                           "Build and reload scripts before editing placement overrides.");
+    }
+
+    bool changed = false;
+    ImGui::BeginDisabled(blockingIssues);
+    for (const auto& baseAttachment : prefab->scripts) {
+        ScriptAttachment* override = findScriptAttachment(placement.scriptOverrides, baseAttachment.scriptId);
+        const ScriptDefinition* definition = content.findScript(baseAttachment.scriptId);
+
+        ImGui::PushID(baseAttachment.scriptId.c_str());
+        ImGui::Separator();
+        ImGui::TextUnformatted(baseAttachment.scriptId.c_str());
+        ImGui::SameLine();
+        if (ImGui::Button("Reset Overrides")) {
+            if (override != nullptr) {
+                placement.scriptOverrides.erase(
+                    std::remove_if(placement.scriptOverrides.begin(),
+                                   placement.scriptOverrides.end(),
+                                   [&](const ScriptAttachmentOverride& candidate) {
+                                       return candidate.scriptId == baseAttachment.scriptId;
+                                   }),
+                    placement.scriptOverrides.end());
+                changed = true;
+                override = nullptr;
+            }
+        }
+
+        if (definition == nullptr) {
+            ImGui::TextColored(ImVec4(0.96f, 0.50f, 0.50f, 1.0f), "Missing script manifest entry.");
+            ImGui::PopID();
+            continue;
+        }
+
+        auto ensureOverride = [&]() -> ScriptAttachment& {
+            ScriptAttachment* existing = findScriptAttachment(placement.scriptOverrides, baseAttachment.scriptId);
+            if (existing != nullptr) {
+                return *existing;
+            }
+            ScriptAttachmentOverride created;
+            created.scriptId = baseAttachment.scriptId;
+            created.enabled = baseAttachment.enabled;
+            placement.scriptOverrides.push_back(std::move(created));
+            return placement.scriptOverrides.back();
+        };
+
+        bool enabled = override != nullptr ? override->enabled : baseAttachment.enabled;
+        if (ImGui::Checkbox("Enabled", &enabled)) {
+            ScriptAttachment& targetOverride = ensureOverride();
+            targetOverride.enabled = enabled;
+            changed = true;
+        }
+
+        bool hasVisibleProperties = false;
+        for (const auto& property : definition->properties) {
+            if (!property.inspector) {
+                continue;
+            }
+            hasVisibleProperties = true;
+            ScriptPropertyValue value = property.defaultValue;
+            if (const auto* baseProperty = findScriptAttachment(prefab->scripts, baseAttachment.scriptId)) {
+                value = resolvedScriptPropertyValue(*baseProperty, property);
+            }
+            if (override != nullptr) {
+                value = resolvedScriptPropertyValue(*override, property);
+            }
+            const std::string label = property.name + "##override_prop";
+            if (editScriptPropertyValue(label, property.type, value)) {
+                ScriptAttachment& targetOverride = ensureOverride();
+                targetOverride.propertyValues[property.name] = std::move(value);
+                changed = true;
+            }
+        }
+        if (!hasVisibleProperties) {
+            ImGui::TextDisabled("No inspector-visible properties.");
+        }
+        ImGui::PopID();
+    }
+    ImGui::EndDisabled();
+    return changed;
 }
 
 void renderFileHeader(const EditorInspectedAsset& asset) {
@@ -93,6 +465,21 @@ std::string shaderSnippet(const std::string& absolutePath) {
     std::string line;
     int lineCount = 0;
     while (std::getline(file, line) && lineCount < 20) {
+        snippet << line << '\n';
+        ++lineCount;
+    }
+    return snippet.str();
+}
+
+std::string scriptSourceSnippet(const std::string& sourcePath) {
+    std::ifstream file(sourcePath);
+    if (!file.is_open()) {
+        return {};
+    }
+    std::ostringstream snippet;
+    std::string line;
+    int lineCount = 0;
+    while (std::getline(file, line) && lineCount < 30) {
         snippet << line << '\n';
         ++lineCount;
     }
@@ -132,6 +519,7 @@ void syncAssetInspectorSession(const EditorInspectedAsset& asset, AssetInspector
         case EditorAssetBrowserKind::Prefab:
             session.prefabDraft = loadGameplayArchetypeAsset(asset.absolutePath);
             break;
+        case EditorAssetBrowserKind::Script:
         default:
             break;
         }
@@ -636,7 +1024,11 @@ void renderPrefabAssetInspector(EditorUiState& ui,
         }
     }
 
-    const bool dirty = renderPrefabDraftFields(prefab);
+    bool dirty = renderPrefabDraftFields(prefab);
+    dirty |= renderScriptAttachmentListEditor("Scripts",
+                                              prefab.scripts,
+                                              content,
+                                              "PrefabScriptAddPopup");
     if (dirty) {
         session.prefabDirty = true;
     }
@@ -644,6 +1036,94 @@ void renderPrefabAssetInspector(EditorUiState& ui,
         ImGui::TextDisabled("Unsaved changes");
     }
     ImGui::TextDisabled("Prefab preview is metadata-only in this first pass.");
+}
+
+void renderScriptAssetInspector(const EditorInspectedAsset& asset,
+                                const ContentRegistry& content,
+                                const EditorSceneDocument& document) {
+    renderFileHeader(asset);
+    renderFileMetadata(asset.absolutePath);
+
+    const std::string scriptId = scriptIdFromAsset(asset);
+    ImGui::Text("Script Id: %s", scriptId.c_str());
+
+    const ScriptDefinition* definition = content.findScript(scriptId);
+    if (definition == nullptr) {
+        ImGui::Separator();
+        ImGui::TextColored(ImVec4(0.96f, 0.50f, 0.50f, 1.0f),
+                           "No built script manifest entry was found for this file.");
+        ImGui::TextDisabled("Run the script build to generate metadata.");
+        return;
+    }
+
+    ImGui::Separator();
+    ImGui::Text("Built Output: %s", definition->builtPath.c_str());
+    ImGui::Text("Status: %s", definition->stale ? "Stale" : "Ready");
+    if (definition->stale) {
+        ImGui::TextColored(ImVec4(0.96f, 0.72f, 0.38f, 1.0f),
+                           "This script is out of date. Build and reload scripts before entering play.");
+        ImGui::TextDisabled("Rebuild scripts via the script pipeline to update.");
+    }
+
+    // Properties section
+    if (ImGui::CollapsingHeader("Properties", ImGuiTreeNodeFlags_DefaultOpen)) {
+        if (definition->properties.empty()) {
+            ImGui::TextDisabled("No decorated properties.");
+        } else {
+            for (const auto& property : definition->properties) {
+                ImGui::TextColored(ImVec4(0.60f, 0.60f, 0.60f, 1.0f), "[%s]",
+                                   scriptPropertyTypeName(property.type));
+                ImGui::SameLine();
+                ImGui::TextUnformatted(property.name.c_str());
+                if (!property.inspector) {
+                    ImGui::SameLine();
+                    ImGui::TextDisabled("[hidden]");
+                }
+                ScriptPropertyValue defaultCopy = property.defaultValue;
+                ImGui::BeginDisabled(true);
+                editScriptPropertyValue("##default_" + property.name, property.type, defaultCopy);
+                ImGui::EndDisabled();
+            }
+        }
+    }
+
+    // Source preview section
+    if (ImGui::CollapsingHeader("Source Preview")) {
+        const std::string snippet = scriptSourceSnippet(definition->sourcePath);
+        if (snippet.empty()) {
+            ImGui::TextDisabled("Source file not found: %s", definition->sourcePath.c_str());
+        } else {
+            ImGui::BeginChild("ScriptSourceSnippet", ImVec2(0.0f, 250.0f), true);
+            ImGui::TextUnformatted(snippet.c_str());
+            ImGui::EndChild();
+        }
+    }
+
+    // Scene usage section
+    if (ImGui::CollapsingHeader("Scene Usage")) {
+        bool anyReferences = false;
+        for (const auto& object : document.objects()) {
+            // Check non-archetype objects with scripts vector
+            const std::vector<ScriptAttachment>* scripts = sceneObjectScripts(object);
+            if (scripts != nullptr) {
+                if (findScriptAttachment(*scripts, scriptId) != nullptr) {
+                    ImGui::BulletText("%s", editorSceneObjectLabel(object).c_str());
+                    anyReferences = true;
+                }
+            }
+            // Check archetype objects via scriptOverrides
+            if (object.kind == EditorSceneObjectKind::Archetype) {
+                const auto& placement = std::get<LevelArchetypePlacement>(object.payload);
+                if (findScriptAttachment(placement.scriptOverrides, scriptId) != nullptr) {
+                    ImGui::BulletText("%s", editorSceneObjectLabel(object).c_str());
+                    anyReferences = true;
+                }
+            }
+        }
+        if (!anyReferences) {
+            ImGui::TextDisabled("Not referenced by any scene object.");
+        }
+    }
 }
 
 void renderSkyAssetInspector(const EditorInspectedAsset& asset, AssetInspectorSession& session) {
@@ -841,6 +1321,11 @@ void renderSceneSelectionInspector(EditorSceneDocument& document,
             beforeState = document.captureState();
             trackSceneItem(beforeState, "Change Mesh Tint", editColor("Tint", *mesh.tint));
         }
+        beforeState = document.captureState();
+        if (renderScriptAttachmentListEditor("Scripts", mesh.scripts, content, "MeshScriptAddPopup")) {
+            document.markSceneDirty();
+            commandStack.pushDocumentStateCommand("Edit Mesh Scripts", beforeState, document.captureState(), document);
+        }
         break;
     }
     case EditorSceneObjectKind::Light: {
@@ -875,6 +1360,11 @@ void renderSceneSelectionInspector(EditorSceneDocument& document,
             beforeState = document.captureState();
             trackSceneItem(beforeState, "Toggle Spot Shadows", ImGui::Checkbox("Casts Shadows", &light.castsShadows));
         }
+        beforeState = document.captureState();
+        if (renderScriptAttachmentListEditor("Scripts", light.scripts, content, "LightScriptAddPopup")) {
+            document.markSceneDirty();
+            commandStack.pushDocumentStateCommand("Edit Light Scripts", beforeState, document.captureState(), document);
+        }
         break;
     }
     case EditorSceneObjectKind::BoxCollider: {
@@ -887,6 +1377,11 @@ void renderSceneSelectionInspector(EditorSceneDocument& document,
             box.halfExtents = glm::max(box.halfExtents, glm::vec3(0.01f));
         }
         trackSceneItem(beforeState, "Resize Box Collider", extentsChanged);
+        beforeState = document.captureState();
+        if (renderScriptAttachmentListEditor("Scripts", box.scripts, content, "BoxScriptAddPopup")) {
+            document.markSceneDirty();
+            commandStack.pushDocumentStateCommand("Edit Box Collider Scripts", beforeState, document.captureState(), document);
+        }
         break;
     }
     case EditorSceneObjectKind::CylinderCollider: {
@@ -897,6 +1392,11 @@ void renderSceneSelectionInspector(EditorSceneDocument& document,
         trackSceneItem(beforeState, "Adjust Cylinder Radius", ImGui::DragFloat("Radius", &cylinder.radius, 0.02f, 0.05f, 20.0f, "%.2f"));
         beforeState = document.captureState();
         trackSceneItem(beforeState, "Adjust Cylinder Height", ImGui::DragFloat("Half Height", &cylinder.halfHeight, 0.02f, 0.05f, 20.0f, "%.2f"));
+        beforeState = document.captureState();
+        if (renderScriptAttachmentListEditor("Scripts", cylinder.scripts, content, "CylinderScriptAddPopup")) {
+            document.markSceneDirty();
+            commandStack.pushDocumentStateCommand("Edit Cylinder Collider Scripts", beforeState, document.captureState(), document);
+        }
         break;
     }
     case EditorSceneObjectKind::PlayerSpawn: {
@@ -928,6 +1428,16 @@ void renderSceneSelectionInspector(EditorSceneDocument& document,
         trackSceneItem(beforeState, "Move Archetype", editVec3("Position", archetype.position));
         beforeState = document.captureState();
         trackSceneItem(beforeState, "Rotate Archetype", ImGui::DragFloat("Yaw", &archetype.yawDegrees, 0.5f, -360.0f, 360.0f, "%.1f"));
+        beforeState = document.captureState();
+        if (renderArchetypeScriptOverrideEditor(archetype,
+                                                content.findArchetype(archetype.archetypeId),
+                                                content)) {
+            document.markSceneDirty();
+            commandStack.pushDocumentStateCommand("Edit Archetype Script Overrides",
+                                                  beforeState,
+                                                  document.captureState(),
+                                                  document);
+        }
         break;
     }
     }
@@ -973,6 +1483,9 @@ InspectorActionResult renderInspector(EditorUiState& ui,
             break;
         case EditorAssetBrowserKind::Prefab:
             renderPrefabAssetInspector(ui, ui.inspectedAsset, session, content, result);
+            break;
+        case EditorAssetBrowserKind::Script:
+            renderScriptAssetInspector(ui.inspectedAsset, content, document);
             break;
         case EditorAssetBrowserKind::Sky:
             renderSkyAssetInspector(ui.inspectedAsset, session);
