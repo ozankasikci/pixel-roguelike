@@ -1,7 +1,9 @@
 #include "engine/rendering/geometry/MeshLibrary.h"
 #include "engine/core/PathUtils.h"
+#include "engine/rendering/assets/AssetCache.h"
 #include "engine/rendering/assets/ModelLoader.h"
 #include "engine/rendering/geometry/Mesh.h"
+#include "engine/rendering/geometry/MeshGeometry.h"
 
 #include <spdlog/spdlog.h>
 #include <stdexcept>
@@ -71,12 +73,51 @@ void MeshLibrary::registerDefaults() {
 }
 
 void MeshLibrary::loadFromFile(const std::string& name, const std::string& filepath) {
-    auto mesh = ModelLoader::load(resolveProjectPath(filepath));
-    if (mesh) {
-        registerMesh(name, std::move(mesh));
-    } else {
-        spdlog::error("MeshLibrary: failed to load mesh '{}' from '{}'", name, filepath);
+    std::string resolvedPath = resolveProjectPath(filepath);
+
+    // Try disk cache first
+    auto cached = AssetCache::findMeshCache(resolvedPath);
+    if (cached) {
+        registerMesh(name, std::make_unique<Mesh>(
+            cached->interleavedVertices, cached->indices,
+            cached->aabbMin, cached->aabbMax));
+        return;
     }
+
+    // Cache miss: full load path
+    RawMeshData raw = ModelLoader::loadRaw(resolvedPath);
+    if (raw.positions.empty() || raw.indices.empty()) {
+        spdlog::error("MeshLibrary: failed to load mesh '{}' from '{}'", name, filepath);
+        return;
+    }
+
+    // Create mesh (this interleaves the data and computes AABB)
+    auto mesh = std::make_unique<Mesh>(
+        raw.positions, raw.normals, raw.uvs, raw.tangents, raw.indices);
+
+    // Build interleaved data for cache storage
+    std::vector<float> interleaved;
+    interleaved.reserve(raw.positions.size() * 11);
+    for (size_t i = 0; i < raw.positions.size(); ++i) {
+        interleaved.push_back(raw.positions[i].x);
+        interleaved.push_back(raw.positions[i].y);
+        interleaved.push_back(raw.positions[i].z);
+        const auto& n = i < raw.normals.size() ? raw.normals[i] : glm::vec3(0.0f, 1.0f, 0.0f);
+        interleaved.push_back(n.x);
+        interleaved.push_back(n.y);
+        interleaved.push_back(n.z);
+        const auto& uv = i < raw.uvs.size() ? raw.uvs[i] : glm::vec2(0.0f, 0.0f);
+        interleaved.push_back(uv.x);
+        interleaved.push_back(uv.y);
+        const auto& t = i < raw.tangents.size() ? raw.tangents[i] : glm::vec3(1.0f, 0.0f, 0.0f);
+        interleaved.push_back(t.x);
+        interleaved.push_back(t.y);
+        interleaved.push_back(t.z);
+    }
+    AssetCache::writeMeshCache(resolvedPath, interleaved, raw.indices,
+                               mesh->aabbMin(), mesh->aabbMax());
+
+    registerMesh(name, std::move(mesh));
 }
 
 void MeshLibrary::clear() {

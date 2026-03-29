@@ -1,10 +1,12 @@
 #include "game/rendering/MaterialTextureLibrary.h"
 
 #include "engine/core/PathUtils.h"
+#include "engine/rendering/assets/AssetCache.h"
 #include "game/content/ContentRegistry.h"
 #include "game/rendering/MaterialDefinition.h"
 
 #include <glm/glm.hpp>
+#include <spdlog/spdlog.h>
 
 #include <algorithm>
 #include <array>
@@ -187,11 +189,48 @@ const MaterialTextureLibrary::TextureSet& MaterialTextureLibrary::ensureTextureS
     }
 
     TextureSet textures;
-    if (resolved.proceduralSource == MaterialProceduralSource::GeneratedBrick) {
-        buildBrickSet(textures);
-    } else if (resolved.proceduralSource == MaterialProceduralSource::GeneratedStone) {
-        buildStoneSet(textures);
+
+    const bool isProcedural =
+        resolved.proceduralSource == MaterialProceduralSource::GeneratedBrick ||
+        resolved.proceduralSource == MaterialProceduralSource::GeneratedStone;
+
+    if (isProcedural) {
+        // Try disk cache for procedural textures
+        uint64_t paramHash = AssetCache::hashBytes(key.data(), key.size());
+        auto cachedAlbedo = AssetCache::findTextureCache(key + "_albedo", paramHash);
+        auto cachedNormal = AssetCache::findTextureCache(key + "_normal", paramHash);
+        auto cachedRoughness = AssetCache::findTextureCache(key + "_roughness", paramHash);
+        auto cachedAo = AssetCache::findTextureCache(key + "_ao", paramHash);
+
+        if (cachedAlbedo && cachedNormal && cachedRoughness && cachedAo) {
+            textures.albedo.createRGBA8(cachedAlbedo->width, cachedAlbedo->height, cachedAlbedo->pixels);
+            textures.normal.createRGBA8(cachedNormal->width, cachedNormal->height, cachedNormal->pixels);
+            textures.roughness.createR8(cachedRoughness->width, cachedRoughness->height, cachedRoughness->pixels);
+            textures.ao.createR8(cachedAo->width, cachedAo->height, cachedAo->pixels);
+            auto [it, inserted] = textureSets_.emplace(key, std::move(textures));
+            (void)inserted;
+            return it->second;
+        }
+
+        // Cache miss: generate pixels, create GL textures, write to disk cache
+        ProceduralPixelData pixels =
+            (resolved.proceduralSource == MaterialProceduralSource::GeneratedBrick)
+            ? generateBrickPixels()
+            : generateStonePixels();
+
+        textures.albedo.createRGBA8(pixels.size, pixels.size, pixels.albedo);
+        textures.normal.createRGBA8(pixels.size, pixels.size, pixels.normal);
+        textures.roughness.createR8(pixels.size, pixels.size, pixels.roughness);
+        textures.ao.createR8(pixels.size, pixels.size, pixels.ao);
+
+        // Write to disk cache for next launch
+        uint16_t sz = static_cast<uint16_t>(pixels.size);
+        AssetCache::writeTextureCache(key + "_albedo", paramHash, pixels.albedo, sz, sz, 4);
+        AssetCache::writeTextureCache(key + "_normal", paramHash, pixels.normal, sz, sz, 4);
+        AssetCache::writeTextureCache(key + "_roughness", paramHash, pixels.roughness, sz, sz, 1);
+        AssetCache::writeTextureCache(key + "_ao", paramHash, pixels.ao, sz, sz, 1);
     } else {
+        // File-based textures: not cached per design doc (diminishing returns)
         if (!resolved.albedoMapPath.empty()) {
             textures.albedo.createRGBA8FromFile(resolveProjectPath(resolved.albedoMapPath));
         }
@@ -219,15 +258,17 @@ std::string MaterialTextureLibrary::textureKeyFor(const ResolvedMaterialDefiniti
         + "|" + resolved.aoMapPath;
 }
 
-void MaterialTextureLibrary::buildBrickSet(TextureSet& brick) const {
+MaterialTextureLibrary::ProceduralPixelData MaterialTextureLibrary::generateBrickPixels() const {
     constexpr int kSize = 512;
     constexpr int kCourseCount = 12;
     constexpr float kBricksPerRow = 6.0f;
 
-    std::vector<std::uint8_t> albedo(static_cast<size_t>(kSize * kSize * 4), 255);
-    std::vector<std::uint8_t> normal(static_cast<size_t>(kSize * kSize * 4), 255);
-    std::vector<std::uint8_t> roughness(static_cast<size_t>(kSize * kSize), 255);
-    std::vector<std::uint8_t> ao(static_cast<size_t>(kSize * kSize), 255);
+    ProceduralPixelData result;
+    result.size = kSize;
+    result.albedo.resize(static_cast<size_t>(kSize * kSize * 4), 255);
+    result.normal.resize(static_cast<size_t>(kSize * kSize * 4), 255);
+    result.roughness.resize(static_cast<size_t>(kSize * kSize), 255);
+    result.ao.resize(static_cast<size_t>(kSize * kSize), 255);
     std::vector<float> height(static_cast<size_t>(kSize * kSize), 0.0f);
 
     for (int y = 0; y < kSize; ++y) {
@@ -293,12 +334,12 @@ void MaterialTextureLibrary::buildBrickSet(TextureSet& brick) const {
 
             const size_t pixelIndex = static_cast<size_t>(y * kSize + x);
             const size_t colorIndex = pixelIndex * 4;
-            albedo[colorIndex + 0] = toByte(color.r);
-            albedo[colorIndex + 1] = toByte(color.g);
-            albedo[colorIndex + 2] = toByte(color.b);
-            albedo[colorIndex + 3] = 255;
-            roughness[pixelIndex] = toByte(localRoughness);
-            ao[pixelIndex] = toByte(localAo);
+            result.albedo[colorIndex + 0] = toByte(color.r);
+            result.albedo[colorIndex + 1] = toByte(color.g);
+            result.albedo[colorIndex + 2] = toByte(color.b);
+            result.albedo[colorIndex + 3] = 255;
+            result.roughness[pixelIndex] = toByte(localRoughness);
+            result.ao[pixelIndex] = toByte(localAo);
             height[pixelIndex] = localHeight;
         }
     }
@@ -307,26 +348,33 @@ void MaterialTextureLibrary::buildBrickSet(TextureSet& brick) const {
         for (int x = 0; x < kSize; ++x) {
             glm::vec3 n = sampleHeightNormal(height, kSize, x, y);
             const size_t colorIndex = static_cast<size_t>(y * kSize + x) * 4;
-            normal[colorIndex + 0] = toByte(n.x * 0.5f + 0.5f);
-            normal[colorIndex + 1] = toByte(n.y * 0.5f + 0.5f);
-            normal[colorIndex + 2] = toByte(n.z * 0.5f + 0.5f);
-            normal[colorIndex + 3] = 255;
+            result.normal[colorIndex + 0] = toByte(n.x * 0.5f + 0.5f);
+            result.normal[colorIndex + 1] = toByte(n.y * 0.5f + 0.5f);
+            result.normal[colorIndex + 2] = toByte(n.z * 0.5f + 0.5f);
+            result.normal[colorIndex + 3] = 255;
         }
     }
 
-    brick.albedo.createRGBA8(kSize, kSize, albedo);
-    brick.normal.createRGBA8(kSize, kSize, normal);
-    brick.roughness.createR8(kSize, kSize, roughness);
-    brick.ao.createR8(kSize, kSize, ao);
+    return result;
 }
 
-void MaterialTextureLibrary::buildStoneSet(TextureSet& stone) const {
+void MaterialTextureLibrary::buildBrickSet(TextureSet& brick) const {
+    auto pixels = generateBrickPixels();
+    brick.albedo.createRGBA8(pixels.size, pixels.size, pixels.albedo);
+    brick.normal.createRGBA8(pixels.size, pixels.size, pixels.normal);
+    brick.roughness.createR8(pixels.size, pixels.size, pixels.roughness);
+    brick.ao.createR8(pixels.size, pixels.size, pixels.ao);
+}
+
+MaterialTextureLibrary::ProceduralPixelData MaterialTextureLibrary::generateStonePixels() const {
     constexpr int kSize = 512;
 
-    std::vector<std::uint8_t> albedo(static_cast<size_t>(kSize * kSize * 4), 255);
-    std::vector<std::uint8_t> normal(static_cast<size_t>(kSize * kSize * 4), 255);
-    std::vector<std::uint8_t> roughness(static_cast<size_t>(kSize * kSize), 255);
-    std::vector<std::uint8_t> ao(static_cast<size_t>(kSize * kSize), 255);
+    ProceduralPixelData result;
+    result.size = kSize;
+    result.albedo.resize(static_cast<size_t>(kSize * kSize * 4), 255);
+    result.normal.resize(static_cast<size_t>(kSize * kSize * 4), 255);
+    result.roughness.resize(static_cast<size_t>(kSize * kSize), 255);
+    result.ao.resize(static_cast<size_t>(kSize * kSize), 255);
     std::vector<float> height(static_cast<size_t>(kSize * kSize), 0.0f);
 
     for (int y = 0; y < kSize; ++y) {
@@ -366,12 +414,12 @@ void MaterialTextureLibrary::buildStoneSet(TextureSet& stone) const {
 
             const size_t pixelIndex = static_cast<size_t>(y * kSize + x);
             const size_t colorIndex = pixelIndex * 4;
-            albedo[colorIndex + 0] = toByte(color.r);
-            albedo[colorIndex + 1] = toByte(color.g);
-            albedo[colorIndex + 2] = toByte(color.b);
-            albedo[colorIndex + 3] = 255;
-            roughness[pixelIndex] = toByte(localRoughness);
-            ao[pixelIndex] = toByte(localAo);
+            result.albedo[colorIndex + 0] = toByte(color.r);
+            result.albedo[colorIndex + 1] = toByte(color.g);
+            result.albedo[colorIndex + 2] = toByte(color.b);
+            result.albedo[colorIndex + 3] = 255;
+            result.roughness[pixelIndex] = toByte(localRoughness);
+            result.ao[pixelIndex] = toByte(localAo);
             height[pixelIndex] = localHeight;
         }
     }
@@ -380,15 +428,20 @@ void MaterialTextureLibrary::buildStoneSet(TextureSet& stone) const {
         for (int x = 0; x < kSize; ++x) {
             glm::vec3 n = sampleHeightNormal(height, kSize, x, y);
             const size_t colorIndex = static_cast<size_t>(y * kSize + x) * 4;
-            normal[colorIndex + 0] = toByte(n.x * 0.5f + 0.5f);
-            normal[colorIndex + 1] = toByte(n.y * 0.5f + 0.5f);
-            normal[colorIndex + 2] = toByte(n.z * 0.5f + 0.5f);
-            normal[colorIndex + 3] = 255;
+            result.normal[colorIndex + 0] = toByte(n.x * 0.5f + 0.5f);
+            result.normal[colorIndex + 1] = toByte(n.y * 0.5f + 0.5f);
+            result.normal[colorIndex + 2] = toByte(n.z * 0.5f + 0.5f);
+            result.normal[colorIndex + 3] = 255;
         }
     }
 
-    stone.albedo.createRGBA8(kSize, kSize, albedo);
-    stone.normal.createRGBA8(kSize, kSize, normal);
-    stone.roughness.createR8(kSize, kSize, roughness);
-    stone.ao.createR8(kSize, kSize, ao);
+    return result;
+}
+
+void MaterialTextureLibrary::buildStoneSet(TextureSet& stone) const {
+    auto pixels = generateStonePixels();
+    stone.albedo.createRGBA8(pixels.size, pixels.size, pixels.albedo);
+    stone.normal.createRGBA8(pixels.size, pixels.size, pixels.normal);
+    stone.roughness.createR8(pixels.size, pixels.size, pixels.roughness);
+    stone.ao.createR8(pixels.size, pixels.size, pixels.ao);
 }

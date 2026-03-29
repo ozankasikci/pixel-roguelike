@@ -15,3 +15,9 @@ pixel_roguelike_add_test(test_model_loader
     LIBRARIES engine_rendering
     LABELS engine
 )
+
+pixel_roguelike_add_test(test_asset_cache
+    SOURCES test_asset_cache.cpp
+    LIBRARIES engine_rendering
+    LABELS engine
+)
