@@ -111,7 +111,7 @@ std::string modeLabel(bool stylized, const PostProcessParams& params, bool autoR
 RenderMaterialData makeViewerMaterial(MaterialKind kind) {
     RenderMaterialData material;
     material.id = std::string(defaultMaterialIdForKind(kind));
-    material.shadingModel = kind;
+    material.shadingModelIndex = static_cast<int>(kind);
     material.baseColor = glm::vec3(1.0f);
     return material;
 }
