@@ -1,0 +1,14 @@
+id concrete_wall
+parent masonry_base
+shading_model stone
+albedo_map assets/textures/smooth_concrete_wall_uhnlfbvn_2k/Smooth_Concrete_Wall_uhnlfbvn_2K_BaseColor.jpg
+normal_map assets/textures/smooth_concrete_wall_uhnlfbvn_2k/Smooth_Concrete_Wall_uhnlfbvn_2K_Normal.jpg
+roughness_map assets/textures/smooth_concrete_wall_uhnlfbvn_2k/Smooth_Concrete_Wall_uhnlfbvn_2K_Roughness.jpg
+ao_map assets/textures/smooth_concrete_wall_uhnlfbvn_2k/Smooth_Concrete_Wall_uhnlfbvn_2K_AO.jpg
+uv_mode world_projected
+uv_scale 0.5 0.5
+normal_strength 0.5
+roughness_scale 1.0
+roughness_bias 0.0
+ao_strength 0.8
+light_tint_response 0.08
