@@ -196,16 +196,8 @@ EnvironmentDefinition loadEnvironmentDefinitionAsset(const std::string& path) {
             continue;
         }
 
-        if (key == "palette_variant") {
-            definition.post.paletteVariant = parseIntRecord(tokens, path, lineNumber, key);
-            continue;
-        }
         if (key == "enable_sky") {
             definition.post.enableSky = parseBoolRecord(tokens, path, lineNumber, key);
-            continue;
-        }
-        if (key == "enable_dither") {
-            definition.post.enableDither = parseBoolRecord(tokens, path, lineNumber, key);
             continue;
         }
         if (key == "enable_edges") {
@@ -242,14 +234,6 @@ EnvironmentDefinition loadEnvironmentDefinitionAsset(const std::string& path) {
         }
         if (key == "tone_map_mode") {
             definition.post.toneMapMode = parseIntRecord(tokens, path, lineNumber, key);
-            continue;
-        }
-        if (key == "threshold_bias") {
-            definition.post.thresholdBias = parseFloatRecord(tokens, path, lineNumber, key);
-            continue;
-        }
-        if (key == "pattern_scale") {
-            definition.post.patternScale = parseFloatRecord(tokens, path, lineNumber, key);
             continue;
         }
         if (key == "edge_threshold") {
@@ -547,9 +531,7 @@ std::string serializeEnvironmentDefinitionAsset(const EnvironmentDefinition& def
     std::ostringstream out;
 
     writeString(out, "id", definition.id);
-    writeInt(out, "palette_variant", definition.post.paletteVariant);
     writeBool(out, "enable_sky", definition.post.enableSky);
-    writeBool(out, "enable_dither", definition.post.enableDither);
     writeBool(out, "enable_edges", definition.post.enableEdges);
     writeBool(out, "enable_fog", definition.post.enableFog);
     writeBool(out, "enable_tone_map", definition.post.enableToneMap);
@@ -559,8 +541,6 @@ std::string serializeEnvironmentDefinitionAsset(const EnvironmentDefinition& def
     writeBool(out, "enable_scanlines", definition.post.enableScanlines);
     writeBool(out, "enable_sharpen", definition.post.enableSharpen);
     writeInt(out, "tone_map_mode", definition.post.toneMapMode);
-    writeFloat(out, "threshold_bias", definition.post.thresholdBias);
-    writeFloat(out, "pattern_scale", definition.post.patternScale);
     writeFloat(out, "edge_threshold", definition.post.edgeThreshold);
     writeFloat(out, "fog_density", definition.post.fogDensity);
     writeFloat(out, "fog_start", definition.post.fogStart);
