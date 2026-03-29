@@ -12,18 +12,18 @@ mesh prison_floor 2.0 0.0 5.0 1.0 1.0 1.0 0.0 0.0 0.0 material floor_default tin
 mesh prison_floor -2.0 0.0 7.0 1.0 1.0 1.0 0.0 0.0 0.0 material floor_default tint 0.3 0.28 0.26 node node_10
 mesh prison_floor 0.0 0.0 7.0 1.0 1.0 1.0 0.0 0.0 0.0 material floor_default tint 0.31 0.29 0.27 node node_11
 mesh prison_floor 2.0 0.0 7.0 1.0 1.0 1.0 0.0 0.0 0.0 material floor_default tint 0.3 0.28 0.26 node node_12
-mesh prison_ceiling -2.0 2.5 1.0 1.0 1.0 1.0 0.0 0.0 0.0 material stone_default tint 0.28 0.26 0.24 node node_13
-mesh prison_ceiling 0.0 2.5 1.0 1.0 1.0 1.0 0.0 0.0 0.0 material stone_default tint 0.27 0.25 0.23 node node_14
-mesh prison_ceiling 2.0 2.5 1.0 1.0 1.0 1.0 0.0 0.0 0.0 material stone_default tint 0.28 0.26 0.24 node node_15
-mesh prison_ceiling -2.0 2.5 3.0 1.0 1.0 1.0 0.0 0.0 0.0 material stone_default tint 0.27 0.25 0.23 node node_16
-mesh prison_ceiling 0.0 2.5 3.0 1.0 1.0 1.0 0.0 0.0 0.0 material stone_default tint 0.28 0.26 0.24 node node_17
-mesh prison_ceiling 2.0 2.5 3.0 1.0 1.0 1.0 0.0 0.0 0.0 material stone_default tint 0.27 0.25 0.23 node node_18
-mesh prison_ceiling -2.0 2.5 5.0 1.0 1.0 1.0 0.0 0.0 0.0 material stone_default tint 0.28 0.26 0.24 node node_19
-mesh prison_ceiling 0.0 2.5 5.0 1.0 1.0 1.0 0.0 0.0 0.0 material stone_default tint 0.27 0.25 0.23 node node_20
-mesh prison_ceiling 2.0 2.5 5.0 1.0 1.0 1.0 0.0 0.0 0.0 material stone_default tint 0.28 0.26 0.24 node node_21
-mesh prison_ceiling -2.0 2.5 7.0 1.0 1.0 1.0 0.0 0.0 0.0 material stone_default tint 0.27 0.25 0.23 node node_22
-mesh prison_ceiling 0.0 2.5 7.0 1.0 1.0 1.0 0.0 0.0 0.0 material stone_default tint 0.28 0.26 0.24 node node_23
-mesh prison_ceiling 2.0 2.5 7.0 1.0 1.0 1.0 0.0 0.0 0.0 material stone_default tint 0.27 0.25 0.23 node node_24
+mesh prison_ceiling -2.0 3.5 1.0 1.0 1.0 1.0 0.0 0.0 0.0 material stone_default tint 0.28 0.26 0.24 node node_13
+mesh prison_ceiling 0.0 3.5 1.0 1.0 1.0 1.0 0.0 0.0 0.0 material stone_default tint 0.27 0.25 0.23 node node_14
+mesh prison_ceiling 2.0 3.5 1.0 1.0 1.0 1.0 0.0 0.0 0.0 material stone_default tint 0.28 0.26 0.24 node node_15
+mesh prison_ceiling -2.0 3.5 3.0 1.0 1.0 1.0 0.0 0.0 0.0 material stone_default tint 0.27 0.25 0.23 node node_16
+mesh prison_ceiling 0.0 3.5 3.0 1.0 1.0 1.0 0.0 0.0 0.0 material stone_default tint 0.28 0.26 0.24 node node_17
+mesh prison_ceiling 2.0 3.5 3.0 1.0 1.0 1.0 0.0 0.0 0.0 material stone_default tint 0.27 0.25 0.23 node node_18
+mesh prison_ceiling -2.0 3.5 5.0 1.0 1.0 1.0 0.0 0.0 0.0 material stone_default tint 0.28 0.26 0.24 node node_19
+mesh prison_ceiling 0.0 3.5 5.0 1.0 1.0 1.0 0.0 0.0 0.0 material stone_default tint 0.27 0.25 0.23 node node_20
+mesh prison_ceiling 2.0 3.5 5.0 1.0 1.0 1.0 0.0 0.0 0.0 material stone_default tint 0.28 0.26 0.24 node node_21
+mesh prison_ceiling -2.0 3.5 7.0 1.0 1.0 1.0 0.0 0.0 0.0 material stone_default tint 0.27 0.25 0.23 node node_22
+mesh prison_ceiling 0.0 3.5 7.0 1.0 1.0 1.0 0.0 0.0 0.0 material stone_default tint 0.28 0.26 0.24 node node_23
+mesh prison_ceiling 2.0 3.5 7.0 1.0 1.0 1.0 0.0 0.0 0.0 material stone_default tint 0.27 0.25 0.23 node node_24
 mesh prison_wall -2.0 0.0 8.0 1.0 1.0 1.0 0.0 180.0 0.0 material stone_default tint 0.35 0.33 0.3 node node_25
 mesh prison_wall_window 0.0 0.0 8.0 1.0 1.0 1.0 0.0 180.0 0.0 material stone_default tint 0.34 0.32 0.29 node node_26
 mesh prison_wall 2.0 0.0 8.0 1.0 1.0 1.0 0.0 180.0 0.0 material stone_default tint 0.36 0.34 0.31 node node_27
@@ -56,17 +56,18 @@ mesh prison_baseboard 2.9 0.0 1.0 1.0 1.0 1.0 0.0 -90.0 0.0 material metal_defau
 mesh prison_baseboard 2.9 0.0 3.0 1.0 1.0 1.0 0.0 -90.0 0.0 material metal_default tint 0.1 0.08 0.06 node node_54
 mesh prison_baseboard 2.9 0.0 5.0 1.0 1.0 1.0 0.0 -90.0 0.0 material metal_default tint 0.1 0.08 0.06 node node_55
 mesh prison_baseboard 2.9 0.0 7.0 1.0 1.0 1.0 0.0 -90.0 0.0 material metal_default tint 0.1 0.08 0.06 node node_56
-spot_light 0.0 2.4 4.5 0.0 -1.0 0.0 1.0 0.95 0.85 8.0 4.0 40.0 55.0 false node node_57
-light 0.0 1.8 7.8 0.8 0.85 0.95 6.0 1.2 node node_58
-light 0.0 2.0 4.0 1.0 0.95 0.9 10.0 1.0 node node_59
-light 0.0 2.0 1.0 0.9 0.9 0.95 8.0 0.6 node node_60
+spot_light 0.0 3.4 4.5 0.0 -1.0 0.0 1.0 0.95 0.85 8.0 4.0 40.0 55.0 false node node_57
+light 0.0 2.5 7.8 0.8 0.85 0.95 6.0 1.2 node node_58
+light 0.0 2.8 4.0 1.0 0.95 0.9 10.0 1.0 node node_59
+light 0.0 2.8 1.0 0.9 0.9 0.95 8.0 0.6 node node_60
 collider_box 0.0 -0.05 4.0 3.0 0.05 4.0 node node_61
-collider_box 0.0 1.25 8.0 3.0 1.25 0.1 node node_62
-collider_box -2.0 1.25 0.0 1.0 1.25 0.1 node node_63
-collider_box 2.0 1.25 0.0 1.0 1.25 0.1 node node_64
-collider_box 0.0 2.3 0.0 1.0 0.2 0.1 node node_65
-collider_box -3.0 1.25 4.0 0.1 1.25 4.0 node node_66
-collider_box 3.0 1.25 4.0 0.1 1.25 4.0 node node_67
+collider_box 0.0 1.75 8.0 3.0 1.75 0.1 node node_62
+collider_box -2.0 1.75 0.0 1.0 1.75 0.1 node node_63
+collider_box 2.0 1.75 0.0 1.0 1.75 0.1 node node_64
+collider_box 0.0 2.8 0.0 1.0 0.7 0.1 node node_65
+collider_box -3.0 1.75 4.0 0.1 1.75 4.0 node node_66
+collider_box 3.0 1.75 4.0 0.1 1.75 4.0 node node_67
+collider_box 0.0 3.5 4.0 3.0 0.05 4.0 node node_ceil
 collider_box 0.0 0.375 4.5 0.6 0.375 0.3 node node_68
 collider_box 2.2 0.65 7.4 0.225 0.65 0.3 node node_69
 player_spawn 0.0 1.0 3.1 -2.0 node node_70
