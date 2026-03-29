@@ -3,10 +3,10 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: Phase complete — ready for verification
-stopped_at: Completed 02.1-02-PLAN.md -- inventory open/close flow verified
-last_updated: "2026-03-25T16:29:40.437Z"
+stopped_at: Phase 3 context gathered
+last_updated: "2026-03-29T01:45:12.396Z"
 progress:
-  total_phases: 4
+  total_phases: 5
   completed_phases: 3
   total_plans: 8
   completed_plans: 8
@@ -92,6 +92,7 @@ None yet.
 
 - Phase 01.1 inserted after Phase 1: Project Restructure — ECS, Application class, modular engine/game split (URGENT)
 - Phase 02.1 inserted after Phase 2: Equipment Inventory and Carry Weight — weapons are inventory items, no slot-grid inventory, Dark Souls-style carry weight (URGENT)
+- Phase 3 added: Build menu in editor — macOS build from editor with progress and output (Windows support later)
 
 ### Blockers/Concerns
 
@@ -99,6 +100,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-25T16:21:00.000Z
-Stopped at: Completed 02.1-02-PLAN.md -- inventory open/close flow verified
-Resume file: None
+Last session: 2026-03-29T01:45:12.392Z
+Stopped at: Phase 3 context gathered
+Resume file: .planning/phases/03-build-menu-in-editor-macos-build-from-editor-with-progress-and-output/03-CONTEXT.md
