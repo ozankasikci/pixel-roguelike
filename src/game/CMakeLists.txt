@@ -2,6 +2,7 @@ add_library(game_content STATIC
     content/ContentRegistry.cpp
     level/LevelDef.cpp
     levels/cathedral/CathedralAssets.cpp
+    levels/prison/PrisonAssets.cpp
     rendering/EnvironmentDefinition.cpp
     rendering/EnvironmentProfile.cpp
     rendering/MaterialDefinition.cpp
@@ -33,6 +34,7 @@ add_library(gameplay STATIC
     scenes/CathedralScene.cpp
     scenes/GenericFileScene.cpp
     scenes/SilosCloisterScene.cpp
+    scenes/WardenOfficeScene.cpp
     session/EquipmentState.cpp
     systems/CameraSystem.cpp
     systems/CheckpointSystem.cpp

@@ -1,29 +1,20 @@
-#include "GenericFileScene.h"
+#include "WardenOfficeScene.h"
 
 #include "engine/core/Application.h"
 #include "game/level/LevelBuildContext.h"
 #include "game/level/LevelLoader.h"
-#include "game/levels/cathedral/CathedralAssets.h"
 #include "game/levels/prison/PrisonAssets.h"
 #include "game/rendering/MeshAssetProvider.h"
 #include "game/rendering/EnvironmentProfile.h"
 
-#include <filesystem>
-
-GenericFileScene::GenericFileScene(const std::string& scenePath) {
-    request_.levelId   = std::filesystem::path(scenePath).stem().string();
-    request_.levelPath = scenePath;
-}
-
-void GenericFileScene::onEnter(Application& app) {
+void WardenOfficeScene::onEnter(Application& app) {
     entities_.clear();
     LevelBuildContext context{
-        .registry    = app.registry(),
+        .registry = app.registry(),
         .meshLibrary = meshLibrary_,
-        .entities    = entities_,
+        .entities = entities_,
     };
     request_.registerAssets = [](MeshLibrary& library) {
-        registerCathedralAssets(library);
         registerPrisonAssets(library);
     };
     request_.buildScriptedGeometry = {};
@@ -31,7 +22,7 @@ void GenericFileScene::onEnter(Application& app) {
     loader.load(app, request_);
 }
 
-void GenericFileScene::onExit(Application& app) {
+void WardenOfficeScene::onExit(Application& app) {
     for (auto entity : entities_) {
         if (app.registry().valid(entity)) {
             app.registry().destroy(entity);

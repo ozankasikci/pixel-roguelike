@@ -10,6 +10,7 @@
 #include "game/systems/InteractionSystem.h"
 #include "game/systems/RenderSystem.h"
 #include "game/scenes/SilosCloisterScene.h"
+#include "game/scenes/WardenOfficeScene.h"
 #include "game/scenes/GenericFileScene.h"
 #include "game/content/ContentRegistry.h"
 #include "game/session/RunSession.h"
@@ -63,11 +64,11 @@ int main(int argc, char* argv[]) {
     }
 
     // Push the starting scene: use --scene <path> if provided, otherwise fall back to the
-    // hardcoded Silos-inspired cloister scene.
+    // hardcoded Warden's Office prison scene.
     SceneManager sceneManager;
     app.setSceneManager(&sceneManager);
     if (scenePath.empty()) {
-        sceneManager.pushScene(std::make_unique<SilosCloisterScene>(), app);
+        sceneManager.pushScene(std::make_unique<WardenOfficeScene>(), app);
     } else {
         sceneManager.pushScene(std::make_unique<GenericFileScene>(scenePath), app);
     }
