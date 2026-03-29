@@ -28,6 +28,7 @@
 #include "game/rendering/MaterialDefinition.h"
 #include "game/rendering/MaterialTextureLibrary.h"
 #include "game/session/EquipmentState.h"
+#include "game/ui/GameOverlays.h"
 #include "game/ui/InteractionPromptState.h"
 #include "game/ui/InventoryMenuState.h"
 
@@ -1559,12 +1560,12 @@ int main(int argc, char* argv[]) {
             if (inventoryOpen) {
                 auto& menu = previewRegistry.ctx().get<InventoryMenuState>();
                 const auto equipment = resolveEffectiveEquipment(runtimePreviewSession.runSession(), content);
-                ImGuiLayer::renderInventory(menu, runtimePreviewSession.runSession(), content, equipment);
+                GameOverlays::renderInventory(menu, runtimePreviewSession.runSession(), content, equipment);
             }
             if (previewRegistry.ctx().contains<InteractionPromptState>()) {
                 const auto& prompt = previewRegistry.ctx().get<InteractionPromptState>();
                 if (prompt.visible && !inventoryOpen) {
-                    ImGuiLayer::renderInteractionPrompt(prompt.text.c_str(), prompt.busy);
+                    GameOverlays::renderInteractionPrompt(prompt.text.c_str(), prompt.busy);
                 }
             }
         }

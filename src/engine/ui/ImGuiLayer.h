@@ -9,12 +9,6 @@
 
 // Forward declarations
 struct GLFWwindow;
-struct PlayerMovementComponent;
-struct ViewmodelComponent;
-class ContentRegistry;
-struct EffectiveEquipmentView;
-struct InventoryMenuState;
-struct RunSession;
 
 enum class ImGuiFontPreset {
     SystemSans,
@@ -90,13 +84,6 @@ public:
     void endFrame();
 
     static void renderOverlay(DebugParams& params, std::vector<RenderLight>& lights);
-    static void renderMovementOverlay(PlayerMovementComponent& movement, bool grounded);
-    static void renderViewmodelOverlay(ViewmodelComponent& vm);
-    static void renderInteractionPrompt(const char* text, bool busy);
-    static void renderInventory(InventoryMenuState& menu,
-                                const RunSession& session,
-                                const ContentRegistry& content,
-                                const EffectiveEquipmentView& equipment);
 
 private:
     void applyPendingFontPreset();
