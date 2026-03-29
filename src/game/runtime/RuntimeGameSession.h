@@ -9,6 +9,7 @@
 #include "game/rendering/RuntimeSceneRenderer.h"
 #include "game/runtime/RuntimeGameplay.h"
 #include "game/runtime/RuntimeInputState.h"
+#include "game/scripting/ScriptRuntime.h"
 #include "game/session/RunSession.h"
 
 #include <entt/entt.hpp>
@@ -80,6 +81,7 @@ private:
     PhysicsSystem physics_;
     DebugParams debugParams_;
     RuntimeSceneRenderer renderer_;
+    ScriptRuntime scriptRuntime_;
     RuntimeEnvironmentSyncState environmentSyncState_;
     RuntimeSessionPerformanceStats performanceStats_;
     std::unique_ptr<RuntimeMutableSnapshot> baselineSnapshot_;

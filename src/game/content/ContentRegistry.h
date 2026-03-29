@@ -3,6 +3,7 @@
 #include "game/prefabs/GameplayPrefabData.h"
 #include "game/rendering/EnvironmentDefinition.h"
 #include "game/rendering/MaterialDefinition.h"
+#include "game/scripting/ScriptTypes.h"
 
 #include <glm/glm.hpp>
 
@@ -64,6 +65,7 @@ struct GameplayArchetypeDefinition {
     GameplayArchetypeKind kind = GameplayArchetypeKind::Checkpoint;
     CheckpointSpawnSpec checkpoint;
     DoubleDoorSpawnSpec doubleDoor;
+    std::vector<ScriptAttachment> scripts;
 };
 
 WeaponDefinition loadWeaponDefinitionAsset(const std::string& path);
@@ -90,9 +92,11 @@ public:
     const MaterialDefinition* findMaterial(const std::string& id) const;
     const EnvironmentDefinition* findEnvironment(const std::string& id) const;
     const std::string* findEnvironmentPath(const std::string& id) const;
+    const ScriptDefinition* findScript(const std::string& id) const;
     const std::unordered_map<std::string, GameplayArchetypeDefinition>& archetypes() const { return archetypes_; }
     const std::unordered_map<std::string, MaterialDefinition>& materials() const { return materials_; }
     const std::unordered_map<std::string, EnvironmentDefinition>& environments() const { return environments_; }
+    const std::unordered_map<std::string, ScriptDefinition>& scripts() const { return scripts_; }
 
 private:
     std::unordered_map<std::string, WeaponDefinition> weapons_;
@@ -103,4 +107,5 @@ private:
     std::unordered_map<std::string, MaterialDefinition> materials_;
     std::unordered_map<std::string, EnvironmentDefinition> environments_;
     std::unordered_map<std::string, std::string> environmentPaths_;
+    std::unordered_map<std::string, ScriptDefinition> scripts_;
 };

@@ -1,5 +1,6 @@
 #include "game/content/ContentRegistry.h"
 #include "engine/core/PathUtils.h"
+#include "game/scripting/ScriptManifest.h"
 
 #include <cctype>
 #include <array>
@@ -35,6 +36,27 @@ std::vector<std::string> sortedDefinitionFiles(const std::string& relativeDirect
     return files;
 }
 
+std::vector<std::string> sortedRecursiveFiles(const std::string& relativeDirectory,
+                                              const std::string& extension) {
+    namespace fs = std::filesystem;
+    std::vector<std::string> files;
+    const fs::path directory = resolveProjectPath(relativeDirectory);
+    if (!fs::exists(directory)) {
+        return files;
+    }
+    for (const auto& entry : fs::recursive_directory_iterator(directory)) {
+        if (!entry.is_regular_file()) {
+            continue;
+        }
+        if (entry.path().extension() != extension) {
+            continue;
+        }
+        files.push_back(entry.path().string());
+    }
+    std::sort(files.begin(), files.end());
+    return files;
+}
+
 [[noreturn]] void throwParseError(const std::string& path, int lineNumber, const std::string& message) {
     throw std::runtime_error(path + ":" + std::to_string(lineNumber) + ": " + message);
 }
@@ -55,10 +77,73 @@ std::vector<std::string> tokenizeRecord(const std::string& line) {
     std::istringstream stream(line);
     std::vector<std::string> tokens;
     std::string token;
-    while (stream >> token) {
+    while (stream >> std::quoted(token)) {
         tokens.push_back(token);
     }
     return tokens;
+}
+
+ScriptAttachment* findScriptAttachment(std::vector<ScriptAttachment>& attachments,
+                                       const std::string& scriptId) {
+    for (auto& attachment : attachments) {
+        if (attachment.scriptId == scriptId) {
+            return &attachment;
+        }
+    }
+    return nullptr;
+}
+
+bool tryParseScriptValueRecord(const std::string& key,
+                               ScriptPropertyType& type) {
+    if (key == "script_number") {
+        type = ScriptPropertyType::Number;
+        return true;
+    }
+    if (key == "script_bool") {
+        type = ScriptPropertyType::Boolean;
+        return true;
+    }
+    if (key == "script_string") {
+        type = ScriptPropertyType::String;
+        return true;
+    }
+    if (key == "script_vec3") {
+        type = ScriptPropertyType::Vec3;
+        return true;
+    }
+    return false;
+}
+
+void appendScriptRecords(std::ostringstream& out,
+                         const std::vector<ScriptAttachment>& attachments) {
+    for (const auto& attachment : attachments) {
+        out << "script_attach " << serializeScriptString(attachment.scriptId) << ' '
+            << (attachment.enabled ? "true" : "false") << '\n';
+        for (const auto& [propertyName, propertyValue] : attachment.propertyValues) {
+            ScriptPropertyType type = ScriptPropertyType::Number;
+            if (std::holds_alternative<double>(propertyValue)) {
+                type = ScriptPropertyType::Number;
+            } else if (std::holds_alternative<bool>(propertyValue)) {
+                type = ScriptPropertyType::Boolean;
+            } else if (std::holds_alternative<std::string>(propertyValue)) {
+                type = ScriptPropertyType::String;
+            } else if (std::holds_alternative<glm::vec3>(propertyValue)) {
+                type = ScriptPropertyType::Vec3;
+            }
+            out << "script_" << scriptPropertyTypeName(type) << ' '
+                << serializeScriptString(attachment.scriptId) << ' '
+                << serializeScriptString(propertyName) << ' '
+                << serializeScriptPropertyValue(propertyValue) << '\n';
+        }
+    }
+}
+
+std::string scriptIdForSourcePath(const std::filesystem::path& scriptPath) {
+    namespace fs = std::filesystem;
+    const fs::path scriptsRoot(resolveProjectPath("assets/scripts"));
+    fs::path relative = fs::relative(scriptPath, scriptsRoot);
+    relative.replace_extension();
+    return relative.generic_string();
 }
 
 template<typename Def>
@@ -365,6 +450,41 @@ GameplayArchetypeDefinition loadGameplayArchetypeAsset(const std::string& path) 
             definition.doubleDoor.openDuration = std::stof(tokens[1]);
             continue;
         }
+        if (key == "script_attach" && tokens.size() == 3) {
+            if (findScriptAttachment(definition.scripts, tokens[1]) != nullptr) {
+                throwParseError(path, lineNumber, "duplicate archetype script id");
+            }
+            ScriptAttachment attachment;
+            attachment.scriptId = tokens[1];
+            if (tokens[2] == "true") {
+                attachment.enabled = true;
+            } else if (tokens[2] == "false") {
+                attachment.enabled = false;
+            } else {
+                throwParseError(path, lineNumber, "invalid archetype script enabled flag");
+            }
+            definition.scripts.push_back(std::move(attachment));
+            continue;
+        }
+
+        ScriptPropertyType scriptType = ScriptPropertyType::Number;
+        if (tryParseScriptValueRecord(key, scriptType)) {
+            if (tokens.size() < 4) {
+                throwParseError(path, lineNumber, "invalid archetype script property record");
+            }
+            auto* attachment = findScriptAttachment(definition.scripts, tokens[1]);
+            if (attachment == nullptr) {
+                throwParseError(path, lineNumber, "script property requires prior script_attach record");
+            }
+            ScriptPropertyValue propertyValue;
+            std::size_t consumed = 0;
+            if (!tryParseScriptPropertyValueTokens(scriptType, tokens, 3, propertyValue, consumed)
+                || 3 + consumed != tokens.size()) {
+                throwParseError(path, lineNumber, "invalid archetype script property value");
+            }
+            attachment->propertyValues[tokens[2]] = propertyValue;
+            continue;
+        }
 
         throwParseError(path, lineNumber, "unknown gameplay archetype key");
     }
@@ -441,6 +561,7 @@ std::string serializeGameplayArchetypeAsset(const GameplayArchetypeDefinition& d
         out << "open_duration " << definition.doubleDoor.openDuration << '\n';
         break;
     }
+    appendScriptRecords(out, definition.scripts);
     return out.str();
 }
 
@@ -485,6 +606,7 @@ void ContentRegistry::loadDefaults() {
     materials_.clear();
     environments_.clear();
     environmentPaths_.clear();
+    scripts_.clear();
 
     auto oldDagger = loadWeaponDefinitionAsset(resolveProjectPath("assets/defs/weapons/old_dagger.weapon"));
     weapons_.emplace(oldDagger.id, oldDagger);
@@ -530,6 +652,27 @@ void ContentRegistry::loadDefaults() {
         environmentPaths_.emplace(environment.id, path);
         environments_.emplace(environment.id, environment);
     }
+
+    ScriptManifest manifest = loadScriptManifest(resolveProjectPath("build/generated/scripts/manifest.txt"));
+    for (const auto& scriptFile : sortedRecursiveFiles("assets/scripts", ".ts")) {
+        const std::filesystem::path scriptPath(scriptFile);
+        const std::string scriptId = scriptIdForSourcePath(scriptPath);
+
+        ScriptDefinition definition;
+        if (const auto it = manifest.find(scriptId); it != manifest.end()) {
+            definition = it->second;
+        }
+        definition.id = scriptId;
+        definition.sourcePath = std::filesystem::relative(scriptPath, std::filesystem::current_path()).generic_string();
+        if (definition.builtPath.empty()) {
+            definition.builtPath = (std::filesystem::path("build/generated/scripts") / std::filesystem::path(scriptId + ".js")).generic_string();
+        }
+
+        const std::filesystem::path builtPath(resolveProjectPath(definition.builtPath));
+        definition.stale = !std::filesystem::exists(builtPath)
+            || std::filesystem::last_write_time(builtPath) < std::filesystem::last_write_time(scriptPath);
+        scripts_.emplace(definition.id, std::move(definition));
+    }
 }
 
 const WeaponDefinition* ContentRegistry::findWeapon(const std::string& id) const {
@@ -570,4 +713,9 @@ const EnvironmentDefinition* ContentRegistry::findEnvironment(const std::string&
 const std::string* ContentRegistry::findEnvironmentPath(const std::string& id) const {
     auto it = environmentPaths_.find(id);
     return it == environmentPaths_.end() ? nullptr : &it->second;
+}
+
+const ScriptDefinition* ContentRegistry::findScript(const std::string& id) const {
+    auto it = scripts_.find(id);
+    return it == scripts_.end() ? nullptr : &it->second;
 }

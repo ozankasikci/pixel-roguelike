@@ -88,7 +88,7 @@ std::string resolvedMaterialId(const LevelMeshPlacement& placement) {
 std::vector<std::string> collectRemainingTokens(std::istream& stream) {
     std::vector<std::string> tokens;
     std::string token;
-    while (stream >> token) {
+    while (stream >> std::quoted(token)) {
         tokens.push_back(token);
     }
     return tokens;
@@ -184,6 +184,76 @@ struct LevelNodeRef {
     std::string parentNodeId;
 };
 
+template <typename AttachmentT>
+AttachmentT* findScriptAttachment(std::vector<AttachmentT>& attachments,
+                                  const std::string& scriptId) {
+    for (auto& attachment : attachments) {
+        if (attachment.scriptId == scriptId) {
+            return &attachment;
+        }
+    }
+    return nullptr;
+}
+
+bool tryParseSceneScriptValueRecord(const std::string& kind,
+                                    ScriptPropertyType& type) {
+    if (kind == "script_number" || kind == "script_override_number") {
+        type = ScriptPropertyType::Number;
+        return true;
+    }
+    if (kind == "script_bool" || kind == "script_override_bool") {
+        type = ScriptPropertyType::Boolean;
+        return true;
+    }
+    if (kind == "script_string" || kind == "script_override_string") {
+        type = ScriptPropertyType::String;
+        return true;
+    }
+    if (kind == "script_vec3" || kind == "script_override_vec3") {
+        type = ScriptPropertyType::Vec3;
+        return true;
+    }
+    return false;
+}
+
+template <typename AttachmentT>
+void appendNodeScriptRecords(std::ostringstream& out,
+                             const std::string& nodeId,
+                             const std::vector<AttachmentT>& attachments,
+                             const char* attachRecord,
+                             const char* valueRecordPrefix) {
+    if (attachments.empty()) {
+        return;
+    }
+    if (nodeId.empty()) {
+        throw std::runtime_error("Script attachment requires a node id");
+    }
+
+    for (const auto& attachment : attachments) {
+        out << attachRecord << ' '
+            << serializeScriptString(nodeId) << ' '
+            << serializeScriptString(attachment.scriptId) << ' '
+            << (attachment.enabled ? "true" : "false") << '\n';
+        for (const auto& [propertyName, propertyValue] : attachment.propertyValues) {
+            ScriptPropertyType type = ScriptPropertyType::Number;
+            if (std::holds_alternative<double>(propertyValue)) {
+                type = ScriptPropertyType::Number;
+            } else if (std::holds_alternative<bool>(propertyValue)) {
+                type = ScriptPropertyType::Boolean;
+            } else if (std::holds_alternative<std::string>(propertyValue)) {
+                type = ScriptPropertyType::String;
+            } else if (std::holds_alternative<glm::vec3>(propertyValue)) {
+                type = ScriptPropertyType::Vec3;
+            }
+            out << valueRecordPrefix << '_' << scriptPropertyTypeName(type) << ' '
+                << serializeScriptString(nodeId) << ' '
+                << serializeScriptString(attachment.scriptId) << ' '
+                << serializeScriptString(propertyName) << ' '
+                << serializeScriptPropertyValue(propertyValue) << '\n';
+        }
+    }
+}
+
 } // namespace
 
 LevelDef loadLevelDef(const std::string& path) {
@@ -193,6 +263,8 @@ LevelDef loadLevelDef(const std::string& path) {
     }
 
     LevelDef data;
+    std::unordered_map<std::string, std::vector<ScriptAttachment>> pendingScripts;
+    std::unordered_map<std::string, std::vector<ScriptAttachmentOverride>> pendingScriptOverrides;
     std::string line;
     int lineNumber = 0;
 
@@ -526,7 +598,105 @@ LevelDef loadLevelDef(const std::string& path) {
             continue;
         }
 
+        if (kind == "script_attach" || kind == "script_override_attach") {
+            const auto tokens = collectRemainingTokens(stream);
+            if (tokens.size() != 3) {
+                throwParseError(path, lineNumber, "invalid script attachment record");
+            }
+            if (tokens[2] != "true" && tokens[2] != "false") {
+                throwParseError(path, lineNumber, "invalid script enabled flag");
+            }
+            const bool enabled = tokens[2] == "true";
+
+            if (kind == "script_attach") {
+                auto& attachments = pendingScripts[tokens[0]];
+                if (findScriptAttachment(attachments, tokens[1]) != nullptr) {
+                    throwParseError(path, lineNumber, "duplicate node script id");
+                }
+                ScriptAttachment attachment;
+                attachment.scriptId = tokens[1];
+                attachment.enabled = enabled;
+                attachments.push_back(std::move(attachment));
+            } else {
+                auto& attachments = pendingScriptOverrides[tokens[0]];
+                if (findScriptAttachment(attachments, tokens[1]) != nullptr) {
+                    throwParseError(path, lineNumber, "duplicate node script override id");
+                }
+                ScriptAttachmentOverride attachment;
+                attachment.scriptId = tokens[1];
+                attachment.enabled = enabled;
+                attachments.push_back(std::move(attachment));
+            }
+            continue;
+        }
+
+        ScriptPropertyType scriptValueType = ScriptPropertyType::Number;
+        if (tryParseSceneScriptValueRecord(kind, scriptValueType)) {
+            const auto tokens = collectRemainingTokens(stream);
+            if (tokens.size() < 4) {
+                throwParseError(path, lineNumber, "invalid script property record");
+            }
+
+            auto applyValue = [&](auto& attachmentMap) {
+                auto mapIt = attachmentMap.find(tokens[0]);
+                if (mapIt == attachmentMap.end()) {
+                    throwParseError(path, lineNumber, "script property requires prior attach record");
+                }
+                auto* attachment = findScriptAttachment(mapIt->second, tokens[1]);
+                if (attachment == nullptr) {
+                    throwParseError(path, lineNumber, "script property requires prior attach record");
+                }
+                ScriptPropertyValue propertyValue;
+                std::size_t consumed = 0;
+                if (!tryParseScriptPropertyValueTokens(scriptValueType, tokens, 3, propertyValue, consumed)
+                    || 3 + consumed != tokens.size()) {
+                    throwParseError(path, lineNumber, "invalid script property value");
+                }
+                attachment->propertyValues[tokens[2]] = propertyValue;
+            };
+
+            if (kind.rfind("script_override_", 0) == 0) {
+                applyValue(pendingScriptOverrides);
+            } else {
+                applyValue(pendingScripts);
+            }
+            continue;
+        }
+
         throwParseError(path, lineNumber, "unknown record type '" + kind + "'");
+    }
+
+    auto applyPendingAttachments = [&](auto& placements, auto& pending) {
+        for (auto& placement : placements) {
+            if (placement.nodeId.empty()) {
+                continue;
+            }
+            auto it = pending.find(placement.nodeId);
+            if (it == pending.end()) {
+                continue;
+            }
+            placement.scripts = std::move(it->second);
+            pending.erase(it);
+        }
+    };
+
+    applyPendingAttachments(data.meshes, pendingScripts);
+    applyPendingAttachments(data.lights, pendingScripts);
+    applyPendingAttachments(data.boxColliders, pendingScripts);
+    applyPendingAttachments(data.cylinderColliders, pendingScripts);
+
+    for (auto& placement : data.archetypes) {
+        if (placement.nodeId.empty()) {
+            continue;
+        }
+        if (auto it = pendingScriptOverrides.find(placement.nodeId); it != pendingScriptOverrides.end()) {
+            placement.scriptOverrides = std::move(it->second);
+            pendingScriptOverrides.erase(it);
+        }
+    }
+
+    if (!pendingScripts.empty() || !pendingScriptOverrides.empty()) {
+        throw std::runtime_error(path + ": unresolved script attachment target");
     }
 
     return data;
@@ -734,6 +904,7 @@ std::string serializeLevelDef(const LevelDef& data) {
         }
         appendNodeMetadata(out, placement.nodeId, placement.parentNodeId);
         out << '\n';
+        appendNodeScriptRecords(out, placement.nodeId, placement.scripts, "script_attach", "script");
     }
 
     for (const auto& placement : data.lights) {
@@ -755,6 +926,7 @@ std::string serializeLevelDef(const LevelDef& data) {
                 << (placement.castsShadows ? "true" : "false");
             appendNodeMetadata(out, placement.nodeId, placement.parentNodeId);
             out << '\n';
+            appendNodeScriptRecords(out, placement.nodeId, placement.scripts, "script_attach", "script");
             continue;
         }
 
@@ -769,6 +941,7 @@ std::string serializeLevelDef(const LevelDef& data) {
                 << formatFloat(placement.intensity);
             appendNodeMetadata(out, placement.nodeId, placement.parentNodeId);
             out << '\n';
+            appendNodeScriptRecords(out, placement.nodeId, placement.scripts, "script_attach", "script");
             continue;
         }
 
@@ -783,6 +956,7 @@ std::string serializeLevelDef(const LevelDef& data) {
             << formatFloat(placement.intensity);
         appendNodeMetadata(out, placement.nodeId, placement.parentNodeId);
         out << '\n';
+        appendNodeScriptRecords(out, placement.nodeId, placement.scripts, "script_attach", "script");
     }
 
     for (const auto& placement : data.boxColliders) {
@@ -801,6 +975,7 @@ std::string serializeLevelDef(const LevelDef& data) {
         }
         appendNodeMetadata(out, placement.nodeId, placement.parentNodeId);
         out << '\n';
+        appendNodeScriptRecords(out, placement.nodeId, placement.scripts, "script_attach", "script");
     }
 
     for (const auto& placement : data.cylinderColliders) {
@@ -818,6 +993,7 @@ std::string serializeLevelDef(const LevelDef& data) {
         }
         appendNodeMetadata(out, placement.nodeId, placement.parentNodeId);
         out << '\n';
+        appendNodeScriptRecords(out, placement.nodeId, placement.scripts, "script_attach", "script");
     }
 
     if (data.hasPlayerSpawn) {

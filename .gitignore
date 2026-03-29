@@ -2,6 +2,7 @@ build/
 build-*/
 build-test/
 cmake-build-*/
+.worktrees/
 .venv/
 .DS_Store
 *.o
@@ -13,3 +14,4 @@ compile_commands.json
 .vscode/
 .codex/
 __pycache__/
+tools/script_pipeline/node_modules/

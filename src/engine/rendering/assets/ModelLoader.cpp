@@ -1,7 +1,7 @@
 #include "engine/rendering/assets/ModelLoader.h"
 
-#include "engine/rendering/assets/AssimpLoader.h"
 #include "engine/rendering/assets/GltfLoader.h"
+#include "engine/rendering/assets/UfbxLoader.h"
 
 #include <spdlog/spdlog.h>
 
@@ -108,7 +108,7 @@ RawMeshData ModelLoader::loadRaw(const std::string& filepath) {
         return GltfLoader::loadRaw(filepath);
     }
     if (extension == ".fbx") {
-        return AssimpLoader::loadRaw(filepath);
+        return UfbxLoader::loadRaw(filepath);
     }
 
     spdlog::error("ModelLoader::loadRaw: unsupported model format '{}'", filepath);

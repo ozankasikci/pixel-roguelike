@@ -324,6 +324,8 @@ bool renderScriptAttachmentListEditor(const char* sectionLabel,
             const std::string label = property.name + "##script_prop";
             if (editScriptPropertyValue(label, property.type, value)) {
                 attachment.propertyValues[property.name] = std::move(value);
+            }
+            if (ImGui::IsItemDeactivatedAfterEdit()) {
                 changed = true;
             }
         }
@@ -425,6 +427,8 @@ bool renderArchetypeScriptOverrideEditor(LevelArchetypePlacement& placement,
             if (editScriptPropertyValue(label, property.type, value)) {
                 ScriptAttachment& targetOverride = ensureOverride();
                 targetOverride.propertyValues[property.name] = std::move(value);
+            }
+            if (ImGui::IsItemDeactivatedAfterEdit()) {
                 changed = true;
             }
         }
@@ -1321,10 +1325,16 @@ void renderSceneSelectionInspector(EditorSceneDocument& document,
             beforeState = document.captureState();
             trackSceneItem(beforeState, "Change Mesh Tint", editColor("Tint", *mesh.tint));
         }
-        beforeState = document.captureState();
-        if (renderScriptAttachmentListEditor("Scripts", mesh.scripts, content, "MeshScriptAddPopup")) {
-            document.markSceneDirty();
-            commandStack.pushDocumentStateCommand("Edit Mesh Scripts", beforeState, document.captureState(), document);
+        {
+            const auto scriptsBefore = mesh.scripts;
+            if (renderScriptAttachmentListEditor("Scripts", mesh.scripts, content, "MeshScriptAddPopup")) {
+                const auto scriptsAfter = mesh.scripts;
+                mesh.scripts = scriptsBefore;
+                const auto stateBefore = document.captureState();
+                mesh.scripts = scriptsAfter;
+                document.markSceneDirty();
+                commandStack.pushDocumentStateCommand("Edit Mesh Scripts", stateBefore, document.captureState(), document);
+            }
         }
         break;
     }
@@ -1360,10 +1370,16 @@ void renderSceneSelectionInspector(EditorSceneDocument& document,
             beforeState = document.captureState();
             trackSceneItem(beforeState, "Toggle Spot Shadows", ImGui::Checkbox("Casts Shadows", &light.castsShadows));
         }
-        beforeState = document.captureState();
-        if (renderScriptAttachmentListEditor("Scripts", light.scripts, content, "LightScriptAddPopup")) {
-            document.markSceneDirty();
-            commandStack.pushDocumentStateCommand("Edit Light Scripts", beforeState, document.captureState(), document);
+        {
+            const auto scriptsBefore = light.scripts;
+            if (renderScriptAttachmentListEditor("Scripts", light.scripts, content, "LightScriptAddPopup")) {
+                const auto scriptsAfter = light.scripts;
+                light.scripts = scriptsBefore;
+                const auto stateBefore = document.captureState();
+                light.scripts = scriptsAfter;
+                document.markSceneDirty();
+                commandStack.pushDocumentStateCommand("Edit Light Scripts", stateBefore, document.captureState(), document);
+            }
         }
         break;
     }
@@ -1377,10 +1393,16 @@ void renderSceneSelectionInspector(EditorSceneDocument& document,
             box.halfExtents = glm::max(box.halfExtents, glm::vec3(0.01f));
         }
         trackSceneItem(beforeState, "Resize Box Collider", extentsChanged);
-        beforeState = document.captureState();
-        if (renderScriptAttachmentListEditor("Scripts", box.scripts, content, "BoxScriptAddPopup")) {
-            document.markSceneDirty();
-            commandStack.pushDocumentStateCommand("Edit Box Collider Scripts", beforeState, document.captureState(), document);
+        {
+            const auto scriptsBefore = box.scripts;
+            if (renderScriptAttachmentListEditor("Scripts", box.scripts, content, "BoxScriptAddPopup")) {
+                const auto scriptsAfter = box.scripts;
+                box.scripts = scriptsBefore;
+                const auto stateBefore = document.captureState();
+                box.scripts = scriptsAfter;
+                document.markSceneDirty();
+                commandStack.pushDocumentStateCommand("Edit Box Collider Scripts", stateBefore, document.captureState(), document);
+            }
         }
         break;
     }
@@ -1392,10 +1414,16 @@ void renderSceneSelectionInspector(EditorSceneDocument& document,
         trackSceneItem(beforeState, "Adjust Cylinder Radius", ImGui::DragFloat("Radius", &cylinder.radius, 0.02f, 0.05f, 20.0f, "%.2f"));
         beforeState = document.captureState();
         trackSceneItem(beforeState, "Adjust Cylinder Height", ImGui::DragFloat("Half Height", &cylinder.halfHeight, 0.02f, 0.05f, 20.0f, "%.2f"));
-        beforeState = document.captureState();
-        if (renderScriptAttachmentListEditor("Scripts", cylinder.scripts, content, "CylinderScriptAddPopup")) {
-            document.markSceneDirty();
-            commandStack.pushDocumentStateCommand("Edit Cylinder Collider Scripts", beforeState, document.captureState(), document);
+        {
+            const auto scriptsBefore = cylinder.scripts;
+            if (renderScriptAttachmentListEditor("Scripts", cylinder.scripts, content, "CylinderScriptAddPopup")) {
+                const auto scriptsAfter = cylinder.scripts;
+                cylinder.scripts = scriptsBefore;
+                const auto stateBefore = document.captureState();
+                cylinder.scripts = scriptsAfter;
+                document.markSceneDirty();
+                commandStack.pushDocumentStateCommand("Edit Cylinder Collider Scripts", stateBefore, document.captureState(), document);
+            }
         }
         break;
     }
@@ -1428,15 +1456,21 @@ void renderSceneSelectionInspector(EditorSceneDocument& document,
         trackSceneItem(beforeState, "Move Archetype", editVec3("Position", archetype.position));
         beforeState = document.captureState();
         trackSceneItem(beforeState, "Rotate Archetype", ImGui::DragFloat("Yaw", &archetype.yawDegrees, 0.5f, -360.0f, 360.0f, "%.1f"));
-        beforeState = document.captureState();
-        if (renderArchetypeScriptOverrideEditor(archetype,
-                                                content.findArchetype(archetype.archetypeId),
-                                                content)) {
-            document.markSceneDirty();
-            commandStack.pushDocumentStateCommand("Edit Archetype Script Overrides",
-                                                  beforeState,
-                                                  document.captureState(),
-                                                  document);
+        {
+            const auto overridesBefore = archetype.scriptOverrides;
+            if (renderArchetypeScriptOverrideEditor(archetype,
+                                                    content.findArchetype(archetype.archetypeId),
+                                                    content)) {
+                const auto overridesAfter = archetype.scriptOverrides;
+                archetype.scriptOverrides = overridesBefore;
+                const auto stateBefore = document.captureState();
+                archetype.scriptOverrides = overridesAfter;
+                document.markSceneDirty();
+                commandStack.pushDocumentStateCommand("Edit Archetype Script Overrides",
+                                                      stateBefore,
+                                                      document.captureState(),
+                                                      document);
+            }
         }
         break;
     }

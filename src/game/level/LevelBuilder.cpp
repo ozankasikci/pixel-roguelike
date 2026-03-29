@@ -162,14 +162,14 @@ entt::entity LevelBuilder::addMesh(Mesh* mesh,
 
     const MaterialKind resolvedMaterial = material.value_or(MaterialKind::Stone);
     auto entity = createEntity();
-    context_.registry.emplace<TransformComponent>(entity);
+    context_.registry.emplace<TransformComponent>(entity, TransformComponent{position, rotation, scale});
     context_.registry.emplace<MeshComponent>(
         entity,
         MeshComponent{
             "",
             mesh,
-            makeModel(position, scale, rotation),
-            true,
+            glm::mat4(1.0f),
+            false,
             tint.value_or(glm::vec3(1.0f)),
             resolvedMaterial,
             materialId.value_or(std::string(defaultMaterialIdForKind(resolvedMaterial)))

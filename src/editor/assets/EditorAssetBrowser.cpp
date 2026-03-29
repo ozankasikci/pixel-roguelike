@@ -23,6 +23,7 @@ bool kindUsesDeclaredId(EditorAssetBrowserKind kind) {
     case EditorAssetBrowserKind::Environment:
     case EditorAssetBrowserKind::Prefab:
         return true;
+    case EditorAssetBrowserKind::Script:
     case EditorAssetBrowserKind::Directory:
     case EditorAssetBrowserKind::Scene:
     case EditorAssetBrowserKind::Mesh:
@@ -54,6 +55,9 @@ EditorAssetBrowserKind classifyAssetPath(const std::filesystem::path& path) {
     }
     if (ext == ".prefab") {
         return EditorAssetBrowserKind::Prefab;
+    }
+    if (ext == ".ts" && path.string().find("assets/scripts") != std::string::npos) {
+        return EditorAssetBrowserKind::Script;
     }
     if (ext == ".vert" || ext == ".frag" || ext == ".glsl") {
         return EditorAssetBrowserKind::Shader;

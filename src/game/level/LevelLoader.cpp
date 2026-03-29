@@ -11,6 +11,8 @@
 #include "game/components/CharacterControllerComponent.h"
 #include "game/components/ControllableTag.h"
 #include "game/components/MeshComponent.h"
+#include "game/components/ScriptAttachmentComponent.h"
+#include "game/components/ScriptHostComponent.h"
 #include "game/components/PlayerInteractionLockComponent.h"
 #include "game/components/PlayerMovementComponent.h"
 #include "game/components/PlayerSpawnComponent.h"
@@ -61,6 +63,38 @@ entt::entity spawnViewmodelMesh(entt::registry& registry,
     return entity;
 }
 
+template <typename AttachmentT>
+std::vector<ScriptAttachment> applyScriptOverrides(const std::vector<ScriptAttachment>& baseScripts,
+                                                   const std::vector<AttachmentT>& overrides) {
+    std::vector<ScriptAttachment> resolved = baseScripts;
+    for (const auto& overrideAttachment : overrides) {
+        for (auto& attachment : resolved) {
+            if (attachment.scriptId != overrideAttachment.scriptId) {
+                continue;
+            }
+            attachment.enabled = overrideAttachment.enabled;
+            for (const auto& [propertyName, propertyValue] : overrideAttachment.propertyValues) {
+                attachment.propertyValues[propertyName] = propertyValue;
+            }
+        }
+    }
+    return resolved;
+}
+
+void attachScriptHost(entt::registry& registry,
+                      entt::entity entity,
+                      ScriptHostKind kind,
+                      const std::string& nodeId,
+                      const std::vector<ScriptAttachment>& attachments) {
+    if (entity == entt::null || nodeId.empty()) {
+        return;
+    }
+    registry.emplace_or_replace<ScriptHostComponent>(entity, ScriptHostComponent{nodeId, kind});
+    if (!attachments.empty()) {
+        registry.emplace_or_replace<ScriptAttachmentComponent>(entity, ScriptAttachmentComponent{attachments});
+    }
+}
+
 } // namespace
 
 void LevelLoader::load(Application& app, const LevelLoadRequest& request) {
@@ -90,35 +124,39 @@ void LevelLoader::load(ContentRegistry& content,
     }
 
     for (const auto& placement : level.meshes) {
-        builder.addMesh(placement.meshId,
-                        placement.position,
-                        placement.scale,
-                        placement.rotation,
-                        placement.tint,
-                        placement.material,
-                        placement.materialId.empty()
-                            ? std::optional<std::string>{}
-                            : std::optional<std::string>{placement.materialId});
+        entt::entity entity = builder.addMesh(placement.meshId,
+                                              placement.position,
+                                              placement.scale,
+                                              placement.rotation,
+                                              placement.tint,
+                                              placement.material,
+                                              placement.materialId.empty()
+                                                  ? std::optional<std::string>{}
+                                                  : std::optional<std::string>{placement.materialId});
+        attachScriptHost(registry, entity, ScriptHostKind::Mesh, placement.nodeId, placement.scripts);
     }
 
     for (const auto& placement : level.lights) {
-        builder.addLight(placement.position,
-                         placement.color,
-                         placement.radius,
-                         placement.intensity,
-                         placement.type,
-                         placement.direction,
-                         placement.innerConeDegrees,
-                         placement.outerConeDegrees,
-                         placement.castsShadows);
+        entt::entity entity = builder.addLight(placement.position,
+                                               placement.color,
+                                               placement.radius,
+                                               placement.intensity,
+                                               placement.type,
+                                               placement.direction,
+                                               placement.innerConeDegrees,
+                                               placement.outerConeDegrees,
+                                               placement.castsShadows);
+        attachScriptHost(registry, entity, ScriptHostKind::Light, placement.nodeId, placement.scripts);
     }
 
     for (const auto& placement : level.boxColliders) {
-        builder.addBoxCollider(placement.position, placement.halfExtents, placement.rotation);
+        entt::entity entity = builder.addBoxCollider(placement.position, placement.halfExtents, placement.rotation);
+        attachScriptHost(registry, entity, ScriptHostKind::BoxCollider, placement.nodeId, placement.scripts);
     }
 
     for (const auto& placement : level.cylinderColliders) {
-        builder.addCylinderCollider(placement.position, placement.radius, placement.halfHeight, placement.rotation);
+        entt::entity entity = builder.addCylinderCollider(placement.position, placement.radius, placement.halfHeight, placement.rotation);
+        attachScriptHost(registry, entity, ScriptHostKind::CylinderCollider, placement.nodeId, placement.scripts);
     }
 
     for (const auto& placement : level.archetypes) {
@@ -126,7 +164,12 @@ void LevelLoader::load(ContentRegistry& content,
         if (archetype == nullptr) {
             continue;
         }
-        (void)spawnGameplayPrefab(builder, instantiateGameplayArchetype(*archetype, placement.position, placement.yawDegrees));
+        entt::entity root = spawnGameplayPrefab(builder, instantiateGameplayArchetype(*archetype, placement.position, placement.yawDegrees));
+        attachScriptHost(registry,
+                         root,
+                         ScriptHostKind::Archetype,
+                         placement.nodeId,
+                         applyScriptOverrides(archetype->scripts, placement.scriptOverrides));
     }
 
     if (session.currentLevelId != request.levelId) {

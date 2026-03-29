@@ -12,6 +12,7 @@ enum class EditorAssetBrowserKind {
     Material,
     Environment,
     Prefab,
+    Script,
     Sky,
     Shader,
     Other,

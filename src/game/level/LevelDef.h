@@ -3,6 +3,7 @@
 #include "engine/rendering/lighting/RenderLight.h"
 #include "game/rendering/MaterialKind.h"
 #include "game/rendering/EnvironmentProfile.h"
+#include "game/scripting/ScriptTypes.h"
 
 #include <glm/glm.hpp>
 
@@ -20,6 +21,7 @@ struct LevelMeshPlacement {
     std::string materialId;
     std::optional<MaterialKind> material;
     std::optional<glm::vec3> tint;
+    std::vector<ScriptAttachment> scripts;
 };
 
 struct LevelLightPlacement {
@@ -34,6 +36,7 @@ struct LevelLightPlacement {
     float innerConeDegrees = 20.0f;
     float outerConeDegrees = 30.0f;
     bool castsShadows = false;
+    std::vector<ScriptAttachment> scripts;
 };
 
 struct LevelBoxColliderPlacement {
@@ -42,6 +45,7 @@ struct LevelBoxColliderPlacement {
     std::string nodeId;
     std::string parentNodeId;
     glm::vec3 halfExtents{0.0f};
+    std::vector<ScriptAttachment> scripts;
 };
 
 struct LevelCylinderColliderPlacement {
@@ -51,6 +55,7 @@ struct LevelCylinderColliderPlacement {
     std::string parentNodeId;
     float radius = 0.0f;
     float halfHeight = 0.0f;
+    std::vector<ScriptAttachment> scripts;
 };
 
 struct LevelPlayerSpawn {
@@ -66,6 +71,7 @@ struct LevelArchetypePlacement {
     std::string nodeId;
     std::string parentNodeId;
     float yawDegrees = 0.0f;
+    std::vector<ScriptAttachmentOverride> scriptOverrides;
 };
 
 struct LevelDef {

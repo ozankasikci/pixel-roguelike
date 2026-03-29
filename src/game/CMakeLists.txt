@@ -5,6 +5,8 @@ add_library(game_content STATIC
     rendering/EnvironmentDefinition.cpp
     rendering/EnvironmentProfile.cpp
     rendering/MaterialDefinition.cpp
+    scripting/ScriptManifest.cpp
+    scripting/ScriptTypes.cpp
 )
 target_include_directories(game_content PUBLIC ${CMAKE_SOURCE_DIR}/src)
 target_link_libraries(game_content PUBLIC
@@ -22,6 +24,20 @@ target_link_libraries(game_rendering PUBLIC
     game_content
     engine_ui
 )
+
+add_library(game_scripting STATIC
+    scripting/ScriptRuntime.cpp
+)
+target_include_directories(game_scripting PUBLIC ${CMAKE_SOURCE_DIR}/src)
+target_compile_options(game_scripting PRIVATE
+    "-idirafter"
+    "${quickjs_SOURCE_DIR}"
+)
+target_link_libraries(game_scripting PUBLIC
+    game_content
+    EnTT::EnTT
+)
+target_link_libraries(game_scripting PRIVATE quickjs)
 
 add_library(gameplay STATIC
     level/LevelBuilder.cpp
@@ -46,6 +62,7 @@ target_include_directories(gameplay PUBLIC ${CMAKE_SOURCE_DIR}/src)
 target_link_libraries(gameplay PUBLIC
     game_content
     game_rendering
+    game_scripting
     engine_input
     engine_physics
     EnTT::EnTT

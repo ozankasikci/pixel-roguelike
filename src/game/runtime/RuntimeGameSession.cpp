@@ -132,12 +132,14 @@ void RuntimeGameSession::rebuild(const LevelDef& level,
     initializeRuntimeInventory(registry_);
     initializeRuntimeDoors(registry_);
     initializeRuntimeCheckpoints(registry_);
+    scriptRuntime_.rebuild(registry_, content);
     physics_.update(registry_, 0.0f);
     captureBaselineState();
     performanceStats_.rebuildMs = elapsedMilliseconds(start, Clock::now());
 }
 
 void RuntimeGameSession::clear() {
+    scriptRuntime_.clear();
     clearEntities();
     input_.reset();
 }
@@ -156,6 +158,9 @@ void RuntimeGameSession::resetForPlay() {
     initializeRuntimeInventory(registry_);
     initializeRuntimeDoors(registry_);
     initializeRuntimeCheckpoints(registry_);
+    if (content_ != nullptr) {
+        scriptRuntime_.rebuild(registry_, *content_);
+    }
     updateRuntimeDoors(registry_, 0.0f);
     updateRuntimeCheckpoints(registry_, 0.0f, runSession_);
     physics_.update(registry_, 0.0f);
@@ -170,6 +175,7 @@ void RuntimeGameSession::tick(float deltaTime, float aspect) {
     updateRuntimeInteraction(registry_, input_);
     updateRuntimeDoors(registry_, deltaTime);
     updateRuntimeCheckpoints(registry_, deltaTime, runSession_);
+    scriptRuntime_.tick(deltaTime);
     physics_.update(registry_, deltaTime);
 
     ContentRegistry* content = nullptr;

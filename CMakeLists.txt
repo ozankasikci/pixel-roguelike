@@ -7,6 +7,24 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 include(FetchContent)
 include(${CMAKE_SOURCE_DIR}/cmake/DesktopApp.cmake)
 
+find_program(NPM_EXECUTABLE npm)
+if(NPM_EXECUTABLE)
+    add_custom_target(scripts_build
+        COMMAND ${NPM_EXECUTABLE} run build
+        WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/tools/script_pipeline
+        COMMENT "Building TypeScript gameplay scripts"
+        VERBATIM
+    )
+    add_custom_target(scripts_typecheck
+        COMMAND ${NPM_EXECUTABLE} run typecheck
+        WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/tools/script_pipeline
+        COMMENT "Typechecking TypeScript gameplay scripts"
+        VERBATIM
+    )
+else()
+    message(WARNING "npm was not found; scripts_build and scripts_typecheck targets will be unavailable.")
+endif()
+
 # GLAD 2 - OpenGL 4.1 Core Profile function loader
 # Requires jinja2: python3 -m venv .venv && .venv/bin/pip install jinja2
 # Configure with: cmake .. -DPython_EXECUTABLE=.venv/bin/python3
@@ -81,39 +99,42 @@ FetchContent_Declare(tinygltf
 )
 FetchContent_MakeAvailable(tinygltf)
 
-# Assimp v6.0.4 - multi-format model importer (FBX, glTF, and more)
-set(ASSIMP_BUILD_ASSIMP_TOOLS OFF CACHE BOOL "" FORCE)
-set(ASSIMP_BUILD_DOCS OFF CACHE BOOL "" FORCE)
-set(ASSIMP_BUILD_SAMPLES OFF CACHE BOOL "" FORCE)
-set(ASSIMP_BUILD_TESTS OFF CACHE BOOL "" FORCE)
-set(ASSIMP_BUILD_ZLIB OFF CACHE BOOL "" FORCE)
-set(ASSIMP_INSTALL OFF CACHE BOOL "" FORCE)
-set(ASSIMP_NO_EXPORT OFF CACHE BOOL "" FORCE)
-set(ASSIMP_WARNINGS_AS_ERRORS OFF CACHE BOOL "" FORCE)
-set(ASSIMP_INJECT_DEBUG_POSTFIX OFF CACHE BOOL "" FORCE)
-if(APPLE AND EXISTS "/opt/homebrew/opt/zlib")
-    list(PREPEND CMAKE_PREFIX_PATH "/opt/homebrew/opt/zlib")
-    set(ZLIB_ROOT "/opt/homebrew/opt/zlib" CACHE PATH "" FORCE)
-endif()
-if(DEFINED BUILD_SHARED_LIBS)
-    set(_pixel_roguelike_saved_build_shared_libs "${BUILD_SHARED_LIBS}")
-    set(_pixel_roguelike_had_build_shared_libs TRUE)
-else()
-    set(_pixel_roguelike_had_build_shared_libs FALSE)
-endif()
-set(BUILD_SHARED_LIBS OFF CACHE BOOL "" FORCE)
-FetchContent_Declare(assimp
-    GIT_REPOSITORY https://github.com/assimp/assimp.git
-    GIT_TAG        v6.0.4
+# ufbx - lightweight FBX loader
+FetchContent_Declare(ufbx
+    GIT_REPOSITORY https://github.com/ufbx/ufbx.git
+    GIT_TAG        v0.21.3
     GIT_PROGRESS   TRUE
     GIT_SHALLOW    TRUE
 )
-FetchContent_MakeAvailable(assimp)
-if(_pixel_roguelike_had_build_shared_libs)
-    set(BUILD_SHARED_LIBS "${_pixel_roguelike_saved_build_shared_libs}" CACHE BOOL "" FORCE)
-else()
-    unset(BUILD_SHARED_LIBS CACHE)
+FetchContent_GetProperties(ufbx)
+if(NOT ufbx_POPULATED)
+    FetchContent_Populate(ufbx)
 endif()
+add_library(ufbx STATIC
+    ${ufbx_SOURCE_DIR}/ufbx.c
+)
+target_include_directories(ufbx PUBLIC ${ufbx_SOURCE_DIR})
+
+FetchContent_Declare(quickjs
+    URL https://bellard.org/quickjs/quickjs-2025-09-13-2.tar.xz
+)
+FetchContent_GetProperties(quickjs)
+if(NOT quickjs_POPULATED)
+    FetchContent_Populate(quickjs)
+endif()
+file(STRINGS "${quickjs_SOURCE_DIR}/VERSION" QUICKJS_VERSION LIMIT_COUNT 1)
+add_library(quickjs STATIC
+    ${quickjs_SOURCE_DIR}/quickjs.c
+    ${quickjs_SOURCE_DIR}/libregexp.c
+    ${quickjs_SOURCE_DIR}/libunicode.c
+    ${quickjs_SOURCE_DIR}/cutils.c
+    ${quickjs_SOURCE_DIR}/dtoa.c
+)
+target_include_directories(quickjs PRIVATE ${quickjs_SOURCE_DIR})
+target_compile_definitions(quickjs PRIVATE
+    _GNU_SOURCE
+    CONFIG_VERSION="${QUICKJS_VERSION}"
+)
 
 enable_testing()
 
