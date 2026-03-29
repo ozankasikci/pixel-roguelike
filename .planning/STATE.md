@@ -97,8 +97,14 @@ None yet.
 
 - macOS OpenGL cap at 4.1: Research recommended OpenGL 4.6 but macOS only supports 4.1 Core Profile. Phase 1 planning must confirm all required features are available in 4.1 (FBOs, GLSL 4.10, fullscreen quads — all confirmed available).
 
+### Quick Tasks Completed
+
+| # | Description | Date | Commit | Directory |
+|---|-------------|------|--------|-----------|
+| 260329-6wt | Add a proper inspector panel section for scripts | 2026-03-29 | 45785e3 | [260329-6wt-add-a-proper-inspector-panel-section-for](./quick/260329-6wt-add-a-proper-inspector-panel-section-for/) |
+
 ## Session Continuity
 
-Last session: 2026-03-25T16:21:00.000Z
-Stopped at: Completed 02.1-02-PLAN.md -- inventory open/close flow verified
+Last activity: 2026-03-29 - Completed quick task 260329-6wt: Add a proper inspector panel section for scripts
+Stopped at: Quick task 260329-6wt complete
 Resume file: None
