@@ -271,6 +271,7 @@ int main(int argc, char* argv[]) {
     MaterialTextureLibrary materialTextures;
     renderStartupProgress(window, imgui, 0.16f, "Preparing materials", "Uploading material texture data...");
     materialTextures.init(content);
+    materialTextures.prewarmAllMaterialMaps();
 
     EditorSceneDocument document;
     renderStartupProgress(window, imgui, 0.28f, "Opening scene", initialScene.c_str());
