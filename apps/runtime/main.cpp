@@ -10,6 +10,7 @@
 #include "game/systems/InteractionSystem.h"
 #include "game/systems/RenderSystem.h"
 #include "game/scenes/SilosCloisterScene.h"
+#include "game/scenes/GenericFileScene.h"
 #include "game/content/ContentRegistry.h"
 #include "game/session/RunSession.h"
 
@@ -20,11 +21,15 @@
 int main(int argc, char* argv[]) {
     spdlog::set_level(spdlog::level::info);
 
-    // Parse --screenshot path for automated capture
+    // Parse command-line arguments
     std::string autoScreenshotPath;
+    std::string scenePath;
     for (int i = 1; i < argc; ++i) {
         if (std::string(argv[i]) == "--screenshot" && i + 1 < argc) {
             autoScreenshotPath = argv[i + 1];
+            ++i;
+        } else if (std::string(argv[i]) == "--scene" && i + 1 < argc) {
+            scenePath = argv[i + 1];
             ++i;
         }
     }
@@ -57,10 +62,15 @@ int main(int argc, char* argv[]) {
         render.enableAutoScreenshot(autoScreenshotPath, 10);
     }
 
-    // Push the Silos-inspired cloister scene as the starting level.
+    // Push the starting scene: use --scene <path> if provided, otherwise fall back to the
+    // hardcoded Silos-inspired cloister scene.
     SceneManager sceneManager;
     app.setSceneManager(&sceneManager);
-    sceneManager.pushScene(std::make_unique<SilosCloisterScene>(), app);
+    if (scenePath.empty()) {
+        sceneManager.pushScene(std::make_unique<SilosCloisterScene>(), app);
+    } else {
+        sceneManager.pushScene(std::make_unique<GenericFileScene>(scenePath), app);
+    }
 
     // Run the game loop (per D-04)
     app.run();
