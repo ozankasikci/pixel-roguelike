@@ -104,8 +104,15 @@ None yet.
 
 - macOS OpenGL cap at 4.1: Research recommended OpenGL 4.6 but macOS only supports 4.1 Core Profile. Phase 1 planning must confirm all required features are available in 4.1 (FBOs, GLSL 4.10, fullscreen quads — all confirmed available).
 
+### Quick Tasks Completed
+
+| # | Description | Date | Commit | Directory |
+|---|-------------|------|--------|-----------|
+| 260329-t50 | Fix lighting attenuation and intensity | 2026-03-29 | 459e34f | [260329-t50-fix-lighting-attenuation-and-intensity](./quick/260329-t50-fix-lighting-attenuation-and-intensity/) |
+
 ## Session Continuity
 
+Last activity: 2026-03-29 - Completed quick task 260329-t50: Fix lighting attenuation and intensity
 Last session: 2026-03-29T09:57:11.883Z
 Stopped at: Checkpoint: 03-02 Task 2 human-verify
 Resume file: None
