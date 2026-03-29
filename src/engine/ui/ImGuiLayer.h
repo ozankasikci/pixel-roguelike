@@ -62,8 +62,6 @@ struct DebugParams {
         glm::vec3(0.72f, 0.80f, 0.92f),
         0.18f
     };
-    float playerTorchInnerConeDegrees = 58.0f;
-    float playerTorchOuterConeDegrees = 82.0f;
 };
 
 class ImGuiLayer {

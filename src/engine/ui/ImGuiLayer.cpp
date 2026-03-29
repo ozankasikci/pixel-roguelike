@@ -364,8 +364,6 @@ void ImGuiLayer::renderOverlay(DebugParams& params, std::vector<RenderLight>& li
             ImGui::TreePop();
         }
         ImGui::EndDisabled();
-        ImGui::SliderFloat("Torch Inner Cone", &params.playerTorchInnerConeDegrees, 5.0f, 50.0f, "%.1f");
-        ImGui::SliderFloat("Torch Outer Cone", &params.playerTorchOuterConeDegrees, 8.0f, 65.0f, "%.1f");
     }
 
     // ------------------------------------------------------------------
