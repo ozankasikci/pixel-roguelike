@@ -519,6 +519,7 @@ void ContentRegistry::loadDefaults() {
         "assets/defs/materials/viewmodel_default.material",
         "assets/defs/materials/brick_wall_old.material",
         "assets/defs/materials/cloister_stone.material",
+        "assets/defs/materials/concrete_wall.material",
     };
     for (const char* path : materialFiles) {
         auto material = loadMaterialDefinitionAsset(resolveProjectPath(path));
