@@ -46,18 +46,18 @@ int main(int argc, char* argv[]) {
 
     // Register systems by phase so scheduling policy lives in the engine instead of boot order.
     auto& input = app.addSystem<InputSystem>(Application::UpdatePhase::Input);
-    auto& interaction = app.addSystem<InteractionSystem>(Application::UpdatePhase::Interaction, input.state());
-    auto& doors = app.addSystem<DoorSystem>(Application::UpdatePhase::Interaction, input.state());
-    auto& checkpoints = app.addSystem<CheckpointSystem>(Application::UpdatePhase::Interaction, input.state());
+    auto& interaction = app.addSystem<InteractionSystem>(Application::UpdatePhase::Interaction, input);
+    auto& doors = app.addSystem<DoorSystem>(Application::UpdatePhase::Interaction, input);
+    auto& checkpoints = app.addSystem<CheckpointSystem>(Application::UpdatePhase::Interaction, input);
     auto& physics = app.addSystem<PhysicsSystem>(Application::UpdatePhase::Physics);
     auto& audio = app.addSystem<AudioSystem>(Application::UpdatePhase::Gameplay);
     app.emplaceService<AudioSystem*>(&audio);
     auto& audioListener = app.addSystem<AudioListenerSystem>(Application::UpdatePhase::Gameplay, audio);
     (void)audioListener;
-    auto& inventory = app.addSystem<InventorySystem>(Application::UpdatePhase::Gameplay, input.state());
-    auto& movement = app.addSystem<PlayerMovementSystem>(Application::UpdatePhase::Gameplay, input.state(), physics);
-    auto& camera = app.addSystem<CameraSystem>(Application::UpdatePhase::Camera, input.state());
-    auto& render = app.addSystem<RenderSystem>(Application::UpdatePhase::Render, input.state());
+    auto& inventory = app.addSystem<InventorySystem>(Application::UpdatePhase::Gameplay, input);
+    auto& movement = app.addSystem<PlayerMovementSystem>(Application::UpdatePhase::Gameplay, input, physics);
+    auto& camera = app.addSystem<CameraSystem>(Application::UpdatePhase::Camera, input);
+    auto& render = app.addSystem<RenderSystem>(Application::UpdatePhase::Render, input);
     (void)doors;
     (void)checkpoints;
     (void)interaction;

@@ -2,9 +2,9 @@
 
 #include "engine/core/Application.h"
 #include "game/runtime/RuntimeGameplay.h"
-#include "game/runtime/RuntimeInputState.h"
+#include "engine/input/InputSystem.h"
 
-DoorSystem::DoorSystem(RuntimeInputState& input)
+DoorSystem::DoorSystem(InputSystem& input)
     : input_(input)
 {}
 

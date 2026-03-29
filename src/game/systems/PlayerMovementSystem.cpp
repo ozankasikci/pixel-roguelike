@@ -3,9 +3,9 @@
 #include "engine/core/Application.h"
 #include "engine/physics/PhysicsSystem.h"
 #include "game/runtime/RuntimeGameplay.h"
-#include "game/runtime/RuntimeInputState.h"
+#include "engine/input/InputSystem.h"
 
-PlayerMovementSystem::PlayerMovementSystem(RuntimeInputState& input, PhysicsSystem& physics)
+PlayerMovementSystem::PlayerMovementSystem(InputSystem& input, PhysicsSystem& physics)
     : input_(input), physics_(physics)
 {}
 

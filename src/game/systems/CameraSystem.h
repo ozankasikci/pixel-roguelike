@@ -1,15 +1,15 @@
 #pragma once
 #include "engine/core/System.h"
 
-struct RuntimeInputState;
+class InputSystem;
 
 class CameraSystem : public System {
 public:
-    explicit CameraSystem(RuntimeInputState& input);
+    explicit CameraSystem(InputSystem& input);
     void init(Application& app) override;
     void update(Application& app, float deltaTime) override;
     void shutdown() override;
 
 private:
-    RuntimeInputState& input_;
+    InputSystem& input_;
 };

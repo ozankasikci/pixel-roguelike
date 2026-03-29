@@ -2,9 +2,9 @@
 
 #include "engine/core/Application.h"
 #include "game/runtime/RuntimeGameplay.h"
-#include "game/runtime/RuntimeInputState.h"
+#include "engine/input/InputSystem.h"
 
-InteractionSystem::InteractionSystem(RuntimeInputState& input)
+InteractionSystem::InteractionSystem(InputSystem& input)
     : input_(input)
 {}
 

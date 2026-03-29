@@ -3,10 +3,10 @@
 #include "engine/core/Application.h"
 #include "game/content/ContentRegistry.h"
 #include "game/runtime/RuntimeGameplay.h"
-#include "game/runtime/RuntimeInputState.h"
+#include "engine/input/InputSystem.h"
 #include "game/session/RunSession.h"
 
-InventorySystem::InventorySystem(RuntimeInputState& input)
+InventorySystem::InventorySystem(InputSystem& input)
     : input_(input) {}
 
 void InventorySystem::init(Application& app) {

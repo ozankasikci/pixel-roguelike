@@ -1,5 +1,6 @@
 #include "game/runtime/RuntimeGameplay.h"
 
+#include "engine/input/InputSystem.h"
 #include "engine/physics/PhysicsSystem.h"
 #include "game/components/CameraComponent.h"
 #include "game/components/CharacterControllerComponent.h"
@@ -56,12 +57,12 @@ glm::vec3 cameraForwardFromAngles(float yawDeg, float pitchDeg) {
     return glm::normalize(forward);
 }
 
-bool inventoryTogglePressed(const RuntimeInputState& input) {
+bool inventoryTogglePressed(const InputSystem& input) {
     return input.isKeyJustPressed(GLFW_KEY_I)
         || input.isKeyJustPressedByName("i")
         || input.isKeyJustPressedByName("I")
-        || input.isKeyJustPressedByName("ı")
-        || input.isKeyJustPressedByName("İ")
+        || input.isKeyJustPressedByName("\xc4\xb1")
+        || input.isKeyJustPressedByName("\xc4\xb0")
         || input.wasCharacterTyped('i')
         || input.wasCharacterTyped('I')
         || input.wasCharacterTyped(0x0130)
@@ -169,7 +170,7 @@ void initializeRuntimeInteraction(entt::registry& registry) {
     }
 }
 
-void updateRuntimeInteraction(entt::registry& registry, const RuntimeInputState& input) {
+void updateRuntimeInteraction(entt::registry& registry, const InputSystem& input) {
     auto& ctx = registry.ctx();
     initializeRuntimeInteraction(registry);
 
@@ -257,7 +258,7 @@ void initializeRuntimeInventory(entt::registry& registry) {
 }
 
 void updateRuntimeInventory(entt::registry& registry,
-                            RuntimeInputState& input,
+                            InputSystem& input,
                             RunSession& session,
                             const ContentRegistry& content) {
     auto& menu = ensureMenuState(registry);
@@ -482,7 +483,7 @@ void updateRuntimeCheckpoints(entt::registry& registry, float deltaTime, RunSess
 }
 
 void updateRuntimePlayerMovement(entt::registry& registry,
-                                 const RuntimeInputState& input,
+                                 const InputSystem& input,
                                  PhysicsSystem& physics,
                                  float deltaTime) {
     const bool inventoryOpen = registry.ctx().contains<InventoryMenuState>()
@@ -571,7 +572,7 @@ void updateRuntimePlayerMovement(entt::registry& registry,
 }
 
 void updateRuntimeCamera(entt::registry& registry,
-                         const RuntimeInputState& input,
+                         const InputSystem& input,
                          float aspect,
                          float deltaTime) {
     (void)deltaTime;

@@ -2,16 +2,16 @@
 
 #include "engine/core/System.h"
 
-struct RuntimeInputState;
+class InputSystem;
 
 class InteractionSystem : public System {
 public:
-    explicit InteractionSystem(RuntimeInputState& input);
+    explicit InteractionSystem(InputSystem& input);
 
     void init(Application& app) override;
     void update(Application& app, float deltaTime) override;
     void shutdown() override;
 
 private:
-    RuntimeInputState& input_;
+    InputSystem& input_;
 };

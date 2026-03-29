@@ -2,16 +2,16 @@
 
 #include "engine/core/System.h"
 
-struct RuntimeInputState;
+class InputSystem;
 
 class CheckpointSystem : public System {
 public:
-    explicit CheckpointSystem(RuntimeInputState& input);
+    explicit CheckpointSystem(InputSystem& input);
 
     void init(Application& app) override;
     void update(Application& app, float deltaTime) override;
     void shutdown() override;
 
 private:
-    RuntimeInputState& input_;
+    InputSystem& input_;
 };

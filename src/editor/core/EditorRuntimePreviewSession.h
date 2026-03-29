@@ -42,8 +42,8 @@ public:
     const MeshLibrary& meshLibrary() const { return session_.meshLibrary(); }
     DebugParams& debugParams() { return session_.debugParams(); }
     const DebugParams& debugParams() const { return session_.debugParams(); }
-    RuntimeInputState& input() { return session_.input(); }
-    const RuntimeInputState& input() const { return session_.input(); }
+    InputSystem& input() { return session_.input(); }
+    const InputSystem& input() const { return session_.input(); }
     RunSession& runSession() { return session_.runSession(); }
     const RunSession& runSession() const { return session_.runSession(); }
     const RuntimeSessionPerformanceStats& performanceStats() const { return session_.performanceStats(); }

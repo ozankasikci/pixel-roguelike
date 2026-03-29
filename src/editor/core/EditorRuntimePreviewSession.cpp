@@ -81,16 +81,16 @@ RuntimeSceneRenderOutput EditorRuntimePreviewSession::render(float deltaTime,
 }
 
 void EditorRuntimePreviewSession::updateInput(GLFWwindow* window, const ImGuiIO& io) {
-    RuntimeInputState& state = session_.input();
+    InputSystem& state = session_.input();
     state.beginFrame();
     state.setWantsCaptureMouse(false);
 
     if (!captured_ || window == nullptr) {
         state.setCursorLocked(false);
-        for (int key = 0; key < RuntimeInputState::MaxKeys; ++key) {
+        for (int key = 0; key < InputSystem::kMaxKeys; ++key) {
             state.setKeyPressed(key, false);
         }
-        for (int button = 0; button < RuntimeInputState::MaxButtons; ++button) {
+        for (int button = 0; button < InputSystem::kMaxButtons; ++button) {
             state.setMouseButtonPressed(button, false);
         }
         state.setMousePosition(glm::vec2(io.MousePos.x, io.MousePos.y));
@@ -99,7 +99,7 @@ void EditorRuntimePreviewSession::updateInput(GLFWwindow* window, const ImGuiIO&
         return;
     }
 
-    for (int key = 0; key < RuntimeInputState::MaxKeys; ++key) {
+    for (int key = 0; key < InputSystem::kMaxKeys; ++key) {
         const bool pressed = glfwGetKey(window, key) == GLFW_PRESS;
         state.setKeyPressed(key, pressed);
         if (state.isKeyJustPressed(key)) {
@@ -107,7 +107,7 @@ void EditorRuntimePreviewSession::updateInput(GLFWwindow* window, const ImGuiIO&
         }
     }
 
-    for (int button = 0; button < RuntimeInputState::MaxButtons; ++button) {
+    for (int button = 0; button < InputSystem::kMaxButtons; ++button) {
         state.setMouseButtonPressed(button, glfwGetMouseButton(window, button) == GLFW_PRESS);
     }
 

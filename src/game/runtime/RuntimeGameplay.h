@@ -1,10 +1,9 @@
 #pragma once
 
-#include "game/runtime/RuntimeInputState.h"
-
 #include <entt/entity/fwd.hpp>
 
 class ContentRegistry;
+class InputSystem;
 class PhysicsSystem;
 struct RunSession;
 
@@ -17,11 +16,11 @@ struct RuntimeCheckpointFeedbackState {
 };
 
 void initializeRuntimeInteraction(entt::registry& registry);
-void updateRuntimeInteraction(entt::registry& registry, const RuntimeInputState& input);
+void updateRuntimeInteraction(entt::registry& registry, const InputSystem& input);
 
 void initializeRuntimeInventory(entt::registry& registry);
 void updateRuntimeInventory(entt::registry& registry,
-                            RuntimeInputState& input,
+                            InputSystem& input,
                             RunSession& session,
                             const ContentRegistry& content);
 
@@ -32,11 +31,11 @@ void initializeRuntimeCheckpoints(entt::registry& registry);
 void updateRuntimeCheckpoints(entt::registry& registry, float deltaTime, RunSession& session);
 
 void updateRuntimePlayerMovement(entt::registry& registry,
-                                 const RuntimeInputState& input,
+                                 const InputSystem& input,
                                  PhysicsSystem& physics,
                                  float deltaTime);
 
 void updateRuntimeCamera(entt::registry& registry,
-                         const RuntimeInputState& input,
+                         const InputSystem& input,
                          float aspect,
                          float deltaTime);
