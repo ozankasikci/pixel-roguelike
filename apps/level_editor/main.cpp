@@ -138,6 +138,58 @@ EditorViewportState fitViewportToAspect(const EditorViewportState& viewport, flo
     return fitted;
 }
 
+void renderStartupProgress(Window& window,
+                           ImGuiLayer& imgui,
+                           float progress,
+                           const char* stageTitle,
+                           const char* stageDetail) {
+    window.pollEvents();
+
+    glViewport(0, 0, window.width(), window.height());
+    glDisable(GL_DEPTH_TEST);
+    glClearColor(0.045f, 0.047f, 0.055f, 1.0f);
+    glClear(GL_COLOR_BUFFER_BIT);
+
+    imgui.beginFrame();
+
+    ImGuiViewport* mainViewport = ImGui::GetMainViewport();
+    ImGui::SetNextWindowPos(mainViewport->WorkPos);
+    ImGui::SetNextWindowSize(mainViewport->WorkSize);
+    ImGui::SetNextWindowViewport(mainViewport->ID);
+    ImGui::Begin("##StartupLoadingScreen",
+                 nullptr,
+                 ImGuiWindowFlags_NoDecoration
+                     | ImGuiWindowFlags_NoMove
+                     | ImGuiWindowFlags_NoResize
+                     | ImGuiWindowFlags_NoSavedSettings
+                     | ImGuiWindowFlags_NoDocking
+                     | ImGuiWindowFlags_NoNav
+                     | ImGuiWindowFlags_NoBringToFrontOnFocus);
+
+    const ImVec2 contentArea = ImGui::GetContentRegionAvail();
+    const ImVec2 panelSize(520.0f, 140.0f);
+    ImGui::SetCursorPos(ImVec2(std::max(0.0f, (contentArea.x - panelSize.x) * 0.5f),
+                               std::max(0.0f, (contentArea.y - panelSize.y) * 0.5f)));
+
+    ImGui::BeginChild("##StartupLoadingPanel",
+                      panelSize,
+                      true,
+                      ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
+    ImGui::TextUnformatted("Level Editor");
+    ImGui::Spacing();
+    ImGui::TextUnformatted(stageTitle);
+    ImGui::TextDisabled("%s", stageDetail);
+    ImGui::Spacing();
+    ImGui::ProgressBar(std::clamp(progress, 0.0f, 1.0f), ImVec2(-1.0f, 0.0f));
+    ImGui::TextDisabled("%d%%", static_cast<int>(std::round(std::clamp(progress, 0.0f, 1.0f) * 100.0f)));
+    ImGui::EndChild();
+
+    ImGui::End();
+
+    imgui.endFrame();
+    window.swapBuffers();
+}
+
 } // namespace
 
 int main(int argc, char* argv[]) {
@@ -153,22 +205,29 @@ int main(int argc, char* argv[]) {
     ImGui::GetIO().ConfigWindowsMoveFromTitleBarOnly = true;
 
     ContentRegistry content;
+    renderStartupProgress(window, imgui, 0.05f, "Loading content registry", "Reading materials, archetypes, and definitions...");
     content.loadDefaults();
 
     MaterialTextureLibrary materialTextures;
+    renderStartupProgress(window, imgui, 0.16f, "Preparing materials", "Uploading material texture data...");
     materialTextures.init(content);
 
     EditorSceneDocument document;
+    renderStartupProgress(window, imgui, 0.28f, "Opening scene", initialScene.c_str());
     document.loadFromSceneFile(initialScene, content);
     EditorCommandStack commandStack;
     commandStack.reset(document);
 
     EditorPreviewWorld previewWorld;
+    renderStartupProgress(window, imgui, 0.42f, "Building edit preview", "Creating preview meshes and helpers...");
     previewWorld.rebuild(document, content);
     EditorRuntimePreviewSession runtimePreviewSession;
+    renderStartupProgress(window, imgui, 0.56f, "Building play preview", "Creating the runtime preview session...");
     runtimePreviewSession.rebuild(document, content);
+    renderStartupProgress(window, imgui, 0.70f, "Warming renderer", "Compiling shaders and preloading preview resources...");
     runtimePreviewSession.prewarmRenderer(content);
 
+    renderStartupProgress(window, imgui, 0.80f, "Creating render pipeline", "Preparing the editor renderer...");
     std::unique_ptr<Shader> sceneShader = std::make_unique<Shader>(
         "assets/shaders/game/scene.vert",
         "assets/shaders/game/scene.frag"
@@ -208,6 +267,8 @@ int main(int argc, char* argv[]) {
     auto layoutPresetNames = listEditorLayoutPresetNames();
     bool dockLayoutResetRequested = false;
 
+    renderStartupProgress(window, imgui, 0.92f, "Finalizing workspace", "Loading layouts, assets, and editor state...");
+
     if (!materialIds.empty()) {
         ui.selectedMaterialId = materialIds.front();
     }
@@ -227,6 +288,8 @@ int main(int argc, char* argv[]) {
     } else {
         dockLayoutResetRequested = true;
     }
+
+    renderStartupProgress(window, imgui, 1.0f, "Ready", "Opening editor...");
 
     bool previewDirty = true;
     bool savePressed = false;
