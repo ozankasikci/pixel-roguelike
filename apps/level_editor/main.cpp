@@ -963,12 +963,16 @@ int main(int argc, char* argv[]) {
             finalFbo.resize(targetW, targetH);
         }
 
-        if (previewDirty || previewSceneRevision != document.sceneRevision()) {
+        if (previewDirty) {
             previewWorld.rebuild(document, content);
             previewDirty = false;
             previewSceneRevision = document.sceneRevision();
             runtimePreviewDirtyState = RuntimePreviewDirtyState::FullWorldRebuild;
             lastRuntimePreviewStructuralChangeTime = glfwGetTime();
+        } else if (previewSceneRevision != document.sceneRevision()) {
+            previewWorld.syncMaterials(document, content);
+            runtimePreviewSession.syncMaterials(document, content);
+            previewSceneRevision = document.sceneRevision();
         }
         if (previewEnvironmentRevision != document.environmentRevision()) {
             previewEnvironmentRevision = document.environmentRevision();

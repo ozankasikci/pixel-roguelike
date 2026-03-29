@@ -1,6 +1,8 @@
 #include "editor/core/EditorRuntimePreviewSession.h"
 
 #include "editor/scene/EditorSceneDocument.h"
+#include "game/components/MeshComponent.h"
+#include "game/rendering/MaterialDefinition.h"
 
 #include <GLFW/glfw3.h>
 #include <imgui.h>
@@ -26,6 +28,25 @@ void EditorRuntimePreviewSession::rebuild(const EditorSceneDocument& document, C
     request.levelPath = document.scenePath();
     session_.rebuild(document.toLevelDef(), request.levelId, request.levelPath, content, request);
     syncEnvironment(document);
+}
+
+void EditorRuntimePreviewSession::syncMaterials(const EditorSceneDocument& document,
+                                                 const ContentRegistry& content) {
+    const LevelDef level = document.toLevelDef();
+    auto meshView = session_.registry().view<MeshComponent>();
+    std::size_t meshIndex = 0;
+    for (auto [entity, mesh] : meshView.each()) {
+        if (meshIndex < level.meshes.size()) {
+            const auto& placement = level.meshes[meshIndex];
+            mesh.material = placement.material.value_or(MaterialKind::Stone);
+            mesh.materialId = placement.materialId;
+            if (mesh.materialId.empty()) {
+                mesh.materialId = std::string(defaultMaterialIdForKind(mesh.material));
+            }
+            mesh.tint = placement.tint.value_or(glm::vec3(1.0f));
+        }
+        ++meshIndex;
+    }
 }
 
 void EditorRuntimePreviewSession::resetForPlay() {

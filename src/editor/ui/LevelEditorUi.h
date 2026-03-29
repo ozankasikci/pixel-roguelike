@@ -121,6 +121,7 @@ struct AssetBrowserActionResult {
 
 struct InspectorActionResult {
     bool previewDirty = false;
+    bool materialDirty = false;
     bool contentReloaded = false;
 };
 

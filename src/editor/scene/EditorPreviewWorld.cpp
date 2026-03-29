@@ -11,6 +11,7 @@
 #include "game/levels/cathedral/CathedralAssets.h"
 #include "game/prefabs/GameplayPrefabs.h"
 #include "game/rendering/EnvironmentProfile.h"
+#include "game/rendering/MaterialDefinition.h"
 #include "game/rendering/MeshAssetProvider.h"
 
 #define GLM_ENABLE_EXPERIMENTAL
@@ -222,6 +223,30 @@ void EditorPreviewWorld::rebuild(const EditorSceneDocument& document, const Cont
     }
 
     rebuildBounds();
+}
+
+void EditorPreviewWorld::syncMaterials(const EditorSceneDocument& document,
+                                       const ContentRegistry& content) {
+    auto meshView = registry_.view<MeshComponent>();
+    for (auto [entity, mesh] : meshView.each()) {
+        auto ownerIt = ownerMap_.find(entity);
+        if (ownerIt == ownerMap_.end()) {
+            continue;
+        }
+        const auto* object = document.findObject(ownerIt->second);
+        if (object == nullptr || object->kind != EditorSceneObjectKind::Mesh) {
+            continue;
+        }
+        const auto& placement = std::get<LevelMeshPlacement>(object->payload);
+        MaterialKind resolvedMaterial = placement.material.value_or(MaterialKind::Stone);
+        std::string resolvedMaterialId = placement.materialId;
+        if (resolvedMaterialId.empty()) {
+            resolvedMaterialId = std::string(defaultMaterialIdForKind(resolvedMaterial));
+        }
+        mesh.material = resolvedMaterial;
+        mesh.materialId = resolvedMaterialId;
+        mesh.tint = placement.tint.value_or(glm::vec3(1.0f));
+    }
 }
 
 void EditorPreviewWorld::clearEntities() {
