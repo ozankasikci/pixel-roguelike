@@ -44,9 +44,18 @@ Requirements for initial playable tech demo. Each maps to roadmap phases.
 ### Game Systems
 
 - [ ] **GSYS-01**: Game state saves at level boundaries (player can quit and resume)
-- [ ] **GSYS-02**: Options menu with FOV slider (60-120°)
+- [ ] **GSYS-02**: Options menu with FOV slider (60-120)
 - [ ] **GSYS-03**: Options menu with mouse sensitivity adjustment
 - [ ] **GSYS-04**: Options menu with fullscreen/windowed toggle
+
+### Engine Boundary (added for Phase 4)
+
+- [ ] **ENG-BOUNDARY-01**: Engine rendering layer compiles with zero game-layer includes
+- [ ] **ENG-BOUNDARY-02**: RenderMaterialData uses opaque int instead of game's MaterialKind enum
+- [ ] **ENG-BOUNDARY-03**: Engine provides generic action mapping system for input bindings
+- [ ] **ENG-BOUNDARY-04**: Engine input layer compiles with zero game-layer includes
+- [ ] **ENG-BOUNDARY-05**: RuntimeSceneRenderer has no hardcoded game-specific constants
+- [ ] **ENG-BOUNDARY-06**: ImGuiLayer has no game-specific forward declarations or methods
 
 ## v2 Requirements
 
@@ -107,24 +116,30 @@ Which phases cover which requirements. Updated during roadmap creation.
 | ENVR-01 | Phase 2 | Pending |
 | ENVR-02 | Phase 2 | Pending |
 | ENVR-03 | Phase 2 | Pending |
-| CMBT-01 | Phase 3 | Pending |
-| CMBT-02 | Phase 3 | Pending |
-| CMBT-03 | Phase 3 | Pending |
-| CMBT-04 | Phase 3 | Pending |
-| ENMY-01 | Phase 3 | Pending |
-| ENMY-02 | Phase 3 | Pending |
-| ENMY-03 | Phase 3 | Pending |
-| ENMY-04 | Phase 3 | Pending |
-| GSYS-01 | Phase 4 | Pending |
-| GSYS-02 | Phase 4 | Pending |
-| GSYS-03 | Phase 4 | Pending |
-| GSYS-04 | Phase 4 | Pending |
+| CMBT-01 | TBD | Pending |
+| CMBT-02 | TBD | Pending |
+| CMBT-03 | TBD | Pending |
+| CMBT-04 | TBD | Pending |
+| ENMY-01 | TBD | Pending |
+| ENMY-02 | TBD | Pending |
+| ENMY-03 | TBD | Pending |
+| ENMY-04 | TBD | Pending |
+| GSYS-01 | TBD | Pending |
+| GSYS-02 | TBD | Pending |
+| GSYS-03 | TBD | Pending |
+| GSYS-04 | TBD | Pending |
+| ENG-BOUNDARY-01 | Phase 4 | Pending |
+| ENG-BOUNDARY-02 | Phase 4 | Pending |
+| ENG-BOUNDARY-03 | Phase 4 | Pending |
+| ENG-BOUNDARY-04 | Phase 4 | Pending |
+| ENG-BOUNDARY-05 | Phase 4 | Pending |
+| ENG-BOUNDARY-06 | Phase 4 | Pending |
 
 **Coverage:**
-- v1 requirements: 23 total
-- Mapped to phases: 23
-- Unmapped: 0
+- v1 requirements: 29 total (23 original + 6 ENG-BOUNDARY)
+- Mapped to phases: 17 (RNDR 5 + PLYR 3 + ENVR 3 + ENG-BOUNDARY 6)
+- TBD (future phases): 12 (CMBT 4 + ENMY 4 + GSYS 4)
 
 ---
 *Requirements defined: 2026-03-23*
-*Last updated: 2026-03-23 after roadmap creation*
+*Last updated: 2026-03-29 — Added ENG-BOUNDARY requirements for Phase 4; moved CMBT/ENMY/GSYS to TBD (phase numbering shifted after inserted phases)*
