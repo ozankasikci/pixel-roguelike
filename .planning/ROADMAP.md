@@ -92,3 +92,15 @@ Plans:
 Plans:
 - [x] 03-01-PLAN.md — EditorBuildSystem backend module (fork/exec, pipe, thread, SIGTERM) and runtime --scene argument
 - [x] 03-02-PLAN.md — Wire Build menu, Build Output panel, keyboard shortcuts, unsaved-changes modal, and preferences into editor
+
+### Phase 4: Make engine fully generic — clean engine/game boundary, remove hardcoded game content, generic editor and build system
+
+**Goal:** The engine layer compiles with zero game-layer imports -- Renderer.h has no MaterialKind, InputSystem.h has no RuntimeInputState, RuntimeSceneRenderer has no hardcoded torch constants, and ImGuiLayer.h has no game-specific overlay methods. The engine is reusable for any 3D project.
+**Requirements**: ENG-BOUNDARY-01, ENG-BOUNDARY-02, ENG-BOUNDARY-03, ENG-BOUNDARY-04, ENG-BOUNDARY-05, ENG-BOUNDARY-06
+**Depends on:** Phase 3
+**Plans:** 3 plans
+
+Plans:
+- [ ] 04-01-PLAN.md — Decouple material system: replace MaterialKind enum with int shadingModelIndex in engine, remove MaterialKind field from MeshComponent
+- [ ] 04-02-PLAN.md — Decouple input system: internalize raw state in InputSystem, remove RuntimeInputState from engine, update all game system callers
+- [ ] 04-03-PLAN.md — Extract player torch to ECS component+system, move game-specific ImGui overlays from engine to game layer
