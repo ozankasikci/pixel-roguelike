@@ -118,3 +118,13 @@ Plans:
 - [x] 05-01-PLAN.md — Extract SceneRenderPipeline into engine_rendering and refactor RuntimeSceneRenderer to compose it
 - [x] 05-02-PLAN.md — Create EditorViewportRenderer, wire editor to shared pipeline, extend environment panel
 - [x] 05-03-PLAN.md — Wire model viewer to shared pipeline, add pipeline stats, update asset preview LTC
+
+### Phase 6: Data-driven scene management
+
+**Goal:** Add "New Scene" and "Delete Scene" to the editor UI, make the runtime default scene configurable instead of hardcoded, and remove legacy scene classes (CathedralScene, SilosCloisterScene, WardenOfficeScene) in favor of GenericFileScene
+**Requirements**: TBD
+**Depends on:** Phase 5
+**Plans:** 0 plans
+
+Plans:
+- [ ] TBD (run /gsd:plan-phase 6 to break down)

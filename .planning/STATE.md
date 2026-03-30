@@ -128,6 +128,7 @@ None yet.
 - Phase 3 added: Build menu in editor — macOS build from editor with progress and output (Windows support later)
 - Phase 4 added: Improve lighting quality — research best practices and implement industry-standard real-time lighting
 - Phase 5 added: Unify editor/runtime/build rendering parity — shared render path so all three modes produce identical visual output
+- Phase 6 added: Data-driven scene management — New/Delete Scene in editor, configurable runtime default, remove legacy hardcoded scene classes
 
 ### Blockers/Concerns
 
