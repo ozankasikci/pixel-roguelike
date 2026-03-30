@@ -281,10 +281,16 @@ void InputSystem::cursorPosCallback(GLFWwindow* window, double xpos, double ypos
 
 void InputSystem::scrollCallback(GLFWwindow* window, double xoffset, double yoffset) {
     (void)window;
-    (void)xoffset;
     if (!instance_) return;
 
-    instance_->scrollAccum_ += static_cast<float>(yoffset);
+    constexpr double kScrollScale = 0.2;
+    double scaledY = yoffset * kScrollScale;
+    double scaledX = xoffset * kScrollScale;
+
+    instance_->scrollAccum_ += static_cast<float>(scaledY);
+
+    // Forward scaled scroll to ImGui (its own callback was overridden by ours)
+    ImGui::GetIO().AddMouseWheelEvent(static_cast<float>(scaledX), static_cast<float>(scaledY));
 }
 
 void InputSystem::keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods) {
