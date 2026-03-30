@@ -41,6 +41,6 @@ void appendSelectionOverlays(std::vector<RenderObject>& objects,
 void renderShadowPass(const std::vector<RenderObject>& objects,
                       const std::vector<RenderLight>& lights,
                       const Shader& shadowShader,
-                      std::array<ShadowMap, 2>& shadowMaps,
+                      std::array<ShadowMap, kMaxShadowedSpotLights>& shadowMaps,
                       int shadowResolution,
                       ShadowRenderData& shadowData);

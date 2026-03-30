@@ -23,7 +23,7 @@
 
 namespace {
 
-constexpr int kMaxShadowedSpotLightsLocal = 2;
+constexpr int kMaxShadowedSpotLightsLocal = kMaxShadowedSpotLights;
 
 glm::vec3 safeNormalize(const glm::vec3& value, const glm::vec3& fallback) {
     if (glm::dot(value, value) <= 0.0001f) {
@@ -266,12 +266,14 @@ void appendSelectionOverlays(std::vector<RenderObject>& objects,
 void renderShadowPass(const std::vector<RenderObject>& objects,
                       const std::vector<RenderLight>& lights,
                       const Shader& shadowShader,
-                      std::array<ShadowMap, 2>& shadowMaps,
+                      std::array<ShadowMap, kMaxShadowedSpotLights>& shadowMaps,
                       int shadowResolution,
                       ShadowRenderData& shadowData) {
     shadowData.shadowCount = 0;
-    shadowData.matrices = {glm::mat4(1.0f), glm::mat4(1.0f)};
-    shadowData.textures = {shadowMaps[0].texture(), shadowMaps[1].texture()};
+    shadowData.matrices.fill(glm::mat4(1.0f));
+    for (std::size_t i = 0; i < shadowMaps.size(); ++i) {
+        shadowData.textures[i] = shadowMaps[i].texture();
+    }
 
     for (auto& shadowMap : shadowMaps) {
         if (shadowMap.texture() == 0) {

@@ -45,11 +45,8 @@ struct RenderObject {
 
 struct ShadowRenderData {
     int shadowCount = 0;
-    std::array<glm::mat4, kMaxShadowedSpotLights> matrices{
-        glm::mat4(1.0f),
-        glm::mat4(1.0f),
-    };
-    std::array<GLuint, kMaxShadowedSpotLights> textures{0, 0};
+    std::array<glm::mat4, kMaxShadowedSpotLights> matrices{};
+    std::array<GLuint, kMaxShadowedSpotLights> textures{};
 };
 
 class Renderer {

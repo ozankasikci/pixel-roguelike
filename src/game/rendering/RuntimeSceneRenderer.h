@@ -45,7 +45,7 @@ public:
     const Framebuffer& sceneFBO() const { return sceneFBO_; }
 
 private:
-    static constexpr int kMaxShadowedSpotLights = 2;
+    static constexpr int kMaxShadowedSpotLights = 8;
 
     struct CameraState {
         glm::vec3 position{0.0f};

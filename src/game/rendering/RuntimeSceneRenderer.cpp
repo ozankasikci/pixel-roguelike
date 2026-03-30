@@ -353,8 +353,10 @@ void RuntimeSceneRenderer::renderShadowPass(const std::vector<RenderObject>& obj
                                             const DebugParams& params,
                                             ShadowRenderData& shadowData) {
     shadowData.shadowCount = 0;
-    shadowData.matrices = {glm::mat4(1.0f), glm::mat4(1.0f)};
-    shadowData.textures = {shadowMaps_[0].texture(), shadowMaps_[1].texture()};
+    shadowData.matrices.fill(glm::mat4(1.0f));
+    for (std::size_t i = 0; i < shadowMaps_.size(); ++i) {
+        shadowData.textures[i] = shadowMaps_[i].texture();
+    }
 
     if (!params.shadowsEnabled || shadowShader_ == nullptr) {
         return;
