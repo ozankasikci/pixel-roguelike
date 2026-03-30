@@ -229,7 +229,8 @@ const MaterialTextureLibrary::TextureSet& MaterialTextureLibrary::ensureTextureS
     const bool isProcedural =
         resolved.proceduralSource == MaterialProceduralSource::GeneratedBrick ||
         resolved.proceduralSource == MaterialProceduralSource::GeneratedStone ||
-        resolved.proceduralSource == MaterialProceduralSource::GeneratedSmooth;
+        resolved.proceduralSource == MaterialProceduralSource::GeneratedSmooth ||
+        resolved.proceduralSource == MaterialProceduralSource::GeneratedFloor;
 
     if (isProcedural) {
         // Try disk cache for procedural textures
@@ -255,6 +256,8 @@ const MaterialTextureLibrary::TextureSet& MaterialTextureLibrary::ensureTextureS
             pixels = generateBrickPixels();
         } else if (resolved.proceduralSource == MaterialProceduralSource::GeneratedSmooth) {
             pixels = generateSmoothWallPixels();
+        } else if (resolved.proceduralSource == MaterialProceduralSource::GeneratedFloor) {
+            pixels = generateFloorPixels();
         } else {
             pixels = generateStonePixels();
         }
@@ -525,6 +528,89 @@ MaterialTextureLibrary::ProceduralPixelData MaterialTextureLibrary::generateSmoo
         }
     }
 
+    for (int y = 0; y < kSize; ++y) {
+        for (int x = 0; x < kSize; ++x) {
+            glm::vec3 n = sampleHeightNormal(height, kSize, x, y);
+            const size_t colorIndex = static_cast<size_t>(y * kSize + x) * 4;
+            result.normal[colorIndex + 0] = toByte(n.x * 0.5f + 0.5f);
+            result.normal[colorIndex + 1] = toByte(n.y * 0.5f + 0.5f);
+            result.normal[colorIndex + 2] = toByte(n.z * 0.5f + 0.5f);
+            result.normal[colorIndex + 3] = 255;
+        }
+    }
+
+    return result;
+}
+
+MaterialTextureLibrary::ProceduralPixelData MaterialTextureLibrary::generateFloorPixels() const {
+    constexpr int kSize = 512;
+    constexpr float kTileCount = 4.0f; // Large-format institutional floor tiles
+
+    ProceduralPixelData result;
+    result.size = kSize;
+    result.albedo.resize(static_cast<size_t>(kSize * kSize * 4), 255);
+    result.normal.resize(static_cast<size_t>(kSize * kSize * 4), 255);
+    result.roughness.resize(static_cast<size_t>(kSize * kSize), 255);
+    result.ao.resize(static_cast<size_t>(kSize * kSize), 255);
+    std::vector<float> height(static_cast<size_t>(kSize * kSize), 0.0f);
+
+    for (int y = 0; y < kSize; ++y) {
+        for (int x = 0; x < kSize; ++x) {
+            const float u = (static_cast<float>(x) + 0.5f) / static_cast<float>(kSize);
+            const float v = (static_cast<float>(y) + 0.5f) / static_cast<float>(kSize);
+            glm::vec2 p(u, v);
+
+            // Tile grid — faint seams between large-format floor tiles
+            const float tileU = u * kTileCount;
+            const float tileV = v * kTileCount;
+            const float seamDistX = std::min(glm::fract(tileU), 1.0f - glm::fract(tileU));
+            const float seamDistY = std::min(glm::fract(tileV), 1.0f - glm::fract(tileV));
+            const float seamDist = std::min(seamDistX, seamDistY);
+            const float seam = 1.0f - smooth01(0.010f, 0.030f, seamDist); // Very thin, subtle seam
+
+            // Per-tile color variation
+            const glm::vec2 tileCell(std::floor(tileU), std::floor(tileV));
+            const float tileVariation = hash21(tileCell) * 0.03f - 0.015f;
+
+            // Tileable noise layers for surface micro-variation
+            const float broad = tileableFbm(p, 2.0f, glm::vec2(9.3f, 3.7f));
+            const float mid = tileableFbm(p, 6.0f, glm::vec2(2.1f, 15.4f));
+            const float fine = tileableFbm(p, 14.0f, glm::vec2(13.8f, 6.2f));
+
+            // Warm beige-tan base — Stanley Parable institutional linoleum
+            glm::vec3 baseWarm(0.82f, 0.76f, 0.67f);
+            glm::vec3 baseCool(0.78f, 0.74f, 0.68f);
+            glm::vec3 color = glm::mix(baseWarm, baseCool, broad * 0.4f + 0.3f);
+            color += glm::vec3(tileVariation, tileVariation * 0.8f, tileVariation * 0.5f);
+            color *= 0.97f + mid * 0.04f + fine * 0.015f;
+
+            // Seam darkening — subtle joint lines
+            color = glm::mix(color, color * 0.88f, seam * 0.6f);
+
+            // Slightly glossier than walls — polished linoleum surface
+            float localRoughness = 0.45f + mid * 0.10f + fine * 0.06f;
+            localRoughness = glm::mix(localRoughness, localRoughness + 0.15f, seam); // Seams rougher
+
+            // Subtle height — nearly flat with faint seam indentation
+            float localHeight = (mid - 0.5f) * 0.003f + (fine - 0.5f) * 0.001f;
+            localHeight -= seam * 0.008f; // Seams dip slightly
+
+            // AO — faint darkening at seam joints
+            float localAo = 0.98f - seam * 0.08f - broad * 0.02f;
+
+            const size_t pixelIndex = static_cast<size_t>(y * kSize + x);
+            const size_t colorIndex = pixelIndex * 4;
+            result.albedo[colorIndex + 0] = toByte(color.r);
+            result.albedo[colorIndex + 1] = toByte(color.g);
+            result.albedo[colorIndex + 2] = toByte(color.b);
+            result.albedo[colorIndex + 3] = 255;
+            result.roughness[pixelIndex] = toByte(localRoughness);
+            result.ao[pixelIndex] = toByte(localAo);
+            height[pixelIndex] = localHeight;
+        }
+    }
+
+    // Pass 2: Normal map from height field
     for (int y = 0; y < kSize; ++y) {
         for (int x = 0; x < kSize; ++x) {
             glm::vec3 n = sampleHeightNormal(height, kSize, x, y);
