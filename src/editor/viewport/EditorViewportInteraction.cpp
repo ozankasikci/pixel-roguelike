@@ -2,6 +2,7 @@
 
 #include "editor/scene/EditorPreviewWorld.h"
 #include "editor/viewport/EditorViewportController.h"
+#include "engine/core/MathUtils.h"
 #include "engine/rendering/geometry/MeshLibrary.h"
 #include "game/content/ContentRegistry.h"
 #include "game/rendering/MaterialDefinition.h"
@@ -19,13 +20,6 @@
 #include <memory>
 
 namespace {
-
-glm::vec3 safeNormalize(const glm::vec3& value, const glm::vec3& fallback) {
-    if (glm::dot(value, value) <= 0.0001f) {
-        return fallback;
-    }
-    return glm::normalize(value);
-}
 
 glm::mat4 makeModelMatrix(const glm::vec3& position,
                           const glm::vec3& scale,

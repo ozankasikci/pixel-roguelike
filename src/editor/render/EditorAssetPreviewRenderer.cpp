@@ -1,5 +1,6 @@
 #include "editor/render/EditorAssetPreviewRenderer.h"
 
+#include "engine/core/MathUtils.h"
 #include "engine/rendering/assets/ModelLoader.h"
 #include "engine/rendering/core/Shader.h"
 #include "engine/rendering/lighting/RenderLight.h"
@@ -17,14 +18,6 @@
 #include <vector>
 
 namespace {
-
-glm::vec3 safeNormalize(const glm::vec3& value, const glm::vec3& fallback) {
-    const float lengthSq = glm::dot(value, value);
-    if (lengthSq <= 1e-6f) {
-        return fallback;
-    }
-    return value / std::sqrt(lengthSq);
-}
 
 RenderLight makeDirectionalLight(const glm::vec3& direction,
                                  const glm::vec3& color,

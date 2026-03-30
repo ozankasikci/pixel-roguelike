@@ -1,5 +1,6 @@
 #include "game/content/ContentRegistry.h"
 #include "engine/core/PathUtils.h"
+#include "game/content/ParseUtils.h"
 #include "game/rendering/MaterialTextureLibrary.h"
 
 #include <spdlog/spdlog.h>
@@ -36,32 +37,6 @@ std::vector<std::string> sortedDefinitionFiles(const std::string& relativeDirect
     }
     std::sort(files.begin(), files.end());
     return files;
-}
-
-[[noreturn]] void throwParseError(const std::string& path, int lineNumber, const std::string& message) {
-    throw std::runtime_error(path + ":" + std::to_string(lineNumber) + ": " + message);
-}
-
-bool isCommentOrEmpty(const std::string& line) {
-    for (char c : line) {
-        if (c == '#') {
-            return true;
-        }
-        if (!std::isspace(static_cast<unsigned char>(c))) {
-            return false;
-        }
-    }
-    return true;
-}
-
-std::vector<std::string> tokenizeRecord(const std::string& line) {
-    std::istringstream stream(line);
-    std::vector<std::string> tokens;
-    std::string token;
-    while (stream >> token) {
-        tokens.push_back(token);
-    }
-    return tokens;
 }
 
 template<typename Def>

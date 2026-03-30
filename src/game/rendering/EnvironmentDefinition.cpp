@@ -1,6 +1,7 @@
 #include "game/rendering/EnvironmentDefinition.h"
 
 #include "engine/core/PathUtils.h"
+#include "game/content/ParseUtils.h"
 
 #include <filesystem>
 #include <fstream>
@@ -9,22 +10,6 @@
 #include <stdexcept>
 
 namespace {
-
-[[noreturn]] void throwParseError(const std::string& path, int lineNumber, const std::string& message) {
-    throw std::runtime_error(path + ":" + std::to_string(lineNumber) + ": " + message);
-}
-
-bool isCommentOrEmpty(const std::string& line) {
-    for (char c : line) {
-        if (c == '#') {
-            return true;
-        }
-        if (!std::isspace(static_cast<unsigned char>(c))) {
-            return false;
-        }
-    }
-    return true;
-}
 
 bool parseBool(const std::string& token, bool& value) {
     if (token == "1" || token == "true" || token == "TRUE") {
@@ -36,16 +21,6 @@ bool parseBool(const std::string& token, bool& value) {
         return true;
     }
     return false;
-}
-
-std::vector<std::string> tokenizeRecord(const std::string& line) {
-    std::istringstream stream(line);
-    std::vector<std::string> tokens;
-    std::string token;
-    while (stream >> token) {
-        tokens.push_back(token);
-    }
-    return tokens;
 }
 
 glm::vec3 parseVec3Record(const std::vector<std::string>& tokens,
