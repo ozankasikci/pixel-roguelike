@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: Ready to execute
-stopped_at: Completed 07-01-PLAN.md — all tasks done
-last_updated: "2026-03-30T19:27:13.045Z"
+stopped_at: Completed 07-02-PLAN.md
+last_updated: "2026-03-30T19:49:32.219Z"
 last_activity: 2026-03-30
 progress:
   total_phases: 9
   completed_phases: 7
   total_plans: 25
-  completed_plans: 22
+  completed_plans: 23
 ---
 
 # Project State
@@ -25,7 +25,7 @@ See: .planning/PROJECT.md (updated 2026-03-23)
 ## Current Position
 
 Phase: 07 (data-driven-material-system-replace-hardcoded-materials-with-a-proper-material-pipeline) — EXECUTING
-Plan: 2 of 4
+Plan: 3 of 4
 
 ## Performance Metrics
 
@@ -68,6 +68,7 @@ Plan: 2 of 4
 | Phase 06-data-driven-scene-management P02 | 10 | 2 tasks | 3 files |
 | Phase 06-data-driven-scene-management P03 | 15 | 1 tasks | 3 files |
 | Phase 07-data-driven-material-system-replace-hardcoded-materials-with-a-proper-material-pipeline P01 | 35 | 2 tasks | 19 files |
+| Phase 07 P02 | 5 | 3 tasks | 26 files |
 
 ## Accumulated Context
 
@@ -129,6 +130,10 @@ Recent decisions affecting current work:
 - [Phase 06-data-driven-scene-management]: NewScenePopup/DeleteSceneConfirm modals placed outside root window (after assetBrowserActions) matching Save Before Building? pattern
 - [Phase 07]: roughness_bias in .material files bakes the per-kind shader default (stone 0.82, wood 0.74, metal 0.34, wax 0.58, moss 0.94, viewmodel 0.48, floor 0.86, brick 0.88)
 - [Phase 07]: ContentRegistry::loadMaterialsFromDirectory uses recursive_directory_iterator — any .material file in assets/materials/ or subdirectory is auto-loaded with duplicate detection
+- [Phase 07]: MaterialKind enum deleted; feature flags (detailBrick, detailStone, etc.) on ResolvedMaterialDefinition are the authoritative material type source
+- [Phase 07]: shading_model key in .material files silently ignored for backward compat — root materials no longer require shading_model
+- [Phase 07]: MaterialTextureLibrary.resolve() returns magenta (1,0,1) fallback for unknown materialId — visible in renderer to aid debugging
+- [Phase 07]: Roughness formula simplified to clamp(uMaterialRoughnessScale * uMaterialRoughnessBias) — roughness_bias bakes the base roughness value in .material files
 
 ### Pending Todos
 
@@ -166,6 +171,6 @@ None yet.
 ## Session Continuity
 
 Last activity: 2026-03-30
-Last session: 2026-03-30T19:27:13.041Z
-Stopped at: Completed 07-01-PLAN.md — all tasks done
+Last session: 2026-03-30T19:49:32.215Z
+Stopped at: Completed 07-02-PLAN.md
 Resume file: None
