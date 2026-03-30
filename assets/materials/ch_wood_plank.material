@@ -9,3 +9,4 @@ metalness 0.0
 ao_strength 1.0
 albedo_map assets/textures/country_house/OldHouseMapWood02.png
 normal_map assets/textures/country_house/OldHouseMapWood02_N.png
+normal_map_flip_y true

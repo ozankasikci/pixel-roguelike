@@ -11,3 +11,4 @@ albedo_map assets/textures/country_house/WoodPlank01.png
 normal_map assets/textures/country_house/WoodPlank01_N.png
 ao_map assets/textures/country_house/WoodPlank01_AO.png
 roughness_map assets/textures/country_house/WoodPlank01_R.png
+normal_map_flip_y true

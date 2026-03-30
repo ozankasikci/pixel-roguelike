@@ -1,0 +1,4 @@
+id outdoor_bright
+lighting_hemi_sky_color 0.70 0.72 0.75
+lighting_hemi_ground_color 0.25 0.22 0.18
+lighting_hemi_strength 0.80

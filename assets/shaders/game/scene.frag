@@ -58,6 +58,7 @@ uniform int uMaterialBrickDetail;
 uniform int uMaterialWoodDetail;
 uniform int uMaterialStoneDetail;
 uniform int uMaterialFloorDetail;
+uniform int uNormalMapFlipY;
 uniform float uTimeSeconds;
 uniform sampler2D uAlbedoMap;
 uniform sampler2D uNormalMap;
@@ -275,6 +276,9 @@ vec3 applyMaterialMapNormal(vec3 geometricNormal, vec2 uv) {
         mapped = sampleBrickNormalTangent(uv, brickMacroMasks(geometricNormal));
     } else {
         mapped = texture(uNormalMap, uv).xyz * 2.0 - 1.0;
+    }
+    if (uNormalMapFlipY != 0) {
+        mapped.y = -mapped.y;
     }
     mapped = normalize(vec3(mapped.xy * max(uMaterialNormalStrength, 0.0), mapped.z));
 

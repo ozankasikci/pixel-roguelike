@@ -146,6 +146,9 @@ ResolvedMaterialDefinition resolveMaterialDefinitionRecursive(
     if (definition.detailFloor.has_value()) {
         resolved.detailFloor = *definition.detailFloor;
     }
+    if (definition.normalMapFlipY.has_value()) {
+        resolved.normalMapFlipY = *definition.normalMapFlipY;
+    }
 
     visiting.erase(id);
     cache.emplace(id, resolved);
@@ -324,6 +327,10 @@ MaterialDefinition loadMaterialDefinitionAsset(const std::string& path) {
             definition.detailFloor = (tokens[1] == "true");
             continue;
         }
+        if (key == "normal_map_flip_y" && tokens.size() == 2) {
+            definition.normalMapFlipY = (tokens[1] == "true");
+            continue;
+        }
 
         throwParseError(path, lineNumber, "invalid material definition record");
     }
@@ -448,6 +455,9 @@ std::string serializeMaterialDefinitionAsset(const MaterialDefinition& definitio
     }
     if (definition.detailFloor.has_value()) {
         out << "detail_floor " << (*definition.detailFloor ? "true" : "false") << '\n';
+    }
+    if (definition.normalMapFlipY.has_value()) {
+        out << "normal_map_flip_y " << (*definition.normalMapFlipY ? "true" : "false") << '\n';
     }
     return out.str();
 }

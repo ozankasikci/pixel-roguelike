@@ -10,3 +10,4 @@ ao_strength 0.9
 albedo_map assets/textures/country_house/Ceiling01.png
 normal_map assets/textures/country_house/Ceiling01_N.png
 ao_map assets/textures/country_house/Ceiling01_AO.png
+normal_map_flip_y true

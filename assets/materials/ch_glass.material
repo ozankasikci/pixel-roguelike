@@ -9,3 +9,4 @@ metalness 0.0
 ao_strength 0.5
 albedo_map assets/textures/country_house/Glass.png
 normal_map assets/textures/country_house/glass_N.tga
+normal_map_flip_y true
