@@ -175,10 +175,11 @@ None yet.
 | 260330-mzu | Restore post-processing flags disabled by SSAO commit | 2026-03-30 | 19068c7 | [260330-mzu-fix-editor-scene-objects-not-visible-aft](./quick/260330-mzu-fix-editor-scene-objects-not-visible-aft/) |
 | 260330-rwe | Create a Claude Code skill for procedural texture generation | 2026-03-30 | e976302 | [260330-rwe-create-a-claude-code-skill-for-procedura](./quick/260330-rwe-create-a-claude-code-skill-for-procedura/) |
 | 260330-wc2 | Fix too-fast scrollbar scrolling in the editor asset browser panel | 2026-03-30 | 156472e | [260330-wc2-fix-too-fast-scrollbar-scrolling-in-the-](./quick/260330-wc2-fix-too-fast-scrollbar-scrolling-in-the-/) |
+| 260330-wt0 | Reorganize Environment inspector panel into logical sub-groups | 2026-03-30 | d28fcd2 | [260330-wt0-improve-environment-inspector-panel-ux-b](./quick/260330-wt0-improve-environment-inspector-panel-ux-b/) |
 
 ## Session Continuity
 
 Last activity: 2026-03-30
 Last session: 2026-03-30T20:16:53.291Z
-Stopped at: Completed quick task 260330-wc2: Fix asset browser scroll speed
+Stopped at: Completed quick task 260330-wt0: Reorganize Environment inspector panel UX
 Resume file: None
