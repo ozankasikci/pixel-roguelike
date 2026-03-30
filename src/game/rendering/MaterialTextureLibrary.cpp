@@ -129,6 +129,26 @@ void MaterialTextureLibrary::init(const ContentRegistry& content) {
     }
 }
 
+void MaterialTextureLibrary::reloadMaterial(const std::string& materialId,
+                                             const std::unordered_map<std::string, MaterialDefinition>& materials) {
+    // Compute and erase the old texture set entry before erasing the resolved definition
+    auto resolvedIt = resolvedDefinitions_.find(materialId);
+    if (resolvedIt != resolvedDefinitions_.end()) {
+        const std::string key = textureKeyFor(resolvedIt->second);
+        textureSets_.erase(key);
+        resolvedDefinitions_.erase(resolvedIt);
+    }
+    materials_.erase(materialId);
+
+    // Re-resolve from the updated materials map so the next resolve() call
+    // returns updated values rather than the magenta fallback
+    auto matIt = materials.find(materialId);
+    if (matIt != materials.end()) {
+        resolvedDefinitions_.emplace(materialId, resolveMaterialDefinition(materialId, materials));
+    }
+    spdlog::info("Invalidated texture cache for material: {}", materialId);
+}
+
 std::size_t MaterialTextureLibrary::prewarmAllMaterialMaps() const {
     std::size_t warmedTextureSets = 0;
     for (const auto& [id, resolved] : resolvedDefinitions_) {

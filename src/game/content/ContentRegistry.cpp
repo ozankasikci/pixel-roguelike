@@ -1,5 +1,6 @@
 #include "game/content/ContentRegistry.h"
 #include "engine/core/PathUtils.h"
+#include "game/rendering/MaterialTextureLibrary.h"
 
 #include <spdlog/spdlog.h>
 
@@ -581,6 +582,8 @@ void ContentRegistry::loadMaterialsFromDirectory(const std::string& relativeDire
                               material.id, entry.path().string());
                 continue;
             }
+            materialFilePathById_[material.id] = entry.path().string();
+            materialFileTimes_[entry.path().string()] = fs::last_write_time(entry.path());
             materials_.emplace(material.id, std::move(material));
         } catch (const std::exception& e) {
             spdlog::error("Failed to load material '{}': {}", entry.path().string(), e.what());
@@ -594,5 +597,94 @@ void ContentRegistry::validateMaterialInheritance() {
             spdlog::error("Material '{}' has missing parent '{}' — will use magenta fallback",
                           id, *def.parent);
         }
+        std::string error;
+        if (!validateMaterialDefinition(def, error)) {
+            spdlog::warn("Material '{}' validation: {}", id, error);
+        }
     }
+}
+
+bool ContentRegistry::validateMaterialDefinition(const MaterialDefinition& def, std::string& errorOut) const {
+    if (def.id.empty()) {
+        errorOut = "Material ID is empty";
+        return false;
+    }
+    if (def.parent.has_value() && !def.parent->empty()) {
+        if (!materials_.count(*def.parent)) {
+            errorOut = "Parent material '" + *def.parent + "' not found";
+            return false;
+        }
+    }
+    if (def.roughnessBias.has_value()) {
+        float v = *def.roughnessBias;
+        if (v < 0.0f || v > 1.0f) {
+            errorOut = "roughness_bias " + std::to_string(v) + " out of range [0, 1]";
+            return false;
+        }
+    }
+    if (def.metalness.has_value()) {
+        float v = *def.metalness;
+        if (v < 0.0f || v > 1.0f) {
+            errorOut = "metalness " + std::to_string(v) + " out of range [0, 1]";
+            return false;
+        }
+    }
+    return true;
+}
+
+void ContentRegistry::pollMaterialHotReload(MaterialTextureLibrary& texLibrary) {
+    auto now = std::chrono::steady_clock::now();
+    auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(now - lastMaterialPoll_);
+    if (elapsed.count() < kMaterialPollIntervalMs) return;
+    lastMaterialPoll_ = now;
+
+    namespace fs = std::filesystem;
+    for (auto& [path, knownTime] : materialFileTimes_) {
+        try {
+            if (!fs::exists(path)) continue;
+            auto currentTime = fs::last_write_time(path);
+            if (currentTime == knownTime) continue;
+            knownTime = currentTime;
+
+            spdlog::info("Hot-reloading material: {}", path);
+            auto updated = loadMaterialDefinitionAsset(path);
+
+            std::string error;
+            if (!validateMaterialDefinition(updated, error)) {
+                spdlog::error("Hot-reload validation failed for '{}': {}", path, error);
+                continue;
+            }
+
+            const std::string updatedId = updated.id;
+            materials_[updatedId] = std::move(updated);
+
+            texLibrary.reloadMaterial(updatedId, materials_);
+        } catch (const std::exception& e) {
+            spdlog::error("Hot-reload error for '{}': {}", path, e.what());
+        }
+    }
+}
+
+void ContentRegistry::addMaterial(MaterialDefinition def, const std::string& filePath) {
+    namespace fs = std::filesystem;
+    const std::string id = def.id;
+    if (materials_.count(id)) {
+        spdlog::warn("addMaterial: overwriting existing material '{}'", id);
+    }
+    materialFilePathById_[id] = filePath;
+    if (fs::exists(filePath)) {
+        materialFileTimes_[filePath] = fs::last_write_time(filePath);
+    }
+    materials_[id] = std::move(def);
+    spdlog::info("Added material '{}' from '{}'", id, filePath);
+}
+
+void ContentRegistry::removeMaterial(const std::string& id) {
+    auto pathIt = materialFilePathById_.find(id);
+    if (pathIt != materialFilePathById_.end()) {
+        materialFileTimes_.erase(pathIt->second);
+        materialFilePathById_.erase(pathIt);
+    }
+    materials_.erase(id);
+    spdlog::info("Removed material '{}'", id);
 }

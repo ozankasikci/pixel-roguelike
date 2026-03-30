@@ -39,7 +39,7 @@ pixel_roguelike_add_test(test_level_lighting
 
 pixel_roguelike_add_test(test_content_registry
     SOURCES test_content_registry.cpp
-    LIBRARIES game_content
+    LIBRARIES game_rendering
     DEFINITIONS ${CONTENT_REGISTRY_FILE_DEFS}
     LABELS game
 )

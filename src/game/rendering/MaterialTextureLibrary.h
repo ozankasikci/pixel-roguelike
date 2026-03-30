@@ -18,6 +18,13 @@ public:
 
     const RenderMaterialData& resolve(std::string_view materialId) const;
 
+    // Per-material cache invalidation for hot-reload.
+    // Clears the cached resolved definition, texture set, and render material for the given
+    // materialId. Re-resolves the definition from the provided materials map so that the next
+    // resolve() call picks up the updated values rather than returning the magenta fallback.
+    void reloadMaterial(const std::string& materialId,
+                        const std::unordered_map<std::string, MaterialDefinition>& materials);
+
 private:
     struct TextureSet {
         Texture2D albedo;

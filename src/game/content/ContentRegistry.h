@@ -6,6 +6,8 @@
 
 #include <glm/glm.hpp>
 
+#include <chrono>
+#include <filesystem>
 #include <string>
 #include <unordered_map>
 
@@ -66,6 +68,8 @@ struct GameplayArchetypeDefinition {
     DoubleDoorSpawnSpec doubleDoor;
 };
 
+class MaterialTextureLibrary;
+
 WeaponDefinition loadWeaponDefinitionAsset(const std::string& path);
 EnemyDefinition loadEnemyDefinitionAsset(const std::string& path);
 ItemDefinition loadItemDefinitionAsset(const std::string& path);
@@ -83,6 +87,16 @@ public:
     void loadDefaults();
     void loadMaterialsFromDirectory(const std::string& relativeDirectory);
     void validateMaterialInheritance();
+
+    // Hot-reload polling (called per-frame in editor)
+    void pollMaterialHotReload(MaterialTextureLibrary& texLibrary);
+
+    // Validation
+    bool validateMaterialDefinition(const MaterialDefinition& def, std::string& errorOut) const;
+
+    // CRUD mutation methods for editor asset browser
+    void addMaterial(MaterialDefinition def, const std::string& filePath);
+    void removeMaterial(const std::string& id);
 
     const WeaponDefinition* findWeapon(const std::string& id) const;
     const EnemyDefinition* findEnemy(const std::string& id) const;
@@ -105,4 +119,10 @@ private:
     std::unordered_map<std::string, MaterialDefinition> materials_;
     std::unordered_map<std::string, EnvironmentDefinition> environments_;
     std::unordered_map<std::string, std::string> environmentPaths_;
+
+    // Hot-reload state
+    std::unordered_map<std::string, std::filesystem::file_time_type> materialFileTimes_;
+    std::unordered_map<std::string, std::string> materialFilePathById_;
+    std::chrono::steady_clock::time_point lastMaterialPoll_ = std::chrono::steady_clock::now();
+    static constexpr int kMaterialPollIntervalMs = 500;
 };
