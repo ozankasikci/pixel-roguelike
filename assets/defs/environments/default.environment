@@ -1,11 +1,11 @@
 id default
 enable_sky true
 enable_edges false
-enable_fog false
-enable_tone_map false
-enable_bloom false
+enable_fog true
+enable_tone_map true
+enable_bloom true
 enable_vignette true
-enable_grain false
+enable_grain true
 enable_scanlines false
 enable_sharpen false
 tone_map_mode 1
