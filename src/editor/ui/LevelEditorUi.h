@@ -63,6 +63,7 @@ struct EditorUiState {
     bool showColliders = false;
     bool showLightHelpers = false;
     bool showSpawnMarker = false;
+    bool showViewportStats = true;
     bool snappingEnabled = true;
     float moveSnap = 0.5f;
     float rotateSnap = 15.0f;

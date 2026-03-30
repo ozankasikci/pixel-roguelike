@@ -592,6 +592,8 @@ int main(int argc, char* argv[]) {
                     ImGui::MenuItem("Show Colliders", nullptr, &ui.showColliders);
                     ImGui::MenuItem("Show Light Helpers", nullptr, &ui.showLightHelpers);
                     ImGui::MenuItem("Show Spawn Marker", nullptr, &ui.showSpawnMarker);
+                    ImGui::Separator();
+                    ImGui::MenuItem("Viewport Stats", nullptr, &ui.showViewportStats);
                     ImGui::EndMenu();
                 }
                 ImGui::EndMenu();
@@ -1281,6 +1283,29 @@ int main(int argc, char* argv[]) {
                              renderViewportState.size,
                              ImVec2(0.0f, 1.0f),
                              ImVec2(1.0f, 0.0f));
+            }
+
+            // Viewport performance stats overlay (bottom-left corner)
+            if (ui.showViewportStats && !startupViewportHandoffActive) {
+                ImDrawList* statsDraw = ImGui::GetWindowDrawList();
+                const float frameMs = 1000.0f / std::max(ImGui::GetIO().Framerate, 1.0f);
+                const float fps = ImGui::GetIO().Framerate;
+                const ImVec2 statsPos(renderViewportState.origin.x + 8.0f,
+                                      renderViewportState.origin.y + renderViewportState.size.y - 52.0f);
+                char statsBuf[128];
+                if (ui.playPreview) {
+                    const double renderMs = runtimePreviewSession.performanceStats().lastRenderMs;
+                    std::snprintf(statsBuf, sizeof(statsBuf),
+                                  "%.1f ms  %.0f FPS  render: %.1f ms", frameMs, fps, renderMs);
+                } else {
+                    std::snprintf(statsBuf, sizeof(statsBuf), "%.1f ms  %.0f FPS", frameMs, fps);
+                }
+                const ImVec2 textSize = ImGui::CalcTextSize(statsBuf);
+                statsDraw->AddRectFilled(
+                    ImVec2(statsPos.x - 6.0f, statsPos.y - 4.0f),
+                    ImVec2(statsPos.x + textSize.x + 6.0f, statsPos.y + textSize.y + 4.0f),
+                    IM_COL32(0, 0, 0, 160), 3.0f);
+                statsDraw->AddText(statsPos, IM_COL32(220, 228, 240, 255), statsBuf);
             }
 
             {
