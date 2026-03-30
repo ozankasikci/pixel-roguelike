@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: Ready to execute
-stopped_at: Completed 04-improve-lighting-quality/04-03-PLAN.md
-last_updated: "2026-03-30T01:41:49.449Z"
+stopped_at: Completed 04-04-PLAN.md
+last_updated: "2026-03-30T01:51:28.566Z"
 last_activity: 2026-03-30
 progress:
   total_phases: 6
   completed_phases: 4
   total_plans: 15
-  completed_plans: 13
+  completed_plans: 14
 ---
 
 # Project State
@@ -25,7 +25,7 @@ See: .planning/PROJECT.md (updated 2026-03-23)
 ## Current Position
 
 Phase: 04 (improve-lighting-quality-research-best-practices-and-implement-industry-standard-real-time-lighting) — EXECUTING
-Plan: 3 of 5
+Plan: 4 of 5
 
 ## Performance Metrics
 
@@ -59,6 +59,7 @@ Plan: 3 of 5
 | Phase 04-improve-lighting-quality P01 | 18 | 2 tasks | 7 files |
 | Phase 04-improve-lighting-quality P02 | 13 | 2 tasks | 12 files |
 | Phase 04-improve-lighting-quality P03 | 30 | 2 tasks | 15 files |
+| Phase 04-improve-lighting-quality P04 | 5 | 2 tasks | 11 files |
 
 ## Accumulated Context
 
@@ -101,6 +102,7 @@ Recent decisions affecting current work:
 - [Phase 04-improve-lighting-quality]: Geometry normals written at layout location 2 in scene.frag for SSAO — unperturbed vNormal used, not normal-mapped N, to avoid per-material AO artifacts
 - [Phase 04-improve-lighting-quality]: SsaoPass uses fixed RNG seeds (42 kernel, 123 noise) for deterministic results — eliminates temporal SSAO shimmer
 - [Phase 04-improve-lighting-quality]: SSAO AO factor applied as color multiply BEFORE bloom and tonemapping in composite.frag — preserves contact shadow darkening
+- [Phase 04-improve-lighting-quality]: CascadedShadowMap: GL_TEXTURE_2D_ARRAY with geometry shader invocations=3 for single-pass multi-layer CSM rendering; glFramebufferTexture for all-layer attachment
 
 ### Pending Todos
 
@@ -133,6 +135,6 @@ None yet.
 ## Session Continuity
 
 Last activity: 2026-03-30
-Last session: 2026-03-30T01:41:49.446Z
-Stopped at: Completed 04-improve-lighting-quality/04-03-PLAN.md
+Last session: 2026-03-30T01:51:28.562Z
+Stopped at: Completed 04-04-PLAN.md
 Resume file: None
