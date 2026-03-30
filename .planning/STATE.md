@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: Milestone complete
-stopped_at: Phase 5 context gathered
-last_updated: "2026-03-30T16:03:18.244Z"
+status: Ready to execute
+stopped_at: Completed 05-unify-editor-runtime-build-rendering-parity/05-01-PLAN.md
+last_updated: "2026-03-30T16:38:36.642Z"
 last_activity: 2026-03-30
 progress:
   total_phases: 7
   completed_phases: 5
-  total_plans: 15
-  completed_plans: 15
+  total_plans: 18
+  completed_plans: 16
 ---
 
 # Project State
@@ -20,12 +20,12 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-23)
 
 **Core value:** The Stanley Parable-inspired art style — clean, minimalist environments with warm soft lighting, muted color palette, and stylized realism
-**Current focus:** Phase 04 — improve-lighting-quality-research-best-practices-and-implement-industry-standard-real-time-lighting
+**Current focus:** Phase 05 — unify-editor-runtime-build-rendering-parity
 
 ## Current Position
 
-Phase: 04
-Plan: Not started
+Phase: 05 (unify-editor-runtime-build-rendering-parity) — EXECUTING
+Plan: 2 of 3
 
 ## Performance Metrics
 
@@ -61,6 +61,7 @@ Plan: Not started
 | Phase 04-improve-lighting-quality P03 | 30 | 2 tasks | 15 files |
 | Phase 04-improve-lighting-quality P04 | 5 | 2 tasks | 11 files |
 | Phase 04-improve-lighting-quality P05 | 9 | 2 tasks | 12 files |
+| Phase 05-unify-editor-runtime-build-rendering-parity P01 | 6 | 2 tasks | 6 files |
 
 ## Accumulated Context
 
@@ -107,6 +108,7 @@ Recent decisions affecting current work:
 - [Phase 04-improve-lighting-quality]: LTC tables generated analytically at init() instead of embedding 130KB static arrays — same per-frame cost (texture lookup), avoids binary bloat
 - [Phase 04-improve-lighting-quality]: LTC texture units 10/11 sit between shadow map units (8-9) and material map units (12-15) without collision
 - [Phase 04-improve-lighting-quality]: emissive_strength=0 default for all materials; non-zero values combine with bloom for perceived light emission
+- [Phase 05-unify-editor-runtime-build-rendering-parity]: SceneRenderPipeline in engine_rendering with no game-layer headers — enforces D-06 layering; viewmodelObjects in SceneRenderInput for glDepthRange trick; safeNormalize duplicated as file-local in both pipeline and RSR
 
 ### Pending Todos
 
@@ -141,6 +143,6 @@ None yet.
 ## Session Continuity
 
 Last activity: 2026-03-30
-Last session: 2026-03-30T16:03:18.241Z
-Stopped at: Phase 5 context gathered
-Resume file: .planning/phases/05-unify-editor-runtime-build-rendering-parity/05-CONTEXT.md
+Last session: 2026-03-30T16:38:36.638Z
+Stopped at: Completed 05-unify-editor-runtime-build-rendering-parity/05-01-PLAN.md
+Resume file: None
