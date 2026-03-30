@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: Phase complete — ready for verification
-stopped_at: Completed 06-03-PLAN.md Task 1 — awaiting human verification checkpoint
-last_updated: "2026-03-30T18:53:15.338Z"
+status: Ready to execute
+stopped_at: Completed 07-01-PLAN.md — all tasks done
+last_updated: "2026-03-30T19:27:13.045Z"
 last_activity: 2026-03-30
 progress:
   total_phases: 9
   completed_phases: 7
-  total_plans: 22
-  completed_plans: 21
+  total_plans: 25
+  completed_plans: 22
 ---
 
 # Project State
@@ -20,12 +20,12 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-23)
 
 **Core value:** The Stanley Parable-inspired art style — clean, minimalist environments with warm soft lighting, muted color palette, and stylized realism
-**Current focus:** Phase 06 — data-driven-scene-management
+**Current focus:** Phase 07 — data-driven-material-system-replace-hardcoded-materials-with-a-proper-material-pipeline
 
 ## Current Position
 
-Phase: 06 (data-driven-scene-management) — EXECUTING
-Plan: 3 of 3
+Phase: 07 (data-driven-material-system-replace-hardcoded-materials-with-a-proper-material-pipeline) — EXECUTING
+Plan: 2 of 4
 
 ## Performance Metrics
 
@@ -67,6 +67,7 @@ Plan: 3 of 3
 | Phase 06-data-driven-scene-management P01 | 5 | 2 tasks | 11 files |
 | Phase 06-data-driven-scene-management P02 | 10 | 2 tasks | 3 files |
 | Phase 06-data-driven-scene-management P03 | 15 | 1 tasks | 3 files |
+| Phase 07-data-driven-material-system-replace-hardcoded-materials-with-a-proper-material-pipeline P01 | 35 | 2 tasks | 19 files |
 
 ## Accumulated Context
 
@@ -126,6 +127,8 @@ Recent decisions affecting current work:
 - [Phase 06-data-driven-scene-management]: ui.pendingScenePath.empty() is the single empty-state sentinel — all scene-dependent rendering guards on this flag
 - [Phase 06-data-driven-scene-management]: doLoadScene lambda defined inline in renderFrame to DRY up loadSceneIntoEditor across Save/Don't Save/direct load paths
 - [Phase 06-data-driven-scene-management]: NewScenePopup/DeleteSceneConfirm modals placed outside root window (after assetBrowserActions) matching Save Before Building? pattern
+- [Phase 07]: roughness_bias in .material files bakes the per-kind shader default (stone 0.82, wood 0.74, metal 0.34, wax 0.58, moss 0.94, viewmodel 0.48, floor 0.86, brick 0.88)
+- [Phase 07]: ContentRegistry::loadMaterialsFromDirectory uses recursive_directory_iterator — any .material file in assets/materials/ or subdirectory is auto-loaded with duplicate detection
 
 ### Pending Todos
 
@@ -163,6 +166,6 @@ None yet.
 ## Session Continuity
 
 Last activity: 2026-03-30
-Last session: 2026-03-30T18:53:15.334Z
-Stopped at: Completed 06-03-PLAN.md Task 1 — awaiting human verification checkpoint
+Last session: 2026-03-30T19:27:13.041Z
+Stopped at: Completed 07-01-PLAN.md — all tasks done
 Resume file: None

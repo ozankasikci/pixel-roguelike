@@ -139,7 +139,7 @@ Plans:
 **Plans:** 4 plans
 
 Plans:
-- [ ] 07-01-PLAN.md — Add feature flags to MaterialDefinition, replace hardcoded material list with auto-scanner, bake shader defaults into .material files, migrate .scene files
+- [x] 07-01-PLAN.md — Add feature flags to MaterialDefinition, replace hardcoded material list with auto-scanner, bake shader defaults into .material files, migrate .scene files
 - [ ] 07-02-PLAN.md — Delete MaterialKind enum, refactor scene.frag/scene.vert to property-driven uber-shader, update all call sites
 - [ ] 07-03-PLAN.md — Editor material browser category, inspector panel with feature flags and preview sphere, CRUD operations
 - [ ] 07-04-PLAN.md — File watcher hot-reload, material validation at load/save, per-material cache invalidation
