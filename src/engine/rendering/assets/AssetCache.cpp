@@ -72,6 +72,24 @@ uint64_t AssetCache::hashFileContents(const std::string& filepath) {
     return hashBytes(buffer.data(), buffer.size());
 }
 
+std::string AssetCache::sanitizeCacheName(const std::string& name) {
+    std::string safe;
+    safe.reserve(name.size());
+    for (char c : name) {
+        if (std::isalnum(static_cast<unsigned char>(c)) || c == '_' || c == '-' || c == '.') {
+            safe += c;
+        } else {
+            safe += '_';
+        }
+    }
+    // Truncate if too long for filesystem (keep prefix + hash suffix room)
+    constexpr size_t kMaxLen = 120;
+    if (safe.size() > kMaxLen) {
+        safe = safe.substr(0, kMaxLen);
+    }
+    return safe;
+}
+
 std::filesystem::path AssetCache::cacheRoot() {
     // Walk up from cwd to find project root (where assets/ exists)
     auto current = std::filesystem::current_path();
@@ -319,9 +337,10 @@ void AssetCache::writeMeshCache(const std::string& sourceFilePath,
 
 std::optional<CachedTextureData> AssetCache::findTextureCache(const std::string& name,
                                                                uint64_t paramHash) {
+    const std::string safeName = sanitizeCacheName(name);
     const std::string hexHash = toHexString(paramHash);
     const std::filesystem::path cachePath =
-        cacheRoot() / "textures" / (name + "_" + hexHash + ".tex.bin");
+        cacheRoot() / "textures" / (safeName + "_" + hexHash + ".tex.bin");
 
     std::ifstream file(cachePath, std::ios::binary);
     if (!file.is_open()) {
@@ -379,12 +398,13 @@ void AssetCache::writeTextureCache(const std::string& name,
                                    uint16_t width,
                                    uint16_t height,
                                    uint8_t channels) {
+    const std::string safeName = sanitizeCacheName(name);
     const std::string hexHash = toHexString(paramHash);
     const std::filesystem::path cacheDir = cacheRoot() / "textures";
     std::filesystem::create_directories(cacheDir);
 
     const std::filesystem::path cachePath =
-        cacheDir / (name + "_" + hexHash + ".tex.bin");
+        cacheDir / (safeName + "_" + hexHash + ".tex.bin");
 
     TextureCacheHeader header{};
     header.magic[0] = 'T';

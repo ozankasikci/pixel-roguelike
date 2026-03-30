@@ -67,7 +67,9 @@ public:
     // FNV-1a 64-bit hash of arbitrary bytes.
     static uint64_t hashBytes(const void* data, size_t length);
 
-private:
     static std::filesystem::path cacheRoot();
     static std::string toHexString(uint64_t value);
+
+private:
+    static std::string sanitizeCacheName(const std::string& name);
 };
