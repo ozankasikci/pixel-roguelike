@@ -294,7 +294,14 @@ void main() {
 
     if (uSsaoEnabled != 0) {
         float ao = texture(uSsaoTex, vTexCoord).r;
-        color *= ao;
+        // Apply AO primarily to ambient/indirect lighting, not direct lighting.
+        // Bright pixels are dominated by direct light (point/spot/sun) — AO should
+        // not darken those since that's what shadow maps handle.
+        // Dark pixels are ambient-dominated — AO contact darkening is appropriate.
+        // This prevents the classic SSAO bright-halo artifact around objects on floors.
+        float brightness = dot(color, lumaWeights);
+        float aoInfluence = 1.0 - smoothstep(0.0, 0.35, brightness);
+        color *= mix(1.0, ao, 0.15 + aoInfluence * 0.85);
     }
 
     if (uEnableBloom != 0) {

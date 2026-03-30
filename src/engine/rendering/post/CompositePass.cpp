@@ -104,7 +104,8 @@ void CompositePass::apply(GLuint sceneColorTex,
     shader_->setInt("uEnableFog", params.enableFog ? 1 : 0);
     shader_->setInt("uEnableToneMap", params.enableToneMap ? 1 : 0);
     shader_->setInt("uEnableBloom", params.enableBloom ? 1 : 0);
-    shader_->setInt("uSsaoEnabled", params.enableSsao ? 1 : 0);
+    // Only enable SSAO sampling if a valid texture was provided
+    shader_->setInt("uSsaoEnabled", (params.enableSsao && ssaoTex != 0) ? 1 : 0);
     shader_->setInt("uEnableVignette", params.enableVignette ? 1 : 0);
     shader_->setInt("uEnableGrain", params.enableGrain ? 1 : 0);
     shader_->setInt("uEnableScanlines", params.enableScanlines ? 1 : 0);
