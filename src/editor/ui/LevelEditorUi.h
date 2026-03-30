@@ -72,7 +72,7 @@ struct EditorUiState {
     std::string selectedMeshId = "cube";
     std::string selectedMaterialId = "stone_default";
     std::string selectedArchetypeId = "checkpoint_shrine";
-    std::string pendingScenePath = "assets/scenes/silos_cloister.scene";
+    std::string pendingScenePath;
     std::string activeLayoutPreset = "default";
     std::string selectedAssetPath = "assets";
     std::unordered_set<std::string> expandedAssetPaths{"assets"};

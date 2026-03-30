@@ -1,4 +1,5 @@
 #include "engine/core/PathUtils.h"
+#include "engine/core/ProjectConfig.h"
 #include "engine/core/Window.h"
 #include "engine/rendering/core/Framebuffer.h"
 #include "engine/rendering/geometry/Mesh.h"
@@ -250,7 +251,19 @@ int main(int argc, char* argv[]) {
     spdlog::set_level(spdlog::level::info);
     std::signal(SIGUSR1, editorSignalHandler);
 
-    const std::string initialScene = argc > 1 ? argv[1] : "assets/scenes/silos_cloister.scene";
+    std::string initialScene;
+    if (argc > 1) {
+        initialScene = argv[1];
+    } else {
+        const std::string cfgPath = resolveProjectPath("assets/project.cfg");
+        const std::string cfgScene = readProjectCfgLastScene(cfgPath);
+        if (!cfgScene.empty()) {
+            const std::string resolved = resolveProjectPath("assets/scenes/" + cfgScene);
+            if (std::filesystem::exists(resolved)) {
+                initialScene = resolved;
+            }
+        }
+    }
 
     const WindowGeometry savedGeo = loadWindowGeometry();
     Window window(savedGeo.width, savedGeo.height, "Level Editor");
@@ -274,19 +287,28 @@ int main(int argc, char* argv[]) {
     materialTextures.prewarmAllMaterialMaps();
 
     EditorSceneDocument document;
-    renderStartupProgress(window, imgui, 0.28f, "Opening scene", initialScene.c_str());
-    document.loadFromSceneFile(initialScene, content);
+    if (!initialScene.empty()) {
+        renderStartupProgress(window, imgui, 0.28f, "Opening scene", initialScene.c_str());
+        document.loadFromSceneFile(initialScene, content);
+    } else {
+        renderStartupProgress(window, imgui, 0.28f, "Ready", "No scene loaded — create or open a scene");
+        document.clear();
+    }
     EditorCommandStack commandStack;
     commandStack.reset(document);
 
     EditorPreviewWorld previewWorld;
-    renderStartupProgress(window, imgui, 0.42f, "Building edit preview", "Creating preview meshes and helpers...");
-    previewWorld.rebuild(document, content);
+    if (!initialScene.empty()) {
+        renderStartupProgress(window, imgui, 0.42f, "Building edit preview", "Creating preview meshes and helpers...");
+        previewWorld.rebuild(document, content);
+    }
     EditorRuntimePreviewSession runtimePreviewSession;
-    renderStartupProgress(window, imgui, 0.56f, "Building play preview", "Creating the runtime preview session...");
-    runtimePreviewSession.rebuild(document, content);
-    renderStartupProgress(window, imgui, 0.70f, "Warming renderer", "Compiling shaders and preloading preview resources...");
-    runtimePreviewSession.prewarmRenderer(content);
+    if (!initialScene.empty()) {
+        renderStartupProgress(window, imgui, 0.56f, "Building play preview", "Creating the runtime preview session...");
+        runtimePreviewSession.rebuild(document, content);
+        renderStartupProgress(window, imgui, 0.70f, "Warming renderer", "Compiling shaders and preloading preview resources...");
+        runtimePreviewSession.prewarmRenderer(content);
+    }
 
     renderStartupProgress(window, imgui, 0.80f, "Creating render pipeline", "Preparing the editor renderer...");
     EditorViewportRenderer editorViewportRenderer;
@@ -296,11 +318,13 @@ int main(int argc, char* argv[]) {
     finalFbo.create(1280, 720);
 
     EditorCamera editCamera;
-    if (!syncEditorCameraToRuntimeStart(document, editCamera) && previewWorld.sceneBounds().valid) {
-        focusEditorCameraOnBounds(editCamera, previewWorld.sceneBounds().min, previewWorld.sceneBounds().max);
+    if (!initialScene.empty()) {
+        if (!syncEditorCameraToRuntimeStart(document, editCamera) && previewWorld.sceneBounds().valid) {
+            focusEditorCameraOnBounds(editCamera, previewWorld.sceneBounds().min, previewWorld.sceneBounds().max);
+        }
     }
     EditorUiState ui;
-    ui.pendingScenePath = initialScene;
+    ui.pendingScenePath = initialScene; // empty if no scene loaded
     EditorPlacementState placementState;
     std::vector<std::uint64_t> selectedIds;
     EditorSelectionPickerState selectionPicker;
@@ -923,6 +947,12 @@ int main(int argc, char* argv[]) {
                                 editCamera,
                                 previewWorld,
                                 previewSceneRevision);
+            // Write last-opened scene to project.cfg (D-05)
+            {
+                const std::string cfgPath = resolveProjectPath("assets/project.cfg");
+                const std::string filename = std::filesystem::path(*requestedScenePath).filename().string();
+                writeProjectCfgLastScene(cfgPath, filename);
+            }
             previewEnvironmentRevision = document.environmentRevision();
             runtimePreviewDirtyState = RuntimePreviewDirtyState::FullWorldRebuild;
             lastRuntimePreviewStructuralChangeTime = glfwGetTime();
@@ -1032,6 +1062,25 @@ int main(int argc, char* argv[]) {
                 viewportState.size = ImVec2(std::max(avail.x, 64.0f), std::max(avail.y, 64.0f));
                 viewportState.origin = ImGui::GetCursorScreenPos();
                 viewportState.hovered = pointInViewport(viewportState, io.MousePos);
+
+                // Empty state overlay: shown when no scene is loaded (D-08)
+                if (ui.pendingScenePath.empty()) {
+                    const ImVec2 windowSize = ImGui::GetContentRegionAvail();
+                    ImGui::SetCursorPos(ImVec2((windowSize.x - 200.0f) * 0.5f, (windowSize.y - 60.0f) * 0.5f));
+                    ImGui::TextUnformatted("No scene loaded");
+                    ImGui::SetCursorPosX((windowSize.x - 200.0f) * 0.5f);
+                    if (ImGui::Button("New Scene...", ImVec2(95, 0))) {
+                        ImGui::OpenPopup("NewScenePopup");
+                    }
+                    if (ImGui::BeginPopup("NewScenePopup")) {
+                        ImGui::TextDisabled("New Scene will be available in Plan 03.");
+                        ImGui::EndPopup();
+                    }
+                    ImGui::SameLine();
+                    if (ImGui::Button("Open Scene...", ImVec2(95, 0))) {
+                        ui.showAssetBrowser = true;
+                    }
+                }
             }
         }
 
@@ -1049,36 +1098,38 @@ int main(int argc, char* argv[]) {
             finalFbo.resize(targetW, targetH);
         }
 
-        if (previewDirty) {
-            previewWorld.rebuild(document, content);
-            previewDirty = false;
-            previewSceneRevision = document.sceneRevision();
-            runtimePreviewDirtyState = RuntimePreviewDirtyState::FullWorldRebuild;
-            lastRuntimePreviewStructuralChangeTime = glfwGetTime();
-        } else if (previewSceneRevision != document.sceneRevision()) {
-            previewWorld.syncMaterials(document, content);
-            previewWorld.syncLights(document);
-            runtimePreviewSession.syncMaterials(document, content);
-            previewSceneRevision = document.sceneRevision();
-        }
-        if (previewEnvironmentRevision != document.environmentRevision()) {
-            previewEnvironmentRevision = document.environmentRevision();
-            runtimePreviewDirtyState = mergeRuntimePreviewDirtyState(runtimePreviewDirtyState,
-                                                                     RuntimePreviewDirtyState::EnvironmentOnly);
-            runtimePreviewSession.syncEnvironment(document);
-            if (runtimePreviewDirtyState == RuntimePreviewDirtyState::EnvironmentOnly) {
+        if (!ui.pendingScenePath.empty()) {
+            if (previewDirty) {
+                previewWorld.rebuild(document, content);
+                previewDirty = false;
+                previewSceneRevision = document.sceneRevision();
+                runtimePreviewDirtyState = RuntimePreviewDirtyState::FullWorldRebuild;
+                lastRuntimePreviewStructuralChangeTime = glfwGetTime();
+            } else if (previewSceneRevision != document.sceneRevision()) {
+                previewWorld.syncMaterials(document, content);
+                previewWorld.syncLights(document);
+                runtimePreviewSession.syncMaterials(document, content);
+                previewSceneRevision = document.sceneRevision();
+            }
+            if (previewEnvironmentRevision != document.environmentRevision()) {
+                previewEnvironmentRevision = document.environmentRevision();
+                runtimePreviewDirtyState = mergeRuntimePreviewDirtyState(runtimePreviewDirtyState,
+                                                                         RuntimePreviewDirtyState::EnvironmentOnly);
+                runtimePreviewSession.syncEnvironment(document);
+                if (runtimePreviewDirtyState == RuntimePreviewDirtyState::EnvironmentOnly) {
+                    runtimePreviewDirtyState = RuntimePreviewDirtyState::None;
+                }
+            }
+            if (!ui.playPreview
+                && runtimePreviewDirtyState == RuntimePreviewDirtyState::FullWorldRebuild
+                && !editorGizmoIsHot()
+                && !widgetCommand.active
+                && !gizmoCommand.active
+                && glfwGetTime() - lastRuntimePreviewStructuralChangeTime >= 0.20) {
+                runtimePreviewSession.rebuild(document, content);
+                runtimePreviewSession.prewarmRenderer(content);
                 runtimePreviewDirtyState = RuntimePreviewDirtyState::None;
             }
-        }
-        if (!ui.playPreview
-            && runtimePreviewDirtyState == RuntimePreviewDirtyState::FullWorldRebuild
-            && !editorGizmoIsHot()
-            && !widgetCommand.active
-            && !gizmoCommand.active
-            && glfwGetTime() - lastRuntimePreviewStructuralChangeTime >= 0.20) {
-            runtimePreviewSession.rebuild(document, content);
-            runtimePreviewSession.prewarmRenderer(content);
-            runtimePreviewDirtyState = RuntimePreviewDirtyState::None;
         }
         const auto selectionHandles = buildEditorSelectionHandles(document, previewWorld);
         const auto viewportSelectionHandles = buildViewportSelectionHandles(selectionHandles, ui);
@@ -1087,7 +1138,7 @@ int main(int argc, char* argv[]) {
         glm::mat4 projection(1.0f);
         glm::mat4 inverseViewProjection(1.0f);
 
-        if (!ui.playPreview && !startupViewportHandoffActive) {
+        if (!ui.pendingScenePath.empty() && !ui.playPreview && !startupViewportHandoffActive) {
             updateEditorFlyCamera(editCamera, window.handle(), renderViewportState, deltaTime);
 
             view = editorCameraView(editCamera);
@@ -1154,7 +1205,7 @@ int main(int argc, char* argv[]) {
             renderParams.shadowResolutionIndex = ui.shadowResolutionIndex;
 
             editorViewportRenderer.render(renderParams, targetW, targetH, finalFbo.framebuffer());
-        } else if (!startupViewportHandoffActive) {
+        } else if (!ui.pendingScenePath.empty() && !startupViewportHandoffActive) {
             runtimePreviewSession.updateInput(window.handle(), io);
             runtimePreviewSession.tick(deltaTime, kRuntimeViewportAspect);
             runtimePreviewSession.syncCursor(window.handle());
