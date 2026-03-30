@@ -3,8 +3,7 @@
 #include "engine/rendering/geometry/MeshLibrary.h"
 #include "engine/rendering/post/PostProcessParams.h"
 #include "engine/ui/Screenshot.h"
-#include "game/levels/cathedral/CathedralAssets.h"
-#include "game/levels/prison/PrisonAssets.h"
+#include "game/levels/GameAssets.h"
 #include "game/rendering/MaterialDefinition.h"
 #include "game/rendering/RetroPalette.h"
 
@@ -150,8 +149,7 @@ int main(int argc, char* argv[]) {
     glfwSwapInterval(1);
 
     MeshLibrary meshLibrary;
-    registerCathedralAssets(meshLibrary);
-    registerPrisonAssets(meshLibrary);
+    registerAllGameAssets(meshLibrary);
     meshLibrary.loadFromFile("gothic_door_static", "assets/meshes/gothic_door_static.glb");
 
     SceneRenderPipeline pipeline;

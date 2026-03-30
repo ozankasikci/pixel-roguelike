@@ -11,8 +11,6 @@
 #include "game/systems/DoorSystem.h"
 #include "game/systems/InteractionSystem.h"
 #include "game/systems/RenderSystem.h"
-#include "game/scenes/SilosCloisterScene.h"
-#include "game/scenes/WardenOfficeScene.h"
 #include "game/scenes/GenericFileScene.h"
 #include "game/content/ContentRegistry.h"
 #include "game/session/RunSession.h"
@@ -70,14 +68,13 @@ int main(int argc, char* argv[]) {
     }
 
     // Push the starting scene: use --scene <path> if provided, otherwise fall back to the
-    // hardcoded Warden's Office prison scene.
+    // warden office scene file. Plan 02 will replace this fallback with project.cfg reading.
     SceneManager sceneManager;
     app.setSceneManager(&sceneManager);
     if (scenePath.empty()) {
-        sceneManager.pushScene(std::make_unique<WardenOfficeScene>(), app);
-    } else {
-        sceneManager.pushScene(std::make_unique<GenericFileScene>(scenePath), app);
+        scenePath = "assets/scenes/warden_office.scene";
     }
+    sceneManager.pushScene(std::make_unique<GenericFileScene>(scenePath), app);
 
     // Run the game loop (per D-04)
     app.run();

@@ -3,8 +3,7 @@
 #include "engine/core/Application.h"
 #include "game/level/LevelBuildContext.h"
 #include "game/level/LevelLoader.h"
-#include "game/levels/cathedral/CathedralAssets.h"
-#include "game/levels/prison/PrisonAssets.h"
+#include "game/levels/GameAssets.h"
 #include "game/rendering/MeshAssetProvider.h"
 #include "game/rendering/EnvironmentProfile.h"
 
@@ -23,8 +22,7 @@ void GenericFileScene::onEnter(Application& app) {
         .entities    = entities_,
     };
     request_.registerAssets = [](MeshLibrary& library) {
-        registerCathedralAssets(library);
-        registerPrisonAssets(library);
+        registerAllGameAssets(library);
     };
     request_.buildScriptedGeometry = {};
     LevelLoader loader(context);
