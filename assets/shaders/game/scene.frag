@@ -21,10 +21,17 @@ struct RenderLight {
     float outerConeCos;
     int castsShadows;
     int shadowIndex;
+    vec3 right;        // local X axis (area/tube)
+    vec3 up;           // local Y axis (area)
+    float width;       // half-width (area) or half-length (tube)
+    float height;      // half-height (area) or tube radius
+    int doubleSided;   // 0 or 1
 };
 
 uniform RenderLight uLights[32];
 uniform int uNumLights;
+uniform sampler2D uLtcMat;    // 64x64 LTC inverse transform matrix LUT
+uniform sampler2D uLtcAmp;    // 64x64 LTC amplitude/Fresnel LUT
 uniform sampler2D uShadowMaps[2];
 uniform mat4 uShadowMatrices[2];
 uniform int uShadowCount;
@@ -52,11 +59,14 @@ uniform float uMaterialRoughnessBias;
 uniform float uMaterialMetalness;
 uniform float uMaterialAoStrength;
 uniform float uMaterialLightTintResponse;
+uniform float uEmissiveStrength;
 uniform int uUnlit;
 
 const int LIGHT_POINT = 0;
 const int LIGHT_SPOT = 1;
 const int LIGHT_DIRECTIONAL = 2;
+const int LIGHT_AREA_RECT = 3;
+const int LIGHT_TUBE = 4;
 
 const int MATERIAL_STONE = 0;
 const int MATERIAL_WOOD = 1;
@@ -549,6 +559,155 @@ float luminance(vec3 color) {
     return dot(color, vec3(0.2126, 0.7152, 0.0722));
 }
 
+// LTC helper: integrates one edge of the spherical polygon
+vec3 integrateEdgeVec(vec3 v1, vec3 v2) {
+    float x = dot(v1, v2);
+    float y = abs(x);
+    float a = 0.8543985 + (0.4965155 + 0.0145206 * y) * y;
+    float b = 3.4175940 + (4.1616724 + y) * y;
+    float v = a / b;
+    float theta_sintheta = (x > 0.0) ? v : 0.5 * inversesqrt(max(1.0 - x * x, 1e-7)) - v;
+    return cross(v1, v2) * theta_sintheta;
+}
+
+// LTC: evaluate irradiance of a quad light using the LTC approximation.
+// Minv: identity for diffuse, inverse LTC transform for specular.
+// points[4]: corners of the quad in world space.
+float LTC_Evaluate(vec3 N, vec3 V, vec3 P, mat3 Minv, vec3 points[4], bool twoSided) {
+    // Build an orthonormal basis around the surface normal
+    vec3 T1 = normalize(V - N * dot(V, N));
+    vec3 T2 = cross(N, T1);
+    Minv = Minv * transpose(mat3(T1, T2, N));
+
+    // Transform quad corners into LTC space
+    vec3 L[4];
+    L[0] = Minv * (points[0] - P);
+    L[1] = Minv * (points[1] - P);
+    L[2] = Minv * (points[2] - P);
+    L[3] = Minv * (points[3] - P);
+
+    // Back-face check (approximate) using centroid
+    vec3 dir = L[0] + L[1] + L[2] + L[3];
+    float len = length(dir);
+    if (len < 0.0001) return 0.0;
+    float z = dir.z / len;
+    if (!twoSided && z < 0.0) return 0.0;
+
+    // Project onto unit sphere
+    L[0] = normalize(L[0]);
+    L[1] = normalize(L[1]);
+    L[2] = normalize(L[2]);
+    L[3] = normalize(L[3]);
+
+    // Integrate edges of the spherical polygon
+    vec3 vsum = vec3(0.0);
+    vsum += integrateEdgeVec(L[0], L[1]);
+    vsum += integrateEdgeVec(L[1], L[2]);
+    vsum += integrateEdgeVec(L[2], L[3]);
+    vsum += integrateEdgeVec(L[3], L[0]);
+
+    float result = max(0.0, length(vsum));
+    return twoSided ? result : result * (z > 0.0 ? 1.0 : 0.0);
+}
+
+// Rectangular area light contribution using LTC
+vec3 areaLightContribution(RenderLight light, vec3 N, vec3 V, vec3 P,
+                            vec3 albedo, float roughness, float metalness, vec3 F0) {
+    vec3 ex = light.right * light.width;
+    vec3 ey = light.up * light.height;
+    vec3 points[4];
+    points[0] = light.position - ex - ey;
+    points[1] = light.position + ex - ey;
+    points[2] = light.position + ex + ey;
+    points[3] = light.position - ex + ey;
+
+    float NdotV = clamp(dot(N, V), 0.0, 1.0);
+    vec2 ltcUv = vec2(roughness, sqrt(1.0 - NdotV));
+    ltcUv = ltcUv * (63.0 / 64.0) + 0.5 / 64.0;
+
+    vec4 t1 = texture(uLtcMat, ltcUv);
+    vec4 t2 = texture(uLtcAmp, ltcUv);
+
+    mat3 Minv = mat3(
+        vec3(t1.x,   0, t1.y),
+        vec3(    0,  1,    0),
+        vec3(t1.z,   0, t1.w)
+    );
+
+    bool twoSided = light.doubleSided != 0;
+    float diffuse  = LTC_Evaluate(N, V, P, mat3(1.0), points, twoSided);
+    float specular = LTC_Evaluate(N, V, P, Minv, points, twoSided);
+    specular *= t2.x;  // GGX sphere magnitude
+
+    vec3 diff = albedo * (1.0 - metalness) * diffuse;
+    vec3 spec = mix(vec3(specular), albedo * specular, metalness);
+
+    float falloff = attenuation(distance(P, light.position), light.radius);
+    // Normalise by light area to prevent over-brightness (Pitfall 4 from research)
+    float areaNorm = 1.0 / max(light.width * light.height * 4.0, 0.001);
+    return (diff + spec) * light.color * light.intensity * areaNorm * falloff;
+}
+
+// Tube light contribution using closest-point-on-segment specular
+vec3 tubeLightContribution(RenderLight light, vec3 N, vec3 V, vec3 P,
+                            vec3 albedo, float roughness, float metalness, vec3 F0) {
+    vec3 L0 = light.position - light.right * light.width - P;
+    vec3 L1 = light.position + light.right * light.width - P;
+
+    float distL0 = length(L0);
+    float distL1 = length(L1);
+    float NdotL0 = dot(N, L0 / distL0);
+    float NdotL1 = dot(N, L1 / distL1);
+    float NdotL = (2.0 * clamp(NdotL0 + NdotL1, 0.0, 2.0))
+                / (distL0 * distL1 + dot(L0, L1) + 2.0);
+
+    // Representative point for specular
+    vec3 R = reflect(-V, N);
+    float RdotL0    = dot(R, L0);
+    vec3  Ldelta    = L1 - L0;
+    float RdotDelta = dot(R, Ldelta);
+    float L0dotD    = dot(L0, Ldelta);
+    float deltaD    = dot(Ldelta, Ldelta);
+    float denom     = deltaD * deltaD - RdotDelta * RdotDelta;
+    float t = clamp((RdotL0 * deltaD - L0dotD * RdotDelta) / (denom + 0.0001), 0.0, 1.0);
+    vec3 closestPoint = L0 + Ldelta * t;
+
+    float tubeRadius = light.height;
+    vec3  centerToRay = closestPoint - R * dot(R, closestPoint);
+    float ctrLen      = length(centerToRay);
+    vec3  closestOnSphere = closestPoint;
+    if (ctrLen > 0.001) {
+        closestOnSphere += normalize(centerToRay) * min(tubeRadius, ctrLen);
+    }
+
+    vec3  L       = normalize(closestOnSphere);
+    float alphaPrime = clamp(roughness + tubeRadius / (2.0 * max(length(closestPoint), 0.001)), 0.0, 1.0);
+
+    float NdotLr = max(dot(N, L), 0.0);
+    vec3  H      = normalize(V + L);
+    float NdotH  = max(dot(N, H), 0.0);
+    float NdotVr = max(dot(N, V), 0.001);
+
+    float a2    = alphaPrime * alphaPrime;
+    float a4    = a2 * a2;
+    float dH    = NdotH * NdotH;
+    float denom2 = dH * (a4 - 1.0) + 1.0;
+    float D = a4 / max(PI * denom2 * denom2, 0.0001);
+
+    float rg = alphaPrime + 1.0;
+    float k  = (rg * rg) / 8.0;
+    float G  = (NdotVr / (NdotVr * (1.0 - k) + k)) * (NdotLr / (NdotLr * (1.0 - k) + k));
+
+    vec3  F    = F0 + (1.0 - F0) * pow(clamp(1.0 - dot(H, V), 0.0, 1.0), 5.0);
+    vec3  spec = (D * G * F) / (4.0 * NdotVr * NdotLr + 0.0001);
+    vec3  kD   = (vec3(1.0) - F) * (1.0 - metalness);
+    vec3  diff = kD * albedo / PI;
+
+    float falloff = attenuation(length(closestPoint), light.radius);
+    return (diff * max(NdotL, 0.0) + spec * NdotLr)
+         * light.color * light.intensity * falloff;
+}
+
 float distributionGGX(vec3 N, vec3 H, float roughness) {
     float a = roughness * roughness;
     float a2 = a * a;
@@ -691,6 +850,19 @@ void main() {
 
     for (int i = 0; i < uNumLights; ++i) {
         RenderLight light = uLights[i];
+
+        // Area rect and tube lights use dedicated evaluation functions
+        if (light.type == LIGHT_AREA_RECT) {
+            totalLight += areaLightContribution(light, N, V, vWorldPos,
+                                                albedo, roughness, metalness, F0) * materialAo;
+            continue;
+        }
+        if (light.type == LIGHT_TUBE) {
+            totalLight += tubeLightContribution(light, N, V, vWorldPos,
+                                                albedo, roughness, metalness, F0) * materialAo;
+            continue;
+        }
+
         vec3 L = vec3(0.0);
         float falloff = 1.0;
 
@@ -753,6 +925,9 @@ void main() {
 
         totalLight += visibility * ((kD * albedo * diffuseRadiance) + (specular * specularRadiance)) * NdotL * materialAo;
     }
+
+    // Emissive self-illumination (combined with bloom this produces perceived light bleeding)
+    totalLight += albedo * max(uEmissiveStrength, 0.0);
 
     float flame = flameMask(baseColor);
     if (flame > 0.0) {

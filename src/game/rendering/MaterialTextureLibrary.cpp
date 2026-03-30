@@ -153,6 +153,7 @@ const RenderMaterialData& MaterialTextureLibrary::resolve(std::string_view mater
     renderMaterial.metalness = resolved.metalness;
     renderMaterial.aoStrength = resolved.aoStrength;
     renderMaterial.lightTintResponse = resolved.lightTintResponse;
+    renderMaterial.emissiveStrength = resolved.emissiveStrength;
 
     auto [it, inserted] = materials_.emplace(renderMaterial.id, renderMaterial);
     (void)inserted;

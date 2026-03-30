@@ -96,6 +96,7 @@ void RuntimeSceneRenderer::init(const ContentRegistry& content) {
     shadowShader_ = std::make_unique<Shader>("assets/shaders/engine/shadow_depth.vert", "assets/shaders/engine/shadow_depth.frag");
     renderer_ = std::make_unique<Renderer>(sceneShader_.get());
     materialTextureLibrary_.init(content);
+    ltcData_.init();
     ensureFramebuffers(1280, 720);
 }
 
@@ -426,6 +427,18 @@ void RuntimeSceneRenderer::renderScenePass(const CameraState& camera,
     const float timeSeconds = static_cast<float>(glfwGetTime());
     sceneShader_->use();
     sceneShader_->setFloat("uTimeSeconds", timeSeconds);
+
+    // Bind LTC lookup textures (units 10 and 11, between shadow maps and material maps)
+    constexpr int kLtcMatUnit = 10;
+    constexpr int kLtcAmpUnit = 11;
+    glActiveTexture(GL_TEXTURE0 + kLtcMatUnit);
+    glBindTexture(GL_TEXTURE_2D, ltcData_.ltcMatTexture());
+    sceneShader_->setInt("uLtcMat", kLtcMatUnit);
+    glActiveTexture(GL_TEXTURE0 + kLtcAmpUnit);
+    glBindTexture(GL_TEXTURE_2D, ltcData_.ltcAmpTexture());
+    sceneShader_->setInt("uLtcAmp", kLtcAmpUnit);
+    glActiveTexture(GL_TEXTURE0);
+
     renderer_->drawScene(objects,
                          lights,
                          lighting,

@@ -3,6 +3,7 @@
 #include "engine/rendering/core/Framebuffer.h"
 #include "engine/rendering/core/Shader.h"
 #include "engine/rendering/geometry/Renderer.h"
+#include "engine/rendering/lighting/LtcData.h"
 #include "engine/rendering/lighting/ShadowMap.h"
 #include "engine/rendering/post/CompositePass.h"
 #include "engine/rendering/post/StylizePass.h"
@@ -98,5 +99,6 @@ private:
     CompositePass compositePass_;
     StylizePass stylizePass_;
     MaterialTextureLibrary materialTextureLibrary_;
+    LtcData ltcData_;
     std::array<ShadowMap, kMaxShadowedSpotLights> shadowMaps_{};
 };
