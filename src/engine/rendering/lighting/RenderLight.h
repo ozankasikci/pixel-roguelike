@@ -6,6 +6,8 @@ enum class LightType {
     Point = 0,
     Spot = 1,
     Directional = 2,
+    AreaRect = 3,
+    Tube = 4,
 };
 
 constexpr int kMaxRenderLights = 32;
@@ -27,6 +29,12 @@ struct RenderLight {
     float intensity = 1.0f;
     float innerConeDegrees = 20.0f;
     float outerConeDegrees = 30.0f;
+    // Area light fields (AreaRect and Tube):
+    glm::vec3 right{1.0f, 0.0f, 0.0f};   // light's local X axis
+    glm::vec3 up{0.0f, 1.0f, 0.0f};      // light's local Y axis
+    float width = 1.0f;                    // half-width for AreaRect, half-length for Tube
+    float height = 0.5f;                   // half-height for AreaRect, tube radius for Tube
+    bool doubleSided = false;              // AreaRect: emit from both sides
     bool castsShadows = false;
     int shadowIndex = -1;
 };

@@ -289,6 +289,13 @@ std::vector<RenderLight> RuntimeSceneRenderer::collectLights(entt::registry& reg
         renderLight.innerConeDegrees = clampInnerCone(light.innerConeDegrees, light.outerConeDegrees);
         renderLight.outerConeDegrees = clampOuterCone(renderLight.innerConeDegrees, light.outerConeDegrees);
         renderLight.castsShadows = light.type == LightType::Spot && light.castsShadows;
+        if (light.type == LightType::AreaRect || light.type == LightType::Tube) {
+            renderLight.right = light.right;
+            renderLight.up = light.up;
+            renderLight.width = light.width;
+            renderLight.height = light.height;
+            renderLight.doubleSided = light.doubleSided;
+        }
         lights.push_back(renderLight);
     }
 
