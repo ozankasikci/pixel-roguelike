@@ -520,6 +520,7 @@ void ContentRegistry::loadDefaults() {
         "assets/materials/brick_wall_old.material",
         "assets/materials/cloister_stone.material",
         "assets/materials/concrete_wall.material",
+        "assets/materials/ceiling_default.material",
     };
     for (const char* path : materialFiles) {
         auto material = loadMaterialDefinitionAsset(resolveProjectPath(path));
