@@ -230,7 +230,8 @@ const MaterialTextureLibrary::TextureSet& MaterialTextureLibrary::ensureTextureS
         resolved.proceduralSource == MaterialProceduralSource::GeneratedBrick ||
         resolved.proceduralSource == MaterialProceduralSource::GeneratedStone ||
         resolved.proceduralSource == MaterialProceduralSource::GeneratedSmooth ||
-        resolved.proceduralSource == MaterialProceduralSource::GeneratedFloor;
+        resolved.proceduralSource == MaterialProceduralSource::GeneratedFloor ||
+        resolved.proceduralSource == MaterialProceduralSource::GeneratedCeiling;
 
     if (isProcedural) {
         // Try disk cache for procedural textures
@@ -258,6 +259,8 @@ const MaterialTextureLibrary::TextureSet& MaterialTextureLibrary::ensureTextureS
             pixels = generateSmoothWallPixels();
         } else if (resolved.proceduralSource == MaterialProceduralSource::GeneratedFloor) {
             pixels = generateFloorPixels();
+        } else if (resolved.proceduralSource == MaterialProceduralSource::GeneratedCeiling) {
+            pixels = generateCeilingPixels();
         } else {
             pixels = generateStonePixels();
         }
@@ -593,6 +596,69 @@ MaterialTextureLibrary::ProceduralPixelData MaterialTextureLibrary::generateFloo
     }
 
     // Pass 2: Normal map from height field
+    for (int y = 0; y < kSize; ++y) {
+        for (int x = 0; x < kSize; ++x) {
+            glm::vec3 n = sampleHeightNormal(height, kSize, x, y);
+            const size_t colorIndex = static_cast<size_t>(y * kSize + x) * 4;
+            result.normal[colorIndex + 0] = toByte(n.x * 0.5f + 0.5f);
+            result.normal[colorIndex + 1] = toByte(n.y * 0.5f + 0.5f);
+            result.normal[colorIndex + 2] = toByte(n.z * 0.5f + 0.5f);
+            result.normal[colorIndex + 3] = 255;
+        }
+    }
+
+    return result;
+}
+
+MaterialTextureLibrary::ProceduralPixelData MaterialTextureLibrary::generateCeilingPixels() const {
+    constexpr int kSize = 512;
+
+    ProceduralPixelData result;
+    result.size = kSize;
+    result.albedo.resize(static_cast<size_t>(kSize * kSize * 4), 255);
+    result.normal.resize(static_cast<size_t>(kSize * kSize * 4), 255);
+    result.roughness.resize(static_cast<size_t>(kSize * kSize), 255);
+    result.ao.resize(static_cast<size_t>(kSize * kSize), 255);
+    std::vector<float> height(static_cast<size_t>(kSize * kSize), 0.0f);
+
+    for (int y = 0; y < kSize; ++y) {
+        for (int x = 0; x < kSize; ++x) {
+            const float u = (static_cast<float>(x) + 0.5f) / static_cast<float>(kSize);
+            const float v = (static_cast<float>(y) + 0.5f) / static_cast<float>(kSize);
+            glm::vec2 p(u, v);
+
+            // All tileable — smooth continuous ceiling surface
+            const float broad = tileableFbm(p, 2.0f, glm::vec2(4.6f, 12.1f));
+            const float mid   = tileableFbm(p, 4.0f, glm::vec2(8.3f, 1.9f));
+            const float fine  = tileableFbm(p, 16.0f, glm::vec2(1.7f, 9.5f));
+            const float patch = tileableFbm(p, 2.0f, glm::vec2(14.2f, 5.8f));
+
+            // Light warm off-white — institutional ceiling panels
+            glm::vec3 baseLight(0.92f, 0.90f, 0.86f);
+            glm::vec3 baseShadow(0.87f, 0.85f, 0.82f);
+            glm::vec3 color = glm::mix(baseLight, baseShadow, broad * 0.3f + patch * 0.15f);
+            color *= 0.98f + mid * 0.03f + fine * 0.01f;
+
+            // Matte ceiling — rougher than walls
+            float localRoughness = 0.78f + mid * 0.06f + fine * 0.04f;
+
+            // Very subtle height — nearly flat plaster
+            float localHeight = (mid - 0.5f) * 0.002f + (fine - 0.5f) * 0.001f;
+
+            float localAo = 0.99f - patch * 0.02f;
+
+            const size_t pixelIndex = static_cast<size_t>(y * kSize + x);
+            const size_t colorIndex = pixelIndex * 4;
+            result.albedo[colorIndex + 0] = toByte(color.r);
+            result.albedo[colorIndex + 1] = toByte(color.g);
+            result.albedo[colorIndex + 2] = toByte(color.b);
+            result.albedo[colorIndex + 3] = 255;
+            result.roughness[pixelIndex] = toByte(localRoughness);
+            result.ao[pixelIndex] = toByte(localAo);
+            height[pixelIndex] = localHeight;
+        }
+    }
+
     for (int y = 0; y < kSize; ++y) {
         for (int x = 0; x < kSize; ++x) {
             glm::vec3 n = sampleHeightNormal(height, kSize, x, y);

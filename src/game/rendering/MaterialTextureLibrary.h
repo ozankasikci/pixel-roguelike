@@ -44,6 +44,7 @@ private:
     ProceduralPixelData generateStonePixels() const;
     ProceduralPixelData generateSmoothWallPixels() const;
     ProceduralPixelData generateFloorPixels() const;
+    ProceduralPixelData generateCeilingPixels() const;
 
     TextureSet fallbackTextures_{};
     std::unordered_map<std::string, ResolvedMaterialDefinition> resolvedDefinitions_{};

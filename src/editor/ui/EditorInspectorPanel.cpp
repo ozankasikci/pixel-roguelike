@@ -270,7 +270,7 @@ void renderMaterialDraftFields(MaterialDefinition& draft, bool& dirty) {
     dragOptionalFloat("Light Tint Response", draft.lightTintResponse, 0.18f, 0.01f, 0.0f, 1.0f, "%.2f");
 
     static constexpr const char* kProceduralSources[] = {
-        "none", "generated_brick", "generated_stone", "generated_smooth", "generated_floor"
+        "none", "generated_brick", "generated_stone", "generated_smooth", "generated_floor", "generated_ceiling"
     };
     int proceduralIndex = 0;
     if (draft.proceduralSource.has_value()) {
@@ -280,9 +280,10 @@ void renderMaterialDraftFields(MaterialDefinition& draft, bool& dirty) {
         case MaterialProceduralSource::GeneratedStone: proceduralIndex = 2; break;
         case MaterialProceduralSource::GeneratedSmooth: proceduralIndex = 3; break;
         case MaterialProceduralSource::GeneratedFloor: proceduralIndex = 4; break;
+        case MaterialProceduralSource::GeneratedCeiling: proceduralIndex = 5; break;
         }
     }
-    if (ImGui::Combo("Procedural Source", &proceduralIndex, kProceduralSources, 5)) {
+    if (ImGui::Combo("Procedural Source", &proceduralIndex, kProceduralSources, 6)) {
         draft.proceduralSource = static_cast<MaterialProceduralSource>(proceduralIndex);
         dirty = true;
     }
