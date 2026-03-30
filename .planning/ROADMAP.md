@@ -128,7 +128,7 @@ Plans:
 
 Plans:
 - [x] 06-01-PLAN.md — Consolidate asset registration into registerAllGameAssets, delete legacy scenes, create ProjectConfig utilities
-- [ ] 06-02-PLAN.md — Wire project.cfg into runtime and editor startup, runtime scene picker, empty editor state
+- [x] 06-02-PLAN.md — Wire project.cfg into runtime and editor startup, runtime scene picker, empty editor state
 - [ ] 06-03-PLAN.md — New Scene, Delete, Rename operations, asset browser scene enhancements, unsaved changes guard
 
 ### Phase 7: Data-driven material system — replace hardcoded materials with a proper material pipeline
