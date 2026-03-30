@@ -561,8 +561,9 @@ MaterialTextureLibrary::ProceduralPixelData MaterialTextureLibrary::generateFloo
             glm::vec2 p(u, v);
 
             // Tile grid — faint seams between large-format floor tiles
-            const float tileU = u * kTileCount;
-            const float tileV = v * kTileCount;
+            // Offset by half a tile so seams land at tile centers, not texture edges
+            const float tileU = u * kTileCount + 0.5f;
+            const float tileV = v * kTileCount + 0.5f;
             const float seamDistX = std::min(glm::fract(tileU), 1.0f - glm::fract(tileU));
             const float seamDistY = std::min(glm::fract(tileV), 1.0f - glm::fract(tileV));
             const float seamDist = std::min(seamDistX, seamDistY);
