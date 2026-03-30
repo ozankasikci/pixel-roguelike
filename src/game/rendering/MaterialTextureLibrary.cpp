@@ -568,8 +568,9 @@ MaterialTextureLibrary::ProceduralPixelData MaterialTextureLibrary::generateFloo
             const float seamDist = std::min(seamDistX, seamDistY);
             const float seam = 1.0f - smooth01(0.010f, 0.030f, seamDist); // Very thin, subtle seam
 
-            // Per-tile color variation
-            const glm::vec2 tileCell(std::floor(tileU), std::floor(tileV));
+            // Per-tile color variation — wrap cell index so edges tile seamlessly
+            const glm::vec2 tileCell(std::fmod(std::floor(tileU), kTileCount),
+                                     std::fmod(std::floor(tileV), kTileCount));
             const float tileVariation = hash21(tileCell) * 0.03f - 0.015f;
 
             // Tileable noise layers for surface micro-variation
