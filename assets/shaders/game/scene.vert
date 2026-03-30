@@ -9,7 +9,7 @@ uniform mat4 uModel;
 uniform mat4 uView;
 uniform mat4 uProjection;
 uniform vec3 uBaseColor;
-uniform int uMaterialKind;
+uniform int uMaterialAnimated;
 uniform float uTimeSeconds;
 
 out vec3 vWorldPos;
@@ -19,8 +19,6 @@ out vec2 vTexCoord;
 out vec3 vObjectPos;
 out vec3 vWorldTangent;
 
-const int MATERIAL_WAX = 3;
-
 float saturationOf(vec3 color) {
     float maxChannel = max(max(color.r, color.g), color.b);
     float minChannel = min(min(color.r, color.g), color.b);
@@ -29,7 +27,7 @@ float saturationOf(vec3 color) {
 
 void main() {
     vec3 localPos = aPosition;
-    float flameMask = (uMaterialKind == MATERIAL_WAX && saturationOf(uBaseColor) > 0.28 && uBaseColor.r > 0.88) ? 1.0 : 0.0;
+    float flameMask = (uMaterialAnimated != 0 && saturationOf(uBaseColor) > 0.28 && uBaseColor.r > 0.88) ? 1.0 : 0.0;
     if (flameMask > 0.0) {
         float tip = clamp(aPosition.y + 0.5, 0.0, 1.0);
         float phase = uTimeSeconds * 8.4 + dot(uModel[3].xz, vec2(1.7, 2.3));

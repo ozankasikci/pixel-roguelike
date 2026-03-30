@@ -51,7 +51,13 @@ uniform float uHemisphereStrength;
 uniform int uEnableDirectionalLights;
 uniform vec3 uCameraPos;
 uniform vec3 uBaseColor;
-uniform int uMaterialKind;
+uniform float uMaterialSpecularLevel;
+uniform int uMaterialAnimated;
+uniform int uMaterialSubsurface;
+uniform int uMaterialBrickDetail;
+uniform int uMaterialWoodDetail;
+uniform int uMaterialStoneDetail;
+uniform int uMaterialFloorDetail;
 uniform float uTimeSeconds;
 uniform sampler2D uAlbedoMap;
 uniform sampler2D uNormalMap;
@@ -75,15 +81,6 @@ const int LIGHT_SPOT = 1;
 const int LIGHT_DIRECTIONAL = 2;
 const int LIGHT_AREA_RECT = 3;
 const int LIGHT_TUBE = 4;
-
-const int MATERIAL_STONE = 0;
-const int MATERIAL_WOOD = 1;
-const int MATERIAL_METAL = 2;
-const int MATERIAL_WAX = 3;
-const int MATERIAL_MOSS = 4;
-const int MATERIAL_VIEWMODEL = 5;
-const int MATERIAL_FLOOR = 6;
-const int MATERIAL_BRICK = 7;
 
 const float PI = 3.14159265359;
 
@@ -250,7 +247,7 @@ float saturationOf(vec3 color) {
 }
 
 float flameMask(vec3 baseColor) {
-    return (uMaterialKind == MATERIAL_WAX && saturationOf(baseColor) > 0.28 && baseColor.r > 0.88) ? 1.0 : 0.0;
+    return (uMaterialAnimated != 0 && saturationOf(baseColor) > 0.28 && baseColor.r > 0.88) ? 1.0 : 0.0;
 }
 
 float flameFlicker(vec3 seed) {
@@ -272,9 +269,9 @@ vec2 materialUv(vec3 N) {
 
 vec3 applyMaterialMapNormal(vec3 geometricNormal, vec2 uv) {
     vec3 mapped;
-    if (uUseProceduralDetail == 0 && uMaterialKind != MATERIAL_BRICK) {
+    if (uUseProceduralDetail == 0 && uMaterialBrickDetail == 0) {
         mapped = normalMapNoTile(uNormalMap, uv);
-    } else if (uMaterialKind == MATERIAL_BRICK) {
+    } else if (uMaterialBrickDetail != 0) {
         mapped = sampleBrickNormalTangent(uv, brickMacroMasks(geometricNormal));
     } else {
         mapped = texture(uNormalMap, uv).xyz * 2.0 - 1.0;
@@ -544,111 +541,32 @@ vec3 detailViewmodel(vec3 baseColor, vec3 N) {
 }
 
 vec3 applyMaterialDetail(vec3 baseColor, vec3 N) {
-    if (uMaterialKind == MATERIAL_WOOD) {
+    if (uMaterialWoodDetail != 0) {
         return detailWood(baseColor);
     }
-    if (uMaterialKind == MATERIAL_METAL) {
-        return detailMetal(baseColor, N);
-    }
-    if (uMaterialKind == MATERIAL_FLOOR) {
-        return detailFloor(baseColor);
-    }
-    if (uMaterialKind == MATERIAL_BRICK) {
+    if (uMaterialBrickDetail != 0) {
         return detailBrick(baseColor, N);
     }
-    if (uMaterialKind == MATERIAL_WAX) {
+    if (uMaterialFloorDetail != 0) {
+        return detailFloor(baseColor);
+    }
+    if (uMaterialStoneDetail != 0) {
+        return detailStone(baseColor, N);
+    }
+    // Fallback for materials with no detail flag (metal, wax, moss, viewmodel, etc.)
+    if (uMaterialMetalness > 0.5) {
+        return detailMetal(baseColor, N);
+    }
+    if (uMaterialAnimated != 0) {
         return detailWax(baseColor, N);
     }
-    if (uMaterialKind == MATERIAL_MOSS) {
+    if (uMaterialSubsurface != 0) {
         return detailMoss(baseColor);
     }
-    if (uMaterialKind == MATERIAL_VIEWMODEL) {
-        return detailViewmodel(baseColor, N);
-    }
-    return detailStone(baseColor, N);
+    // Default: apply stone-like macro variation for any unmatched material
+    return applyMacroVariation(baseColor, N);
 }
 
-float materialRoughness() {
-    if (uMaterialKind == MATERIAL_WOOD) {
-        return 0.74;
-    }
-    if (uMaterialKind == MATERIAL_METAL) {
-        return 0.34;
-    }
-    if (uMaterialKind == MATERIAL_WAX) {
-        return 0.58;
-    }
-    if (uMaterialKind == MATERIAL_MOSS) {
-        return 0.94;
-    }
-    if (uMaterialKind == MATERIAL_VIEWMODEL) {
-        return 0.48;
-    }
-    if (uMaterialKind == MATERIAL_FLOOR) {
-        return 0.86;
-    }
-    if (uMaterialKind == MATERIAL_BRICK) {
-        return 0.88;
-    }
-    return 0.82;
-}
-
-float materialMetalness() {
-    if (uMaterialKind == MATERIAL_METAL) {
-        return 0.86;
-    }
-    return 0.0;
-}
-
-float materialSpecularLevel() {
-    if (uMaterialKind == MATERIAL_WOOD) {
-        return 0.24;
-    }
-    if (uMaterialKind == MATERIAL_METAL) {
-        return 1.0;
-    }
-    if (uMaterialKind == MATERIAL_WAX) {
-        return 0.46;
-    }
-    if (uMaterialKind == MATERIAL_MOSS) {
-        return 0.10;
-    }
-    if (uMaterialKind == MATERIAL_VIEWMODEL) {
-        return 0.55;
-    }
-    if (uMaterialKind == MATERIAL_FLOOR) {
-        return 0.10;
-    }
-    if (uMaterialKind == MATERIAL_BRICK) {
-        return 0.08;
-    }
-    return 0.20;
-}
-
-float materialLightTintResponse() {
-    if (uMaterialKind == MATERIAL_WOOD) {
-        return 0.16;
-    }
-    if (uMaterialKind == MATERIAL_METAL) {
-        return 0.24;
-    }
-    if (uMaterialKind == MATERIAL_WAX) {
-        return 0.18;
-    }
-    if (uMaterialKind == MATERIAL_MOSS) {
-        return 0.14;
-    }
-    if (uMaterialKind == MATERIAL_VIEWMODEL) {
-        return 0.18;
-    }
-    if (uMaterialKind == MATERIAL_FLOOR) {
-        return 0.06;
-    }
-    if (uMaterialKind == MATERIAL_BRICK) {
-        return 0.14;
-    }
-    return 0.08;
-}
 
 float luminance(vec3 color) {
     return dot(color, vec3(0.2126, 0.7152, 0.0722));
@@ -984,27 +902,35 @@ void main() {
     fragGeomNormal = vec4(geometricNormal * 0.5 + 0.5, 1.0);
     vec2 uv = materialUv(geometricNormal);
     vec4 brickMacro = vec4(0.0);
-    if (uMaterialKind == MATERIAL_BRICK) {
+    if (uMaterialBrickDetail != 0) {
         brickMacro = brickMacroMasks(geometricNormal);
     }
     vec3 N = geometricNormal;
     if (uUseMaterialMaps != 0) {
         N = applyMaterialMapNormal(geometricNormal, uv);
-    } else if (uMaterialKind == MATERIAL_BRICK) {
+    } else if (uMaterialBrickDetail != 0) {
         N = detailBrickNormal(geometricNormal);
     }
     vec3 V = normalize(uCameraPos - vWorldPos);
     vec3 fragViewPos = (uViewMatrix * vec4(vWorldPos, 1.0)).xyz;
     vec3 baseColor = clamp(uBaseColor, 0.0, 1.0);
     if (uUnlit != 0) {
-        float materialMarker = (float(uMaterialKind) + 0.5) / 8.0;
+        float materialMarker = 0.0;
+        if (uMaterialBrickDetail != 0) materialMarker = 0.875;
+        else if (uMaterialFloorDetail != 0) materialMarker = 0.8125;
+        else if (uMaterialWoodDetail != 0) materialMarker = 0.1875;
+        else if (uMaterialStoneDetail != 0) materialMarker = 0.0625;
+        else if (uMaterialAnimated != 0) materialMarker = 0.4375;
+        else if (uMaterialSubsurface != 0) materialMarker = 0.5625;
+        else if (uMaterialMetalness > 0.5) materialMarker = 0.3125;
+        else materialMarker = 0.6875;
         fragColor = vec4(baseColor, 1.0);
         fragNormal = vec4(N * 0.5 + 0.5, materialMarker);
         // fragGeomNormal already written above
         return;
     }
     vec3 materialBaseColor = baseColor;
-    if (uUseMaterialMaps != 0 && uMaterialKind != MATERIAL_BRICK) {
+    if (uUseMaterialMaps != 0 && uMaterialBrickDetail == 0) {
         vec3 albedoSample = (uUseProceduralDetail == 0)
             ? textureNoTile(uAlbedoMap, uv).rgb
             : texture(uAlbedoMap, uv).rgb;
@@ -1014,14 +940,14 @@ void main() {
         ? applyMaterialDetail(materialBaseColor, geometricNormal)
         : applyMacroVariation(materialBaseColor, geometricNormal);
 
-    float roughness = clamp(materialRoughness() * uMaterialRoughnessScale + uMaterialRoughnessBias, 0.08, 0.98);
+    float roughness = clamp(uMaterialRoughnessScale * uMaterialRoughnessBias, 0.08, 0.98);
     float metalness = clamp(uMaterialMetalness, 0.0, 1.0);
-    float specularLevel = materialSpecularLevel();
+    float specularLevel = uMaterialSpecularLevel;
     float tintResponse = clamp(uMaterialLightTintResponse, 0.0, 1.0);
     float materialAo = 1.0;
 
     if (uUseMaterialMaps != 0) {
-        if (uMaterialKind == MATERIAL_BRICK) {
+        if (uMaterialBrickDetail != 0) {
             roughness = clamp(sampleBrickRoughness(uv, brickMacro) * uMaterialRoughnessScale + uMaterialRoughnessBias, 0.08, 0.98);
             materialAo = mix(1.0, sampleBrickAo(uv, brickMacro), clamp(uMaterialAoStrength, 0.0, 1.0));
         } else {
@@ -1034,7 +960,7 @@ void main() {
             roughness = clamp(roughSample * uMaterialRoughnessScale + uMaterialRoughnessBias, 0.08, 0.98);
             materialAo = mix(1.0, aoSample, clamp(uMaterialAoStrength, 0.0, 1.0));
         }
-        if (uMaterialKind == MATERIAL_BRICK) {
+        if (uMaterialBrickDetail != 0) {
             roughness = clamp(roughness + brickMacro.w * 0.08 + brickMacro.y * 0.02 - brickMacro.z * 0.03, 0.08, 0.98);
             materialAo *= clamp(1.0 - brickMacro.w * 0.12 - brickMacro.z * 0.05, 0.72, 1.0);
         }
@@ -1103,15 +1029,15 @@ void main() {
         float neutralEnergy = luminance(radiance);
         float chromaBoost = smoothstep(0.18, 0.72, saturationOf(light.color));
         float diffuseTintResponse = tintResponse;
-        if (uMaterialKind == MATERIAL_STONE) {
+        if (uMaterialStoneDetail != 0) {
             diffuseTintResponse += chromaBoost * 0.10;
-        } else if (uMaterialKind == MATERIAL_BRICK) {
+        } else if (uMaterialBrickDetail != 0) {
             diffuseTintResponse += chromaBoost * 0.14;
-        } else if (uMaterialKind == MATERIAL_FLOOR) {
+        } else if (uMaterialFloorDetail != 0) {
             diffuseTintResponse += chromaBoost * 0.06;
-        } else if (uMaterialKind == MATERIAL_WOOD) {
+        } else if (uMaterialWoodDetail != 0) {
             diffuseTintResponse += chromaBoost * 0.06;
-        } else if (uMaterialKind == MATERIAL_WAX) {
+        } else if (uMaterialAnimated != 0) {
             diffuseTintResponse += chromaBoost * 0.04;
         }
         diffuseTintResponse = clamp(diffuseTintResponse, 0.0, 0.42);
@@ -1139,6 +1065,14 @@ void main() {
 
     fragColor = vec4(max(totalLight, vec3(0.0)), 1.0);
 
-    float materialMarker = (float(uMaterialKind) + 0.5) / 8.0;
+    float materialMarker = 0.0;
+    if (uMaterialBrickDetail != 0) materialMarker = 0.875;
+    else if (uMaterialFloorDetail != 0) materialMarker = 0.8125;
+    else if (uMaterialWoodDetail != 0) materialMarker = 0.1875;
+    else if (uMaterialStoneDetail != 0) materialMarker = 0.0625;
+    else if (uMaterialAnimated != 0) materialMarker = 0.4375;
+    else if (uMaterialSubsurface != 0) materialMarker = 0.5625;
+    else if (uMaterialMetalness > 0.5) materialMarker = 0.3125;
+    else materialMarker = 0.6875;
     fragNormal = vec4(N * 0.5 + 0.5, materialMarker);
 }
