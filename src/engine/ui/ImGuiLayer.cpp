@@ -216,6 +216,9 @@ void ImGuiLayer::applyPendingFontPreset() {
 void ImGuiLayer::beginFrame() {
     ImGui_ImplOpenGL3_NewFrame();
     ImGui_ImplGlfw_NewFrame();
+    // Scale mouse wheel after GLFW captures raw input, before ImGui processes it.
+    // Default scroll is 5 lines/notch which is too fast for editor tree/list panels.
+    ImGui::GetIO().MouseWheel *= 0.2f;
     applyPendingFontPreset();
     ImGui::NewFrame();
 }
