@@ -28,6 +28,7 @@ public:
 
     void rebuild(const EditorSceneDocument& document, const ContentRegistry& content);
     void syncMaterials(const EditorSceneDocument& document, const ContentRegistry& content);
+    void syncLights(const EditorSceneDocument& document);
     void reloadMeshAssets();
 
     entt::registry& registry() { return registry_; }

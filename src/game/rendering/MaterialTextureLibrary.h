@@ -42,6 +42,7 @@ private:
     void buildStoneSet(TextureSet& stone) const;
     ProceduralPixelData generateBrickPixels() const;
     ProceduralPixelData generateStonePixels() const;
+    ProceduralPixelData generateSmoothWallPixels() const;
 
     TextureSet fallbackTextures_{};
     std::unordered_map<std::string, ResolvedMaterialDefinition> resolvedDefinitions_{};

@@ -220,6 +220,10 @@ bool tryParseMaterialProceduralSourceToken(const std::string& token, MaterialPro
         source = MaterialProceduralSource::GeneratedStone;
         return true;
     }
+    if (token == "generated_smooth") {
+        source = MaterialProceduralSource::GeneratedSmooth;
+        return true;
+    }
     return false;
 }
 
@@ -408,6 +412,8 @@ std::string materialProceduralSourceToken(MaterialProceduralSource source) {
         return "generated_brick";
     case MaterialProceduralSource::GeneratedStone:
         return "generated_stone";
+    case MaterialProceduralSource::GeneratedSmooth:
+        return "generated_smooth";
     }
     return "none";
 }

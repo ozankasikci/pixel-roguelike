@@ -18,6 +18,7 @@ enum class MaterialProceduralSource {
     None = 0,
     GeneratedBrick = 1,
     GeneratedStone = 2,
+    GeneratedSmooth = 3,
 };
 
 struct MaterialDefinition {

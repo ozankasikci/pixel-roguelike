@@ -1073,6 +1073,7 @@ int main(int argc, char* argv[]) {
             lastRuntimePreviewStructuralChangeTime = glfwGetTime();
         } else if (previewSceneRevision != document.sceneRevision()) {
             previewWorld.syncMaterials(document, content);
+            previewWorld.syncLights(document);
             runtimePreviewSession.syncMaterials(document, content);
             previewSceneRevision = document.sceneRevision();
         }

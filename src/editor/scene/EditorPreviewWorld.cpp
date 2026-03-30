@@ -251,6 +251,30 @@ void EditorPreviewWorld::syncMaterials(const EditorSceneDocument& document,
     }
 }
 
+void EditorPreviewWorld::syncLights(const EditorSceneDocument& document) {
+    auto lightView = registry_.view<TransformComponent, LightComponent>();
+    for (auto [entity, transform, light] : lightView.each()) {
+        auto ownerIt = ownerMap_.find(entity);
+        if (ownerIt == ownerMap_.end()) {
+            continue;
+        }
+        const auto* object = document.findObject(ownerIt->second);
+        if (object == nullptr || object->kind != EditorSceneObjectKind::Light) {
+            continue;
+        }
+        const auto& placement = std::get<LevelLightPlacement>(object->payload);
+        light.type = placement.type;
+        light.color = placement.color;
+        light.radius = placement.radius;
+        light.intensity = placement.intensity;
+        light.direction = placement.direction;
+        light.innerConeDegrees = placement.innerConeDegrees;
+        light.outerConeDegrees = placement.outerConeDegrees;
+        light.castsShadows = placement.castsShadows;
+        transform.position = placement.position;
+    }
+}
+
 void EditorPreviewWorld::clearEntities() {
     for (auto entity : entities_) {
         if (registry_.valid(entity)) {

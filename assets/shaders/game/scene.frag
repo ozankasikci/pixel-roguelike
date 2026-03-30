@@ -115,6 +115,78 @@ float fbm(vec3 p) {
     return value;
 }
 
+// Anti-tiling: per-tile random offset + flip (Inigo Quilez, Technique 1)
+// https://iquilezles.org/articles/texturerepetition/
+vec4 hash4(vec2 p) {
+    return fract(sin(vec4(
+        1.0 + dot(p, vec2(37.0, 17.0)),
+        2.0 + dot(p, vec2(11.0, 47.0)),
+        3.0 + dot(p, vec2(41.0, 29.0)),
+        4.0 + dot(p, vec2(23.0, 31.0))
+    )) * 103.0);
+}
+
+vec4 textureNoTile(sampler2D samp, vec2 uv) {
+    ivec2 iuv = ivec2(floor(uv));
+    vec2 fuv = fract(uv);
+
+    vec4 ofa = hash4(vec2(iuv + ivec2(0, 0)));
+    vec4 ofb = hash4(vec2(iuv + ivec2(1, 0)));
+    vec4 ofc = hash4(vec2(iuv + ivec2(0, 1)));
+    vec4 ofd = hash4(vec2(iuv + ivec2(1, 1)));
+
+    vec2 ddx = dFdx(uv);
+    vec2 ddy = dFdy(uv);
+
+    ofa.zw = sign(ofa.zw - 0.5);
+    ofb.zw = sign(ofb.zw - 0.5);
+    ofc.zw = sign(ofc.zw - 0.5);
+    ofd.zw = sign(ofd.zw - 0.5);
+
+    vec2 uva = uv * ofa.zw + ofa.xy, ddxa = ddx * ofa.zw, ddya = ddy * ofa.zw;
+    vec2 uvb = uv * ofb.zw + ofb.xy, ddxb = ddx * ofb.zw, ddyb = ddy * ofb.zw;
+    vec2 uvc = uv * ofc.zw + ofc.xy, ddxc = ddx * ofc.zw, ddyc = ddy * ofc.zw;
+    vec2 uvd = uv * ofd.zw + ofd.xy, ddxd = ddx * ofd.zw, ddyd = ddy * ofd.zw;
+
+    vec2 b = smoothstep(0.25, 0.75, fuv);
+    return mix(mix(textureGrad(samp, uva, ddxa, ddya),
+                   textureGrad(samp, uvb, ddxb, ddyb), b.x),
+               mix(textureGrad(samp, uvc, ddxc, ddyc),
+                   textureGrad(samp, uvd, ddxd, ddyd), b.x), b.y);
+}
+
+vec3 normalMapNoTile(sampler2D samp, vec2 uv) {
+    ivec2 iuv = ivec2(floor(uv));
+    vec2 fuv = fract(uv);
+
+    vec4 ofa = hash4(vec2(iuv + ivec2(0, 0)));
+    vec4 ofb = hash4(vec2(iuv + ivec2(1, 0)));
+    vec4 ofc = hash4(vec2(iuv + ivec2(0, 1)));
+    vec4 ofd = hash4(vec2(iuv + ivec2(1, 1)));
+
+    vec2 ddx = dFdx(uv);
+    vec2 ddy = dFdy(uv);
+
+    ofa.zw = sign(ofa.zw - 0.5);
+    ofb.zw = sign(ofb.zw - 0.5);
+    ofc.zw = sign(ofc.zw - 0.5);
+    ofd.zw = sign(ofd.zw - 0.5);
+
+    vec2 uva = uv * ofa.zw + ofa.xy, ddxa = ddx * ofa.zw, ddya = ddy * ofa.zw;
+    vec2 uvb = uv * ofb.zw + ofb.xy, ddxb = ddx * ofb.zw, ddyb = ddy * ofb.zw;
+    vec2 uvc = uv * ofc.zw + ofc.xy, ddxc = ddx * ofc.zw, ddyc = ddy * ofc.zw;
+    vec2 uvd = uv * ofd.zw + ofd.xy, ddxd = ddx * ofd.zw, ddyd = ddy * ofd.zw;
+
+    // Unpack and correct tangent-space normals for UV flips
+    vec3 na = textureGrad(samp, uva, ddxa, ddya).xyz * 2.0 - 1.0; na.xy *= ofa.zw;
+    vec3 nb = textureGrad(samp, uvb, ddxb, ddyb).xyz * 2.0 - 1.0; nb.xy *= ofb.zw;
+    vec3 nc = textureGrad(samp, uvc, ddxc, ddyc).xyz * 2.0 - 1.0; nc.xy *= ofc.zw;
+    vec3 nd = textureGrad(samp, uvd, ddxd, ddyd).xyz * 2.0 - 1.0; nd.xy *= ofd.zw;
+
+    vec2 b = smoothstep(0.25, 0.75, fuv);
+    return normalize(mix(mix(na, nb, b.x), mix(nc, nd, b.x), b.y));
+}
+
 vec2 dominantProjection(vec3 p, vec3 N) {
     vec3 absNormal = abs(N);
     if (absNormal.y >= absNormal.x && absNormal.y >= absNormal.z) {
@@ -182,9 +254,13 @@ vec2 materialUv(vec3 N) {
 }
 
 vec3 applyMaterialMapNormal(vec3 geometricNormal, vec2 uv) {
-    vec3 mapped = texture(uNormalMap, uv).xyz * 2.0 - 1.0;
-    if (uMaterialKind == MATERIAL_BRICK) {
+    vec3 mapped;
+    if (uUseProceduralDetail == 0 && uMaterialKind != MATERIAL_BRICK) {
+        mapped = normalMapNoTile(uNormalMap, uv);
+    } else if (uMaterialKind == MATERIAL_BRICK) {
         mapped = sampleBrickNormalTangent(uv, brickMacroMasks(geometricNormal));
+    } else {
+        mapped = texture(uNormalMap, uv).xyz * 2.0 - 1.0;
     }
     mapped = normalize(vec3(mapped.xy * max(uMaterialNormalStrength, 0.0), mapped.z));
 
@@ -670,7 +746,10 @@ void main() {
     }
     vec3 materialBaseColor = baseColor;
     if (uUseMaterialMaps != 0 && uMaterialKind != MATERIAL_BRICK) {
-        materialBaseColor = clamp(baseColor * texture(uAlbedoMap, uv).rgb, 0.0, 1.0);
+        vec3 albedoSample = (uUseProceduralDetail == 0)
+            ? textureNoTile(uAlbedoMap, uv).rgb
+            : texture(uAlbedoMap, uv).rgb;
+        materialBaseColor = clamp(baseColor * albedoSample, 0.0, 1.0);
     }
     vec3 albedo = (uUseProceduralDetail != 0 || uUseMaterialMaps == 0)
         ? applyMaterialDetail(materialBaseColor, geometricNormal)
@@ -687,8 +766,14 @@ void main() {
             roughness = clamp(sampleBrickRoughness(uv, brickMacro) * uMaterialRoughnessScale + uMaterialRoughnessBias, 0.08, 0.98);
             materialAo = mix(1.0, sampleBrickAo(uv, brickMacro), clamp(uMaterialAoStrength, 0.0, 1.0));
         } else {
-            roughness = clamp(texture(uRoughnessMap, uv).r * uMaterialRoughnessScale + uMaterialRoughnessBias, 0.08, 0.98);
-            materialAo = mix(1.0, texture(uAoMap, uv).r, clamp(uMaterialAoStrength, 0.0, 1.0));
+            float roughSample = (uUseProceduralDetail == 0)
+                ? textureNoTile(uRoughnessMap, uv).r
+                : texture(uRoughnessMap, uv).r;
+            float aoSample = (uUseProceduralDetail == 0)
+                ? textureNoTile(uAoMap, uv).r
+                : texture(uAoMap, uv).r;
+            roughness = clamp(roughSample * uMaterialRoughnessScale + uMaterialRoughnessBias, 0.08, 0.98);
+            materialAo = mix(1.0, aoSample, clamp(uMaterialAoStrength, 0.0, 1.0));
         }
         if (uMaterialKind == MATERIAL_BRICK) {
             roughness = clamp(roughness + brickMacro.w * 0.08 + brickMacro.y * 0.02 - brickMacro.z * 0.03, 0.08, 0.98);

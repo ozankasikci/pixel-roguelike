@@ -6,7 +6,7 @@ The project stores most gameplay content as text assets under [`assets/`](../ass
 
 - `assets/scenes/`: playable scene layouts stored as `.scene`
 - `assets/prefabs/gameplay/`: gameplay archetypes stored as `.prefab`
-- `assets/defs/materials/`: material definitions stored as `.material`
+- `assets/materials/`: material definitions stored as `.material`
 - `assets/defs/environments/`: environment definitions stored as `.environment`
 - `assets/defs/weapons/`: weapon definitions stored as `.weapon`
 - `assets/defs/enemies/`: enemy definitions stored as `.enemy`
@@ -80,7 +80,7 @@ Material definition files describe shading model, inheritance, UV behavior, and 
 
 Conventions:
 
-- place material files under `assets/defs/materials/`
+- place material files under `assets/materials/`
 - give every material a unique `id`
 - use `parent` for inheritance rather than duplicating large blocks of data
 

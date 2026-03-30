@@ -1,0 +1,11 @@
+id concrete_wall
+parent masonry_base
+shading_model stone
+procedural_source generated_smooth
+uv_mode world_projected
+uv_scale 0.55 0.55
+normal_strength 0.42
+roughness_scale 1.0
+roughness_bias 0.0
+ao_strength 0.8
+light_tint_response 0.08

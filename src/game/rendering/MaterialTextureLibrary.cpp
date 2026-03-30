@@ -57,6 +57,38 @@ float fbm(glm::vec2 p) {
     return value;
 }
 
+// Tileable noise: lattice coordinates wrap at the given period so the pattern
+// repeats seamlessly.  A vec2 seed shifts the hash input without breaking tiling.
+float tileableValueNoise(const glm::vec2& p, float period, const glm::vec2& seed) {
+    glm::vec2 ip = glm::floor(p);
+    glm::vec2 fp = p - ip;
+    fp = fp * fp * (glm::vec2(3.0f) - 2.0f * fp);
+
+    auto wrap = [period](glm::vec2 v) {
+        return glm::vec2(v.x - period * std::floor(v.x / period),
+                         v.y - period * std::floor(v.y / period));
+    };
+
+    float n00 = hash21(wrap(ip) + seed);
+    float n10 = hash21(wrap(ip + glm::vec2(1.0f, 0.0f)) + seed);
+    float n01 = hash21(wrap(ip + glm::vec2(0.0f, 1.0f)) + seed);
+    float n11 = hash21(wrap(ip + glm::vec2(1.0f, 1.0f)) + seed);
+
+    return glm::mix(glm::mix(n00, n10, fp.x), glm::mix(n01, n11, fp.x), fp.y);
+}
+
+float tileableFbm(glm::vec2 p, float baseFreq, const glm::vec2& seed) {
+    float value = 0.0f;
+    float amplitude = 0.5f;
+    float freq = baseFreq;
+    for (int i = 0; i < 4; ++i) {
+        value += tileableValueNoise(p * freq, freq, seed + glm::vec2(float(i) * 5.3f, float(i) * 3.7f)) * amplitude;
+        freq *= 2.0f;
+        amplitude *= 0.5f;
+    }
+    return value;
+}
+
 std::uint8_t toByte(float value) {
     return static_cast<std::uint8_t>(std::round(saturate(value) * 255.0f));
 }
@@ -141,7 +173,9 @@ const RenderMaterialData& MaterialTextureLibrary::resolve(std::string_view mater
     renderMaterial.shadingModel = resolved.shadingModel;
     renderMaterial.baseColor = resolved.baseColor;
     renderMaterial.useMaterialMaps = useMaterialMaps;
-    renderMaterial.useProceduralDetail = resolved.proceduralSource != MaterialProceduralSource::None;
+    renderMaterial.useProceduralDetail =
+        resolved.proceduralSource == MaterialProceduralSource::GeneratedBrick ||
+        resolved.proceduralSource == MaterialProceduralSource::GeneratedStone;
     renderMaterial.albedoTexture = (textures != nullptr && textures->albedo.id() != 0) ? textures->albedo.id() : fallbackTextures_.albedo.id();
     renderMaterial.normalTexture = (textures != nullptr && textures->normal.id() != 0) ? textures->normal.id() : fallbackTextures_.normal.id();
     renderMaterial.roughnessTexture = (textures != nullptr && textures->roughness.id() != 0) ? textures->roughness.id() : fallbackTextures_.roughness.id();
@@ -193,7 +227,8 @@ const MaterialTextureLibrary::TextureSet& MaterialTextureLibrary::ensureTextureS
 
     const bool isProcedural =
         resolved.proceduralSource == MaterialProceduralSource::GeneratedBrick ||
-        resolved.proceduralSource == MaterialProceduralSource::GeneratedStone;
+        resolved.proceduralSource == MaterialProceduralSource::GeneratedStone ||
+        resolved.proceduralSource == MaterialProceduralSource::GeneratedSmooth;
 
     if (isProcedural) {
         // Try disk cache for procedural textures
@@ -214,10 +249,14 @@ const MaterialTextureLibrary::TextureSet& MaterialTextureLibrary::ensureTextureS
         }
 
         // Cache miss: generate pixels, create GL textures, write to disk cache
-        ProceduralPixelData pixels =
-            (resolved.proceduralSource == MaterialProceduralSource::GeneratedBrick)
-            ? generateBrickPixels()
-            : generateStonePixels();
+        ProceduralPixelData pixels;
+        if (resolved.proceduralSource == MaterialProceduralSource::GeneratedBrick) {
+            pixels = generateBrickPixels();
+        } else if (resolved.proceduralSource == MaterialProceduralSource::GeneratedSmooth) {
+            pixels = generateSmoothWallPixels();
+        } else {
+            pixels = generateStonePixels();
+        }
 
         textures.albedo.createRGBA8(pixels.size, pixels.size, pixels.albedo);
         textures.normal.createRGBA8(pixels.size, pixels.size, pixels.normal);
@@ -412,6 +451,66 @@ MaterialTextureLibrary::ProceduralPixelData MaterialTextureLibrary::generateSton
                 - specks * 0.002f;
             float localRoughness = 0.72f + damp * 0.10f + (1.0f - veins) * 0.06f + grain * 0.04f;
             float localAo = 0.96f - damp * 0.08f - veins * 0.04f - specks * 0.03f;
+
+            const size_t pixelIndex = static_cast<size_t>(y * kSize + x);
+            const size_t colorIndex = pixelIndex * 4;
+            result.albedo[colorIndex + 0] = toByte(color.r);
+            result.albedo[colorIndex + 1] = toByte(color.g);
+            result.albedo[colorIndex + 2] = toByte(color.b);
+            result.albedo[colorIndex + 3] = 255;
+            result.roughness[pixelIndex] = toByte(localRoughness);
+            result.ao[pixelIndex] = toByte(localAo);
+            height[pixelIndex] = localHeight;
+        }
+    }
+
+    for (int y = 0; y < kSize; ++y) {
+        for (int x = 0; x < kSize; ++x) {
+            glm::vec3 n = sampleHeightNormal(height, kSize, x, y);
+            const size_t colorIndex = static_cast<size_t>(y * kSize + x) * 4;
+            result.normal[colorIndex + 0] = toByte(n.x * 0.5f + 0.5f);
+            result.normal[colorIndex + 1] = toByte(n.y * 0.5f + 0.5f);
+            result.normal[colorIndex + 2] = toByte(n.z * 0.5f + 0.5f);
+            result.normal[colorIndex + 3] = 255;
+        }
+    }
+
+    return result;
+}
+
+MaterialTextureLibrary::ProceduralPixelData MaterialTextureLibrary::generateSmoothWallPixels() const {
+    constexpr int kSize = 512;
+
+    ProceduralPixelData result;
+    result.size = kSize;
+    result.albedo.resize(static_cast<size_t>(kSize * kSize * 4), 255);
+    result.normal.resize(static_cast<size_t>(kSize * kSize * 4), 255);
+    result.roughness.resize(static_cast<size_t>(kSize * kSize), 255);
+    result.ao.resize(static_cast<size_t>(kSize * kSize), 255);
+    std::vector<float> height(static_cast<size_t>(kSize * kSize), 0.0f);
+
+    for (int y = 0; y < kSize; ++y) {
+        for (int x = 0; x < kSize; ++x) {
+            const float u = (static_cast<float>(x) + 0.5f) / static_cast<float>(kSize);
+            const float v = (static_cast<float>(y) + 0.5f) / static_cast<float>(kSize);
+            glm::vec2 p(u, v);
+
+            // All noise is tileable over [0,1] UV range
+            const float broad = tileableFbm(p, 2.0f, glm::vec2(3.1f, 7.4f));
+            const float mid   = tileableFbm(p, 4.0f, glm::vec2(11.3f, 2.8f));
+            const float fine  = tileableFbm(p, 16.0f, glm::vec2(5.9f, 14.2f));
+            const float patch = tileableFbm(p, 2.0f, glm::vec2(8.7f, 4.1f));
+
+            // Warm, muted base — Stanley Parable aesthetic
+            glm::vec3 baseWarm(0.88f, 0.85f, 0.80f);
+            glm::vec3 baseCool(0.82f, 0.81f, 0.78f);
+            glm::vec3 color = glm::mix(baseWarm, baseCool, broad * 0.5f + patch * 0.2f);
+            color *= 0.96f + mid * 0.06f + fine * 0.02f;
+
+            // Very subtle height for normal map — smooth surface with micro-grain
+            float localHeight = (mid - 0.5f) * 0.004f + (fine - 0.5f) * 0.002f;
+            float localRoughness = 0.68f + mid * 0.06f + fine * 0.04f;
+            float localAo = 0.98f - patch * 0.03f;
 
             const size_t pixelIndex = static_cast<size_t>(y * kSize + x);
             const size_t colorIndex = pixelIndex * 4;

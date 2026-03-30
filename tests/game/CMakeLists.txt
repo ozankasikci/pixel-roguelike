@@ -8,9 +8,9 @@ set(SILOS_CLOISTER_SCENE_FILE_DEF
     SILOS_CLOISTER_SCENE_FILE="${CMAKE_SOURCE_DIR}/assets/scenes/silos_cloister.scene"
 )
 set(MATERIAL_DEFINITION_FILE_DEFS
-    MATERIAL_BASE_FILE="${CMAKE_SOURCE_DIR}/assets/defs/materials/masonry_base.material"
-    MATERIAL_BRICK_FILE="${CMAKE_SOURCE_DIR}/assets/defs/materials/brick_default.material"
-    MATERIAL_BRICK_OLD_FILE="${CMAKE_SOURCE_DIR}/assets/defs/materials/brick_wall_old.material"
+    MATERIAL_BASE_FILE="${CMAKE_SOURCE_DIR}/assets/materials/masonry_base.material"
+    MATERIAL_BRICK_FILE="${CMAKE_SOURCE_DIR}/assets/materials/brick_default.material"
+    MATERIAL_BRICK_OLD_FILE="${CMAKE_SOURCE_DIR}/assets/materials/brick_wall_old.material"
 )
 set(CONTENT_REGISTRY_FILE_DEFS
     WEAPON_DEF_FILE="${CMAKE_SOURCE_DIR}/assets/defs/weapons/old_dagger.weapon"

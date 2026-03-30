@@ -508,18 +508,18 @@ void ContentRegistry::loadDefaults() {
     archetypes_.emplace(doubleDoor.id, doubleDoor);
 
     const std::array materialFiles{
-        "assets/defs/materials/masonry_base.material",
-        "assets/defs/materials/stone_default.material",
-        "assets/defs/materials/wood_default.material",
-        "assets/defs/materials/metal_default.material",
-        "assets/defs/materials/wax_default.material",
-        "assets/defs/materials/moss_default.material",
-        "assets/defs/materials/floor_default.material",
-        "assets/defs/materials/brick_default.material",
-        "assets/defs/materials/viewmodel_default.material",
-        "assets/defs/materials/brick_wall_old.material",
-        "assets/defs/materials/cloister_stone.material",
-        "assets/defs/materials/concrete_wall.material",
+        "assets/materials/masonry_base.material",
+        "assets/materials/stone_default.material",
+        "assets/materials/wood_default.material",
+        "assets/materials/metal_default.material",
+        "assets/materials/wax_default.material",
+        "assets/materials/moss_default.material",
+        "assets/materials/floor_default.material",
+        "assets/materials/brick_default.material",
+        "assets/materials/viewmodel_default.material",
+        "assets/materials/brick_wall_old.material",
+        "assets/materials/cloister_stone.material",
+        "assets/materials/concrete_wall.material",
     };
     for (const char* path : materialFiles) {
         auto material = loadMaterialDefinitionAsset(resolveProjectPath(path));
