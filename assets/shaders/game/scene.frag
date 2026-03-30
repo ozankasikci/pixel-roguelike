@@ -1069,7 +1069,7 @@ void main() {
             if (uEnableDirectionalLights == 0) {
                 continue;
             }
-            L = normalize(-light.direction);
+            L = normalize(light.direction);
         } else {
             vec3 toLight = light.position - vWorldPos;
             float dist = length(toLight);
