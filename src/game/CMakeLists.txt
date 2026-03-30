@@ -22,6 +22,7 @@ target_link_libraries(game_rendering PUBLIC
     game_content
     engine_ui
 )
+target_link_libraries(game_rendering PRIVATE tinygltf)
 
 add_library(gameplay STATIC
     level/LevelBuilder.cpp
