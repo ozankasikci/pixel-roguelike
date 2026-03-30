@@ -94,6 +94,10 @@ float clampOuterCone(float innerConeDegrees, float outerConeDegrees) {
 void RuntimeSceneRenderer::init(const ContentRegistry& content) {
     sceneShader_ = std::make_unique<Shader>("assets/shaders/game/scene.vert", "assets/shaders/game/scene.frag");
     shadowShader_ = std::make_unique<Shader>("assets/shaders/engine/shadow_depth.vert", "assets/shaders/engine/shadow_depth.frag");
+    csmShader_ = std::make_unique<Shader>("assets/shaders/engine/csm_depth.vert",
+                                           "assets/shaders/engine/csm_depth.geom",
+                                           "assets/shaders/engine/csm_depth.frag");
+    csmShadowMap_.create(CascadedShadowMap::kDefaultResolution);
     renderer_ = std::make_unique<Renderer>(sceneShader_.get());
     bloomPass_.init();
     ssaoPass_.init();
@@ -353,6 +357,7 @@ glm::mat4 RuntimeSceneRenderer::buildShadowMatrix(const RenderLight& light) cons
 void RuntimeSceneRenderer::renderShadowPass(const std::vector<RenderObject>& objects,
                                             const std::vector<RenderLight>& lights,
                                             const DebugParams& params,
+                                            const CameraState& camera,
                                             ShadowRenderData& shadowData) {
     shadowData.shadowCount = 0;
     shadowData.matrices.fill(glm::mat4(1.0f));
@@ -399,6 +404,31 @@ void RuntimeSceneRenderer::renderShadowPass(const std::vector<RenderObject>& obj
     }
 
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+    // Render CSM for directional sun
+    const LightingEnvironment lighting = lightingEnvironment(params);
+    if (lighting.sun.enabled && lighting.enableShadows && csmShader_ != nullptr) {
+        csmShadowMap_.computeCascades(camera.viewMatrix,
+                                      camera.projectionMatrix,
+                                      lighting.sun.direction,
+                                      camera.nearPlane,
+                                      camera.farPlane);
+
+        csmShadowMap_.bind();
+        csmShader_->use();
+
+        const auto& csmMatrices = csmShadowMap_.lightSpaceMatrices();
+        for (int i = 0; i < CascadedShadowMap::kCascadeCount; ++i) {
+            csmShader_->setMat4("uLightSpaceMatrices[" + std::to_string(i) + "]", csmMatrices[i]);
+        }
+
+        for (const auto& object : objects) {
+            csmShader_->setMat4("uModel", object.modelMatrix);
+            object.mesh->draw();
+        }
+
+        csmShadowMap_.unbind();
+    }
 }
 
 void RuntimeSceneRenderer::renderScenePass(const CameraState& camera,
@@ -411,7 +441,7 @@ void RuntimeSceneRenderer::renderScenePass(const CameraState& camera,
     ensureFramebuffers(internalWidth, internalHeight);
 
     ShadowRenderData shadowData;
-    renderShadowPass(objects, lights, params, shadowData);
+    renderShadowPass(objects, lights, params, camera, shadowData);
 
     sceneFBO_.bind();
     glViewport(0, 0, sceneFBO_.width(), sceneFBO_.height());
@@ -421,8 +451,28 @@ void RuntimeSceneRenderer::renderScenePass(const CameraState& camera,
 
     const LightingEnvironment lighting = lightingEnvironment(params);
     const float timeSeconds = static_cast<float>(glfwGetTime());
+
+    // Bind CSM depth array texture and set scene shader uniforms for CSM
+    const bool csmEnabled = lighting.sun.enabled && lighting.enableShadows;
+    constexpr int kCsmTextureUnit = 16;
     sceneShader_->use();
     sceneShader_->setFloat("uTimeSeconds", timeSeconds);
+    sceneShader_->setMat4("uViewMatrix", camera.viewMatrix);
+    sceneShader_->setInt("uCsmShadowMap", kCsmTextureUnit);
+    sceneShader_->setInt("uCsmEnabled", csmEnabled ? 1 : 0);
+    sceneShader_->setInt("uCsmCascadeCount", CascadedShadowMap::kCascadeCount);
+    if (csmEnabled) {
+        const auto& csmMatrices = csmShadowMap_.lightSpaceMatrices();
+        const auto& csmSplits = csmShadowMap_.splitDistances();
+        for (int i = 0; i < CascadedShadowMap::kCascadeCount; ++i) {
+            sceneShader_->setMat4("uCsmMatrices[" + std::to_string(i) + "]", csmMatrices[i]);
+            sceneShader_->setFloat("uCsmSplitDistances[" + std::to_string(i) + "]", csmSplits[i]);
+        }
+    }
+    glActiveTexture(GL_TEXTURE0 + kCsmTextureUnit);
+    glBindTexture(GL_TEXTURE_2D_ARRAY, csmEnabled ? csmShadowMap_.depthArrayTexture() : 0);
+    glActiveTexture(GL_TEXTURE0);
+
     renderer_->drawScene(objects,
                          lights,
                          lighting,
@@ -435,6 +485,7 @@ void RuntimeSceneRenderer::renderScenePass(const CameraState& camera,
         glDepthRange(0.0, 0.01);
         sceneShader_->use();
         sceneShader_->setFloat("uTimeSeconds", timeSeconds);
+        // CSM uniforms carry over since same shader is active; viewmodel objects don't receive CSM shadows
         renderer_->drawScene(viewmodelObjects,
                              lights,
                              lighting,

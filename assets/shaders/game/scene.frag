@@ -32,6 +32,12 @@ uniform int uShadowCount;
 uniform int uEnableShadows;
 uniform float uShadowBias;
 uniform float uShadowNormalBias;
+uniform mat4 uViewMatrix;
+uniform sampler2DArrayShadow uCsmShadowMap;
+uniform mat4 uCsmMatrices[3];
+uniform float uCsmSplitDistances[3];
+uniform int uCsmCascadeCount;
+uniform int uCsmEnabled;
 uniform vec3 uHemisphereSkyColor;
 uniform vec3 uHemisphereGroundColor;
 uniform float uHemisphereStrength;
@@ -718,6 +724,65 @@ float hash12(vec2 p) {
     return fract((p3.x + p3.y) * p3.z);
 }
 
+int selectCascade(float viewDepth) {
+    for (int i = 0; i < uCsmCascadeCount; ++i) {
+        if (viewDepth < uCsmSplitDistances[i]) return i;
+    }
+    return uCsmCascadeCount - 1;
+}
+
+float sampleCsmShadow(vec3 fragWorldPos, vec3 fragViewPos, vec3 N, vec3 L) {
+    if (uCsmEnabled == 0) return 1.0;
+    int layer = selectCascade(abs(fragViewPos.z));
+    vec4 fragInLightSpace = uCsmMatrices[layer] * vec4(fragWorldPos, 1.0);
+    vec3 projCoords = fragInLightSpace.xyz / fragInLightSpace.w;
+    projCoords = projCoords * 0.5 + 0.5;
+    if (projCoords.z >= 1.0) return 1.0;
+
+    // Per-cascade bias — scale inversely with cascade distance to prevent Peter-Panning and acne
+    float baseBias = max(0.005 * (1.0 - dot(N, L)), 0.0005);
+    float bias = baseBias / max(uCsmSplitDistances[layer], 0.01);
+
+    // 16-tap Poisson PCF matching spot shadow quality
+    float angle = hash12(gl_FragCoord.xy) * 6.2831853;
+    float s = sin(angle), c = cos(angle);
+    mat2 rot = mat2(c, s, -s, c);
+    float texelSize = 1.0 / float(textureSize(uCsmShadowMap, 0).x);
+    float spread = 3.0;
+
+    float visibility = 0.0;
+    for (int i = 0; i < 16; ++i) {
+        vec2 offset = (rot * poissonDisk[i]) * texelSize * spread;
+        visibility += texture(uCsmShadowMap,
+            vec4(projCoords.xy + offset, float(layer), projCoords.z - bias));
+    }
+    visibility /= 16.0;
+
+    // Blend between cascades in a 10% overlap zone to prevent visible seams
+    if (layer < uCsmCascadeCount - 1) {
+        float splitDist = uCsmSplitDistances[layer];
+        float blendZone = splitDist * 0.1;
+        float distFromSplit = splitDist - abs(fragViewPos.z);
+        if (distFromSplit < blendZone && distFromSplit > 0.0) {
+            float blendFactor = 1.0 - distFromSplit / blendZone;
+            int nextLayer = layer + 1;
+            vec4 nextLightSpace = uCsmMatrices[nextLayer] * vec4(fragWorldPos, 1.0);
+            vec3 nextProj = nextLightSpace.xyz / nextLightSpace.w * 0.5 + 0.5;
+            float nextBias = baseBias / max(uCsmSplitDistances[nextLayer], 0.01);
+            float nextVisibility = 0.0;
+            for (int i = 0; i < 16; ++i) {
+                vec2 offset = (rot * poissonDisk[i]) * texelSize * spread;
+                nextVisibility += texture(uCsmShadowMap,
+                    vec4(nextProj.xy + offset, float(nextLayer), nextProj.z - nextBias));
+            }
+            nextVisibility /= 16.0;
+            visibility = mix(visibility, nextVisibility, blendFactor);
+        }
+    }
+
+    return visibility;
+}
+
 float sampleShadow(int shadowIndex, vec3 N, vec3 L) {
     if (uEnableShadows == 0 || shadowIndex < 0 || shadowIndex >= uShadowCount) {
         return 1.0;
@@ -770,6 +835,7 @@ void main() {
         N = detailBrickNormal(geometricNormal);
     }
     vec3 V = normalize(uCameraPos - vWorldPos);
+    vec3 fragViewPos = (uViewMatrix * vec4(vWorldPos, 1.0)).xyz;
     vec3 baseColor = clamp(uBaseColor, 0.0, 1.0);
     if (uUnlit != 0) {
         float materialMarker = (float(uMaterialKind) + 0.5) / 8.0;
@@ -880,9 +946,12 @@ void main() {
         float specularTintResponse = clamp(0.22 + metalness * 0.68 + chromaBoost * 0.08, 0.0, 1.0);
         vec3 diffuseRadiance = mix(vec3(neutralEnergy), radiance, diffuseTintResponse);
         vec3 specularRadiance = mix(vec3(neutralEnergy), radiance, specularTintResponse);
-        float visibility = (light.castsShadows != 0 && light.shadowIndex >= 0)
-            ? sampleShadow(light.shadowIndex, N, L)
-            : 1.0;
+        float visibility = 1.0;
+        if (light.type == LIGHT_DIRECTIONAL) {
+            visibility = sampleCsmShadow(vWorldPos, fragViewPos, N, L);
+        } else if (light.castsShadows != 0 && light.shadowIndex >= 0) {
+            visibility = sampleShadow(light.shadowIndex, N, L);
+        }
 
         totalLight += visibility * ((kD * albedo * diffuseRadiance) + (specular * specularRadiance)) * NdotL * materialAo;
     }

@@ -3,6 +3,7 @@
 #include "engine/rendering/core/Framebuffer.h"
 #include "engine/rendering/core/Shader.h"
 #include "engine/rendering/geometry/Renderer.h"
+#include "engine/rendering/lighting/CascadedShadowMap.h"
 #include "engine/rendering/lighting/ShadowMap.h"
 #include "engine/rendering/post/BloomPass.h"
 #include "engine/rendering/post/CompositePass.h"
@@ -73,6 +74,7 @@ private:
     void renderShadowPass(const std::vector<RenderObject>& objects,
                           const std::vector<RenderLight>& lights,
                           const DebugParams& params,
+                          const CameraState& camera,
                           ShadowRenderData& shadowData);
     void renderScenePass(const CameraState& camera,
                          const std::vector<RenderObject>& objects,
@@ -96,6 +98,7 @@ private:
     Framebuffer compositeFBO_;
     std::unique_ptr<Shader> sceneShader_;
     std::unique_ptr<Shader> shadowShader_;
+    std::unique_ptr<Shader> csmShader_;
     std::unique_ptr<Renderer> renderer_;
     BloomPass bloomPass_;
     SsaoPass ssaoPass_;
@@ -103,4 +106,5 @@ private:
     StylizePass stylizePass_;
     MaterialTextureLibrary materialTextureLibrary_;
     std::array<ShadowMap, kMaxShadowedSpotLights> shadowMaps_{};
+    CascadedShadowMap csmShadowMap_;
 };
