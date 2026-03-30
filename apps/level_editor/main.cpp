@@ -1,14 +1,8 @@
 #include "engine/core/PathUtils.h"
 #include "engine/core/Window.h"
 #include "engine/rendering/core/Framebuffer.h"
-#include "engine/rendering/core/Shader.h"
 #include "engine/rendering/geometry/Mesh.h"
 #include "engine/rendering/geometry/MeshLibrary.h"
-#include "engine/rendering/geometry/Renderer.h"
-#include "engine/rendering/lighting/ShadowMap.h"
-#include "engine/rendering/post/CompositePass.h"
-#include "engine/rendering/post/PostProcessParams.h"
-#include "engine/rendering/post/StylizePass.h"
 #include "engine/ui/ImGuiLayer.h"
 #include "engine/ui/Screenshot.h"
 #include "game/ui/GameOverlays.h"
@@ -21,6 +15,7 @@
 #include "editor/core/EditorRuntimePreviewSession.h"
 #include "editor/core/LevelEditorCore.h"
 #include "editor/render/EditorScenePreviewRenderer.h"
+#include "editor/render/EditorViewportRenderer.h"
 #include "editor/ui/EditorOutlinerPanel.h"
 #include "editor/ui/EditorPanels.h"
 #include "editor/viewport/EditorViewportController.h"
@@ -67,8 +62,6 @@ void editorSignalHandler(int) { g_editorScreenshotRequested = 1; }
 
 using Clock = std::chrono::steady_clock;
 
-constexpr int kMaxShadowedSpotLightsLocal = kMaxShadowedSpotLights;
-constexpr int kShadowResolutions[] = {512, 1024, 2048};
 constexpr const char* kEditorRootWindowName = "Level Editor Root";
 constexpr const char* kViewportWindowName = "Viewport";
 constexpr const char* kOutlinerWindowName = "Outliner";
@@ -296,26 +289,11 @@ int main(int argc, char* argv[]) {
     runtimePreviewSession.prewarmRenderer(content);
 
     renderStartupProgress(window, imgui, 0.80f, "Creating render pipeline", "Preparing the editor renderer...");
-    std::unique_ptr<Shader> sceneShader = std::make_unique<Shader>(
-        "assets/shaders/game/scene.vert",
-        "assets/shaders/game/scene.frag"
-    );
-    std::unique_ptr<Shader> shadowShader = std::make_unique<Shader>(
-        "assets/shaders/engine/shadow_depth.vert",
-        "assets/shaders/engine/shadow_depth.frag"
-    );
-    Renderer renderer(sceneShader.get());
-    CompositePass compositePass;
-    StylizePass stylizePass;
+    EditorViewportRenderer editorViewportRenderer;
+    editorViewportRenderer.init();
 
-    Framebuffer sceneFbo;
-    Framebuffer compositeFbo;
     Framebuffer finalFbo;
-    sceneFbo.create(1280, 720);
-    compositeFbo.create(1280, 720);
     finalFbo.create(1280, 720);
-
-    std::array<ShadowMap, kMaxShadowedSpotLightsLocal> shadowMaps;
 
     EditorCamera editCamera;
     if (!syncEditorCameraToRuntimeStart(document, editCamera) && previewWorld.sceneBounds().valid) {
@@ -1065,9 +1043,7 @@ int main(int argc, char* argv[]) {
         const ImVec2 fbScale = io.DisplayFramebufferScale;
         const int targetW = std::max(1, static_cast<int>(std::max(renderViewportState.size.x, 64.0f) * fbScale.x));
         const int targetH = std::max(1, static_cast<int>(std::max(renderViewportState.size.y, 64.0f) * fbScale.y));
-        if (!startupViewportHandoffActive && (sceneFbo.width() != targetW || sceneFbo.height() != targetH)) {
-            sceneFbo.resize(targetW, targetH);
-            compositeFbo.resize(targetW, targetH);
+        if (!startupViewportHandoffActive && (finalFbo.width() != targetW || finalFbo.height() != targetH)) {
             finalFbo.resize(targetW, targetH);
         }
 
@@ -1162,65 +1138,20 @@ int main(int argc, char* argv[]) {
             }
 
             std::vector<RenderLight> lights = collectLights(previewWorld.registry(), previewEnvironment);
-            ShadowRenderData shadowData;
-            if (previewEnvironment.lighting.enableShadows) {
-                renderShadowPass(objects, lights, *shadowShader, shadowMaps, kShadowResolutions[ui.shadowResolutionIndex], shadowData);
-            } else {
-                shadowData.shadowCount = 0;
-                shadowData.matrices = {glm::mat4(1.0f), glm::mat4(1.0f)};
-                shadowData.textures = {0, 0};
-            }
 
-            sceneFbo.bind();
-            glViewport(0, 0, targetW, targetH);
-            glEnable(GL_DEPTH_TEST);
-            glClearColor(0.04f, 0.04f, 0.045f, 1.0f);
-            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+            EditorViewportRenderParams renderParams;
+            renderParams.viewMatrix = view;
+            renderParams.projectionMatrix = projection;
+            renderParams.cameraPosition = editCamera.position;
+            renderParams.nearPlane = editCamera.nearPlane;
+            renderParams.farPlane = editCamera.farPlane;
+            renderParams.objects = &objects;
+            renderParams.lights = &lights;
+            renderParams.environment = &previewEnvironment;
+            renderParams.shadowsEnabled = previewEnvironment.lighting.enableShadows;
+            renderParams.shadowResolutionIndex = ui.shadowResolutionIndex;
 
-            // Set uniforms for phase-4 features not available in editor preview.
-            // Assign CSM and LTC samplers to dedicated units with null textures
-            // to prevent sampler type mismatch (GL_INVALID_OPERATION) on draw.
-            sceneShader->use();
-            sceneShader->setInt("uCsmEnabled", 0);
-            sceneShader->setInt("uCsmCascadeCount", 0);
-            sceneShader->setInt("uCsmShadowMap", 16);
-            glActiveTexture(GL_TEXTURE16);
-            glBindTexture(GL_TEXTURE_2D_ARRAY, 0);
-            sceneShader->setInt("uLtcMat", 10);
-            sceneShader->setInt("uLtcAmp", 11);
-            glActiveTexture(GL_TEXTURE10);
-            glBindTexture(GL_TEXTURE_2D, 0);
-            glActiveTexture(GL_TEXTURE11);
-            glBindTexture(GL_TEXTURE_2D, 0);
-            glActiveTexture(GL_TEXTURE0);
-
-            renderer.drawScene(objects,
-                               lights,
-                               makeLightingEnvironment(previewEnvironment),
-                               shadowData,
-                               view,
-                               projection,
-                               editCamera.position);
-            sceneFbo.unbind();
-            glDisable(GL_DEPTH_TEST);
-
-            compositePass.apply(sceneFbo.colorTexture(),
-                                sceneFbo.depthTexture(),
-                                sceneFbo.normalTexture(),
-                                0,  // no bloom in editor preview
-                                0,  // no SSAO in editor preview
-                                compositeFbo.framebuffer(),
-                                previewEnvironment.post,
-                                targetW,
-                                targetH);
-            stylizePass.apply(compositeFbo.colorTexture(),
-                              sceneFbo.colorTexture(),
-                              sceneFbo.depthTexture(),
-                              sceneFbo.normalTexture(),
-                              previewEnvironment.post,
-                              targetW,
-                              targetH,
-                              finalFbo.framebuffer());
+            editorViewportRenderer.render(renderParams, targetW, targetH, finalFbo.framebuffer());
         } else if (!startupViewportHandoffActive) {
             runtimePreviewSession.updateInput(window.handle(), io);
             runtimePreviewSession.tick(deltaTime, kRuntimeViewportAspect);

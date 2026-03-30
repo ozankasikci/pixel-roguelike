@@ -7,6 +7,7 @@ add_library(editor STATIC
     core/LevelEditorCore.cpp
     render/EditorAssetPreviewRenderer.cpp
     render/EditorScenePreviewRenderer.cpp
+    render/EditorViewportRenderer.cpp
     scene/EditorPreviewWorld.cpp
     scene/EditorSceneDocument.cpp
     scene/EditorSceneSerializer.cpp
