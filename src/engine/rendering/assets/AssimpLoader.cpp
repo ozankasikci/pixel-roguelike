@@ -10,6 +10,9 @@
 
 #include <algorithm>
 #include <cmath>
+#include <string>
+#include <unordered_map>
+#include <vector>
 
 namespace {
 
@@ -147,6 +150,138 @@ RawMeshData loadMergedRaw(const aiScene& scene) {
     return merged;
 }
 
+// Extract vertex data from a single aiMesh into a RawMeshData part.
+RawMeshData extractMeshPart(const aiMesh* sourceMesh) {
+    RawMeshData part;
+    part.positions.reserve(sourceMesh->mNumVertices);
+    if (sourceMesh->HasNormals()) {
+        part.normals.reserve(sourceMesh->mNumVertices);
+    }
+    if (sourceMesh->HasTextureCoords(0)) {
+        part.uvs.reserve(sourceMesh->mNumVertices);
+    }
+    if (sourceMesh->HasTangentsAndBitangents()) {
+        part.tangents.reserve(sourceMesh->mNumVertices);
+    }
+
+    for (unsigned vertexIndex = 0; vertexIndex < sourceMesh->mNumVertices; ++vertexIndex) {
+        const aiVector3D& position = sourceMesh->mVertices[vertexIndex];
+        part.positions.emplace_back(position.x, position.y, position.z);
+
+        if (sourceMesh->HasNormals()) {
+            const aiVector3D& normal = sourceMesh->mNormals[vertexIndex];
+            part.normals.push_back(safeNormalize(glm::vec3(normal.x, normal.y, normal.z),
+                                                 glm::vec3(0.0f, 1.0f, 0.0f)));
+        }
+
+        if (sourceMesh->HasTextureCoords(0)) {
+            const aiVector3D& uv = sourceMesh->mTextureCoords[0][vertexIndex];
+            part.uvs.emplace_back(uv.x, uv.y);
+        }
+
+        if (sourceMesh->HasTangentsAndBitangents()) {
+            const aiVector3D& tangent = sourceMesh->mTangents[vertexIndex];
+            part.tangents.push_back(safeNormalize(glm::vec3(tangent.x, tangent.y, tangent.z),
+                                                  glm::vec3(1.0f, 0.0f, 0.0f)));
+        }
+    }
+
+    part.indices.reserve(sourceMesh->mNumFaces * 3);
+    for (unsigned faceIndex = 0; faceIndex < sourceMesh->mNumFaces; ++faceIndex) {
+        const aiFace& face = sourceMesh->mFaces[faceIndex];
+        if (face.mNumIndices != 3) {
+            continue;
+        }
+        part.indices.push_back(face.mIndices[0]);
+        part.indices.push_back(face.mIndices[1]);
+        part.indices.push_back(face.mIndices[2]);
+    }
+
+    if (part.indices.empty()) {
+        part.indices.resize(part.positions.size());
+        for (uint32_t index = 0; index < static_cast<uint32_t>(part.indices.size()); ++index) {
+            part.indices[index] = index;
+        }
+    }
+    if (part.normals.size() != part.positions.size()) {
+        generateSmoothNormals(part);
+    }
+    if (part.uvs.size() != part.positions.size()) {
+        generateProjectedUVs(part);
+    }
+    if (part.tangents.size() != part.positions.size()) {
+        generateTangents(part);
+    }
+
+    return part;
+}
+
+// Append one RawMeshData part into a merged accumulator, rebasing indices.
+void appendPart(RawMeshData& merged, const RawMeshData& part) {
+    const uint32_t baseIndex = static_cast<uint32_t>(merged.positions.size());
+    merged.positions.insert(merged.positions.end(), part.positions.begin(), part.positions.end());
+    merged.normals.insert(merged.normals.end(), part.normals.begin(), part.normals.end());
+    merged.uvs.insert(merged.uvs.end(), part.uvs.begin(), part.uvs.end());
+    merged.tangents.insert(merged.tangents.end(), part.tangents.begin(), part.tangents.end());
+    for (uint32_t index : part.indices) {
+        merged.indices.push_back(baseIndex + index);
+    }
+}
+
+// Group all submeshes by material index, merge each group, tag with material name.
+std::vector<NamedRawMeshData> loadGroupedByMaterial(const aiScene& scene) {
+    // Build a map: material index -> list of mesh indices
+    std::unordered_map<unsigned, std::vector<unsigned>> materialToMeshes;
+    for (unsigned meshIndex = 0; meshIndex < scene.mNumMeshes; ++meshIndex) {
+        const aiMesh* sourceMesh = scene.mMeshes[meshIndex];
+        if (sourceMesh == nullptr || sourceMesh->mNumVertices == 0) {
+            continue;
+        }
+        materialToMeshes[sourceMesh->mMaterialIndex].push_back(meshIndex);
+    }
+
+    // Collect material indices in sorted order for deterministic output
+    std::vector<unsigned> materialIndices;
+    materialIndices.reserve(materialToMeshes.size());
+    for (const auto& [matIdx, meshIndices] : materialToMeshes) {
+        (void)meshIndices;
+        materialIndices.push_back(matIdx);
+    }
+    std::sort(materialIndices.begin(), materialIndices.end());
+
+    std::vector<NamedRawMeshData> result;
+    result.reserve(materialIndices.size());
+
+    for (unsigned matIdx : materialIndices) {
+        // Resolve material name
+        std::string matName;
+        if (matIdx < scene.mNumMaterials && scene.mMaterials[matIdx] != nullptr) {
+            const aiString aiName = scene.mMaterials[matIdx]->GetName();
+            matName = aiName.C_Str();
+        }
+        if (matName.empty()) {
+            matName = "material_" + std::to_string(matIdx);
+        }
+
+        // Merge all submeshes that share this material
+        RawMeshData merged;
+        for (unsigned meshIndex : materialToMeshes[matIdx]) {
+            const aiMesh* sourceMesh = scene.mMeshes[meshIndex];
+            RawMeshData part = extractMeshPart(sourceMesh);
+            appendPart(merged, part);
+        }
+
+        if (!merged.positions.empty() && !merged.indices.empty()) {
+            NamedRawMeshData entry;
+            entry.name = std::move(matName);
+            entry.mesh = std::move(merged);
+            result.push_back(std::move(entry));
+        }
+    }
+
+    return result;
+}
+
 } // namespace
 
 std::unique_ptr<Mesh> AssimpLoader::load(const std::string& filepath) {
@@ -181,4 +316,27 @@ RawMeshData AssimpLoader::loadRaw(const std::string& filepath) {
                  result.positions.size(),
                  result.indices.size() / 3);
     return result;
+}
+
+std::vector<NamedRawMeshData> AssimpLoader::loadRawMulti(const std::string& filepath) {
+    Assimp::Importer importer;
+    const aiScene* scene = importer.ReadFile(filepath, kAssimpImportFlags);
+    if (scene == nullptr) {
+        spdlog::error("AssimpLoader::loadRawMulti: failed to load '{}': {}", filepath, importer.GetErrorString());
+        return {};
+    }
+
+    if (!scene->HasMeshes()) {
+        spdlog::error("AssimpLoader::loadRawMulti: no mesh primitives in '{}'", filepath);
+        return {};
+    }
+
+    std::vector<NamedRawMeshData> groups = loadGroupedByMaterial(*scene);
+    if (groups.empty()) {
+        spdlog::error("AssimpLoader::loadRawMulti: no material groups produced for '{}'", filepath);
+        return {};
+    }
+
+    spdlog::info("AssimpLoader::loadRawMulti: loaded '{}' ({} material groups)", filepath, groups.size());
+    return groups;
 }

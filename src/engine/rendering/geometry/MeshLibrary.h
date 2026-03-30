@@ -41,6 +41,12 @@ public:
     // Load a supported model file and register it under the given name
     void loadFromFile(const std::string& name, const std::string& filepath);
 
+    // Load a multi-material model and register each material group as
+    // baseName#materialName. For FBX files this produces one mesh per unique
+    // material; for glTF/glb files it produces a single mesh named
+    // baseName#<filestem>.
+    void loadFromFileMulti(const std::string& baseName, const std::string& filepath);
+
     // Clear all registered meshes (destroys GL resources)
     void clear();
 
