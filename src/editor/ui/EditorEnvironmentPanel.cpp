@@ -140,24 +140,10 @@ bool renderEnvironmentPanel(EditorSceneDocument& document,
             "ACES Fitted",
         };
 
+        // --- Tone Mapping ---
+        ImGui::SeparatorText("Tone Mapping");
         auto beforeState = document.captureState();
-        trackEnvItem(beforeState, "Toggle Sky In Post", ImGui::Checkbox("Enable Sky", &environment.post.enableSky));
-        beforeState = document.captureState();
-        trackEnvItem(beforeState, "Toggle Edges", ImGui::Checkbox("Enable Edges", &environment.post.enableEdges));
-        beforeState = document.captureState();
-        trackEnvItem(beforeState, "Toggle Fog", ImGui::Checkbox("Enable Fog", &environment.post.enableFog));
-        beforeState = document.captureState();
         trackEnvItem(beforeState, "Toggle Tone Map", ImGui::Checkbox("Enable Tone Map", &environment.post.enableToneMap));
-        beforeState = document.captureState();
-        trackEnvItem(beforeState, "Toggle Bloom", ImGui::Checkbox("Enable Bloom", &environment.post.enableBloom));
-        beforeState = document.captureState();
-        trackEnvItem(beforeState, "Toggle Vignette", ImGui::Checkbox("Enable Vignette", &environment.post.enableVignette));
-        beforeState = document.captureState();
-        trackEnvItem(beforeState, "Toggle Grain", ImGui::Checkbox("Enable Grain", &environment.post.enableGrain));
-        beforeState = document.captureState();
-        trackEnvItem(beforeState, "Toggle Scanlines", ImGui::Checkbox("Enable Scanlines", &environment.post.enableScanlines));
-        beforeState = document.captureState();
-        trackEnvItem(beforeState, "Toggle Sharpen", ImGui::Checkbox("Enable Sharpen", &environment.post.enableSharpen));
         beforeState = document.captureState();
         int toneMapMode = environment.post.toneMapMode;
         const bool toneMapChanged = ImGui::Combo("Tone Mapper", &toneMapMode, kToneMapModes, 2);
@@ -166,14 +152,6 @@ bool renderEnvironmentPanel(EditorSceneDocument& document,
         }
         trackEnvItem(beforeState, "Change Tone Mapper", toneMapChanged);
         beforeState = document.captureState();
-        trackEnvItem(beforeState, "Adjust Edge Threshold", ImGui::DragFloat("Edge Threshold", &environment.post.edgeThreshold, 0.005f, 0.0f, 1.0f, "%.3f"));
-        beforeState = document.captureState();
-        trackEnvItem(beforeState, "Adjust Fog Density", ImGui::DragFloat("Fog Density", &environment.post.fogDensity, 0.001f, 0.0f, 0.5f, "%.3f"));
-        beforeState = document.captureState();
-        trackEnvItem(beforeState, "Adjust Fog Start", ImGui::DragFloat("Fog Start", &environment.post.fogStart, 0.1f, 0.0f, 80.0f, "%.1f"));
-        beforeState = document.captureState();
-        trackEnvItem(beforeState, "Adjust Depth View Scale", ImGui::DragFloat("Depth View Scale", &environment.post.depthViewScale, 0.001f, 0.01f, 0.30f, "%.3f"));
-        beforeState = document.captureState();
         trackEnvItem(beforeState, "Adjust Exposure", ImGui::DragFloat("Exposure", &environment.post.exposure, 0.01f, 0.2f, 2.5f, "%.2f"));
         beforeState = document.captureState();
         trackEnvItem(beforeState, "Adjust Gamma", ImGui::DragFloat("Gamma", &environment.post.gamma, 0.01f, 0.5f, 2.0f, "%.2f"));
@@ -181,36 +159,75 @@ bool renderEnvironmentPanel(EditorSceneDocument& document,
         trackEnvItem(beforeState, "Adjust Contrast", ImGui::DragFloat("Contrast", &environment.post.contrast, 0.01f, 0.4f, 2.0f, "%.2f"));
         beforeState = document.captureState();
         trackEnvItem(beforeState, "Adjust Saturation", ImGui::DragFloat("Saturation", &environment.post.saturation, 0.01f, 0.0f, 1.5f, "%.2f"));
+
+        // --- Bloom ---
+        ImGui::SeparatorText("Bloom");
+        beforeState = document.captureState();
+        trackEnvItem(beforeState, "Toggle Bloom", ImGui::Checkbox("Enable Bloom", &environment.post.enableBloom));
         beforeState = document.captureState();
         trackEnvItem(beforeState, "Adjust Bloom Threshold", ImGui::DragFloat("Bloom Threshold", &environment.post.bloomThreshold, 0.01f, 0.0f, 1.5f, "%.2f"));
         beforeState = document.captureState();
         trackEnvItem(beforeState, "Adjust Bloom Intensity", ImGui::DragFloat("Bloom Intensity", &environment.post.bloomIntensity, 0.01f, 0.0f, 1.0f, "%.2f"));
         beforeState = document.captureState();
         trackEnvItem(beforeState, "Adjust Bloom Radius", ImGui::DragFloat("Bloom Radius", &environment.post.bloomRadius, 0.01f, 0.5f, 5.0f, "%.2f"));
+
+        // --- Fog ---
+        ImGui::SeparatorText("Fog");
         beforeState = document.captureState();
-        trackEnvItem(beforeState, "Adjust Vignette Strength", ImGui::DragFloat("Vignette Strength", &environment.post.vignetteStrength, 0.01f, 0.0f, 1.0f, "%.2f"));
+        trackEnvItem(beforeState, "Toggle Fog", ImGui::Checkbox("Enable Fog", &environment.post.enableFog));
         beforeState = document.captureState();
-        trackEnvItem(beforeState, "Adjust Vignette Softness", ImGui::DragFloat("Vignette Softness", &environment.post.vignetteSoftness, 0.01f, 0.1f, 1.2f, "%.2f"));
+        trackEnvItem(beforeState, "Adjust Fog Density", ImGui::DragFloat("Fog Density", &environment.post.fogDensity, 0.001f, 0.0f, 0.5f, "%.3f"));
         beforeState = document.captureState();
-        trackEnvItem(beforeState, "Adjust Grain Amount", ImGui::DragFloat("Grain Amount", &environment.post.grainAmount, 0.001f, 0.0f, 0.2f, "%.3f"));
+        trackEnvItem(beforeState, "Adjust Fog Start", ImGui::DragFloat("Fog Start", &environment.post.fogStart, 0.1f, 0.0f, 80.0f, "%.1f"));
         beforeState = document.captureState();
-        trackEnvItem(beforeState, "Adjust Scanline Amount", ImGui::DragFloat("Scanline Amount", &environment.post.scanlineAmount, 0.01f, 0.0f, 0.35f, "%.2f"));
+        trackEnvItem(beforeState, "Adjust Depth View Scale", ImGui::DragFloat("Depth View Scale", &environment.post.depthViewScale, 0.001f, 0.01f, 0.30f, "%.3f"));
         beforeState = document.captureState();
-        trackEnvItem(beforeState, "Adjust Scanline Density", ImGui::DragFloat("Scanline Density", &environment.post.scanlineDensity, 0.01f, 0.5f, 3.0f, "%.2f"));
+        trackEnvItem(beforeState, "Change Fog Near Color", editColor("Fog Near", environment.post.fogNearColor));
         beforeState = document.captureState();
-        trackEnvItem(beforeState, "Adjust Sharpen Amount", ImGui::DragFloat("Sharpen Amount", &environment.post.sharpenAmount, 0.01f, 0.0f, 1.0f, "%.2f"));
+        trackEnvItem(beforeState, "Change Fog Far Color", editColor("Fog Far", environment.post.fogFarColor));
+
+        // --- Edges ---
+        ImGui::SeparatorText("Edges");
+        beforeState = document.captureState();
+        trackEnvItem(beforeState, "Toggle Edges", ImGui::Checkbox("Enable Edges", &environment.post.enableEdges));
+        beforeState = document.captureState();
+        trackEnvItem(beforeState, "Adjust Edge Threshold", ImGui::DragFloat("Edge Threshold", &environment.post.edgeThreshold, 0.005f, 0.0f, 1.0f, "%.3f"));
+
+        // --- Color Grading ---
+        ImGui::SeparatorText("Color Grading");
         beforeState = document.captureState();
         trackEnvItem(beforeState, "Adjust Split Tone Strength", ImGui::DragFloat("Split Strength", &environment.post.splitToneStrength, 0.01f, 0.0f, 0.6f, "%.2f"));
         beforeState = document.captureState();
         trackEnvItem(beforeState, "Adjust Split Tone Balance", ImGui::DragFloat("Split Balance", &environment.post.splitToneBalance, 0.01f, 0.15f, 0.85f, "%.2f"));
         beforeState = document.captureState();
-        trackEnvItem(beforeState, "Change Fog Near Color", editColor("Fog Near", environment.post.fogNearColor));
-        beforeState = document.captureState();
-        trackEnvItem(beforeState, "Change Fog Far Color", editColor("Fog Far", environment.post.fogFarColor));
-        beforeState = document.captureState();
         trackEnvItem(beforeState, "Change Shadow Tint", editColor("Shadow Tint", environment.post.shadowTint));
         beforeState = document.captureState();
         trackEnvItem(beforeState, "Change Highlight Tint", editColor("Highlight Tint", environment.post.highlightTint));
+
+        // --- Effects ---
+        ImGui::SeparatorText("Effects");
+        beforeState = document.captureState();
+        trackEnvItem(beforeState, "Toggle Sky In Post", ImGui::Checkbox("Enable Sky", &environment.post.enableSky));
+        beforeState = document.captureState();
+        trackEnvItem(beforeState, "Toggle Vignette", ImGui::Checkbox("Enable Vignette", &environment.post.enableVignette));
+        beforeState = document.captureState();
+        trackEnvItem(beforeState, "Adjust Vignette Strength", ImGui::DragFloat("Vignette Strength", &environment.post.vignetteStrength, 0.01f, 0.0f, 1.0f, "%.2f"));
+        beforeState = document.captureState();
+        trackEnvItem(beforeState, "Adjust Vignette Softness", ImGui::DragFloat("Vignette Softness", &environment.post.vignetteSoftness, 0.01f, 0.1f, 1.2f, "%.2f"));
+        beforeState = document.captureState();
+        trackEnvItem(beforeState, "Toggle Grain", ImGui::Checkbox("Enable Grain", &environment.post.enableGrain));
+        beforeState = document.captureState();
+        trackEnvItem(beforeState, "Adjust Grain Amount", ImGui::DragFloat("Grain Amount", &environment.post.grainAmount, 0.001f, 0.0f, 0.2f, "%.3f"));
+        beforeState = document.captureState();
+        trackEnvItem(beforeState, "Toggle Scanlines", ImGui::Checkbox("Enable Scanlines", &environment.post.enableScanlines));
+        beforeState = document.captureState();
+        trackEnvItem(beforeState, "Adjust Scanline Amount", ImGui::DragFloat("Scanline Amount", &environment.post.scanlineAmount, 0.01f, 0.0f, 0.35f, "%.2f"));
+        beforeState = document.captureState();
+        trackEnvItem(beforeState, "Adjust Scanline Density", ImGui::DragFloat("Scanline Density", &environment.post.scanlineDensity, 0.01f, 0.5f, 3.0f, "%.2f"));
+        beforeState = document.captureState();
+        trackEnvItem(beforeState, "Toggle Sharpen", ImGui::Checkbox("Enable Sharpen", &environment.post.enableSharpen));
+        beforeState = document.captureState();
+        trackEnvItem(beforeState, "Adjust Sharpen Amount", ImGui::DragFloat("Sharpen Amount", &environment.post.sharpenAmount, 0.01f, 0.0f, 1.0f, "%.2f"));
     }
 
     if (ImGui::CollapsingHeader("Sky", ImGuiTreeNodeFlags_DefaultOpen)) {
@@ -223,12 +240,18 @@ bool renderEnvironmentPanel(EditorSceneDocument& document,
 
         auto beforeState = document.captureState();
         trackEnvItem(beforeState, "Toggle Sky System", ImGui::Checkbox("Sky Enabled", &environment.sky.enabled));
+
+        // --- Sky Colors ---
+        ImGui::SeparatorText("Sky Colors");
         beforeState = document.captureState();
         trackEnvItem(beforeState, "Change Zenith Color", editColor("Zenith", environment.sky.zenithColor));
         beforeState = document.captureState();
         trackEnvItem(beforeState, "Change Horizon Color", editColor("Horizon", environment.sky.horizonColor));
         beforeState = document.captureState();
         trackEnvItem(beforeState, "Change Ground Haze Color", editColor("Ground Haze", environment.sky.groundHazeColor));
+
+        // --- Sun ---
+        ImGui::SeparatorText("Sun");
         beforeState = document.captureState();
         trackEnvItem(beforeState, "Adjust Sky Sun Direction", editVec3("Sun Direction", environment.sky.sunDirection, 0.01f));
         beforeState = document.captureState();
@@ -237,6 +260,22 @@ bool renderEnvironmentPanel(EditorSceneDocument& document,
         trackEnvItem(beforeState, "Adjust Sky Sun Size", ImGui::DragFloat("Sun Size", &environment.sky.sunSize, 0.001f, 0.001f, 0.10f, "%.3f"));
         beforeState = document.captureState();
         trackEnvItem(beforeState, "Adjust Sky Sun Glow", ImGui::DragFloat("Sun Glow", &environment.sky.sunGlow, 0.01f, 0.0f, 2.0f, "%.2f"));
+
+        // --- Moon ---
+        ImGui::SeparatorText("Moon");
+        beforeState = document.captureState();
+        trackEnvItem(beforeState, "Toggle Moon", ImGui::Checkbox("Moon Enabled", &environment.sky.moonEnabled));
+        beforeState = document.captureState();
+        trackEnvItem(beforeState, "Adjust Moon Direction", editVec3("Moon Direction", environment.sky.moonDirection, 0.01f));
+        beforeState = document.captureState();
+        trackEnvItem(beforeState, "Change Moon Color", editColor("Moon Color", environment.sky.moonColor));
+        beforeState = document.captureState();
+        trackEnvItem(beforeState, "Adjust Moon Size", ImGui::DragFloat("Moon Size", &environment.sky.moonSize, 0.001f, 0.001f, 0.10f, "%.3f"));
+        beforeState = document.captureState();
+        trackEnvItem(beforeState, "Adjust Moon Glow", ImGui::DragFloat("Moon Glow", &environment.sky.moonGlow, 0.01f, 0.0f, 1.0f, "%.2f"));
+
+        // --- Panorama ---
+        ImGui::SeparatorText("Panorama");
         beforeState = document.captureState();
         trackEnvItem(beforeState, "Set Panorama Path", editString("Panorama Path", environment.sky.panoramaPath, "assets/skies/sky.jpg"));
         beforeState = document.captureState();
@@ -245,6 +284,7 @@ bool renderEnvironmentPanel(EditorSceneDocument& document,
         trackEnvItem(beforeState, "Adjust Panorama Strength", ImGui::DragFloat("Panorama Strength", &environment.sky.panoramaStrength, 0.01f, 0.0f, 2.0f, "%.2f"));
         beforeState = document.captureState();
         trackEnvItem(beforeState, "Adjust Panorama Yaw", ImGui::DragFloat("Panorama Yaw", &environment.sky.panoramaYawOffset, 0.5f, -360.0f, 360.0f, "%.1f"));
+
         if (ImGui::TreeNodeEx("Cubemap", ImGuiTreeNodeFlags_DefaultOpen)) {
             static constexpr std::array<const char*, 6> kCubemapLabels{
                 "Face +X",
@@ -276,25 +316,13 @@ bool renderEnvironmentPanel(EditorSceneDocument& document,
             trackEnvItem(beforeState, "Adjust Cubemap Strength", ImGui::DragFloat("Cubemap Strength", &environment.sky.cubemapStrength, 0.01f, 0.0f, 2.0f, "%.2f"));
             ImGui::TreePop();
         }
+
+        // --- Clouds ---
+        ImGui::SeparatorText("Clouds");
         beforeState = document.captureState();
-        trackEnvItem(beforeState, "Toggle Moon", ImGui::Checkbox("Moon Enabled", &environment.sky.moonEnabled));
+        trackEnvItem(beforeState, "Set Cloud Layer A", editString("Cloud Layer A", environment.sky.cloudLayerAPath, "assets/skies/clouds_a.png"));
         beforeState = document.captureState();
-        trackEnvItem(beforeState, "Adjust Moon Direction", editVec3("Moon Direction", environment.sky.moonDirection, 0.01f));
-        beforeState = document.captureState();
-        trackEnvItem(beforeState, "Change Moon Color", editColor("Moon Color", environment.sky.moonColor));
-        beforeState = document.captureState();
-        trackEnvItem(beforeState, "Adjust Moon Size", ImGui::DragFloat("Moon Size", &environment.sky.moonSize, 0.001f, 0.001f, 0.10f, "%.3f"));
-        beforeState = document.captureState();
-        trackEnvItem(beforeState, "Adjust Moon Glow", ImGui::DragFloat("Moon Glow", &environment.sky.moonGlow, 0.01f, 0.0f, 1.0f, "%.2f"));
-        if (ImGui::TreeNodeEx("Sky Layers", ImGuiTreeNodeFlags_DefaultOpen)) {
-            beforeState = document.captureState();
-            trackEnvItem(beforeState, "Set Cloud Layer A", editString("Cloud Layer A", environment.sky.cloudLayerAPath, "assets/skies/clouds_a.png"));
-            beforeState = document.captureState();
-            trackEnvItem(beforeState, "Set Cloud Layer B", editString("Cloud Layer B", environment.sky.cloudLayerBPath, "assets/skies/clouds_b.png"));
-            beforeState = document.captureState();
-            trackEnvItem(beforeState, "Set Horizon Layer", editString("Horizon Layer", environment.sky.horizonLayerPath, "assets/skies/horizon.png"));
-            ImGui::TreePop();
-        }
+        trackEnvItem(beforeState, "Set Cloud Layer B", editString("Cloud Layer B", environment.sky.cloudLayerBPath, "assets/skies/clouds_b.png"));
         beforeState = document.captureState();
         trackEnvItem(beforeState, "Change Cloud Tint", editColor("Cloud Tint", environment.sky.cloudTint));
         beforeState = document.captureState();
@@ -305,6 +333,11 @@ bool renderEnvironmentPanel(EditorSceneDocument& document,
         trackEnvItem(beforeState, "Adjust Cloud Coverage", ImGui::DragFloat("Cloud Coverage", &environment.sky.cloudCoverage, 0.01f, 0.0f, 1.0f, "%.2f"));
         beforeState = document.captureState();
         trackEnvItem(beforeState, "Adjust Cloud Parallax", ImGui::DragFloat("Cloud Parallax", &environment.sky.cloudParallax, 0.001f, 0.0f, 0.20f, "%.3f"));
+
+        // --- Horizon ---
+        ImGui::SeparatorText("Horizon");
+        beforeState = document.captureState();
+        trackEnvItem(beforeState, "Set Horizon Layer", editString("Horizon Layer", environment.sky.horizonLayerPath, "assets/skies/horizon.png"));
         beforeState = document.captureState();
         trackEnvItem(beforeState, "Change Horizon Tint", editColor("Horizon Tint", environment.sky.horizonTint));
         beforeState = document.captureState();
