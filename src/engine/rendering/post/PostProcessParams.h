@@ -27,6 +27,10 @@ struct PostProcessParams {
     float bloomThreshold  = 0.58f;
     float bloomIntensity  = 0.14f;
     float bloomRadius     = 1.80f;
+    bool enableSsao     = true;
+    float ssaoRadius    = 0.5f;
+    float ssaoBias      = 0.025f;
+    float ssaoStrength  = 0.5f;
     float vignetteStrength = 0.24f;
     float vignetteSoftness = 0.68f;
     float grainAmount      = 0.035f;

@@ -517,6 +517,23 @@ EnvironmentDefinition loadEnvironmentDefinitionAsset(const std::string& path) {
             continue;
         }
 
+        if (key == "ssao_enabled") {
+            definition.post.enableSsao = parseBoolRecord(tokens, path, lineNumber, key);
+            continue;
+        }
+        if (key == "ssao_radius") {
+            definition.post.ssaoRadius = parseFloatRecord(tokens, path, lineNumber, key);
+            continue;
+        }
+        if (key == "ssao_bias") {
+            definition.post.ssaoBias = parseFloatRecord(tokens, path, lineNumber, key);
+            continue;
+        }
+        if (key == "ssao_strength") {
+            definition.post.ssaoStrength = parseFloatRecord(tokens, path, lineNumber, key);
+            continue;
+        }
+
         throwParseError(path, lineNumber, "invalid environment definition record");
     }
 
@@ -552,6 +569,10 @@ std::string serializeEnvironmentDefinitionAsset(const EnvironmentDefinition& def
     writeFloat(out, "bloom_threshold", definition.post.bloomThreshold);
     writeFloat(out, "bloom_intensity", definition.post.bloomIntensity);
     writeFloat(out, "bloom_radius", definition.post.bloomRadius);
+    writeBool(out, "ssao_enabled", definition.post.enableSsao);
+    writeFloat(out, "ssao_radius", definition.post.ssaoRadius);
+    writeFloat(out, "ssao_bias", definition.post.ssaoBias);
+    writeFloat(out, "ssao_strength", definition.post.ssaoStrength);
     writeFloat(out, "vignette_strength", definition.post.vignetteStrength);
     writeFloat(out, "vignette_softness", definition.post.vignetteSoftness);
     writeFloat(out, "grain_amount", definition.post.grainAmount);

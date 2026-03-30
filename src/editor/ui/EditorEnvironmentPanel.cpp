@@ -188,6 +188,14 @@ bool renderEnvironmentPanel(EditorSceneDocument& document,
         beforeState = document.captureState();
         trackEnvItem(beforeState, "Adjust Bloom Radius", ImGui::DragFloat("Bloom Radius", &environment.post.bloomRadius, 0.01f, 0.5f, 5.0f, "%.2f"));
         beforeState = document.captureState();
+        trackEnvItem(beforeState, "Toggle SSAO", ImGui::Checkbox("Enable SSAO", &environment.post.enableSsao));
+        beforeState = document.captureState();
+        trackEnvItem(beforeState, "Adjust SSAO Radius", ImGui::DragFloat("AO Radius", &environment.post.ssaoRadius, 0.01f, 0.1f, 2.0f, "%.2f"));
+        beforeState = document.captureState();
+        trackEnvItem(beforeState, "Adjust SSAO Bias", ImGui::DragFloat("AO Bias", &environment.post.ssaoBias, 0.001f, 0.001f, 0.1f, "%.3f"));
+        beforeState = document.captureState();
+        trackEnvItem(beforeState, "Adjust SSAO Strength", ImGui::DragFloat("AO Strength", &environment.post.ssaoStrength, 0.01f, 0.0f, 2.0f, "%.2f"));
+        beforeState = document.captureState();
         trackEnvItem(beforeState, "Adjust Vignette Strength", ImGui::DragFloat("Vignette Strength", &environment.post.vignetteStrength, 0.01f, 0.0f, 1.0f, "%.2f"));
         beforeState = document.captureState();
         trackEnvItem(beforeState, "Adjust Vignette Softness", ImGui::DragFloat("Vignette Softness", &environment.post.vignetteSoftness, 0.01f, 0.1f, 1.2f, "%.2f"));

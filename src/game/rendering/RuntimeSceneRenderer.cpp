@@ -96,6 +96,7 @@ void RuntimeSceneRenderer::init(const ContentRegistry& content) {
     shadowShader_ = std::make_unique<Shader>("assets/shaders/engine/shadow_depth.vert", "assets/shaders/engine/shadow_depth.frag");
     renderer_ = std::make_unique<Renderer>(sceneShader_.get());
     bloomPass_.init();
+    ssaoPass_.init();
     materialTextureLibrary_.init(content);
     ensureFramebuffers(1280, 720);
 }
@@ -461,10 +462,21 @@ void RuntimeSceneRenderer::renderPostProcess(const CameraState& camera,
 
     bloomPass_.render(sceneFBO_.colorTexture(), params.post.bloomRadius * 0.003f);
 
+    if (params.post.enableSsao) {
+        ssaoPass_.render(sceneFBO_.depthTexture(),
+                         sceneFBO_.geomNormalTexture(),
+                         camera.projectionMatrix,
+                         camera.viewMatrix,
+                         params.post.ssaoRadius,
+                         params.post.ssaoBias,
+                         params.post.ssaoStrength);
+    }
+
     compositePass_.apply(sceneFBO_.colorTexture(),
                          sceneFBO_.depthTexture(),
                          sceneFBO_.normalTexture(),
                          bloomPass_.bloomTexture(),
+                         params.post.enableSsao ? ssaoPass_.aoTexture() : 0,
                          compositeFBO_.framebuffer(),
                          params.post,
                          compositeFBO_.width(),
@@ -509,6 +521,7 @@ void RuntimeSceneRenderer::ensureFramebuffers(int internalWidth, int internalHei
     }
 
     bloomPass_.resize(safeW, safeH);
+    ssaoPass_.resize(safeW, safeH);
 }
 
 void RuntimeSceneRenderer::render(entt::registry& registry,

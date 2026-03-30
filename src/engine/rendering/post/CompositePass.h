@@ -20,6 +20,7 @@ public:
                GLuint sceneDepthTex,
                GLuint sceneNormalTex,
                GLuint bloomTex,
+               GLuint ssaoTex,
                GLuint targetFbo,
                const PostProcessParams& params,
                int targetW,

@@ -62,7 +62,7 @@ namespace {
 
 using Clock = std::chrono::steady_clock;
 
-constexpr int kMaxShadowedSpotLightsLocal = 2;
+constexpr int kMaxShadowedSpotLightsLocal = kMaxShadowedSpotLights;
 constexpr int kShadowResolutions[] = {512, 1024, 2048};
 constexpr const char* kEditorRootWindowName = "Level Editor Root";
 constexpr const char* kViewportWindowName = "Viewport";
@@ -1183,6 +1183,8 @@ int main(int argc, char* argv[]) {
             compositePass.apply(sceneFbo.colorTexture(),
                                 sceneFbo.depthTexture(),
                                 sceneFbo.normalTexture(),
+                                0,  // no bloom in editor preview
+                                0,  // no SSAO in editor preview
                                 compositeFbo.framebuffer(),
                                 previewEnvironment.post,
                                 targetW,

@@ -6,6 +6,7 @@
 #include "engine/rendering/lighting/ShadowMap.h"
 #include "engine/rendering/post/BloomPass.h"
 #include "engine/rendering/post/CompositePass.h"
+#include "engine/rendering/post/SsaoPass.h"
 #include "engine/rendering/post/StylizePass.h"
 #include "engine/ui/ImGuiLayer.h"
 #include "game/rendering/EnvironmentDebugSync.h"
@@ -97,6 +98,7 @@ private:
     std::unique_ptr<Shader> shadowShader_;
     std::unique_ptr<Renderer> renderer_;
     BloomPass bloomPass_;
+    SsaoPass ssaoPass_;
     CompositePass compositePass_;
     StylizePass stylizePass_;
     MaterialTextureLibrary materialTextureLibrary_;

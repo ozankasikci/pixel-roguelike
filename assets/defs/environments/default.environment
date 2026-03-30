@@ -2,8 +2,8 @@ id default
 enable_sky true
 enable_edges false
 enable_fog false
-enable_tone_map true
-enable_bloom true
+enable_tone_map false
+enable_bloom false
 enable_vignette true
 enable_grain false
 enable_scanlines false
@@ -17,9 +17,13 @@ exposure 1.0
 gamma 1.0
 contrast 1.02
 saturation 0.88
-bloom_threshold 0.80
+bloom_threshold 0.8
 bloom_intensity 0.06
 bloom_radius 1.5
+ssao_enabled true
+ssao_radius 0.5
+ssao_bias 0.025
+ssao_strength 0.5
 vignette_strength 0.08
 vignette_softness 0.78
 grain_amount 0.035
@@ -30,8 +34,8 @@ split_tone_strength 0.03
 split_tone_balance 0.56
 fog_near_color 0.3 0.3 0.28
 fog_far_color 0.56 0.58 0.54
-shadow_tint 0.90 0.88 0.84
-highlight_tint 0.98 0.96 0.90
+shadow_tint 0.9 0.88 0.84
+highlight_tint 0.98 0.96 0.9
 sky_enabled true
 sky_zenith_color 0.24 0.38 0.62
 sky_horizon_color 0.84 0.82 0.74
@@ -60,8 +64,8 @@ sky_cloud_parallax 0.024
 sky_horizon_tint 1.0 1.0 1.0
 sky_horizon_height 0.55
 sky_horizon_fade 0.22
-lighting_hemi_sky_color 0.50 0.48 0.44
-lighting_hemi_ground_color 0.15 0.13 0.10
+lighting_hemi_sky_color 0.5 0.48 0.44
+lighting_hemi_ground_color 0.15 0.13 0.1
 lighting_hemi_strength 0.35
 lighting_enable_directional true
 lighting_enable_shadows true

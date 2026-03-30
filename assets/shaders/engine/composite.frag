@@ -9,11 +9,13 @@ uniform sampler2D uHorizonLayer;
 uniform sampler2D uSkyPanorama;
 uniform samplerCube uSkyCubemap;
 uniform sampler2D uBloomTex;
+uniform sampler2D uSsaoTex;
 
 uniform int uEnableSky;
 uniform int uEnableFog;
 uniform int uEnableToneMap;
 uniform int uEnableBloom;
+uniform int uSsaoEnabled;
 uniform int uEnableVignette;
 uniform int uEnableGrain;
 uniform int uEnableScanlines;
@@ -288,6 +290,11 @@ void main() {
         float fogContrastFade = 1.0 - fogFactor * 0.22;
         color = mix(vec3(dot(color, lumaWeights)), color, fogContrastFade);
         color = mix(color, localFogColor, fogFactor * mistAmount);
+    }
+
+    if (uSsaoEnabled != 0) {
+        float ao = texture(uSsaoTex, vTexCoord).r;
+        color *= ao;
     }
 
     if (uEnableBloom != 0) {

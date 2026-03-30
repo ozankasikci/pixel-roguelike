@@ -48,6 +48,7 @@ void CompositePass::apply(GLuint sceneColorTex,
                           GLuint sceneDepthTex,
                           GLuint sceneNormalTex,
                           GLuint bloomTex,
+                          GLuint ssaoTex,
                           GLuint targetFbo,
                           const PostProcessParams& params,
                           int targetW,
@@ -95,10 +96,15 @@ void CompositePass::apply(GLuint sceneColorTex,
     glBindTexture(GL_TEXTURE_2D, bloomTex);
     shader_->setInt("uBloomTex", 8);
 
+    glActiveTexture(GL_TEXTURE9);
+    glBindTexture(GL_TEXTURE_2D, ssaoTex);
+    shader_->setInt("uSsaoTex", 9);
+
     shader_->setInt("uEnableSky", (params.enableSky && params.sky.enabled) ? 1 : 0);
     shader_->setInt("uEnableFog", params.enableFog ? 1 : 0);
     shader_->setInt("uEnableToneMap", params.enableToneMap ? 1 : 0);
     shader_->setInt("uEnableBloom", params.enableBloom ? 1 : 0);
+    shader_->setInt("uSsaoEnabled", params.enableSsao ? 1 : 0);
     shader_->setInt("uEnableVignette", params.enableVignette ? 1 : 0);
     shader_->setInt("uEnableGrain", params.enableGrain ? 1 : 0);
     shader_->setInt("uEnableScanlines", params.enableScanlines ? 1 : 0);

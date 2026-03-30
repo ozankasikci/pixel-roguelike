@@ -310,6 +310,15 @@ void ImGuiLayer::renderOverlay(DebugParams& params, std::vector<RenderLight>& li
         ImGui::EndDisabled();
     }
 
+    if (ImGui::CollapsingHeader("Ambient Occlusion", ImGuiTreeNodeFlags_DefaultOpen)) {
+        ImGui::Checkbox("Enable SSAO", &params.post.enableSsao);
+        ImGui::BeginDisabled(!params.post.enableSsao);
+        ImGui::SliderFloat("AO Radius", &params.post.ssaoRadius, 0.1f, 2.0f, "%.2f");
+        ImGui::SliderFloat("AO Bias", &params.post.ssaoBias, 0.001f, 0.1f, "%.3f");
+        ImGui::SliderFloat("AO Strength", &params.post.ssaoStrength, 0.0f, 2.0f, "%.2f");
+        ImGui::EndDisabled();
+    }
+
     if (ImGui::CollapsingHeader("Lens", ImGuiTreeNodeFlags_DefaultOpen)) {
         ImGui::BeginDisabled(!params.post.enableVignette);
         ImGui::SliderFloat("Vignette Strength", &params.post.vignetteStrength, 0.0f, 1.0f, "%.2f");
