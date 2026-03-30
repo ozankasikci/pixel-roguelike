@@ -1,0 +1,43 @@
+environment_profile default
+
+# Country house — external FBX asset (ALP_Assets)
+# FBX is in cm; scale 0.01 converts to meters.
+# At scale 0.01: house spans X[-7.41..+7.41], Y[0..+7.89], Z[-5.06..+6.85]
+
+# Main house structure
+mesh country_house 0.0 0.0 0.0 0.01 0.01 0.01 0.0 0.0 0.0 material ch_wood_exterior tint 1.0 1.0 1.0 node node_house
+
+# Doors — positioned at main entry (front of house near Z=-5.06, centered in X)
+mesh country_house_doors 0.0 0.0 -4.5 0.01 0.01 0.01 0.0 0.0 0.0 material ch_door tint 1.0 1.0 1.0 node node_doors
+mesh country_house_door -2.5 0.0 -4.5 0.01 0.01 0.01 0.0 0.0 0.0 material ch_door tint 1.0 1.0 1.0 node node_door1
+mesh country_house_door 2.5 0.0 -4.5 0.01 0.01 0.01 0.0 180.0 0.0 material ch_door tint 1.0 1.0 1.0 node node_door2
+
+# Interior warm lighting — ceiling-mounted, warm white (Stanley Parable style)
+# Ceiling is at ~7.9m; position lights at Y=6.5 to cast downward into rooms
+light -3.0 6.5 0.0 1.0 0.97 0.9 10.0 4.0 node node_light_int_1
+light 3.0 6.5 0.0 1.0 0.97 0.9 10.0 4.0 node node_light_int_2
+light 0.0 6.5 3.5 1.0 0.97 0.9 10.0 4.0 node node_light_int_3
+light 0.0 6.5 -2.0 1.0 0.97 0.9 10.0 4.0 node node_light_int_4
+light -3.5 4.0 5.5 1.0 0.97 0.9 8.0 3.5 node node_light_int_5
+light 3.5 4.0 5.5 1.0 0.97 0.9 8.0 3.5 node node_light_int_6
+
+# Exterior fill lights — softer, slightly cooler sky light
+light 0.0 8.0 -8.0 1.0 0.98 0.92 18.0 2.5 node node_light_ext_1
+light 8.0 5.0 1.0 1.0 0.98 0.92 18.0 2.0 node node_light_ext_2
+light -8.0 5.0 1.0 1.0 0.98 0.92 18.0 2.0 node node_light_ext_3
+
+# Floor collider — large flat box covering the house footprint
+collider_box 0.0 -0.05 0.9 7.5 0.05 6.1 node node_col_floor
+
+# Perimeter wall colliders — approximate the house exterior walls
+# North wall (Z = +6.85)
+collider_box 0.0 4.0 7.0 7.5 4.0 0.15 node node_col_wall_n
+# South wall (Z = -5.06)
+collider_box 0.0 4.0 -5.2 7.5 4.0 0.15 node node_col_wall_s
+# East wall (X = +7.41)
+collider_box 7.6 4.0 0.9 0.15 4.0 6.1 node node_col_wall_e
+# West wall (X = -7.41)
+collider_box -7.6 4.0 0.9 0.15 4.0 6.1 node node_col_wall_w
+
+# Player spawn — inside the house, eye height, looking toward main room
+player_spawn 0.0 1.6 2.0 -5.0 node node_spawn
