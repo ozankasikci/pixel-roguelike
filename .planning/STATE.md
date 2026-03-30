@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: Ready to execute
-stopped_at: Completed 07-02-PLAN.md
-last_updated: "2026-03-30T19:49:32.219Z"
+stopped_at: Completed 07-04-PLAN.md
+last_updated: "2026-03-30T19:58:24.954Z"
 last_activity: 2026-03-30
 progress:
   total_phases: 9
   completed_phases: 7
   total_plans: 25
-  completed_plans: 23
+  completed_plans: 24
 ---
 
 # Project State
@@ -25,7 +25,7 @@ See: .planning/PROJECT.md (updated 2026-03-23)
 ## Current Position
 
 Phase: 07 (data-driven-material-system-replace-hardcoded-materials-with-a-proper-material-pipeline) — EXECUTING
-Plan: 3 of 4
+Plan: 4 of 4
 
 ## Performance Metrics
 
@@ -69,6 +69,7 @@ Plan: 3 of 4
 | Phase 06-data-driven-scene-management P03 | 15 | 1 tasks | 3 files |
 | Phase 07-data-driven-material-system-replace-hardcoded-materials-with-a-proper-material-pipeline P01 | 35 | 2 tasks | 19 files |
 | Phase 07 P02 | 5 | 3 tasks | 26 files |
+| Phase 07 P04 | 525609 | 2 tasks | 6 files |
 
 ## Accumulated Context
 
@@ -134,6 +135,9 @@ Recent decisions affecting current work:
 - [Phase 07]: shading_model key in .material files silently ignored for backward compat — root materials no longer require shading_model
 - [Phase 07]: MaterialTextureLibrary.resolve() returns magenta (1,0,1) fallback for unknown materialId — visible in renderer to aid debugging
 - [Phase 07]: Roughness formula simplified to clamp(uMaterialRoughnessScale * uMaterialRoughnessBias) — roughness_bias bakes the base roughness value in .material files
+- [Phase 07]: pollMaterialHotReload takes MaterialTextureLibrary& by reference — editor owns both and passes them; runtime game never calls this
+- [Phase 07]: reloadMaterial takes the materials map so it can immediately re-resolve the updated definition — avoids one-frame magenta flash
+- [Phase 07]: test_content_registry links game_rendering (not just game_content) because ContentRegistry.cpp now calls MaterialTextureLibrary methods
 
 ### Pending Todos
 
@@ -171,6 +175,6 @@ None yet.
 ## Session Continuity
 
 Last activity: 2026-03-30
-Last session: 2026-03-30T19:49:32.215Z
-Stopped at: Completed 07-02-PLAN.md
+Last session: 2026-03-30T19:58:24.951Z
+Stopped at: Completed 07-04-PLAN.md
 Resume file: None
