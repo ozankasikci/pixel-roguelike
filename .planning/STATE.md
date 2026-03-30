@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: Phase complete — ready for verification
-stopped_at: Phase 4 context gathered
-last_updated: "2026-03-30T00:40:09.732Z"
-last_activity: "2026-03-30 - Completed quick task 260330-321: Add concrete wall texture material to warden office"
+status: Ready to execute
+stopped_at: Completed 04-improve-lighting-quality 04-01-PLAN.md
+last_updated: "2026-03-30T01:16:48.462Z"
+last_activity: 2026-03-30
 progress:
   total_phases: 6
   completed_phases: 4
-  total_plans: 10
-  completed_plans: 10
+  total_plans: 15
+  completed_plans: 11
 ---
 
 # Project State
@@ -20,12 +20,12 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-23)
 
 **Core value:** The Stanley Parable-inspired art style — clean, minimalist environments with warm soft lighting, muted color palette, and stylized realism
-**Current focus:** Phase 03 — build-menu-in-editor-macos-build-from-editor-with-progress-and-output
+**Current focus:** Phase 04 — improve-lighting-quality-research-best-practices-and-implement-industry-standard-real-time-lighting
 
 ## Current Position
 
-Phase: 03 (build-menu-in-editor-macos-build-from-editor-with-progress-and-output) — EXECUTING
-Plan: 2 of 2
+Phase: 04 (improve-lighting-quality-research-best-practices-and-implement-industry-standard-real-time-lighting) — EXECUTING
+Plan: 2 of 5
 
 ## Performance Metrics
 
@@ -56,6 +56,7 @@ Plan: 2 of 2
 | Phase 01.1-project-restructure-ecs-application-class-modular-engine-game-split P04 | 15 | 3 tasks | 3 files |
 | Phase 03-build-menu-in-editor-macos-build-from-editor-with-progress-and-output P01 | 90 | 2 tasks | 7 files |
 | Phase 03-build-menu-in-editor-macos-build-from-editor-with-progress-and-output P02 | 25 | 1 tasks | 5 files |
+| Phase 04-improve-lighting-quality P01 | 18 | 2 tasks | 7 files |
 
 ## Accumulated Context
 
@@ -90,6 +91,9 @@ Recent decisions affecting current work:
 - [Phase 03-build-menu-in-editor-macos-build-from-editor-with-progress-and-output]: GenericFileScene uses registerCathedralAssets for all scenes -- all current scenes use cathedral asset set
 - [Phase 03-build-menu-in-editor-macos-build-from-editor-with-progress-and-output]: Build Output panel starts hidden and auto-shows on build start; docked to bottomId alongside Asset Browser
 - [Phase 03-build-menu-in-editor-macos-build-from-editor-with-progress-and-output]: Cmd+R Build and Run shortcut includes right-mouse-not-pressed guard to avoid conflict with fly camera R (scale tool)
+- [Phase 04-improve-lighting-quality]: Explicit if/else chains (not dynamic array indexing) for all shadow sampler accesses — macOS OpenGL driver requirement
+- [Phase 04-improve-lighting-quality]: 16-tap Poisson disk PCF with per-fragment hash rotation replaces 9-tap box PCF for banding-free soft shadows
+- [Phase 04-improve-lighting-quality]: kMaxShadowedSpotLights expanded from 2 to 8; ShadowRenderData arrays use fill()/loop instead of hardcoded 2-element initializers
 
 ### Pending Todos
 
@@ -121,7 +125,7 @@ None yet.
 
 ## Session Continuity
 
-Last activity: 2026-03-30 - Completed quick task 260330-321: Add concrete wall texture material to warden office
-Last session: 2026-03-30T00:40:09.728Z
-Stopped at: Phase 4 context gathered
-Resume file: .planning/phases/04-improve-lighting-quality-research-best-practices-and-implement-industry-standard-real-time-lighting/04-CONTEXT.md
+Last activity: 2026-03-30
+Last session: 2026-03-30T01:16:48.457Z
+Stopped at: Completed 04-improve-lighting-quality 04-01-PLAN.md
+Resume file: None
