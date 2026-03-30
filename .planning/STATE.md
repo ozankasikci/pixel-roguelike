@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: Ready to execute
-stopped_at: Completed 04-improve-lighting-quality 04-02-PLAN.md
-last_updated: "2026-03-30T01:24:06.364Z"
+stopped_at: Completed 04-improve-lighting-quality/04-03-PLAN.md
+last_updated: "2026-03-30T01:41:49.449Z"
 last_activity: 2026-03-30
 progress:
   total_phases: 6
   completed_phases: 4
   total_plans: 15
-  completed_plans: 11
+  completed_plans: 13
 ---
 
 # Project State
@@ -25,7 +25,7 @@ See: .planning/PROJECT.md (updated 2026-03-23)
 ## Current Position
 
 Phase: 04 (improve-lighting-quality-research-best-practices-and-implement-industry-standard-real-time-lighting) — EXECUTING
-Plan: 2 of 5
+Plan: 3 of 5
 
 ## Performance Metrics
 
@@ -58,6 +58,7 @@ Plan: 2 of 5
 | Phase 03-build-menu-in-editor-macos-build-from-editor-with-progress-and-output P02 | 25 | 1 tasks | 5 files |
 | Phase 04-improve-lighting-quality P01 | 18 | 2 tasks | 7 files |
 | Phase 04-improve-lighting-quality P02 | 13 | 2 tasks | 12 files |
+| Phase 04-improve-lighting-quality P03 | 30 | 2 tasks | 15 files |
 
 ## Accumulated Context
 
@@ -97,6 +98,9 @@ Recent decisions affecting current work:
 - [Phase 04-improve-lighting-quality]: kMaxShadowedSpotLights expanded from 2 to 8; ShadowRenderData arrays use fill()/loop instead of hardcoded 2-element initializers
 - [Phase 04-improve-lighting-quality]: Mip-chain bloom: BloomPass uses 5 GL_RGBA16F half-resolution FBOs, 13-tap downsample + tent upsample, no threshold extraction — HDR values naturally emphasize bright pixels
 - [Phase 04-improve-lighting-quality]: Bloom texture bound to unit 8 in CompositePass (units 0-7 pre-occupied by scene/sky/cloud textures); bloomGlow() 8-tap function removed from composite.frag
+- [Phase 04-improve-lighting-quality]: Geometry normals written at layout location 2 in scene.frag for SSAO — unperturbed vNormal used, not normal-mapped N, to avoid per-material AO artifacts
+- [Phase 04-improve-lighting-quality]: SsaoPass uses fixed RNG seeds (42 kernel, 123 noise) for deterministic results — eliminates temporal SSAO shimmer
+- [Phase 04-improve-lighting-quality]: SSAO AO factor applied as color multiply BEFORE bloom and tonemapping in composite.frag — preserves contact shadow darkening
 
 ### Pending Todos
 
@@ -129,6 +133,6 @@ None yet.
 ## Session Continuity
 
 Last activity: 2026-03-30
-Last session: 2026-03-30T01:24:06.361Z
-Stopped at: Completed 04-improve-lighting-quality 04-02-PLAN.md
+Last session: 2026-03-30T01:41:49.446Z
+Stopped at: Completed 04-improve-lighting-quality/04-03-PLAN.md
 Resume file: None

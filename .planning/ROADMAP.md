@@ -102,7 +102,7 @@ Plans:
 
 Plans:
 - [x] 04-01-PLAN.md — Soft shadow PCF upgrade (16-tap Poisson disk) and shadow slot expansion (2 to 8)
-- [ ] 04-02-PLAN.md — Mip-chain bloom pipeline (13-tap downsample, tent upsample, replace old bloomGlow)
-- [ ] 04-03-PLAN.md — Screen-space ambient occlusion (32-sample hemisphere SSAO with blur)
+- [x] 04-02-PLAN.md — Mip-chain bloom pipeline (13-tap downsample, tent upsample, replace old bloomGlow)
+- [x] 04-03-PLAN.md — Screen-space ambient occlusion (32-sample hemisphere SSAO with blur)
 - [ ] 04-04-PLAN.md — Cascaded shadow maps for directional sun light (3 cascades, geometry shader)
 - [ ] 04-05-PLAN.md — Area lights (LTC), tube lights (closest-point), and emissive material support
