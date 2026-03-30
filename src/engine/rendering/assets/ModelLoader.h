@@ -23,4 +23,9 @@ public:
                                                                    const std::filesystem::path& relativeBase);
     static std::unique_ptr<Mesh> load(const std::string& filepath);
     static RawMeshData loadRaw(const std::string& filepath);
+
+    // Load submeshes grouped by material name. For FBX files, returns one merged
+    // RawMeshData per unique material. For glTF/glb, wraps the single merged mesh
+    // in a single-element vector using the file stem as the name.
+    static std::vector<NamedRawMeshData> loadRawMulti(const std::string& filepath);
 };

@@ -120,6 +120,67 @@ void MeshLibrary::loadFromFile(const std::string& name, const std::string& filep
     registerMesh(name, std::move(mesh));
 }
 
+void MeshLibrary::loadFromFileMulti(const std::string& baseName, const std::string& filepath) {
+    std::string resolvedPath = resolveProjectPath(filepath);
+
+    std::vector<NamedRawMeshData> groups = ModelLoader::loadRawMulti(resolvedPath);
+    if (groups.empty()) {
+        spdlog::error("MeshLibrary: loadFromFileMulti failed for '{}' (no material groups)", filepath);
+        return;
+    }
+
+    for (auto& entry : groups) {
+        const std::string meshName = baseName + "#" + entry.name;
+        const std::string cacheKey = resolvedPath + "#" + entry.name;
+
+        // Try disk cache first
+        auto cached = AssetCache::findMeshCache(cacheKey);
+        if (cached) {
+            registerMesh(meshName, std::make_unique<Mesh>(
+                cached->interleavedVertices, cached->indices,
+                cached->aabbMin, cached->aabbMax));
+            continue;
+        }
+
+        // Cache miss: build mesh from raw data
+        RawMeshData& raw = entry.mesh;
+        if (raw.positions.empty() || raw.indices.empty()) {
+            spdlog::warn("MeshLibrary: skipping empty material group '{}' in '{}'", entry.name, filepath);
+            continue;
+        }
+
+        auto mesh = std::make_unique<Mesh>(
+            raw.positions, raw.normals, raw.uvs, raw.tangents, raw.indices);
+
+        // Build interleaved data for cache storage
+        std::vector<float> interleaved;
+        interleaved.reserve(raw.positions.size() * 11);
+        for (size_t i = 0; i < raw.positions.size(); ++i) {
+            interleaved.push_back(raw.positions[i].x);
+            interleaved.push_back(raw.positions[i].y);
+            interleaved.push_back(raw.positions[i].z);
+            const auto& n = i < raw.normals.size() ? raw.normals[i] : glm::vec3(0.0f, 1.0f, 0.0f);
+            interleaved.push_back(n.x);
+            interleaved.push_back(n.y);
+            interleaved.push_back(n.z);
+            const auto& uv = i < raw.uvs.size() ? raw.uvs[i] : glm::vec2(0.0f, 0.0f);
+            interleaved.push_back(uv.x);
+            interleaved.push_back(uv.y);
+            const auto& t = i < raw.tangents.size() ? raw.tangents[i] : glm::vec3(1.0f, 0.0f, 0.0f);
+            interleaved.push_back(t.x);
+            interleaved.push_back(t.y);
+            interleaved.push_back(t.z);
+        }
+        AssetCache::writeMeshCache(cacheKey, interleaved, raw.indices,
+                                   mesh->aabbMin(), mesh->aabbMax());
+
+        registerMesh(meshName, std::move(mesh));
+    }
+
+    spdlog::info("MeshLibrary: registered {} submeshes from '{}' as '{}#...'",
+                 groups.size(), filepath, baseName);
+}
+
 void MeshLibrary::clear() {
     meshes_.clear();
     fileAliases_.clear();
