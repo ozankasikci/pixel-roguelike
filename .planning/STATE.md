@@ -174,10 +174,11 @@ None yet.
 | 260330-321 | Add concrete wall texture material to warden office | 2026-03-30 | 3187a34 | [260330-321-add-concrete-wall-texture-material-to-wa](./quick/260330-321-add-concrete-wall-texture-material-to-wa/) |
 | 260330-mzu | Restore post-processing flags disabled by SSAO commit | 2026-03-30 | 19068c7 | [260330-mzu-fix-editor-scene-objects-not-visible-aft](./quick/260330-mzu-fix-editor-scene-objects-not-visible-aft/) |
 | 260330-rwe | Create a Claude Code skill for procedural texture generation | 2026-03-30 | e976302 | [260330-rwe-create-a-claude-code-skill-for-procedura](./quick/260330-rwe-create-a-claude-code-skill-for-procedura/) |
+| 260330-wc2 | Fix too-fast scrollbar scrolling in the editor asset browser panel | 2026-03-30 | 156472e | [260330-wc2-fix-too-fast-scrollbar-scrolling-in-the-](./quick/260330-wc2-fix-too-fast-scrollbar-scrolling-in-the-/) |
 
 ## Session Continuity
 
 Last activity: 2026-03-30
-Last session: 2026-03-30T20:06:30.447Z
-Stopped at: Completed 07-03-PLAN.md
+Last session: 2026-03-30T20:16:53.291Z
+Stopped at: Completed quick task 260330-wc2: Fix asset browser scroll speed
 Resume file: None
