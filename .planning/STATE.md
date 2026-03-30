@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: Phase complete — ready for verification
-stopped_at: Completed 05-unify-editor-runtime-build-rendering-parity 05-02-PLAN.md
-last_updated: "2026-03-30T16:47:32.976Z"
+stopped_at: Completed 05-unify-editor-runtime-build-rendering-parity/05-03-PLAN.md
+last_updated: "2026-03-30T16:47:43.117Z"
 last_activity: 2026-03-30
 progress:
   total_phases: 7
@@ -113,6 +113,9 @@ Recent decisions affecting current work:
 - [Phase 05-unify-editor-runtime-build-rendering-parity]: SceneRenderPipeline in engine_rendering with no game-layer headers — enforces D-06 layering; viewmodelObjects in SceneRenderInput for glDepthRange trick; safeNormalize duplicated as file-local in both pipeline and RSR
 - [Phase 05-unify-editor-runtime-build-rendering-parity]: EditorViewportRenderer does NOT own MaterialTextureLibrary -- objects arrive pre-resolved from main.cpp's library, keeping material resolution in one place
 - [Phase 05-unify-editor-runtime-build-rendering-parity]: PSSM lambda default 0.5 (balanced linear+log) replaces hardcoded fixed CSM splits (0-5m, 5-20m, 20-far) in CascadedShadowMap
+- [Phase 05-unify-editor-runtime-build-rendering-parity]: Model viewer uses SceneRenderPipeline (shadows disabled, no directional lights in viewer setup) per D-10
+- [Phase 05-unify-editor-runtime-build-rendering-parity]: SceneRenderPipelineStats uses CPU glfwGetTime() timing (not GPU queries) to avoid sync stalls per D-16
+- [Phase 05-unify-editor-runtime-build-rendering-parity]: EditorAssetPreviewRenderer owns its own LtcData instance -- preview renderer is standalone, not routed through SceneRenderPipeline per D-12
 
 ### Pending Todos
 
@@ -147,6 +150,6 @@ None yet.
 ## Session Continuity
 
 Last activity: 2026-03-30
-Last session: 2026-03-30T16:47:28.935Z
-Stopped at: Completed 05-unify-editor-runtime-build-rendering-parity 05-02-PLAN.md
+Last session: 2026-03-30T16:47:43.112Z
+Stopped at: Completed 05-unify-editor-runtime-build-rendering-parity/05-03-PLAN.md
 Resume file: None
