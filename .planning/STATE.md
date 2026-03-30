@@ -135,10 +135,11 @@ None yet.
 | 260330-171 | Comprehensive AssetCache test suite for invalidation, binary format, and edge cases | 2026-03-30 | 0ed7241 | [260330-171-comprehensive-assetcache-test-suite-for-](./quick/260330-171-comprehensive-assetcache-test-suite-for-/) |
 | 260330-222 | Port AudioSystem, ActionMap/InputSystem, GameOverlays, EditorConsoleSink from codex/scripting-v1 | 2026-03-30 | ecc270a | [260330-222-port-audiosystem-actionmap-inputsystem-g](./quick/260330-222-port-audiosystem-actionmap-inputsystem-g/) |
 | 260330-321 | Add concrete wall texture material to warden office | 2026-03-30 | 3187a34 | [260330-321-add-concrete-wall-texture-material-to-wa](./quick/260330-321-add-concrete-wall-texture-material-to-wa/) |
+| 260330-mzu | Restore post-processing flags disabled by SSAO commit | 2026-03-30 | 19068c7 | [260330-mzu-fix-editor-scene-objects-not-visible-aft](./quick/260330-mzu-fix-editor-scene-objects-not-visible-aft/) |
 
 ## Session Continuity
 
 Last activity: 2026-03-30
-Last session: 2026-03-30T02:06:20.094Z
-Stopped at: Completed 04-05-PLAN.md
+Last session: 2026-03-30T13:50:37Z
+Stopped at: Completed quick/260330-mzu-PLAN.md
 Resume file: None
