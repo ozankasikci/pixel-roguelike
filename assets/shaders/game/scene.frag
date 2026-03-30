@@ -9,6 +9,7 @@ in vec3 vWorldTangent;
 
 layout(location = 0) out vec4 fragColor;
 layout(location = 1) out vec4 fragNormal;
+layout(location = 2) out vec4 fragGeomNormal;
 
 struct RenderLight {
     int type;
@@ -756,6 +757,7 @@ float sampleShadow(int shadowIndex, vec3 N, vec3 L) {
 
 void main() {
     vec3 geometricNormal = normalize(vNormal);
+    fragGeomNormal = vec4(geometricNormal * 0.5 + 0.5, 1.0);
     vec2 uv = materialUv(geometricNormal);
     vec4 brickMacro = vec4(0.0);
     if (uMaterialKind == MATERIAL_BRICK) {
@@ -773,6 +775,7 @@ void main() {
         float materialMarker = (float(uMaterialKind) + 0.5) / 8.0;
         fragColor = vec4(baseColor, 1.0);
         fragNormal = vec4(N * 0.5 + 0.5, materialMarker);
+        // fragGeomNormal already written above
         return;
     }
     vec3 materialBaseColor = baseColor;

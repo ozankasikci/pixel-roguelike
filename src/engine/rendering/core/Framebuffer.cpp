@@ -29,6 +29,15 @@ void Framebuffer::create(int width, int height) {
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 
+    // Color attachment 2: GL_RGBA16F (geometry normals for SSAO — unperturbed, no normal mapping)
+    glGenTextures(1, &geomNormalTex_);
+    glBindTexture(GL_TEXTURE_2D, geomNormalTex_);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, width, height, 0, GL_RGBA, GL_FLOAT, nullptr);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
     // Depth attachment: texture (sampled by post-process passes for edge detection + fog)
     glGenTextures(1, &depthTex_);
     glBindTexture(GL_TEXTURE_2D, depthTex_);
@@ -44,10 +53,11 @@ void Framebuffer::create(int width, int height) {
     glBindFramebuffer(GL_FRAMEBUFFER, fbo_);
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, colorTex_, 0);
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, GL_TEXTURE_2D, normalTex_, 0);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT2, GL_TEXTURE_2D, geomNormalTex_, 0);
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, depthTex_, 0);
 
-    GLenum drawBuffers[2] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1 };
-    glDrawBuffers(2, drawBuffers);
+    GLenum drawBuffers[3] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2 };
+    glDrawBuffers(3, drawBuffers);
 
     GLenum status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
     if (status != GL_FRAMEBUFFER_COMPLETE) {
@@ -57,7 +67,7 @@ void Framebuffer::create(int width, int height) {
     }
 
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
-    spdlog::info("Framebuffer created: {}x{} GL_RGB16F + RGBA normals/material + depth", width, height);
+    spdlog::info("Framebuffer created: {}x{} GL_RGB16F + RGBA normals/material + RGBA geom normals + depth", width, height);
 }
 
 void Framebuffer::bind() {
@@ -85,6 +95,10 @@ void Framebuffer::destroy() {
     if (normalTex_) {
         glDeleteTextures(1, &normalTex_);
         normalTex_ = 0;
+    }
+    if (geomNormalTex_) {
+        glDeleteTextures(1, &geomNormalTex_);
+        geomNormalTex_ = 0;
     }
     if (depthTex_) {
         glDeleteTextures(1, &depthTex_);

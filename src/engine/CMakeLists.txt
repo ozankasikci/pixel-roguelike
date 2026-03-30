@@ -14,6 +14,7 @@ add_library(engine_rendering STATIC
     rendering/post/BloomPass.cpp
     rendering/post/CompositePass.cpp
     rendering/post/SkyTextureLibrary.cpp
+    rendering/post/SsaoPass.cpp
     rendering/geometry/Mesh.cpp
     rendering/geometry/MeshLibrary.cpp
     rendering/geometry/Renderer.cpp
