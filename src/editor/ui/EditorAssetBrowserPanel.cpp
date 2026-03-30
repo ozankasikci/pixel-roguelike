@@ -287,7 +287,7 @@ AssetBrowserActionResult renderAssetBrowser(EditorUiState& ui,
     if (ImGui::IsWindowHovered(ImGuiHoveredFlags_RootAndChildWindows)) {
         float wheel = ImGui::GetIO().MouseWheel;
         if (wheel != 0.0f) {
-            float scrollStep = ImGui::GetFontSize() * 2.0f;
+            float scrollStep = ImGui::GetFontSize() * 1.0f;
             ImGui::SetScrollY(ImGui::GetScrollY() - wheel * scrollStep);
         }
     }
