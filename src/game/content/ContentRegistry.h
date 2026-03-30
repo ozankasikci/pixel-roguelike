@@ -81,6 +81,8 @@ GameplayPrefabInstance instantiateGameplayArchetype(const GameplayArchetypeDefin
 class ContentRegistry {
 public:
     void loadDefaults();
+    void loadMaterialsFromDirectory(const std::string& relativeDirectory);
+    void validateMaterialInheritance();
 
     const WeaponDefinition* findWeapon(const std::string& id) const;
     const EnemyDefinition* findEnemy(const std::string& id) const;

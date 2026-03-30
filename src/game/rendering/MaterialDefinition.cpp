@@ -154,6 +154,27 @@ ResolvedMaterialDefinition resolveMaterialDefinitionRecursive(
     if (definition.proceduralSource.has_value()) {
         resolved.proceduralSource = *definition.proceduralSource;
     }
+    if (definition.specularLevel.has_value()) {
+        resolved.specularLevel = *definition.specularLevel;
+    }
+    if (definition.animated.has_value()) {
+        resolved.animated = *definition.animated;
+    }
+    if (definition.subsurface.has_value()) {
+        resolved.subsurface = *definition.subsurface;
+    }
+    if (definition.detailBrick.has_value()) {
+        resolved.detailBrick = *definition.detailBrick;
+    }
+    if (definition.detailWood.has_value()) {
+        resolved.detailWood = *definition.detailWood;
+    }
+    if (definition.detailStone.has_value()) {
+        resolved.detailStone = *definition.detailStone;
+    }
+    if (definition.detailFloor.has_value()) {
+        resolved.detailFloor = *definition.detailFloor;
+    }
 
     visiting.erase(id);
     cache.emplace(id, resolved);
@@ -366,6 +387,34 @@ MaterialDefinition loadMaterialDefinitionAsset(const std::string& path) {
             definition.proceduralSource = source;
             continue;
         }
+        if (key == "specular_level") {
+            definition.specularLevel = parseFloatRecord(tokens, path, lineNumber, key);
+            continue;
+        }
+        if (key == "animated" && tokens.size() == 2) {
+            definition.animated = (tokens[1] == "true");
+            continue;
+        }
+        if (key == "subsurface" && tokens.size() == 2) {
+            definition.subsurface = (tokens[1] == "true");
+            continue;
+        }
+        if (key == "detail_brick" && tokens.size() == 2) {
+            definition.detailBrick = (tokens[1] == "true");
+            continue;
+        }
+        if (key == "detail_wood" && tokens.size() == 2) {
+            definition.detailWood = (tokens[1] == "true");
+            continue;
+        }
+        if (key == "detail_stone" && tokens.size() == 2) {
+            definition.detailStone = (tokens[1] == "true");
+            continue;
+        }
+        if (key == "detail_floor" && tokens.size() == 2) {
+            definition.detailFloor = (tokens[1] == "true");
+            continue;
+        }
 
         throwParseError(path, lineNumber, "invalid material definition record");
     }
@@ -496,6 +545,25 @@ std::string serializeMaterialDefinitionAsset(const MaterialDefinition& definitio
     writeOptionalFloat(out, "emissive_strength", definition.emissiveStrength);
     if (definition.proceduralSource.has_value()) {
         out << "procedural_source " << materialProceduralSourceToken(*definition.proceduralSource) << '\n';
+    }
+    writeOptionalFloat(out, "specular_level", definition.specularLevel);
+    if (definition.animated.has_value()) {
+        out << "animated " << (*definition.animated ? "true" : "false") << '\n';
+    }
+    if (definition.subsurface.has_value()) {
+        out << "subsurface " << (*definition.subsurface ? "true" : "false") << '\n';
+    }
+    if (definition.detailBrick.has_value()) {
+        out << "detail_brick " << (*definition.detailBrick ? "true" : "false") << '\n';
+    }
+    if (definition.detailWood.has_value()) {
+        out << "detail_wood " << (*definition.detailWood ? "true" : "false") << '\n';
+    }
+    if (definition.detailStone.has_value()) {
+        out << "detail_stone " << (*definition.detailStone ? "true" : "false") << '\n';
+    }
+    if (definition.detailFloor.has_value()) {
+        out << "detail_floor " << (*definition.detailFloor ? "true" : "false") << '\n';
     }
     return out.str();
 }

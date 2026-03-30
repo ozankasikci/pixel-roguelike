@@ -1,6 +1,8 @@
 #include "game/content/ContentRegistry.h"
 #include "engine/core/PathUtils.h"
 
+#include <spdlog/spdlog.h>
+
 #include <cctype>
 #include <array>
 #include <cmath>
@@ -507,25 +509,8 @@ void ContentRegistry::loadDefaults() {
     auto doubleDoor = loadGameplayArchetypeAsset(resolveProjectPath("assets/prefabs/gameplay/double_door.prefab"));
     archetypes_.emplace(doubleDoor.id, doubleDoor);
 
-    const std::array materialFiles{
-        "assets/materials/masonry_base.material",
-        "assets/materials/stone_default.material",
-        "assets/materials/wood_default.material",
-        "assets/materials/metal_default.material",
-        "assets/materials/wax_default.material",
-        "assets/materials/moss_default.material",
-        "assets/materials/floor_default.material",
-        "assets/materials/brick_default.material",
-        "assets/materials/viewmodel_default.material",
-        "assets/materials/brick_wall_old.material",
-        "assets/materials/cloister_stone.material",
-        "assets/materials/concrete_wall.material",
-        "assets/materials/ceiling_default.material",
-    };
-    for (const char* path : materialFiles) {
-        auto material = loadMaterialDefinitionAsset(resolveProjectPath(path));
-        materials_.emplace(material.id, material);
-    }
+    loadMaterialsFromDirectory("assets/materials");
+    validateMaterialInheritance();
 
     for (const auto& path : sortedDefinitionFiles("assets/defs/environments", ".environment")) {
         auto environment = loadEnvironmentDefinitionAsset(path);
@@ -572,4 +557,42 @@ const EnvironmentDefinition* ContentRegistry::findEnvironment(const std::string&
 const std::string* ContentRegistry::findEnvironmentPath(const std::string& id) const {
     auto it = environmentPaths_.find(id);
     return it == environmentPaths_.end() ? nullptr : &it->second;
+}
+
+void ContentRegistry::loadMaterialsFromDirectory(const std::string& relativeDirectory) {
+    namespace fs = std::filesystem;
+    const fs::path directory = resolveProjectPath(relativeDirectory);
+    if (!fs::exists(directory)) {
+        spdlog::warn("Material directory does not exist: {}", directory.string());
+        return;
+    }
+    for (const auto& entry : fs::recursive_directory_iterator(directory,
+            fs::directory_options::skip_permission_denied)) {
+        if (!entry.is_regular_file()) {
+            continue;
+        }
+        if (entry.path().extension() != ".material") {
+            continue;
+        }
+        try {
+            auto material = loadMaterialDefinitionAsset(entry.path().string());
+            if (materials_.count(material.id)) {
+                spdlog::error("Duplicate material id '{}' in '{}' — skipped (first loaded from earlier scan)",
+                              material.id, entry.path().string());
+                continue;
+            }
+            materials_.emplace(material.id, std::move(material));
+        } catch (const std::exception& e) {
+            spdlog::error("Failed to load material '{}': {}", entry.path().string(), e.what());
+        }
+    }
+}
+
+void ContentRegistry::validateMaterialInheritance() {
+    for (const auto& [id, def] : materials_) {
+        if (def.parent.has_value() && !materials_.count(*def.parent)) {
+            spdlog::error("Material '{}' has missing parent '{}' — will use magenta fallback",
+                          id, *def.parent);
+        }
+    }
 }

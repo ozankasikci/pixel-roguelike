@@ -42,6 +42,13 @@ struct MaterialDefinition {
     std::optional<float> lightTintResponse;
     std::optional<float> emissiveStrength;
     std::optional<MaterialProceduralSource> proceduralSource;
+    std::optional<float> specularLevel;
+    std::optional<bool> animated;
+    std::optional<bool> subsurface;
+    std::optional<bool> detailBrick;
+    std::optional<bool> detailWood;
+    std::optional<bool> detailStone;
+    std::optional<bool> detailFloor;
 };
 
 struct ResolvedMaterialDefinition {
@@ -63,6 +70,13 @@ struct ResolvedMaterialDefinition {
     float lightTintResponse = 0.18f;
     float emissiveStrength = 0.0f;
     MaterialProceduralSource proceduralSource = MaterialProceduralSource::None;
+    float specularLevel = 0.20f;
+    bool animated = false;
+    bool subsurface = false;
+    bool detailBrick = false;
+    bool detailWood = false;
+    bool detailStone = false;
+    bool detailFloor = false;
 };
 
 MaterialDefinition loadMaterialDefinitionAsset(const std::string& path);
