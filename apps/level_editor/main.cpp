@@ -22,6 +22,7 @@
 #include "editor/viewport/EditorViewportController.h"
 #include "editor/viewport/EditorViewportInteraction.h"
 #include "game/content/ContentRegistry.h"
+#include "game/level/LevelDef.h"
 #include "game/rendering/MaterialDefinition.h"
 #include "game/rendering/MaterialTextureLibrary.h"
 #include "game/session/EquipmentState.h"
@@ -364,6 +365,10 @@ int main(int argc, char* argv[]) {
     bool previewDirty = true;
     int startupViewportHandoffFramesRemaining = 3;
     bool savePressed = false;
+    bool newScenePopupRequested = false;
+    char newSceneNameBuffer[128] = "new_scene";
+    std::string pendingDeleteScenePath;
+    std::optional<std::string> pendingSceneSwitch;
     bool focusPressed = false;
     bool resetStartPressed = false;
     bool duplicatePressed = false;
@@ -510,6 +515,10 @@ int main(int argc, char* argv[]) {
 
         if (ImGui::BeginMenuBar()) {
             if (ImGui::BeginMenu("File")) {
+                if (ImGui::MenuItem("New Scene...")) {
+                    newScenePopupRequested = true;
+                    std::strncpy(newSceneNameBuffer, "new_scene", sizeof(newSceneNameBuffer));
+                }
                 if (ImGui::MenuItem("Save", "Ctrl/Cmd+S", false, document.dirty())) {
                     savePressed = true;
                 }
@@ -932,8 +941,8 @@ int main(int argc, char* argv[]) {
         if (assetBrowserActions.consumedExternalDrops) {
             pendingDroppedAssetPaths.clear();
         }
-        if (requestedScenePath.has_value()) {
-            loadSceneIntoEditor(*requestedScenePath,
+        auto doLoadScene = [&](const std::string& scenePath) {
+            loadSceneIntoEditor(scenePath,
                                 ui,
                                 document,
                                 content,
@@ -947,18 +956,136 @@ int main(int argc, char* argv[]) {
                                 editCamera,
                                 previewWorld,
                                 previewSceneRevision);
-            // Write last-opened scene to project.cfg (D-05)
-            {
-                const std::string cfgPath = resolveProjectPath("assets/project.cfg");
-                const std::string filename = std::filesystem::path(*requestedScenePath).filename().string();
-                writeProjectCfgLastScene(cfgPath, filename);
-            }
+            const std::string cfgPath = resolveProjectPath("assets/project.cfg");
+            const std::string filename = std::filesystem::path(scenePath).filename().string();
+            writeProjectCfgLastScene(cfgPath, filename);
             previewEnvironmentRevision = document.environmentRevision();
             runtimePreviewDirtyState = RuntimePreviewDirtyState::FullWorldRebuild;
             lastRuntimePreviewStructuralChangeTime = glfwGetTime();
             if (ui.playPreview) {
                 runtimePreviewSession.endCapture(window.handle());
             }
+        };
+
+        if (requestedScenePath.has_value()) {
+            if (document.dirty()) {
+                pendingSceneSwitch = requestedScenePath;
+                ImGui::OpenPopup("UnsavedChangesOnSwitch");
+            } else {
+                doLoadScene(*requestedScenePath);
+            }
+        }
+
+        // Unsaved changes guard modal (D-13)
+        if (ImGui::BeginPopupModal("UnsavedChangesOnSwitch", nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
+            const std::string currentName = std::filesystem::path(ui.pendingScenePath).filename().string();
+            ImGui::Text("Save changes to '%s' before opening another scene?", currentName.c_str());
+            ImGui::Separator();
+            if (ImGui::Button("Save", ImVec2(100, 0))) {
+                document.save(content);
+                if (pendingSceneSwitch.has_value()) {
+                    doLoadScene(*pendingSceneSwitch);
+                }
+                pendingSceneSwitch.reset();
+                ImGui::CloseCurrentPopup();
+            }
+            ImGui::SameLine();
+            if (ImGui::Button("Don't Save", ImVec2(100, 0))) {
+                if (pendingSceneSwitch.has_value()) {
+                    doLoadScene(*pendingSceneSwitch);
+                }
+                pendingSceneSwitch.reset();
+                ImGui::CloseCurrentPopup();
+            }
+            ImGui::SameLine();
+            if (ImGui::Button("Cancel", ImVec2(100, 0))) {
+                pendingSceneSwitch.reset();
+                ImGui::CloseCurrentPopup();
+            }
+            ImGui::EndPopup();
+        }
+
+        // New Scene popup (D-01, D-02, D-03, D-04)
+        if (newScenePopupRequested || assetBrowserActions.newSceneRequested) {
+            if (assetBrowserActions.newSceneRequested) {
+                std::strncpy(newSceneNameBuffer, "new_scene", sizeof(newSceneNameBuffer));
+            }
+            ImGui::OpenPopup("NewScenePopup");
+            newScenePopupRequested = false;
+        }
+        if (ImGui::BeginPopupModal("NewScenePopup", nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
+            if (ImGui::IsWindowAppearing()) {
+                ImGui::SetKeyboardFocusHere();
+            }
+            ImGui::Text("Create a new scene in assets/scenes/");
+            ImGui::Separator();
+            ImGui::SetNextItemWidth(250);
+            const bool newSceneEnterPressed = ImGui::InputText("Name", newSceneNameBuffer, sizeof(newSceneNameBuffer),
+                                                               ImGuiInputTextFlags_EnterReturnsTrue);
+            ImGui::SameLine();
+            ImGui::TextDisabled(".scene");
+            const bool hasNewSceneName = std::strlen(newSceneNameBuffer) > 0;
+            ImGui::BeginDisabled(!hasNewSceneName);
+            if (ImGui::Button("Create", ImVec2(80, 0)) || (newSceneEnterPressed && hasNewSceneName)) {
+                std::string name(newSceneNameBuffer);
+                std::string filename = name + ".scene";
+                std::string fullPath = resolveProjectPath("assets/scenes/" + filename);
+                int counter = 1;
+                while (std::filesystem::exists(fullPath)) {
+                    filename = name + "_" + std::to_string(counter) + ".scene";
+                    fullPath = resolveProjectPath("assets/scenes/" + filename);
+                    ++counter;
+                }
+                LevelDef newSceneDef;
+                newSceneDef.environmentId = "default";
+                newSceneDef.hasPlayerSpawn = true;
+                saveLevelDef(fullPath, newSceneDef);
+                scenePaths = sortedScenePaths();
+                ImGui::CloseCurrentPopup();
+            }
+            ImGui::EndDisabled();
+            ImGui::SameLine();
+            if (ImGui::Button("Cancel", ImVec2(80, 0))) {
+                ImGui::CloseCurrentPopup();
+            }
+            ImGui::EndPopup();
+        }
+
+        // Delete Scene confirmation modal (D-10, D-11)
+        if (assetBrowserActions.deleteScenePath.has_value()) {
+            pendingDeleteScenePath = *assetBrowserActions.deleteScenePath;
+            ImGui::OpenPopup("DeleteSceneConfirm");
+        }
+        if (ImGui::BeginPopupModal("DeleteSceneConfirm", nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
+            const std::string deleteSceneName = std::filesystem::path(pendingDeleteScenePath).filename().string();
+            ImGui::Text("Delete '%s'?", deleteSceneName.c_str());
+            ImGui::TextWrapped("This cannot be undone.");
+            ImGui::Separator();
+            if (ImGui::Button("Delete", ImVec2(80, 0))) {
+                const std::string absDeletePath = resolveProjectPath(pendingDeleteScenePath);
+                std::error_code deleteEc;
+                std::filesystem::remove(absDeletePath, deleteEc);
+                if (!deleteEc) {
+                    if (pendingDeleteScenePath == ui.pendingScenePath) {
+                        document.clear();
+                        ui.pendingScenePath.clear();
+                    }
+                    const std::string cfgPath = resolveProjectPath("assets/project.cfg");
+                    const std::string lastScene = readProjectCfgLastScene(cfgPath);
+                    if (lastScene == deleteSceneName) {
+                        writeProjectCfgLastScene(cfgPath, "");
+                    }
+                    scenePaths = sortedScenePaths();
+                }
+                pendingDeleteScenePath.clear();
+                ImGui::CloseCurrentPopup();
+            }
+            ImGui::SameLine();
+            if (ImGui::Button("Cancel", ImVec2(80, 0))) {
+                pendingDeleteScenePath.clear();
+                ImGui::CloseCurrentPopup();
+            }
+            ImGui::EndPopup();
         }
 
         EditorViewportState viewportState;
@@ -1070,11 +1197,8 @@ int main(int argc, char* argv[]) {
                     ImGui::TextUnformatted("No scene loaded");
                     ImGui::SetCursorPosX((windowSize.x - 200.0f) * 0.5f);
                     if (ImGui::Button("New Scene...", ImVec2(95, 0))) {
-                        ImGui::OpenPopup("NewScenePopup");
-                    }
-                    if (ImGui::BeginPopup("NewScenePopup")) {
-                        ImGui::TextDisabled("New Scene will be available in Plan 03.");
-                        ImGui::EndPopup();
+                        newScenePopupRequested = true;
+                        std::strncpy(newSceneNameBuffer, "new_scene", sizeof(newSceneNameBuffer));
                     }
                     ImGui::SameLine();
                     if (ImGui::Button("Open Scene...", ImVec2(95, 0))) {

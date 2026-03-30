@@ -121,6 +121,9 @@ struct AssetBrowserActionResult {
     bool previewDirty = false;
     bool assetCatalogChanged = false;
     bool consumedExternalDrops = false;
+    bool newSceneRequested = false;
+    std::optional<std::string> deleteScenePath;
+    std::optional<std::string> renameScenePath;
 };
 
 struct InspectorActionResult {

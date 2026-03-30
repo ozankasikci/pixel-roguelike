@@ -2,14 +2,28 @@
 
 #include "editor/assets/EditorAssetBrowser.h"
 #include "engine/core/PathUtils.h"
+#include "engine/core/ProjectConfig.h"
 #include "game/content/ContentRegistry.h"
+#include "game/level/LevelDef.h"
 
 #include <algorithm>
+#include <cstdlib>
 #include <filesystem>
 #include <functional>
 #include <imgui.h>
 
 namespace {
+
+void revealInFinder(const std::string& absolutePath) {
+#ifdef __APPLE__
+    std::string cmd = "open -R \"" + absolutePath + "\" &";
+#elif defined(_WIN32)
+    std::string cmd = "explorer /select,\"" + absolutePath + "\"";
+#else
+    std::string cmd = "xdg-open \"" + std::filesystem::path(absolutePath).parent_path().string() + "\" &";
+#endif
+    std::system(cmd.c_str());
+}
 
 struct AssetBrowserVisibleRow {
     const EditorAssetBrowserNode* node = nullptr;
@@ -28,6 +42,17 @@ struct AssetBrowserSession {
 AssetBrowserSession& assetBrowserSession() {
     static AssetBrowserSession session;
     return session;
+}
+
+struct SceneRenameState {
+    std::string renamingPath;
+    char nameBuffer[128] = {};
+    bool focusRequested = false;
+};
+
+SceneRenameState& sceneRenameState() {
+    static SceneRenameState state;
+    return state;
 }
 
 const std::vector<EditorAssetBrowserNode>& cachedAssetNodes(bool forceRefresh = false) {
@@ -321,8 +346,21 @@ AssetBrowserActionResult renderAssetBrowser(EditorUiState& ui,
             if (consumeAssetScrollRequest(node.relativePath)) {
                 ImGui::SetScrollHereY(0.5f);
             }
+            if (node.name == "scenes") {
+                ImGui::SameLine();
+                if (ImGui::SmallButton("+##NewScene")) {
+                    result.newSceneRequested = true;
+                }
+                if (ImGui::IsItemHovered()) {
+                    ImGui::SetTooltip("New Scene");
+                }
+            }
             if (ImGui::BeginPopupContextItem("AssetFolderContext")) {
                 setSelectedAsset(ui, node);
+                if (ImGui::MenuItem("Reveal in Finder")) {
+                    revealInFinder(node.absolutePath);
+                }
+                ImGui::Separator();
                 renderAssetBrowserCreateContextMenu(placementState);
                 ImGui::EndPopup();
             }
@@ -337,8 +375,61 @@ AssetBrowserActionResult renderAssetBrowser(EditorUiState& ui,
         }
 
         const bool selected = (ui.selectedAssetPath == node.relativePath);
-        if (ImGui::Selectable(node.name.c_str(), selected)) {
-            setSelectedAsset(ui, node);
+        SceneRenameState& renameState = sceneRenameState();
+        const bool isRenaming = (node.kind == EditorAssetBrowserKind::Scene
+                                 && renameState.renamingPath == node.relativePath);
+        const bool isActiveScene = (node.kind == EditorAssetBrowserKind::Scene
+                                    && node.relativePath == ui.pendingScenePath);
+
+        if (isRenaming) {
+            if (renameState.focusRequested) {
+                ImGui::SetKeyboardFocusHere();
+                renameState.focusRequested = false;
+            }
+            ImGui::SetNextItemWidth(-1);
+            if (ImGui::InputText("##rename", renameState.nameBuffer, sizeof(renameState.nameBuffer),
+                                 ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_AutoSelectAll)) {
+                const std::string newName(renameState.nameBuffer);
+                if (!newName.empty() && newName != std::filesystem::path(node.name).stem().string()) {
+                    namespace fs = std::filesystem;
+                    const fs::path oldPath(node.absolutePath);
+                    const std::string newFilename = newName.ends_with(".scene") ? newName : newName + ".scene";
+                    const fs::path newPath = oldPath.parent_path() / newFilename;
+                    std::error_code ec;
+                    fs::rename(oldPath, newPath, ec);
+                    if (!ec) {
+                        const std::string cfgPath = resolveProjectPath("assets/project.cfg");
+                        const std::string lastScene = readProjectCfgLastScene(cfgPath);
+                        if (lastScene == oldPath.filename().string()) {
+                            writeProjectCfgLastScene(cfgPath, newFilename);
+                        }
+                        if (ui.pendingScenePath == node.relativePath) {
+                            const std::string newRelative = fs::relative(newPath, fs::current_path()).generic_string();
+                            ui.pendingScenePath = newRelative;
+                            document.setScenePath(newRelative);
+                        }
+                        refreshAssetTree = true;
+                    }
+                }
+                renameState.renamingPath.clear();
+            }
+            if (!ImGui::IsItemActive() && !renameState.focusRequested
+                && renameState.renamingPath == node.relativePath
+                && ImGui::IsMouseClicked(ImGuiMouseButton_Left)) {
+                renameState.renamingPath.clear();
+            }
+        } else {
+            if (isActiveScene) {
+                ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.4f, 0.8f, 0.4f, 1.0f));
+            }
+            if (ImGui::Selectable(node.name.c_str(), selected)) {
+                setSelectedAsset(ui, node);
+            }
+            if (isActiveScene) {
+                ImGui::PopStyleColor();
+                ImGui::SameLine();
+                ImGui::TextDisabled("[active]");
+            }
         }
         if (consumeAssetScrollRequest(node.relativePath)) {
             ImGui::SetScrollHereY(0.5f);
@@ -378,6 +469,18 @@ AssetBrowserActionResult renderAssetBrowser(EditorUiState& ui,
             case EditorAssetBrowserKind::Scene:
                 if (ImGui::MenuItem("Open Scene")) {
                     result.openScenePath = node.relativePath;
+                }
+                if (ImGui::MenuItem("Rename")) {
+                    SceneRenameState& rs = sceneRenameState();
+                    rs.renamingPath = node.relativePath;
+                    const std::string stem = std::filesystem::path(node.name).stem().string();
+                    std::strncpy(rs.nameBuffer, stem.c_str(), sizeof(rs.nameBuffer) - 1);
+                    rs.nameBuffer[sizeof(rs.nameBuffer) - 1] = '\0';
+                    rs.focusRequested = true;
+                }
+                ImGui::Separator();
+                if (ImGui::MenuItem("Delete...")) {
+                    result.deleteScenePath = node.relativePath;
                 }
                 break;
             case EditorAssetBrowserKind::Environment:
@@ -421,6 +524,10 @@ AssetBrowserActionResult renderAssetBrowser(EditorUiState& ui,
                 break;
             default:
                 break;
+            }
+            ImGui::Separator();
+            if (ImGui::MenuItem("Reveal in Finder")) {
+                revealInFinder(node.absolutePath);
             }
             ImGui::EndPopup();
         }
