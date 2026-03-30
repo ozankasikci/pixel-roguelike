@@ -136,7 +136,7 @@ glm::mat4 CascadedShadowMap::buildCascadeMatrix(const glm::vec3& lightDir,
     const glm::vec3 up = std::abs(lightDir.y) > 0.97f
         ? glm::vec3(0.0f, 0.0f, 1.0f)
         : glm::vec3(0.0f, 1.0f, 0.0f);
-    const glm::mat4 lightView = glm::lookAt(center + lightDir, center, up);
+    const glm::mat4 lightView = glm::lookAt(center - lightDir, center, up);
 
     float minX = FLT_MAX, maxX = -FLT_MAX;
     float minY = FLT_MAX, maxY = -FLT_MAX;

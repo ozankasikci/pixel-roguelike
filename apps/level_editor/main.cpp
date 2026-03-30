@@ -1182,9 +1182,14 @@ int main(int argc, char* argv[]) {
             sceneShader->setInt("uCsmEnabled", 0);
             sceneShader->setInt("uCsmCascadeCount", 0);
 
+            LightingEnvironment editorLighting = makeLightingEnvironment(previewEnvironment);
+            // Boost editor ambient so scene is clearly visible without player torch
+            editorLighting.hemisphereSkyColor = glm::max(editorLighting.hemisphereSkyColor, glm::vec3(0.60f));
+            editorLighting.hemisphereGroundColor = glm::max(editorLighting.hemisphereGroundColor, glm::vec3(0.30f));
+            editorLighting.hemisphereStrength = std::max(editorLighting.hemisphereStrength, 0.80f);
             renderer.drawScene(objects,
                                lights,
-                               makeLightingEnvironment(previewEnvironment),
+                               editorLighting,
                                shadowData,
                                view,
                                projection,
