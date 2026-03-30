@@ -533,6 +533,10 @@ EnvironmentDefinition loadEnvironmentDefinitionAsset(const std::string& path) {
             definition.post.ssaoStrength = parseFloatRecord(tokens, path, lineNumber, key);
             continue;
         }
+        if (key == "csm_lambda") {
+            definition.post.csmLambda = parseFloatRecord(tokens, path, lineNumber, key);
+            continue;
+        }
 
         throwParseError(path, lineNumber, "invalid environment definition record");
     }
@@ -573,6 +577,7 @@ std::string serializeEnvironmentDefinitionAsset(const EnvironmentDefinition& def
     writeFloat(out, "ssao_radius", definition.post.ssaoRadius);
     writeFloat(out, "ssao_bias", definition.post.ssaoBias);
     writeFloat(out, "ssao_strength", definition.post.ssaoStrength);
+    writeFloat(out, "csm_lambda", definition.post.csmLambda);
     writeFloat(out, "vignette_strength", definition.post.vignetteStrength);
     writeFloat(out, "vignette_softness", definition.post.vignetteSoftness);
     writeFloat(out, "grain_amount", definition.post.grainAmount);

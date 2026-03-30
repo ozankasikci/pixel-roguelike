@@ -24,10 +24,13 @@ public:
     void bind() const;
     void unbind() const;
 
+    // Compute cascade matrices using PSSM split blending.
+    // lambda=0 produces uniform linear splits; lambda=1 produces fully logarithmic splits.
     void computeCascades(const glm::mat4& viewMatrix,
                          const glm::mat4& projectionMatrix,
                          const glm::vec3& lightDirection,
-                         float nearPlane, float farPlane);
+                         float nearPlane, float farPlane,
+                         float lambda = 0.5f);
 
     GLuint depthArrayTexture() const { return depthArray_; }
     GLuint framebuffer() const { return fbo_; }

@@ -155,7 +155,8 @@ void SceneRenderPipeline::renderShadowPass(const std::vector<RenderObject>& obje
                                        input.projectionMatrix,
                                        lighting.sun.direction,
                                        input.nearPlane,
-                                       input.farPlane);
+                                       input.farPlane,
+                                       input.postParams ? input.postParams->csmLambda : 0.5f);
 
         csmShadowMap_.bind();
         csmShader_->use();

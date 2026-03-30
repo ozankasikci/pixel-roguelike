@@ -31,6 +31,7 @@ struct PostProcessParams {
     float ssaoRadius    = 0.5f;
     float ssaoBias      = 0.025f;
     float ssaoStrength  = 0.5f;
+    float csmLambda     = 0.5f;   // PSSM cascade split blend: 0=uniform linear, 1=fully logarithmic
     float vignetteStrength = 0.24f;
     float vignetteSoftness = 0.68f;
     float grainAmount      = 0.035f;

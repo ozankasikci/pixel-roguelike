@@ -78,12 +78,23 @@ void CascadedShadowMap::unbind() const {
 void CascadedShadowMap::computeCascades(const glm::mat4& viewMatrix,
                                          const glm::mat4& projectionMatrix,
                                          const glm::vec3& lightDirection,
-                                         float nearPlane, float farPlane) {
-    // Fixed cascade split distances (world-space view depth)
-    // Cascade 0: near to 5.0 — close contact shadows
-    // Cascade 1: 5.0 to 20.0 — mid-range
-    // Cascade 2: 20.0 to farPlane — distant geometry
-    const float cascadeSplits[kCascadeCount] = {5.0f, 20.0f, farPlane};
+                                         float nearPlane, float farPlane,
+                                         float lambda) {
+    // PSSM cascade split blending.
+    // lambda=0 produces uniform linear splits; lambda=1 produces fully logarithmic splits.
+    // Blended formula: split_i = lerp(linear_i, log_i, lambda)
+    //   linear_i = near + (far - near) * (i+1) / kCascadeCount
+    //   log_i    = near * pow(far/near, (i+1) / kCascadeCount)
+    const float clampedLambda = std::clamp(lambda, 0.0f, 1.0f);
+    float cascadeSplits[kCascadeCount];
+    for (int i = 0; i < kCascadeCount; ++i) {
+        const float fraction = static_cast<float>(i + 1) / static_cast<float>(kCascadeCount);
+        const float linearSplit = nearPlane + (farPlane - nearPlane) * fraction;
+        const float logSplit = nearPlane * std::pow(farPlane / nearPlane, fraction);
+        cascadeSplits[i] = clampedLambda * logSplit + (1.0f - clampedLambda) * linearSplit;
+    }
+    // Always end at farPlane
+    cascadeSplits[kCascadeCount - 1] = farPlane;
 
     for (int i = 0; i < kCascadeCount; ++i) {
         splitDistances_[i] = cascadeSplits[i];

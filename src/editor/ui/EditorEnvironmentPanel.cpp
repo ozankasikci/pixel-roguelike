@@ -196,6 +196,13 @@ bool renderEnvironmentPanel(EditorSceneDocument& document,
         beforeState = document.captureState();
         trackEnvItem(beforeState, "Adjust SSAO Strength", ImGui::DragFloat("AO Strength", &environment.post.ssaoStrength, 0.01f, 0.0f, 2.0f, "%.2f"));
         beforeState = document.captureState();
+        trackEnvItem(beforeState, "Adjust CSM Split Blend", ImGui::DragFloat("CSM Split Blend", &environment.post.csmLambda, 0.01f, 0.0f, 1.0f, "%.2f"));
+        ImGui::SameLine();
+        ImGui::TextDisabled("(?)");
+        if (ImGui::IsItemHovered()) {
+            ImGui::SetTooltip("0 = uniform linear splits\n1 = fully logarithmic splits (more detail near camera)");
+        }
+        beforeState = document.captureState();
         trackEnvItem(beforeState, "Adjust Vignette Strength", ImGui::DragFloat("Vignette Strength", &environment.post.vignetteStrength, 0.01f, 0.0f, 1.0f, "%.2f"));
         beforeState = document.captureState();
         trackEnvItem(beforeState, "Adjust Vignette Softness", ImGui::DragFloat("Vignette Softness", &environment.post.vignetteSoftness, 0.01f, 0.1f, 1.2f, "%.2f"));
