@@ -75,6 +75,7 @@ void EditorAssetPreviewRenderer::ensureInitialized() {
         sceneShader_ = std::make_unique<Shader>("assets/shaders/game/scene.vert", "assets/shaders/game/scene.frag");
         renderer_ = std::make_unique<Renderer>(sceneShader_.get());
         previewCube_ = std::make_unique<Mesh>(Mesh::createCube(1.0f));
+        ltcData_.init();
         fallbackAlbedo_.createRGBA8(1, 1, {255, 255, 255, 255});
         fallbackNormal_.createRGBA8(1, 1, {128, 128, 255, 255});
         fallbackRoughness_.createR8(1, 1, {196});
@@ -193,6 +194,26 @@ void EditorAssetPreviewRenderer::renderPreviewMesh(Mesh* mesh,
                                                        fallbackRoughness_,
                                                        fallbackAo_);
     material.useMaterialMaps = material.useMaterialMaps || material.albedoTexture != fallbackAlbedo_.id();
+
+    // Bind LTC lookup textures for area light support in previews (per D-12)
+    constexpr int kLtcMatUnit = 10;
+    constexpr int kLtcAmpUnit = 11;
+    sceneShader_->use();
+    glActiveTexture(GL_TEXTURE0 + kLtcMatUnit);
+    glBindTexture(GL_TEXTURE_2D, ltcData_.ltcMatTexture());
+    sceneShader_->setInt("uLtcMat", kLtcMatUnit);
+    glActiveTexture(GL_TEXTURE0 + kLtcAmpUnit);
+    glBindTexture(GL_TEXTURE_2D, ltcData_.ltcAmpTexture());
+    sceneShader_->setInt("uLtcAmp", kLtcAmpUnit);
+    glActiveTexture(GL_TEXTURE0);
+
+    // Disable CSM in asset previews (no directional shadow cascades needed for thumbnails)
+    sceneShader_->setInt("uCsmEnabled", 0);
+    sceneShader_->setInt("uCsmCascadeCount", 0);
+    sceneShader_->setInt("uCsmShadowMap", 16);
+    glActiveTexture(GL_TEXTURE16);
+    glBindTexture(GL_TEXTURE_2D_ARRAY, 0);
+    glActiveTexture(GL_TEXTURE0);
 
     const RenderObject object{
         mesh,

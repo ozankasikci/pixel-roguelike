@@ -4,6 +4,7 @@
 #include "engine/rendering/core/Framebuffer.h"
 #include "engine/rendering/geometry/Mesh.h"
 #include "engine/rendering/geometry/Renderer.h"
+#include "engine/rendering/lighting/LtcData.h"
 
 #include <glm/vec2.hpp>
 #include <imgui.h>
@@ -55,6 +56,7 @@ private:
     std::unique_ptr<Mesh> previewMesh_;
     std::unique_ptr<Mesh> previewCube_;
     Framebuffer framebuffer_;
+    LtcData ltcData_;
     Texture2D imagePreview_;
     Texture2D fallbackAlbedo_;
     Texture2D fallbackNormal_;

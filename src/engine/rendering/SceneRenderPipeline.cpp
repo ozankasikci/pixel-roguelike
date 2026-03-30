@@ -54,6 +54,7 @@ void SceneRenderPipeline::render(const SceneRenderInput& input,
                                   int outputWidth,
                                   int outputHeight,
                                   GLuint targetFramebuffer) {
+    const double t0 = glfwGetTime();
     ensureFramebuffers(internalWidth, internalHeight);
 
     // Make mutable copy of lights for shadow slot assignment
@@ -61,9 +62,23 @@ void SceneRenderPipeline::render(const SceneRenderInput& input,
     assignShadowSlots(lights, input.shadowsEnabled);
 
     ShadowRenderData shadowData;
+    const double tShadowStart = glfwGetTime();
     renderShadowPass(*input.objects, lights, input, shadowData);
+    const double tShadowEnd = glfwGetTime();
+
+    const double tSceneStart = glfwGetTime();
     renderScenePass(input, lights, shadowData, internalWidth, internalHeight);
+    const double tSceneEnd = glfwGetTime();
+
     renderPostProcess(input, outputWidth, outputHeight, targetFramebuffer);
+
+    const double tEnd = glfwGetTime();
+    lastStats_.totalRenderMs = (tEnd - t0) * 1000.0;
+    lastStats_.shadowPassMs = (tShadowEnd - tShadowStart) * 1000.0;
+    lastStats_.scenePassMs = (tSceneEnd - tSceneStart) * 1000.0;
+    lastStats_.objectCount = static_cast<int>(input.objects->size());
+    lastStats_.lightCount = static_cast<int>(lights.size());
+    lastStats_.drawCalls = lastStats_.objectCount;
 }
 
 void SceneRenderPipeline::assignShadowSlots(std::vector<RenderLight>& lights, bool enabled) {
@@ -265,8 +280,11 @@ void SceneRenderPipeline::renderPostProcess(const SceneRenderInput& input,
     }
     post.sky.sunColor = glm::max(input.lightingEnvironment.sun.color, glm::vec3(0.0f));
 
+    const double tBloomStart = glfwGetTime();
     bloomPass_.render(sceneFBO_.colorTexture(), post.bloomRadius * 0.003f, post.bloomThreshold);
+    lastStats_.bloomMs = (glfwGetTime() - tBloomStart) * 1000.0;
 
+    const double tSsaoStart = glfwGetTime();
     if (post.enableSsao) {
         // Use geomNormalTexture() for SSAO (geometric normals, per Pitfall 5)
         ssaoPass_.render(sceneFBO_.depthTexture(),
@@ -277,7 +295,9 @@ void SceneRenderPipeline::renderPostProcess(const SceneRenderInput& input,
                           post.ssaoBias,
                           post.ssaoStrength);
     }
+    lastStats_.ssaoMs = (glfwGetTime() - tSsaoStart) * 1000.0;
 
+    const double tCompositeStart = glfwGetTime();
     compositePass_.apply(sceneFBO_.colorTexture(),
                           sceneFBO_.depthTexture(),
                           sceneFBO_.normalTexture(),
@@ -296,6 +316,7 @@ void SceneRenderPipeline::renderPostProcess(const SceneRenderInput& input,
                         outputWidth,
                         outputHeight,
                         targetFramebuffer);
+    lastStats_.compositeMs = (glfwGetTime() - tCompositeStart) * 1000.0;
 }
 
 void SceneRenderPipeline::ensureFramebuffers(int internalWidth, int internalHeight) {
