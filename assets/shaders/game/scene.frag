@@ -59,6 +59,8 @@ uniform int uMaterialWoodDetail;
 uniform int uMaterialStoneDetail;
 uniform int uMaterialFloorDetail;
 uniform int uNormalMapFlipY;
+uniform int uAlphaTest;
+uniform float uAlphaCutoff;
 uniform float uTimeSeconds;
 uniform sampler2D uAlbedoMap;
 uniform sampler2D uNormalMap;
@@ -937,10 +939,13 @@ void main() {
     }
     vec3 materialBaseColor = baseColor;
     if (uUseMaterialMaps != 0 && uMaterialBrickDetail == 0) {
-        vec3 albedoSample = (uUseProceduralDetail == 0 && uMaterialUvMode != 0)
-            ? textureNoTile(uAlbedoMap, uv).rgb
-            : texture(uAlbedoMap, uv).rgb;
-        materialBaseColor = clamp(baseColor * albedoSample, 0.0, 1.0);
+        vec4 albedoRGBA = (uUseProceduralDetail == 0 && uMaterialUvMode != 0)
+            ? textureNoTile(uAlbedoMap, uv)
+            : texture(uAlbedoMap, uv);
+        if (uAlphaTest != 0 && albedoRGBA.a < uAlphaCutoff) {
+            discard;
+        }
+        materialBaseColor = clamp(baseColor * albedoRGBA.rgb, 0.0, 1.0);
     }
     vec3 albedo = (uUseProceduralDetail != 0 || uUseMaterialMaps == 0)
         ? applyMaterialDetail(materialBaseColor, geometricNormal)

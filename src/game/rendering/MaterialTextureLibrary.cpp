@@ -214,6 +214,8 @@ const RenderMaterialData& MaterialTextureLibrary::resolve(std::string_view mater
     renderMaterial.detailStone = resolved.detailStone;
     renderMaterial.detailFloor = resolved.detailFloor;
     renderMaterial.normalMapFlipY = resolved.normalMapFlipY;
+    renderMaterial.alphaTest = resolved.alphaTest;
+    renderMaterial.alphaCutoff = resolved.alphaCutoff;
     renderMaterial.baseColor = resolved.baseColor;
     renderMaterial.useMaterialMaps = useMaterialMaps;
     renderMaterial.useProceduralDetail =

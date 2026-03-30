@@ -113,6 +113,8 @@ void Renderer::drawScene(const std::vector<RenderObject>& objects,
         shader_->setInt("uMaterialStoneDetail", material.detailStone ? 1 : 0);
         shader_->setInt("uMaterialFloorDetail", material.detailFloor ? 1 : 0);
         shader_->setInt("uNormalMapFlipY", material.normalMapFlipY ? 1 : 0);
+        shader_->setInt("uAlphaTest", material.alphaTest ? 1 : 0);
+        shader_->setFloat("uAlphaCutoff", material.alphaCutoff);
         obj.mesh->draw();
     }
 

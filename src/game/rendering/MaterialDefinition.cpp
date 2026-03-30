@@ -149,6 +149,12 @@ ResolvedMaterialDefinition resolveMaterialDefinitionRecursive(
     if (definition.normalMapFlipY.has_value()) {
         resolved.normalMapFlipY = *definition.normalMapFlipY;
     }
+    if (definition.alphaTest.has_value()) {
+        resolved.alphaTest = *definition.alphaTest;
+    }
+    if (definition.alphaCutoff.has_value()) {
+        resolved.alphaCutoff = *definition.alphaCutoff;
+    }
 
     visiting.erase(id);
     cache.emplace(id, resolved);
@@ -331,6 +337,14 @@ MaterialDefinition loadMaterialDefinitionAsset(const std::string& path) {
             definition.normalMapFlipY = (tokens[1] == "true");
             continue;
         }
+        if (key == "alpha_test" && tokens.size() == 2) {
+            definition.alphaTest = (tokens[1] == "true");
+            continue;
+        }
+        if (key == "alpha_cutoff" && tokens.size() == 2) {
+            definition.alphaCutoff = std::stof(tokens[1]);
+            continue;
+        }
 
         throwParseError(path, lineNumber, "invalid material definition record");
     }
@@ -458,6 +472,12 @@ std::string serializeMaterialDefinitionAsset(const MaterialDefinition& definitio
     }
     if (definition.normalMapFlipY.has_value()) {
         out << "normal_map_flip_y " << (*definition.normalMapFlipY ? "true" : "false") << '\n';
+    }
+    if (definition.alphaTest.has_value()) {
+        out << "alpha_test " << (*definition.alphaTest ? "true" : "false") << '\n';
+    }
+    if (definition.alphaCutoff.has_value()) {
+        out << "alpha_cutoff " << *definition.alphaCutoff << '\n';
     }
     return out.str();
 }
