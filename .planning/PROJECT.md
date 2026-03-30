@@ -78,5 +78,9 @@ This document evolves at phase transitions and milestone boundaries.
 3. Audit Out of Scope — reasons still valid?
 4. Update Context with current state
 
+## Current State
+
+Phase 5 complete — all three executables (game, editor, model viewer) share the same SceneRenderPipeline for identical rendering output including bloom, SSAO, CSM, LTC area lights, tube lights, and emissive materials. This is the last phase of the current milestone.
+
 ---
-*Last updated: 2026-03-23 after initialization*
+*Last updated: 2026-03-30 after Phase 5 completion*
