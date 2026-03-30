@@ -25,8 +25,8 @@ struct RenderLight {
 
 uniform RenderLight uLights[32];
 uniform int uNumLights;
-uniform sampler2D uShadowMaps[2];
-uniform mat4 uShadowMatrices[2];
+uniform sampler2D uShadowMaps[8];
+uniform mat4 uShadowMatrices[8];
 uniform int uShadowCount;
 uniform int uEnableShadows;
 uniform float uShadowBias;
@@ -668,24 +668,53 @@ float spotConeFactor(RenderLight light, vec3 L) {
 }
 
 vec2 shadowTexelSize(int shadowIndex) {
-    if (shadowIndex == 0) {
-        return 1.0 / vec2(textureSize(uShadowMaps[0], 0));
-    }
-    return 1.0 / vec2(textureSize(uShadowMaps[1], 0));
+    if (shadowIndex == 0) return 1.0 / vec2(textureSize(uShadowMaps[0], 0));
+    if (shadowIndex == 1) return 1.0 / vec2(textureSize(uShadowMaps[1], 0));
+    if (shadowIndex == 2) return 1.0 / vec2(textureSize(uShadowMaps[2], 0));
+    if (shadowIndex == 3) return 1.0 / vec2(textureSize(uShadowMaps[3], 0));
+    if (shadowIndex == 4) return 1.0 / vec2(textureSize(uShadowMaps[4], 0));
+    if (shadowIndex == 5) return 1.0 / vec2(textureSize(uShadowMaps[5], 0));
+    if (shadowIndex == 6) return 1.0 / vec2(textureSize(uShadowMaps[6], 0));
+    return 1.0 / vec2(textureSize(uShadowMaps[7], 0));
 }
 
 float shadowDepthAt(int shadowIndex, vec2 uv) {
-    if (shadowIndex == 0) {
-        return texture(uShadowMaps[0], uv).r;
-    }
-    return texture(uShadowMaps[1], uv).r;
+    if (shadowIndex == 0) return texture(uShadowMaps[0], uv).r;
+    if (shadowIndex == 1) return texture(uShadowMaps[1], uv).r;
+    if (shadowIndex == 2) return texture(uShadowMaps[2], uv).r;
+    if (shadowIndex == 3) return texture(uShadowMaps[3], uv).r;
+    if (shadowIndex == 4) return texture(uShadowMaps[4], uv).r;
+    if (shadowIndex == 5) return texture(uShadowMaps[5], uv).r;
+    if (shadowIndex == 6) return texture(uShadowMaps[6], uv).r;
+    return texture(uShadowMaps[7], uv).r;
 }
 
 vec4 shadowClipPosition(int shadowIndex) {
-    if (shadowIndex == 0) {
-        return uShadowMatrices[0] * vec4(vWorldPos, 1.0);
-    }
-    return uShadowMatrices[1] * vec4(vWorldPos, 1.0);
+    if (shadowIndex == 0) return uShadowMatrices[0] * vec4(vWorldPos, 1.0);
+    if (shadowIndex == 1) return uShadowMatrices[1] * vec4(vWorldPos, 1.0);
+    if (shadowIndex == 2) return uShadowMatrices[2] * vec4(vWorldPos, 1.0);
+    if (shadowIndex == 3) return uShadowMatrices[3] * vec4(vWorldPos, 1.0);
+    if (shadowIndex == 4) return uShadowMatrices[4] * vec4(vWorldPos, 1.0);
+    if (shadowIndex == 5) return uShadowMatrices[5] * vec4(vWorldPos, 1.0);
+    if (shadowIndex == 6) return uShadowMatrices[6] * vec4(vWorldPos, 1.0);
+    return uShadowMatrices[7] * vec4(vWorldPos, 1.0);
+}
+
+const vec2 poissonDisk[16] = vec2[16](
+    vec2(-0.94201624, -0.39906216), vec2( 0.94558609, -0.76890725),
+    vec2(-0.09418410, -0.92938870), vec2( 0.34495938,  0.29387760),
+    vec2(-0.91588581,  0.45771432), vec2(-0.81544232, -0.87912464),
+    vec2(-0.38277543,  0.27676845), vec2( 0.97484398,  0.75648379),
+    vec2( 0.44323325, -0.97511554), vec2( 0.53742981, -0.47373420),
+    vec2(-0.26496911, -0.41893023), vec2( 0.79197514,  0.19090188),
+    vec2(-0.24188840,  0.99706507), vec2(-0.81409955,  0.91437590),
+    vec2( 0.19984126,  0.78641367), vec2( 0.14383161, -0.14100790)
+);
+
+float hash12(vec2 p) {
+    vec3 p3 = fract(vec3(p.xyx) * 0.1031);
+    p3 += dot(p3, p3.yzx + 33.33);
+    return fract((p3.x + p3.y) * p3.z);
 }
 
 float sampleShadow(int shadowIndex, vec3 N, vec3 L) {
@@ -710,17 +739,19 @@ float sampleShadow(int shadowIndex, vec3 N, vec3 L) {
     float slopeBias = uShadowNormalBias * (1.0 - max(dot(N, L), 0.0));
     float bias = max(uShadowBias, slopeBias);
     vec2 texel = shadowTexelSize(shadowIndex);
+    float spread = 3.0;
+
+    float angle = hash12(gl_FragCoord.xy) * 6.2831853;
+    float s = sin(angle), c = cos(angle);
+    mat2 rot = mat2(c, s, -s, c);
 
     float visibility = 0.0;
-    for (int y = -1; y <= 1; ++y) {
-        for (int x = -1; x <= 1; ++x) {
-            vec2 offset = vec2(float(x), float(y)) * texel;
-            float storedDepth = shadowDepthAt(shadowIndex, proj.xy + offset);
-            visibility += (proj.z - bias) <= storedDepth ? 1.0 : 0.0;
-        }
+    for (int i = 0; i < 16; ++i) {
+        vec2 offset = (rot * poissonDisk[i]) * texel * spread;
+        float storedDepth = shadowDepthAt(shadowIndex, proj.xy + offset);
+        visibility += (proj.z - bias) <= storedDepth ? 1.0 : 0.0;
     }
-
-    return visibility / 9.0;
+    return visibility / 16.0;
 }
 
 void main() {
