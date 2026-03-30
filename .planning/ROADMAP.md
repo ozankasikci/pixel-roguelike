@@ -122,9 +122,21 @@ Plans:
 ### Phase 6: Data-driven scene management
 
 **Goal:** Add "New Scene" and "Delete Scene" to the editor UI, make the runtime default scene configurable instead of hardcoded, and remove legacy scene classes (CathedralScene, SilosCloisterScene, WardenOfficeScene) in favor of GenericFileScene
-**Requirements**: TBD
+**Requirements**: None (editor tooling phase; not mapped to REQUIREMENTS.md IDs)
 **Depends on:** Phase 5
+**Plans:** 3 plans
+
+Plans:
+- [ ] 06-01-PLAN.md — Consolidate asset registration into registerAllGameAssets, delete legacy scenes, create ProjectConfig utilities
+- [ ] 06-02-PLAN.md — Wire project.cfg into runtime and editor startup, runtime scene picker, empty editor state
+- [ ] 06-03-PLAN.md — New Scene, Delete, Rename operations, asset browser scene enhancements, unsaved changes guard
+
+### Phase 7: Data-driven material system — replace hardcoded materials with a proper material pipeline
+
+**Goal:** [To be planned]
+**Requirements**: TBD
+**Depends on:** Phase 6
 **Plans:** 0 plans
 
 Plans:
-- [ ] TBD (run /gsd:plan-phase 6 to break down)
+- [ ] TBD (run /gsd:plan-phase 7 to break down)
