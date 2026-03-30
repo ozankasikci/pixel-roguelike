@@ -700,7 +700,10 @@ void registerAllGameAssets(MeshLibrary& meshLibrary) {
     meshLibrary.registerFileAlias("hand", "assets/meshes/hand_with_old_dagger.glb");
 
     // Country house assets (external FBX)
-    meshLibrary.registerFileAlias("country_house", "assets/meshes/country_house.fbx");
+    // Multi-submesh load: registers country_house#OldHouseMapWood02,
+    // country_house#OldHouseMapIndoorWall01, country_house#OldHouseMapWood01,
+    // country_house#WindowsMat01, country_house#q11:Glass
+    meshLibrary.loadFromFileMulti("country_house", "assets/meshes/country_house.fbx");
     meshLibrary.registerFileAlias("country_house_door", "assets/meshes/country_house_door.fbx");
     meshLibrary.registerFileAlias("country_house_doors", "assets/meshes/country_house_doors.fbx");
 
