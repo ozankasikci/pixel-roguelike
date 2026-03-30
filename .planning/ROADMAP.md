@@ -133,10 +133,13 @@ Plans:
 
 ### Phase 7: Data-driven material system — replace hardcoded materials with a proper material pipeline
 
-**Goal:** [To be planned]
-**Requirements**: TBD
+**Goal:** Replace the hardcoded MaterialKind enum and material registration with a fully data-driven material pipeline: auto-discover materials from the filesystem, remove the MaterialKind enum in favor of property-driven PBR shading with feature flags, refactor the scene shader to a single uber-shader, and add editor tooling for creating/editing/previewing materials with hot-reload
+**Requirements**: None (material pipeline phase; not mapped to REQUIREMENTS.md IDs)
 **Depends on:** Phase 6
-**Plans:** 0 plans
+**Plans:** 4 plans
 
 Plans:
-- [ ] TBD (run /gsd:plan-phase 7 to break down)
+- [ ] 07-01-PLAN.md — Add feature flags to MaterialDefinition, replace hardcoded material list with auto-scanner, bake shader defaults into .material files, migrate .scene files
+- [ ] 07-02-PLAN.md — Delete MaterialKind enum, refactor scene.frag/scene.vert to property-driven uber-shader, update all call sites
+- [ ] 07-03-PLAN.md — Editor material browser category, inspector panel with feature flags and preview sphere, CRUD operations
+- [ ] 07-04-PLAN.md — File watcher hot-reload, material validation at load/save, per-material cache invalidation
