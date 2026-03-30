@@ -3,8 +3,9 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: Phase complete — ready for verification
-stopped_at: Completed quick/260330-0fz-PLAN.md
-last_updated: "2026-03-29T21:46:27.778Z"
+stopped_at: Completed 04-improve-lighting-quality 04-02-PLAN.md
+last_updated: "2026-03-30T01:24:06.364Z"
+last_activity: 2026-03-30
 progress:
   total_phases: 5
   completed_phases: 4
@@ -55,6 +56,7 @@ Plan: 2 of 2
 | Phase 01.1-project-restructure-ecs-application-class-modular-engine-game-split P04 | 15 | 3 tasks | 3 files |
 | Phase 03-build-menu-in-editor-macos-build-from-editor-with-progress-and-output P01 | 90 | 2 tasks | 7 files |
 | Phase 03-build-menu-in-editor-macos-build-from-editor-with-progress-and-output P02 | 25 | 1 tasks | 5 files |
+| Phase 04-improve-lighting-quality P02 | 13 | 2 tasks | 12 files |
 
 ## Accumulated Context
 
@@ -89,6 +91,8 @@ Recent decisions affecting current work:
 - [Phase 03-build-menu-in-editor-macos-build-from-editor-with-progress-and-output]: GenericFileScene uses registerCathedralAssets for all scenes -- all current scenes use cathedral asset set
 - [Phase 03-build-menu-in-editor-macos-build-from-editor-with-progress-and-output]: Build Output panel starts hidden and auto-shows on build start; docked to bottomId alongside Asset Browser
 - [Phase 03-build-menu-in-editor-macos-build-from-editor-with-progress-and-output]: Cmd+R Build and Run shortcut includes right-mouse-not-pressed guard to avoid conflict with fly camera R (scale tool)
+- [Phase 04-improve-lighting-quality]: Mip-chain bloom: BloomPass uses 5 GL_RGBA16F half-resolution FBOs, 13-tap downsample + tent upsample, no threshold extraction — HDR values naturally emphasize bright pixels
+- [Phase 04-improve-lighting-quality]: Bloom texture bound to unit 8 in CompositePass (units 0-7 pre-occupied by scene/sky/cloud textures); bloomGlow() 8-tap function removed from composite.frag
 
 ### Pending Todos
 
@@ -118,7 +122,7 @@ None yet.
 
 ## Session Continuity
 
-Last activity: 2026-03-30 - Completed quick task 260330-222: Port features from codex/scripting-v1
-Last session: 2026-03-29T21:46:27.773Z
-Stopped at: Completed quick/260330-0fz
+Last activity: 2026-03-30
+Last session: 2026-03-30T01:24:06.361Z
+Stopped at: Completed 04-improve-lighting-quality 04-02-PLAN.md
 Resume file: None
