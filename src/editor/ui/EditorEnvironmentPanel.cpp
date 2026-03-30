@@ -238,7 +238,7 @@ bool renderEnvironmentPanel(EditorSceneDocument& document,
         // --- Effects ---
         ImGui::SeparatorText("Effects");
         beforeState = document.captureState();
-        trackEnvItem(beforeState, "Toggle Sky In Post", ImGui::Checkbox("Enable Sky", &environment.post.enableSky));
+        trackEnvItem(beforeState, "Toggle Sky In Post", ImGui::Checkbox("Sky Compositing", &environment.post.enableSky));
         beforeState = document.captureState();
         trackEnvItem(beforeState, "Toggle Vignette", ImGui::Checkbox("Enable Vignette", &environment.post.enableVignette));
         if (environment.post.enableVignette) {
