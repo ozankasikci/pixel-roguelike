@@ -1,8 +1,11 @@
 #include "engine/core/Application.h"
+#include "engine/core/PathUtils.h"
+#include "engine/core/ProjectConfig.h"
 #include "engine/scene/SceneManager.h"
 #include "engine/audio/AudioSystem.h"
 #include "engine/input/InputSystem.h"
 #include "engine/physics/PhysicsSystem.h"
+#include "engine/ui/ImGuiLayer.h"
 #include "game/systems/AudioListenerSystem.h"
 #include "game/systems/InventorySystem.h"
 #include "game/systems/PlayerMovementSystem.h"
@@ -15,9 +18,31 @@
 #include "game/content/ContentRegistry.h"
 #include "game/session/RunSession.h"
 
+#include <GLFW/glfw3.h>
+#include <imgui.h>
 #include <spdlog/spdlog.h>
+#include <algorithm>
+#include <filesystem>
 #include <memory>
 #include <string>
+#include <vector>
+
+namespace {
+
+std::vector<std::string> listAvailableScenes() {
+    namespace fs = std::filesystem;
+    std::vector<std::string> results;
+    const std::string sceneDir = resolveProjectPath("assets/scenes");
+    if (!fs::exists(sceneDir)) { return results; }
+    for (const auto& entry : fs::directory_iterator(sceneDir)) {
+        if (!entry.is_regular_file() || entry.path().extension() != ".scene") continue;
+        results.push_back(entry.path().filename().string());
+    }
+    std::sort(results.begin(), results.end());
+    return results;
+}
+
+} // namespace
 
 int main(int argc, char* argv[]) {
     spdlog::set_level(spdlog::level::info);
@@ -67,13 +92,85 @@ int main(int argc, char* argv[]) {
         render.enableAutoScreenshot(autoScreenshotPath, 10);
     }
 
-    // Push the starting scene: use --scene <path> if provided, otherwise fall back to the
-    // warden office scene file. Plan 02 will replace this fallback with project.cfg reading.
+    // Scene resolution: (1) --scene arg, (2) project.cfg, (3) first-launch picker (D-05, D-07)
+    const std::string cfgPath = resolveProjectPath("assets/project.cfg");
+
+    if (scenePath.empty()) {
+        const std::string cfgScene = readProjectCfgLastScene(cfgPath);
+        if (!cfgScene.empty()) {
+            const std::string resolved = resolveProjectPath("assets/scenes/" + cfgScene);
+            if (std::filesystem::exists(resolved)) {
+                scenePath = resolved;
+            }
+        }
+    }
+
+    if (scenePath.empty()) {
+        // First-launch: show ImGui scene picker (D-07)
+        // Temporary ImGuiLayer for picker only — RenderSystem owns its own ImGuiLayer
+        // initialized during app.run(), so this standalone one runs before the game loop.
+        ImGuiLayer pickerImgui;
+        pickerImgui.init(app.window().handle());
+
+        const auto scenes = listAvailableScenes();
+        int selectedIndex = 0;
+        bool launched = false;
+
+        while (!launched && !glfwWindowShouldClose(app.window().handle())) {
+            glfwPollEvents();
+            pickerImgui.beginFrame();
+
+            ImGui::SetNextWindowPos(ImVec2(0, 0));
+            ImGui::SetNextWindowSize(ImGui::GetIO().DisplaySize);
+            ImGui::Begin("Scene Picker", nullptr,
+                         ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize);
+
+            ImGui::Text("Select a scene to launch:");
+            ImGui::Separator();
+
+            if (scenes.empty()) {
+                ImGui::TextWrapped("No .scene files found in assets/scenes/. Create a scene in the editor first.");
+            } else {
+                ImGui::BeginChild("SceneList", ImVec2(0, -ImGui::GetFrameHeightWithSpacing() - 8));
+                for (int i = 0; i < static_cast<int>(scenes.size()); ++i) {
+                    if (ImGui::Selectable(scenes[static_cast<std::size_t>(i)].c_str(), i == selectedIndex)) {
+                        selectedIndex = i;
+                    }
+                    if (ImGui::IsItemHovered() && ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left)) {
+                        selectedIndex = i;
+                        launched = true;
+                    }
+                }
+                ImGui::EndChild();
+
+                ImGui::BeginDisabled(scenes.empty());
+                if (ImGui::Button("Launch", ImVec2(120, 0))) {
+                    launched = true;
+                }
+                ImGui::EndDisabled();
+            }
+
+            ImGui::End();
+            pickerImgui.endFrame();
+            glfwSwapBuffers(app.window().handle());
+        }
+
+        pickerImgui.shutdown();
+
+        if (launched && !scenes.empty()) {
+            const std::string& chosen = scenes[static_cast<std::size_t>(selectedIndex)];
+            scenePath = resolveProjectPath("assets/scenes/" + chosen);
+        }
+
+        if (scenePath.empty()) {
+            // User closed window without picking
+            spdlog::info("No scene selected, exiting.");
+            return 0;
+        }
+    }
+
     SceneManager sceneManager;
     app.setSceneManager(&sceneManager);
-    if (scenePath.empty()) {
-        scenePath = "assets/scenes/warden_office.scene";
-    }
     sceneManager.pushScene(std::make_unique<GenericFileScene>(scenePath), app);
 
     // Run the game loop (per D-04)
