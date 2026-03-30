@@ -1177,19 +1177,26 @@ int main(int argc, char* argv[]) {
             glClearColor(0.04f, 0.04f, 0.045f, 1.0f);
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-            // Set uniforms for phase-4 features not available in editor preview
+            // Set uniforms for phase-4 features not available in editor preview.
+            // Assign CSM and LTC samplers to dedicated units with null textures
+            // to prevent sampler type mismatch (GL_INVALID_OPERATION) on draw.
             sceneShader->use();
             sceneShader->setInt("uCsmEnabled", 0);
             sceneShader->setInt("uCsmCascadeCount", 0);
+            sceneShader->setInt("uCsmShadowMap", 16);
+            glActiveTexture(GL_TEXTURE16);
+            glBindTexture(GL_TEXTURE_2D_ARRAY, 0);
+            sceneShader->setInt("uLtcMat", 10);
+            sceneShader->setInt("uLtcAmp", 11);
+            glActiveTexture(GL_TEXTURE10);
+            glBindTexture(GL_TEXTURE_2D, 0);
+            glActiveTexture(GL_TEXTURE11);
+            glBindTexture(GL_TEXTURE_2D, 0);
+            glActiveTexture(GL_TEXTURE0);
 
-            LightingEnvironment editorLighting = makeLightingEnvironment(previewEnvironment);
-            // Boost editor ambient so scene is clearly visible without player torch
-            editorLighting.hemisphereSkyColor = glm::max(editorLighting.hemisphereSkyColor, glm::vec3(0.60f));
-            editorLighting.hemisphereGroundColor = glm::max(editorLighting.hemisphereGroundColor, glm::vec3(0.30f));
-            editorLighting.hemisphereStrength = std::max(editorLighting.hemisphereStrength, 0.80f);
             renderer.drawScene(objects,
                                lights,
-                               editorLighting,
+                               makeLightingEnvironment(previewEnvironment),
                                shadowData,
                                view,
                                projection,
