@@ -1,5 +1,7 @@
 #include "game/rendering/MaterialDefinition.h"
 
+#include "game/content/ParseUtils.h"
+
 #include <fstream>
 #include <iomanip>
 #include <sstream>
@@ -7,22 +9,6 @@
 #include <unordered_set>
 
 namespace {
-
-[[noreturn]] void throwParseError(const std::string& path, int lineNumber, const std::string& message) {
-    throw std::runtime_error(path + ":" + std::to_string(lineNumber) + ": " + message);
-}
-
-bool isCommentOrEmpty(const std::string& line) {
-    for (char c : line) {
-        if (c == '#') {
-            return true;
-        }
-        if (!std::isspace(static_cast<unsigned char>(c))) {
-            return false;
-        }
-    }
-    return true;
-}
 
 bool tryParseFloatToken(const std::string& token, float& value) {
     std::size_t parsed = 0;
@@ -62,16 +48,6 @@ float parseFloatRecord(const std::vector<std::string>& tokens,
         throwParseError(path, lineNumber, "invalid " + label + " record");
     }
     return std::stof(tokens[1]);
-}
-
-std::vector<std::string> tokenizeRecord(const std::string& line) {
-    std::istringstream stream(line);
-    std::vector<std::string> tokens;
-    std::string token;
-    while (stream >> token) {
-        tokens.push_back(token);
-    }
-    return tokens;
 }
 
 ResolvedMaterialDefinition resolveMaterialDefinitionRecursive(

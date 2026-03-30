@@ -1,6 +1,7 @@
 #include "game/level/LevelDef.h"
 
 #include "engine/core/MathUtils.h"
+#include "game/content/ParseUtils.h"
 #include "game/rendering/EnvironmentProfile.h"
 #include <filesystem>
 #include <cctype>
@@ -18,22 +19,6 @@
 #include <unordered_set>
 
 namespace {
-
-[[noreturn]] void throwParseError(const std::string& path, int lineNumber, const std::string& message) {
-    throw std::runtime_error(path + ":" + std::to_string(lineNumber) + ": " + message);
-}
-
-bool isCommentOrEmpty(const std::string& line) {
-    for (char c : line) {
-        if (c == '#') {
-            return true;
-        }
-        if (!std::isspace(static_cast<unsigned char>(c))) {
-            return false;
-        }
-    }
-    return true;
-}
 
 bool tryParseFloatToken(const std::string& token, float& value) {
     std::size_t parsed = 0;
