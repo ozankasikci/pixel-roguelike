@@ -2,6 +2,7 @@ add_library(engine_core STATIC
     core/Window.cpp
     core/Application.cpp
     core/PathUtils.cpp
+    core/ProjectConfig.cpp
     core/Time.cpp
 )
 target_include_directories(engine_core PUBLIC ${CMAKE_SOURCE_DIR}/src)
