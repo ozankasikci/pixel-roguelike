@@ -27,6 +27,7 @@ add_library(engine_rendering STATIC
     rendering/assets/Texture2D.cpp
     rendering/assets/TextureCube.cpp
     rendering/assets/AssetCache.cpp
+    rendering/SceneRenderPipeline.cpp
 )
 target_include_directories(engine_rendering PUBLIC ${CMAKE_SOURCE_DIR}/src)
 target_link_libraries(engine_rendering PUBLIC engine_core glm::glm)
