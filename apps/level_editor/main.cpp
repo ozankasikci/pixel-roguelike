@@ -1111,7 +1111,7 @@ int main(int argc, char* argv[]) {
                     }
                 }
                 viewportState.focused = ImGui::IsWindowFocused();
-                if (!ui.playPreview) {
+                if (!ui.playPreview && !ui.pendingScenePath.empty()) {
                     auto renderToolButton = [&](const char* label, EditorTransformTool tool) {
                         if (ui.tool == tool) {
                             ImGui::PushStyleColor(ImGuiCol_Button, IM_COL32(72, 92, 124, 255));
@@ -1202,7 +1202,19 @@ int main(int argc, char* argv[]) {
                     }
                     ImGui::SameLine();
                     if (ImGui::Button("Open Scene...", ImVec2(95, 0))) {
-                        ui.showAssetBrowser = true;
+                        ImGui::OpenPopup("OpenScenePickerPopup");
+                    }
+                    if (ImGui::BeginPopup("OpenScenePickerPopup")) {
+                        for (const auto& sp : scenePaths) {
+                            const std::string label = std::filesystem::path(sp).filename().string();
+                            if (ImGui::MenuItem(label.c_str())) {
+                                doLoadScene(sp);
+                            }
+                        }
+                        if (scenePaths.empty()) {
+                            ImGui::TextDisabled("No scenes found");
+                        }
+                        ImGui::EndPopup();
                     }
                 }
             }
@@ -1358,7 +1370,7 @@ int main(int argc, char* argv[]) {
             }
         }
 
-        if (viewportWindowVisible) {
+        if (viewportWindowVisible && !ui.pendingScenePath.empty()) {
             if (ui.playPreview) {
                 ImGui::SetCursorScreenPos(renderViewportState.origin);
             }
