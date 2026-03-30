@@ -106,3 +106,15 @@ Plans:
 - [x] 04-03-PLAN.md — Screen-space ambient occlusion (32-sample hemisphere SSAO with blur)
 - [x] 04-04-PLAN.md — Cascaded shadow maps for directional sun light (3 cascades, geometry shader)
 - [ ] 04-05-PLAN.md — Area lights (LTC), tube lights (closest-point), and emissive material support
+
+### Phase 5: Unify editor/runtime/build rendering parity
+
+**Goal:** Extract a shared SceneRenderPipeline from RuntimeSceneRenderer so the editor viewport, runtime game, and model viewer all render identically through the same code path — including bloom, SSAO, cascaded shadow maps, LTC area lights, tube lights, and emissive materials
+**Requirements**: None (rendering architecture phase; not mapped to REQUIREMENTS.md IDs)
+**Depends on:** Phase 4
+**Plans:** 3 plans
+
+Plans:
+- [ ] 05-01-PLAN.md — Extract SceneRenderPipeline into engine_rendering and refactor RuntimeSceneRenderer to compose it
+- [ ] 05-02-PLAN.md — Create EditorViewportRenderer, wire editor to shared pipeline, extend environment panel
+- [ ] 05-03-PLAN.md — Wire model viewer to shared pipeline, add pipeline stats, update asset preview LTC
