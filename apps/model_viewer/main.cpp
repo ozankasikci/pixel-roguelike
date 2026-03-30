@@ -1,11 +1,7 @@
 #include "engine/core/Window.h"
-#include "engine/rendering/core/Framebuffer.h"
-#include "engine/rendering/core/Shader.h"
+#include "engine/rendering/SceneRenderPipeline.h"
 #include "engine/rendering/geometry/MeshLibrary.h"
-#include "engine/rendering/geometry/Renderer.h"
-#include "engine/rendering/post/CompositePass.h"
 #include "engine/rendering/post/PostProcessParams.h"
-#include "engine/rendering/post/StylizePass.h"
 #include "engine/ui/Screenshot.h"
 #include "game/levels/cathedral/CathedralAssets.h"
 #include "game/levels/prison/PrisonAssets.h"
@@ -158,17 +154,8 @@ int main(int argc, char* argv[]) {
     registerPrisonAssets(meshLibrary);
     meshLibrary.loadFromFile("gothic_door_static", "assets/meshes/gothic_door_static.glb");
 
-    std::unique_ptr<Shader> sceneShader = std::make_unique<Shader>(
-        "assets/shaders/game/scene.vert",
-        "assets/shaders/game/scene.frag"
-    );
-    Renderer renderer(sceneShader.get());
-    CompositePass compositePass;
-    StylizePass stylizePass;
-    Framebuffer sceneFbo;
-    Framebuffer compositeFbo;
-    sceneFbo.create(window.width(), window.height());
-    compositeFbo.create(window.width(), window.height());
+    SceneRenderPipeline pipeline;
+    pipeline.init();
 
     PostProcessParams params;
     params.enableFog = false;
@@ -271,10 +258,6 @@ int main(int argc, char* argv[]) {
 
         const int displayW = window.width();
         const int displayH = window.height();
-        if (sceneFbo.width() != displayW || sceneFbo.height() != displayH) {
-            sceneFbo.resize(displayW, displayH);
-            compositeFbo.resize(displayW, displayH);
-        }
 
         const ViewerPreset& preset = currentPreset();
         Mesh* mesh = meshLibrary.get(preset.name);
@@ -311,39 +294,20 @@ int main(int argc, char* argv[]) {
         lighting.hemisphereGroundColor = glm::vec3(0.12f, 0.12f, 0.14f);
         lighting.hemisphereStrength = 0.6f;
         lighting.enableShadows = false;
-        ShadowRenderData shadowData;
 
-        sceneFbo.bind();
-        glViewport(0, 0, sceneFbo.width(), sceneFbo.height());
-        glEnable(GL_DEPTH_TEST);
-        glClearColor(0.09f, 0.09f, 0.10f, 1.0f);
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-        renderer.drawScene(objects, lights, lighting, shadowData, view, projection, cameraPos);
-        sceneFbo.unbind();
-        glDisable(GL_DEPTH_TEST);
+        SceneRenderInput input;
+        input.objects = &objects;
+        input.lights = &lights;
+        input.viewMatrix = view;
+        input.projectionMatrix = projection;
+        input.cameraPosition = cameraPos;
+        input.nearPlane = 0.1f;
+        input.farPlane = 100.0f;
+        input.postParams = &params;
+        input.lightingEnvironment = lighting;
+        input.shadowsEnabled = false;
 
-        params.nearPlane = 0.1f;
-        params.farPlane = 100.0f;
-        params.timeSeconds = static_cast<float>(glfwGetTime());
-
-        compositePass.apply(sceneFbo.colorTexture(),
-                            sceneFbo.depthTexture(),
-                            sceneFbo.normalTexture(),
-                            0,  // no bloom in model viewer
-                            0,  // no SSAO in model viewer
-                            compositeFbo.framebuffer(),
-                            params,
-                            compositeFbo.width(),
-                            compositeFbo.height());
-
-        glViewport(0, 0, displayW, displayH);
-        glClear(GL_COLOR_BUFFER_BIT);
-        stylizePass.apply(compositeFbo.colorTexture(),
-                          sceneFbo.colorTexture(),
-                          sceneFbo.depthTexture(),
-                          sceneFbo.normalTexture(),
-                          params,
-                          displayW, displayH);
+        pipeline.render(input, displayW, displayH, displayW, displayH);
 
         if (glfwGetKey(window.handle(), GLFW_KEY_F12) == GLFW_PRESS && !f12Held) {
             f12Held = true;

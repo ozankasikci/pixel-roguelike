@@ -19,6 +19,20 @@
 
 class Shader;
 
+// Per-frame timing and draw statistics reported by SceneRenderPipeline.
+// All values are updated after each render() call.
+struct SceneRenderPipelineStats {
+    double totalRenderMs = 0.0;
+    double shadowPassMs = 0.0;
+    double scenePassMs = 0.0;
+    double bloomMs = 0.0;
+    double ssaoMs = 0.0;
+    double compositeMs = 0.0;
+    int drawCalls = 0;
+    int objectCount = 0;
+    int lightCount = 0;
+};
+
 // Input struct for SceneRenderPipeline::render(). All fields are engine-layer types.
 // No game-layer types allowed here.
 struct SceneRenderInput {
@@ -73,6 +87,9 @@ public:
     // to additional shader programs (e.g., asset preview renderer per D-12).
     const LtcData& ltcData() const { return ltcData_; }
 
+    // Per-frame timing stats updated after each render() call.
+    const SceneRenderPipelineStats& lastStats() const { return lastStats_; }
+
 private:
     void ensureFramebuffers(int w, int h);
     void assignShadowSlots(std::vector<RenderLight>& lights, bool enabled);
@@ -91,6 +108,7 @@ private:
                            int outputHeight,
                            GLuint targetFramebuffer);
 
+    SceneRenderPipelineStats lastStats_;
     Framebuffer sceneFBO_;
     Framebuffer compositeFBO_;
     std::unique_ptr<Shader> sceneShader_;
