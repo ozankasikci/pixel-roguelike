@@ -17,7 +17,7 @@ public:
 
     void init();
     void resize(int baseWidth, int baseHeight);
-    void render(GLuint sceneColorTex, float filterRadius);
+    void render(GLuint sceneColorTex, float filterRadius, float threshold = 0.8f, float softKnee = 0.5f);
     GLuint bloomTexture() const;
 
 private:

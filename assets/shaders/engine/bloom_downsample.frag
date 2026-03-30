@@ -2,9 +2,23 @@
 
 uniform sampler2D uSrcTex;
 uniform vec2 uSrcTexelSize;
+uniform float uThreshold;    // brightness threshold (0 = no filtering)
+uniform float uSoftKnee;     // soft knee width (typically 0.5)
 
 in vec2 vTexCoord;
 out vec4 fragColor;
+
+// Soft-knee threshold: smoothly fades contribution around the threshold
+// instead of a hard cutoff, preventing harsh bloom edges
+vec3 prefilter(vec3 color) {
+    float brightness = max(color.r, max(color.g, color.b));
+    float knee = uThreshold * uSoftKnee;
+    float soft = brightness - uThreshold + knee;
+    soft = clamp(soft, 0.0, 2.0 * knee);
+    soft = soft * soft / (4.0 * knee + 0.00001);
+    float contribution = max(soft, brightness - uThreshold) / max(brightness, 0.00001);
+    return color * max(contribution, 0.0);
+}
 
 void main() {
     vec2 uv = vTexCoord;
@@ -29,6 +43,11 @@ void main() {
                 + (a + c + g + i) * 0.03125
                 + (b + d + f + h) * 0.0625
                 + (j + k + l + m) * 0.125;
+
+    // Apply threshold prefilter on first pass (uThreshold > 0)
+    if (uThreshold > 0.0) {
+        result = prefilter(result);
+    }
 
     fragColor = vec4(result, 1.0);
 }

@@ -529,7 +529,7 @@ void RuntimeSceneRenderer::renderPostProcess(const CameraState& camera,
     params.post.inverseViewProjection = glm::inverse(camera.projectionMatrix * camera.viewMatrix);
     syncSkySunFromDirectional(params);
 
-    bloomPass_.render(sceneFBO_.colorTexture(), params.post.bloomRadius * 0.003f);
+    bloomPass_.render(sceneFBO_.colorTexture(), params.post.bloomRadius * 0.003f, params.post.bloomThreshold);
 
     if (params.post.enableSsao) {
         ssaoPass_.render(sceneFBO_.depthTexture(),

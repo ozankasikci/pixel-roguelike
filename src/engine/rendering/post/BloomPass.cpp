@@ -96,7 +96,7 @@ void BloomPass::resize(int baseWidth, int baseHeight) {
     }
 }
 
-void BloomPass::render(GLuint sceneColorTex, float filterRadius) {
+void BloomPass::render(GLuint sceneColorTex, float filterRadius, float threshold, float softKnee) {
     if (!initialized_) {
         return;
     }
@@ -123,6 +123,10 @@ void BloomPass::render(GLuint sceneColorTex, float filterRadius) {
         downsampleShader_->setVec2("uSrcTexelSize",
             glm::vec2(1.0f / static_cast<float>(srcW),
                       1.0f / static_cast<float>(srcH)));
+
+        // Apply threshold prefilter only on first downsample pass
+        downsampleShader_->setFloat("uThreshold", (i == 0) ? threshold : 0.0f);
+        downsampleShader_->setFloat("uSoftKnee", softKnee);
 
         glDrawArrays(GL_TRIANGLES, 0, 6);
     }
