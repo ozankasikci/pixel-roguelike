@@ -30,6 +30,7 @@ struct RenderMaterialData {
     float metalness = 0.0f;
     float aoStrength = 1.0f;
     float lightTintResponse = 0.18f;
+    float emissiveStrength = 0.0f;
 };
 
 struct RenderObject {

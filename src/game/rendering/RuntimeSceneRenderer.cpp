@@ -102,6 +102,7 @@ void RuntimeSceneRenderer::init(const ContentRegistry& content) {
     bloomPass_.init();
     ssaoPass_.init();
     materialTextureLibrary_.init(content);
+    ltcData_.init();
     ensureFramebuffers(1280, 720);
 }
 
@@ -295,6 +296,13 @@ std::vector<RenderLight> RuntimeSceneRenderer::collectLights(entt::registry& reg
         renderLight.innerConeDegrees = clampInnerCone(light.innerConeDegrees, light.outerConeDegrees);
         renderLight.outerConeDegrees = clampOuterCone(renderLight.innerConeDegrees, light.outerConeDegrees);
         renderLight.castsShadows = light.type == LightType::Spot && light.castsShadows;
+        if (light.type == LightType::AreaRect || light.type == LightType::Tube) {
+            renderLight.right = light.right;
+            renderLight.up = light.up;
+            renderLight.width = light.width;
+            renderLight.height = light.height;
+            renderLight.doubleSided = light.doubleSided;
+        }
         lights.push_back(renderLight);
     }
 
@@ -471,6 +479,16 @@ void RuntimeSceneRenderer::renderScenePass(const CameraState& camera,
     }
     glActiveTexture(GL_TEXTURE0 + kCsmTextureUnit);
     glBindTexture(GL_TEXTURE_2D_ARRAY, csmEnabled ? csmShadowMap_.depthArrayTexture() : 0);
+
+    // Bind LTC lookup textures (units 10 and 11, between shadow maps and material maps)
+    constexpr int kLtcMatUnit = 10;
+    constexpr int kLtcAmpUnit = 11;
+    glActiveTexture(GL_TEXTURE0 + kLtcMatUnit);
+    glBindTexture(GL_TEXTURE_2D, ltcData_.ltcMatTexture());
+    sceneShader_->setInt("uLtcMat", kLtcMatUnit);
+    glActiveTexture(GL_TEXTURE0 + kLtcAmpUnit);
+    glBindTexture(GL_TEXTURE_2D, ltcData_.ltcAmpTexture());
+    sceneShader_->setInt("uLtcAmp", kLtcAmpUnit);
     glActiveTexture(GL_TEXTURE0);
 
     renderer_->drawScene(objects,

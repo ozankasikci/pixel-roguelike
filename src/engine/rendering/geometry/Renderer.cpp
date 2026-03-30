@@ -61,6 +61,11 @@ void Renderer::drawScene(const std::vector<RenderObject>& objects,
         shader_->setFloat(base + "outerConeCos", std::cos(glm::radians(light.outerConeDegrees)));
         shader_->setInt(base + "castsShadows", light.castsShadows ? 1 : 0);
         shader_->setInt(base + "shadowIndex", light.shadowIndex);
+        shader_->setVec3(base + "right", light.right);
+        shader_->setVec3(base + "up", light.up);
+        shader_->setFloat(base + "width", light.width);
+        shader_->setFloat(base + "height", light.height);
+        shader_->setInt(base + "doubleSided", light.doubleSided ? 1 : 0);
     }
 
     for (const auto& obj : objects) {
@@ -88,6 +93,7 @@ void Renderer::drawScene(const std::vector<RenderObject>& objects,
         shader_->setFloat("uMaterialMetalness", material.metalness);
         shader_->setFloat("uMaterialAoStrength", material.aoStrength);
         shader_->setFloat("uMaterialLightTintResponse", material.lightTintResponse);
+        shader_->setFloat("uEmissiveStrength", material.emissiveStrength);
         glActiveTexture(GL_TEXTURE12);
         glBindTexture(GL_TEXTURE_2D, material.albedoTexture);
         glActiveTexture(GL_TEXTURE13);

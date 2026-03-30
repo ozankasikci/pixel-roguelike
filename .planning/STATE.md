@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: Ready to execute
-stopped_at: Completed 04-04-PLAN.md
-last_updated: "2026-03-30T01:51:28.566Z"
+stopped_at: Completed 04-05-PLAN.md
+last_updated: "2026-03-30T02:06:20.098Z"
 last_activity: 2026-03-30
 progress:
   total_phases: 6
@@ -60,6 +60,7 @@ Plan: 4 of 5
 | Phase 04-improve-lighting-quality P02 | 13 | 2 tasks | 12 files |
 | Phase 04-improve-lighting-quality P03 | 30 | 2 tasks | 15 files |
 | Phase 04-improve-lighting-quality P04 | 5 | 2 tasks | 11 files |
+| Phase 04-improve-lighting-quality P05 | 9 | 2 tasks | 12 files |
 
 ## Accumulated Context
 
@@ -103,6 +104,9 @@ Recent decisions affecting current work:
 - [Phase 04-improve-lighting-quality]: SsaoPass uses fixed RNG seeds (42 kernel, 123 noise) for deterministic results — eliminates temporal SSAO shimmer
 - [Phase 04-improve-lighting-quality]: SSAO AO factor applied as color multiply BEFORE bloom and tonemapping in composite.frag — preserves contact shadow darkening
 - [Phase 04-improve-lighting-quality]: CascadedShadowMap: GL_TEXTURE_2D_ARRAY with geometry shader invocations=3 for single-pass multi-layer CSM rendering; glFramebufferTexture for all-layer attachment
+- [Phase 04-improve-lighting-quality]: LTC tables generated analytically at init() instead of embedding 130KB static arrays — same per-frame cost (texture lookup), avoids binary bloat
+- [Phase 04-improve-lighting-quality]: LTC texture units 10/11 sit between shadow map units (8-9) and material map units (12-15) without collision
+- [Phase 04-improve-lighting-quality]: emissive_strength=0 default for all materials; non-zero values combine with bloom for perceived light emission
 
 ### Pending Todos
 
@@ -135,6 +139,6 @@ None yet.
 ## Session Continuity
 
 Last activity: 2026-03-30
-Last session: 2026-03-30T01:51:28.562Z
-Stopped at: Completed 04-04-PLAN.md
+Last session: 2026-03-30T02:06:20.094Z
+Stopped at: Completed 04-05-PLAN.md
 Resume file: None

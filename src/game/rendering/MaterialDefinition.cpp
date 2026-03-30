@@ -148,6 +148,9 @@ ResolvedMaterialDefinition resolveMaterialDefinitionRecursive(
     if (definition.lightTintResponse.has_value()) {
         resolved.lightTintResponse = *definition.lightTintResponse;
     }
+    if (definition.emissiveStrength.has_value()) {
+        resolved.emissiveStrength = *definition.emissiveStrength;
+    }
     if (definition.proceduralSource.has_value()) {
         resolved.proceduralSource = *definition.proceduralSource;
     }
@@ -343,6 +346,10 @@ MaterialDefinition loadMaterialDefinitionAsset(const std::string& path) {
             definition.lightTintResponse = parseFloatRecord(tokens, path, lineNumber, key);
             continue;
         }
+        if (key == "emissive_strength") {
+            definition.emissiveStrength = parseFloatRecord(tokens, path, lineNumber, key);
+            continue;
+        }
         if (key == "procedural_source" && tokens.size() == 2) {
             MaterialProceduralSource source;
             if (!tryParseMaterialProceduralSourceToken(tokens[1], source)) {
@@ -474,6 +481,7 @@ std::string serializeMaterialDefinitionAsset(const MaterialDefinition& definitio
     writeOptionalFloat(out, "metalness", definition.metalness);
     writeOptionalFloat(out, "ao_strength", definition.aoStrength);
     writeOptionalFloat(out, "light_tint_response", definition.lightTintResponse);
+    writeOptionalFloat(out, "emissive_strength", definition.emissiveStrength);
     if (definition.proceduralSource.has_value()) {
         out << "procedural_source " << materialProceduralSourceToken(*definition.proceduralSource) << '\n';
     }

@@ -38,6 +38,7 @@ struct MaterialDefinition {
     std::optional<float> metalness;
     std::optional<float> aoStrength;
     std::optional<float> lightTintResponse;
+    std::optional<float> emissiveStrength;
     std::optional<MaterialProceduralSource> proceduralSource;
 };
 
@@ -58,6 +59,7 @@ struct ResolvedMaterialDefinition {
     float metalness = 0.0f;
     float aoStrength = 1.0f;
     float lightTintResponse = 0.18f;
+    float emissiveStrength = 0.0f;
     MaterialProceduralSource proceduralSource = MaterialProceduralSource::None;
 };
 
