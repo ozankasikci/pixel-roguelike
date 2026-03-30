@@ -178,10 +178,11 @@ None yet.
 | 260330-wt0 | Reorganize Environment inspector panel into logical sub-groups | 2026-03-30 | 1824913 | [260330-wt0-improve-environment-inspector-panel-ux-b](./quick/260330-wt0-improve-environment-inspector-panel-ux-b/) |
 | 260331-089 | Deduplicate shared utils and remove CMake ImGui patch | 2026-03-31 | 9d5f1a5 | [260331-089-deduplicate-shared-utils-and-remove-cmak](./quick/260331-089-deduplicate-shared-utils-and-remove-cmak/) |
 | 260331-071 | Create new scene using external ALP_Assets mesh and texture assets | 2026-03-31 | d332018 | [260331-071-create-new-scene-using-external-alp-asse](./quick/260331-071-create-new-scene-using-external-alp-asse/) |
+| 260331-0mj | Add multi-submesh FBX loading for country_house.fbx (5 per-material groups) | 2026-03-31 | 5a3a32d | [260331-0mj-add-multi-submesh-fbx-loading-to-support](./quick/260331-0mj-add-multi-submesh-fbx-loading-to-support/) |
 
 ## Session Continuity
 
-Last activity: 2026-03-31 - Completed quick task 260331-071: Create new scene using external ALP_Assets mesh and texture assets
+Last activity: 2026-03-31 - Completed quick task 260331-0mj: Add multi-submesh FBX loading for country_house.fbx
 Last session: 2026-03-31T00:00:00.000Z
-Stopped at: Completed quick task 260331-071: Create new scene using external ALP_Assets mesh and texture assets
+Stopped at: Completed quick task 260331-0mj: Add multi-submesh FBX loading for country_house.fbx
 Resume file: None
