@@ -20,7 +20,6 @@ constexpr unsigned kAssimpImportFlags =
     aiProcess_Triangulate
     | aiProcess_JoinIdenticalVertices
     | aiProcess_ImproveCacheLocality
-    | aiProcess_RemoveRedundantMaterials
     | aiProcess_FindInvalidData
     | aiProcess_GenUVCoords
     | aiProcess_TransformUVCoords
@@ -320,7 +319,7 @@ RawMeshData AssimpLoader::loadRaw(const std::string& filepath) {
 
 std::vector<NamedRawMeshData> AssimpLoader::loadRawMulti(const std::string& filepath) {
     Assimp::Importer importer;
-    const aiScene* scene = importer.ReadFile(filepath, kAssimpImportFlags);
+    const aiScene* scene = importer.ReadFile(filepath, kAssimpImportFlags | aiProcess_FlipUVs);
     if (scene == nullptr) {
         spdlog::error("AssimpLoader::loadRawMulti: failed to load '{}': {}", filepath, importer.GetErrorString());
         return {};
