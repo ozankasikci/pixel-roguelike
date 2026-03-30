@@ -699,6 +699,11 @@ void registerAllGameAssets(MeshLibrary& meshLibrary) {
     meshLibrary.registerFileAlias("arch", "assets/meshes/arch.glb");
     meshLibrary.registerFileAlias("hand", "assets/meshes/hand_with_old_dagger.glb");
 
+    // Country house assets (external FBX)
+    meshLibrary.registerFileAlias("country_house", "assets/meshes/country_house.fbx");
+    meshLibrary.registerFileAlias("country_house_door", "assets/meshes/country_house_door.fbx");
+    meshLibrary.registerFileAlias("country_house_doors", "assets/meshes/country_house_doors.fbx");
+
     // Prison assets
     // Architectural walls
     meshLibrary.registerMesh("prison_wall", createPrisonWall());
