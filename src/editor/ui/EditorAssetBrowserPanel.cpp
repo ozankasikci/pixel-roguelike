@@ -278,9 +278,18 @@ AssetBrowserActionResult renderAssetBrowser(EditorUiState& ui,
     if (open != nullptr && !*open) {
         return result;
     }
-    if (!ImGui::Begin("Asset Browser", open)) {
+    if (!ImGui::Begin("Asset Browser", open, ImGuiWindowFlags_NoScrollWithMouse)) {
         ImGui::End();
         return result;
+    }
+
+    // Custom scroll speed — default 5 lines/notch is too fast for tree views
+    if (ImGui::IsWindowHovered(ImGuiHoveredFlags_RootAndChildWindows)) {
+        float wheel = ImGui::GetIO().MouseWheel;
+        if (wheel != 0.0f) {
+            float scrollStep = ImGui::GetFontSize() * 2.0f;
+            ImGui::SetScrollY(ImGui::GetScrollY() - wheel * scrollStep);
+        }
     }
 
     const auto meshObjects = selectedMeshObjects(document, selectedIds);
