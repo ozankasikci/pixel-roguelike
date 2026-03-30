@@ -2,12 +2,18 @@
 
 #include <glad/gl.h>
 #include <glm/glm.hpp>
+#include <memory>
 #include <string>
 
 class Shader {
 public:
     Shader(const std::string& vertPath, const std::string& fragPath);
+    Shader(const std::string& vertPath, const std::string& geomPath, const std::string& fragPath);
     ~Shader();
+
+    static std::unique_ptr<Shader> load(const std::string& vertPath, const std::string& fragPath);
+    static std::unique_ptr<Shader> load(const std::string& vertPath, const std::string& geomPath,
+                                         const std::string& fragPath);
 
     // Non-copyable
     Shader(const Shader&) = delete;

@@ -37,6 +37,49 @@ Shader::Shader(const std::string& vertPath, const std::string& fragPath) {
     glDeleteShader(frag);
 }
 
+Shader::Shader(const std::string& vertPath, const std::string& geomPath, const std::string& fragPath) {
+    std::string vertSrc = readFile(vertPath);
+    std::string geomSrc = readFile(geomPath);
+    std::string fragSrc = readFile(fragPath);
+
+    GLuint vert = compileShader(GL_VERTEX_SHADER, vertSrc, vertPath);
+    GLuint geom = compileShader(GL_GEOMETRY_SHADER, geomSrc, geomPath);
+    GLuint frag = compileShader(GL_FRAGMENT_SHADER, fragSrc, fragPath);
+
+    program_ = glCreateProgram();
+    glAttachShader(program_, vert);
+    glAttachShader(program_, geom);
+    glAttachShader(program_, frag);
+    glLinkProgram(program_);
+
+    int success = 0;
+    glGetProgramiv(program_, GL_LINK_STATUS, &success);
+    if (!success) {
+        char infoLog[1024];
+        glGetProgramInfoLog(program_, sizeof(infoLog), nullptr, infoLog);
+        spdlog::error("Shader program link error (vert+geom+frag):\n{}", infoLog);
+        glDeleteShader(vert);
+        glDeleteShader(geom);
+        glDeleteShader(frag);
+        glDeleteProgram(program_);
+        program_ = 0;
+        throw std::runtime_error("Shader program link failed (with geometry shader)");
+    }
+
+    glDeleteShader(vert);
+    glDeleteShader(geom);
+    glDeleteShader(frag);
+}
+
+std::unique_ptr<Shader> Shader::load(const std::string& vertPath, const std::string& fragPath) {
+    return std::make_unique<Shader>(vertPath, fragPath);
+}
+
+std::unique_ptr<Shader> Shader::load(const std::string& vertPath, const std::string& geomPath,
+                                      const std::string& fragPath) {
+    return std::make_unique<Shader>(vertPath, geomPath, fragPath);
+}
+
 Shader::~Shader() {
     if (program_) {
         glDeleteProgram(program_);
