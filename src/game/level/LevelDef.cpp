@@ -1,5 +1,6 @@
 #include "game/level/LevelDef.h"
 
+#include "engine/core/MathUtils.h"
 #include "game/rendering/EnvironmentProfile.h"
 #include <filesystem>
 #include <cctype>
@@ -105,17 +106,6 @@ void appendNodeMetadata(std::ostringstream& out,
     if (!parentNodeId.empty()) {
         out << " parent " << parentNodeId;
     }
-}
-
-glm::mat4 makeTransformMatrix(const glm::vec3& position,
-                              const glm::vec3& rotationDegrees,
-                              const glm::vec3& scale) {
-    glm::mat4 matrix = glm::translate(glm::mat4(1.0f), position);
-    matrix = glm::rotate(matrix, glm::radians(rotationDegrees.x), glm::vec3(1.0f, 0.0f, 0.0f));
-    matrix = glm::rotate(matrix, glm::radians(rotationDegrees.y), glm::vec3(0.0f, 1.0f, 0.0f));
-    matrix = glm::rotate(matrix, glm::radians(rotationDegrees.z), glm::vec3(0.0f, 0.0f, 1.0f));
-    matrix = glm::scale(matrix, scale);
-    return matrix;
 }
 
 glm::mat3 extractRotationMatrix(const glm::mat4& matrix) {
@@ -594,13 +584,6 @@ LevelDef resolveLevelHierarchy(const LevelDef& data) {
     std::vector<glm::mat3> worldRotations(refs.size(), glm::mat3(1.0f));
     std::vector<bool> resolvedFlags(refs.size(), false);
     std::vector<bool> visiting(refs.size(), false);
-
-    auto safeNormalize = [](const glm::vec3& value, const glm::vec3& fallback) {
-        if (glm::dot(value, value) <= 0.0001f) {
-            return fallback;
-        }
-        return glm::normalize(value);
-    };
 
     std::function<void(std::size_t)> resolveRef = [&](std::size_t idx) {
         if (resolvedFlags[idx]) {

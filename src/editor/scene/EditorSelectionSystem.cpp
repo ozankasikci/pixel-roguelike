@@ -1,6 +1,7 @@
 #include "editor/scene/EditorSelectionSystem.h"
 
 #include "editor/scene/EditorPreviewWorld.h"
+#include "engine/core/MathUtils.h"
 
 #include <glm/gtc/matrix_inverse.hpp>
 #include <glm/gtc/matrix_transform.hpp>
@@ -11,13 +12,6 @@
 #include <limits>
 
 namespace {
-
-glm::vec3 safeNormalize(const glm::vec3& value, const glm::vec3& fallback) {
-    if (glm::dot(value, value) <= 0.0001f) {
-        return fallback;
-    }
-    return glm::normalize(value);
-}
 
 std::optional<float> intersectRayAabb(const EditorRay& ray,
                                       const glm::vec3& boundsMin,

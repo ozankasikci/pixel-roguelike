@@ -1,5 +1,6 @@
 #include "game/rendering/RuntimeSceneRenderer.h"
 
+#include "engine/core/MathUtils.h"
 #include "engine/rendering/geometry/Mesh.h"
 #include "engine/rendering/geometry/MeshLibrary.h"
 #include "game/components/CameraComponent.h"
@@ -41,13 +42,6 @@ constexpr float kPlayerHandGlowIntensity = 0.08f;
 constexpr float kPlayerHandGlowForwardOffset = 0.08f;
 constexpr float kPlayerHandGlowRightOffset = -0.14f;
 constexpr float kPlayerHandGlowDownOffset = 0.06f;
-
-glm::vec3 safeNormalize(const glm::vec3& value, const glm::vec3& fallback) {
-    if (glm::dot(value, value) <= 0.0001f) {
-        return fallback;
-    }
-    return glm::normalize(value);
-}
 
 void appendDirectionalLight(std::vector<RenderLight>& lights,
                             const DirectionalLightSlot& slot,

@@ -1,17 +1,11 @@
 #include "game/rendering/EnvironmentDebugSync.h"
 
+#include "engine/core/MathUtils.h"
 #include "game/content/ContentRegistry.h"
 
 #include <algorithm>
 
 namespace {
-
-glm::vec3 safeNormalize(const glm::vec3& value, const glm::vec3& fallback) {
-    if (glm::dot(value, value) <= 0.0001f) {
-        return fallback;
-    }
-    return glm::normalize(value);
-}
 
 struct PreservedDebugFields {
     int debugViewMode = 0;

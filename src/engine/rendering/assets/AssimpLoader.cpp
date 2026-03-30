@@ -1,5 +1,7 @@
 #include "engine/rendering/assets/AssimpLoader.h"
 
+#include "engine/core/MathUtils.h"
+
 #include <assimp/Importer.hpp>
 #include <assimp/postprocess.h>
 #include <assimp/scene.h>
@@ -23,14 +25,6 @@ constexpr unsigned kAssimpImportFlags =
     | aiProcess_CalcTangentSpace
     | aiProcess_PreTransformVertices
     | aiProcess_SortByPType;
-
-glm::vec3 safeNormalize(const glm::vec3& value, const glm::vec3& fallback) {
-    const float lengthSq = glm::dot(value, value);
-    if (lengthSq <= 1e-12f) {
-        return fallback;
-    }
-    return value / std::sqrt(lengthSq);
-}
 
 void generateSmoothNormals(RawMeshData& mesh) {
     mesh.normals.assign(mesh.positions.size(), glm::vec3(0.0f));

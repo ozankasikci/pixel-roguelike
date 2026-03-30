@@ -1,5 +1,6 @@
 #include "engine/rendering/SceneRenderPipeline.h"
 
+#include "engine/core/MathUtils.h"
 #include "engine/rendering/core/Shader.h"
 #include "engine/rendering/geometry/Mesh.h"
 #include "engine/rendering/lighting/CascadedShadowMap.h"
@@ -16,13 +17,6 @@ constexpr int kShadowResolutions[] = {512, 1024, 2048};
 constexpr int kCsmTextureUnit = 16;
 constexpr int kLtcMatUnit = 10;
 constexpr int kLtcAmpUnit = 11;
-
-glm::vec3 safeNormalize(const glm::vec3& value, const glm::vec3& fallback) {
-    if (glm::dot(value, value) <= 0.0001f) {
-        return fallback;
-    }
-    return glm::normalize(value);
-}
 
 } // namespace
 
