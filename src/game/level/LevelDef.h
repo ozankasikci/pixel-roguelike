@@ -1,7 +1,6 @@
 #pragma once
 
 #include "engine/rendering/lighting/RenderLight.h"
-#include "game/rendering/MaterialKind.h"
 #include "game/rendering/EnvironmentProfile.h"
 
 #include <glm/glm.hpp>
@@ -18,7 +17,6 @@ struct LevelMeshPlacement {
     std::string nodeId;
     std::string parentNodeId;
     std::string materialId;
-    std::optional<MaterialKind> material;
     std::optional<glm::vec3> tint;
 };
 

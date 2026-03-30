@@ -4,7 +4,6 @@
 #include "engine/rendering/post/PostProcessParams.h"
 #include "engine/ui/Screenshot.h"
 #include "game/levels/GameAssets.h"
-#include "game/rendering/MaterialDefinition.h"
 #include "game/rendering/RetroPalette.h"
 
 #include <GLFW/glfw3.h>
@@ -25,7 +24,7 @@ namespace {
 struct ViewerPreset {
     std::string name;
     glm::vec3 tint;
-    MaterialKind material;
+    std::string materialId;
     glm::vec3 modelScale{1.0f};
     glm::vec3 modelRotation{0.0f};
     glm::vec3 target{0.0f};
@@ -44,30 +43,30 @@ struct ViewerConfig {
 
 std::vector<ViewerPreset> buildPresets() {
     return {
-        {"door_leaf_left",  glm::vec3(0.33f, 0.15f, 0.09f), MaterialKind::Wood,  glm::vec3(2.315f, 6.26f, 0.42f), glm::vec3(0.0f),  glm::vec3(0.0f, 0.0f, 0.0f), 5.8f, 90.0f, 2.0f},
-        {"door_leaf_right", glm::vec3(0.26f, 0.11f, 0.07f), MaterialKind::Wood,  glm::vec3(2.315f, 6.26f, 0.42f), glm::vec3(0.0f),  glm::vec3(0.0f, 0.0f, 0.0f), 5.8f, 90.0f, 2.0f},
-        {"door_frame_romanesque", glm::vec3(0.82f, 0.80f, 0.75f), MaterialKind::Stone, glm::vec3(4.25f, 6.25f, 0.90f), glm::vec3(0.0f), glm::vec3(0.0f, 3.12f, 0.0f), 8.4f, 90.0f, 5.0f},
-        {"gothic_door_static", glm::vec3(0.09f, 0.09f, 0.10f), MaterialKind::Wood, glm::vec3(6.45f),           glm::vec3(0.0f, 90.0f, 0.0f), glm::vec3(0.0f, 3.1f, 0.0f), 9.2f, 90.0f, 6.0f},
-        {"pillar",          RetroPalette::CarvedStone,      MaterialKind::Stone, glm::vec3(1.0f),                glm::vec3(0.0f),  glm::vec3(0.0f, 2.8f, 0.0f), 6.2f, 40.0f, 8.0f},
-        {"arch",            RetroPalette::CarvedStone,      MaterialKind::Stone, glm::vec3(1.2f, 1.15f, 1.0f),  glm::vec3(0.0f),  glm::vec3(0.0f, 6.0f, 0.0f), 8.2f, 90.0f, 5.0f},
-        {"hand",            RetroPalette::Bone,             MaterialKind::Viewmodel, glm::vec3(2.5f),            glm::vec3(-10.0f, 210.0f, 0.0f), glm::vec3(0.0f), 2.6f, 110.0f, 15.0f},
-        {"cube",            RetroPalette::Stone,            MaterialKind::Stone, glm::vec3(2.0f),                glm::vec3(0.0f),  glm::vec3(0.0f), 3.6f, 45.0f, 18.0f},
-        {"plane",           RetroPalette::Flagstone,        MaterialKind::Floor, glm::vec3(4.0f),                glm::vec3(0.0f),  glm::vec3(0.0f), 4.8f, 60.0f, 60.0f},
-        {"cylinder",        RetroPalette::Stone,            MaterialKind::Stone, glm::vec3(1.6f, 3.0f, 1.6f),   glm::vec3(0.0f),  glm::vec3(0.0f, 1.5f, 0.0f), 5.2f, 45.0f, 10.0f},
-        {"cylinder_wide",   RetroPalette::Stone,            MaterialKind::Stone, glm::vec3(1.1f, 1.4f, 1.1f),   glm::vec3(0.0f),  glm::vec3(0.0f, 0.7f, 0.0f), 4.2f, 45.0f, 16.0f},
-        {"cylinder_cap",    RetroPalette::Stone,            MaterialKind::Stone, glm::vec3(1.1f, 1.0f, 1.1f),   glm::vec3(0.0f),  glm::vec3(0.0f, 0.5f, 0.0f), 4.2f, 45.0f, 16.0f},
-        {"prison_wall",        RetroPalette::Stone, MaterialKind::Stone, glm::vec3(1.0f),                glm::vec3(0.0f),  glm::vec3(0.0f, 1.25f, 0.0f), 4.0f, 90.0f, 10.0f},
-        {"prison_wall_window", RetroPalette::Stone, MaterialKind::Stone, glm::vec3(1.0f),                glm::vec3(0.0f),  glm::vec3(0.0f, 1.25f, 0.0f), 4.0f, 90.0f, 10.0f},
-        {"prison_wall_door",   RetroPalette::Stone, MaterialKind::Stone, glm::vec3(1.0f),                glm::vec3(0.0f),  glm::vec3(0.0f, 1.25f, 0.0f), 4.0f, 90.0f, 10.0f},
-        {"prison_floor",       RetroPalette::Stone, MaterialKind::Stone, glm::vec3(1.0f),                glm::vec3(0.0f),  glm::vec3(0.0f),              3.6f, 60.0f, 50.0f},
-        {"prison_ceiling",     RetroPalette::Stone, MaterialKind::Stone, glm::vec3(1.0f),                glm::vec3(0.0f),  glm::vec3(0.0f),              3.6f, 60.0f, -50.0f},
-        {"prison_baseboard",   RetroPalette::Iron,  MaterialKind::Metal, glm::vec3(1.0f),                glm::vec3(0.0f),  glm::vec3(0.0f, 0.075f, 0.0f), 2.0f, 90.0f, 10.0f},
-        {"office_door",        RetroPalette::OldWood, MaterialKind::Wood, glm::vec3(1.0f),               glm::vec3(0.0f),  glm::vec3(0.0f, 1.05f, 0.0f), 3.6f, 90.0f, 8.0f},
-        {"prison_desk",        RetroPalette::Iron,  MaterialKind::Metal, glm::vec3(1.0f),                glm::vec3(0.0f),  glm::vec3(0.0f, 0.4f, 0.0f),  3.0f, 60.0f, 20.0f},
-        {"prison_chair",       RetroPalette::Iron,  MaterialKind::Metal, glm::vec3(1.0f),                glm::vec3(0.0f),  glm::vec3(0.0f, 0.4f, 0.0f),  2.4f, 60.0f, 20.0f},
-        {"warden_chair",       RetroPalette::OldWood, MaterialKind::Wood, glm::vec3(1.0f),              glm::vec3(0.0f),  glm::vec3(0.0f, 0.42f, 0.0f), 2.6f, 50.0f, 18.0f},
-        {"prison_cabinet",     RetroPalette::Iron,  MaterialKind::Metal, glm::vec3(1.0f),                glm::vec3(0.0f),  glm::vec3(0.0f, 0.65f, 0.0f), 3.2f, 60.0f, 15.0f},
-        {"prison_shelf",       RetroPalette::Iron,  MaterialKind::Metal, glm::vec3(1.0f),                glm::vec3(0.0f),  glm::vec3(0.0f, 0.0f, 0.0f),  2.0f, 60.0f, 15.0f},
+        {"door_leaf_left",  glm::vec3(0.33f, 0.15f, 0.09f), "wood_default",      glm::vec3(2.315f, 6.26f, 0.42f), glm::vec3(0.0f),  glm::vec3(0.0f, 0.0f, 0.0f), 5.8f, 90.0f, 2.0f},
+        {"door_leaf_right", glm::vec3(0.26f, 0.11f, 0.07f), "wood_default",      glm::vec3(2.315f, 6.26f, 0.42f), glm::vec3(0.0f),  glm::vec3(0.0f, 0.0f, 0.0f), 5.8f, 90.0f, 2.0f},
+        {"door_frame_romanesque", glm::vec3(0.82f, 0.80f, 0.75f), "stone_default", glm::vec3(4.25f, 6.25f, 0.90f), glm::vec3(0.0f), glm::vec3(0.0f, 3.12f, 0.0f), 8.4f, 90.0f, 5.0f},
+        {"gothic_door_static", glm::vec3(0.09f, 0.09f, 0.10f), "wood_default",   glm::vec3(6.45f),           glm::vec3(0.0f, 90.0f, 0.0f), glm::vec3(0.0f, 3.1f, 0.0f), 9.2f, 90.0f, 6.0f},
+        {"pillar",          RetroPalette::CarvedStone,      "stone_default",     glm::vec3(1.0f),                glm::vec3(0.0f),  glm::vec3(0.0f, 2.8f, 0.0f), 6.2f, 40.0f, 8.0f},
+        {"arch",            RetroPalette::CarvedStone,      "stone_default",     glm::vec3(1.2f, 1.15f, 1.0f),  glm::vec3(0.0f),  glm::vec3(0.0f, 6.0f, 0.0f), 8.2f, 90.0f, 5.0f},
+        {"hand",            RetroPalette::Bone,             "viewmodel_default", glm::vec3(2.5f),            glm::vec3(-10.0f, 210.0f, 0.0f), glm::vec3(0.0f), 2.6f, 110.0f, 15.0f},
+        {"cube",            RetroPalette::Stone,            "stone_default",     glm::vec3(2.0f),                glm::vec3(0.0f),  glm::vec3(0.0f), 3.6f, 45.0f, 18.0f},
+        {"plane",           RetroPalette::Flagstone,        "floor_default",     glm::vec3(4.0f),                glm::vec3(0.0f),  glm::vec3(0.0f), 4.8f, 60.0f, 60.0f},
+        {"cylinder",        RetroPalette::Stone,            "stone_default",     glm::vec3(1.6f, 3.0f, 1.6f),   glm::vec3(0.0f),  glm::vec3(0.0f, 1.5f, 0.0f), 5.2f, 45.0f, 10.0f},
+        {"cylinder_wide",   RetroPalette::Stone,            "stone_default",     glm::vec3(1.1f, 1.4f, 1.1f),   glm::vec3(0.0f),  glm::vec3(0.0f, 0.7f, 0.0f), 4.2f, 45.0f, 16.0f},
+        {"cylinder_cap",    RetroPalette::Stone,            "stone_default",     glm::vec3(1.1f, 1.0f, 1.1f),   glm::vec3(0.0f),  glm::vec3(0.0f, 0.5f, 0.0f), 4.2f, 45.0f, 16.0f},
+        {"prison_wall",        RetroPalette::Stone, "stone_default",     glm::vec3(1.0f),                glm::vec3(0.0f),  glm::vec3(0.0f, 1.25f, 0.0f), 4.0f, 90.0f, 10.0f},
+        {"prison_wall_window", RetroPalette::Stone, "stone_default",     glm::vec3(1.0f),                glm::vec3(0.0f),  glm::vec3(0.0f, 1.25f, 0.0f), 4.0f, 90.0f, 10.0f},
+        {"prison_wall_door",   RetroPalette::Stone, "stone_default",     glm::vec3(1.0f),                glm::vec3(0.0f),  glm::vec3(0.0f, 1.25f, 0.0f), 4.0f, 90.0f, 10.0f},
+        {"prison_floor",       RetroPalette::Stone, "floor_default",     glm::vec3(1.0f),                glm::vec3(0.0f),  glm::vec3(0.0f),              3.6f, 60.0f, 50.0f},
+        {"prison_ceiling",     RetroPalette::Stone, "ceiling_default",   glm::vec3(1.0f),                glm::vec3(0.0f),  glm::vec3(0.0f),              3.6f, 60.0f, -50.0f},
+        {"prison_baseboard",   RetroPalette::Iron,  "metal_default",     glm::vec3(1.0f),                glm::vec3(0.0f),  glm::vec3(0.0f, 0.075f, 0.0f), 2.0f, 90.0f, 10.0f},
+        {"office_door",        RetroPalette::OldWood, "wood_default",    glm::vec3(1.0f),               glm::vec3(0.0f),  glm::vec3(0.0f, 1.05f, 0.0f), 3.6f, 90.0f, 8.0f},
+        {"prison_desk",        RetroPalette::Iron,  "metal_default",     glm::vec3(1.0f),                glm::vec3(0.0f),  glm::vec3(0.0f, 0.4f, 0.0f),  3.0f, 60.0f, 20.0f},
+        {"prison_chair",       RetroPalette::Iron,  "metal_default",     glm::vec3(1.0f),                glm::vec3(0.0f),  glm::vec3(0.0f, 0.4f, 0.0f),  2.4f, 60.0f, 20.0f},
+        {"warden_chair",       RetroPalette::OldWood, "wood_default",    glm::vec3(1.0f),              glm::vec3(0.0f),  glm::vec3(0.0f, 0.42f, 0.0f), 2.6f, 50.0f, 18.0f},
+        {"prison_cabinet",     RetroPalette::Iron,  "metal_default",     glm::vec3(1.0f),                glm::vec3(0.0f),  glm::vec3(0.0f, 0.65f, 0.0f), 3.2f, 60.0f, 15.0f},
+        {"prison_shelf",       RetroPalette::Iron,  "metal_default",     glm::vec3(1.0f),                glm::vec3(0.0f),  glm::vec3(0.0f, 0.0f, 0.0f),  2.0f, 60.0f, 15.0f},
     };
 }
 
@@ -115,10 +114,9 @@ std::string modeLabel(bool stylized, const PostProcessParams& params, bool autoR
         + (autoRotate ? " +spin" : "");
 }
 
-RenderMaterialData makeViewerMaterial(MaterialKind kind) {
+RenderMaterialData makeViewerMaterial(const std::string& materialId) {
     RenderMaterialData material;
-    material.id = std::string(defaultMaterialIdForKind(kind));
-    material.shadingModel = kind;
+    material.id = materialId;
     material.baseColor = glm::vec3(1.0f);
     return material;
 }
@@ -270,7 +268,7 @@ int main(int argc, char* argv[]) {
 
         const glm::mat4 model = makeModel(preset, autoSpinDeg);
         std::vector<RenderObject> objects = {
-            RenderObject{mesh, model, preset.tint, makeViewerMaterial(preset.material)}
+            RenderObject{mesh, model, preset.tint, makeViewerMaterial(preset.materialId)}
         };
 
         Mesh* plane = meshLibrary.get("plane");
@@ -278,7 +276,7 @@ int main(int argc, char* argv[]) {
             glm::mat4 ground(1.0f);
             ground = glm::translate(ground, glm::vec3(0.0f, -3.2f, 0.0f));
             ground = glm::scale(ground, glm::vec3(10.0f, 1.0f, 10.0f));
-            objects.push_back(RenderObject{plane, ground, glm::vec3(0.24f, 0.24f, 0.27f), makeViewerMaterial(MaterialKind::Stone)});
+            objects.push_back(RenderObject{plane, ground, glm::vec3(0.24f, 0.24f, 0.27f), makeViewerMaterial("stone_default")});
         }
 
         std::vector<RenderLight> lights = {

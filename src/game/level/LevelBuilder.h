@@ -2,7 +2,6 @@
 
 #include "engine/rendering/lighting/RenderLight.h"
 #include "game/level/LevelBuildContext.h"
-#include "game/rendering/MaterialKind.h"
 
 #include <glm/glm.hpp>
 
@@ -28,14 +27,12 @@ public:
                          const glm::vec3& scale,
                          const glm::vec3& rotation = glm::vec3(0.0f),
                          std::optional<glm::vec3> tint = std::nullopt,
-                         std::optional<MaterialKind> material = std::nullopt,
                          std::optional<std::string> materialId = std::nullopt);
     entt::entity addMesh(const std::string& meshName,
                          const glm::vec3& position,
                          const glm::vec3& scale,
                          const glm::vec3& rotation = glm::vec3(0.0f),
                          std::optional<glm::vec3> tint = std::nullopt,
-                         std::optional<MaterialKind> material = std::nullopt,
                          std::optional<std::string> materialId = std::nullopt);
     entt::entity addLight(const glm::vec3& position,
                           const glm::vec3& color,

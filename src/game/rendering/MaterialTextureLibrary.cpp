@@ -152,8 +152,24 @@ std::size_t MaterialTextureLibrary::prewarmAllMaterialMaps() const {
     return warmedTextureSets;
 }
 
-const RenderMaterialData& MaterialTextureLibrary::resolve(std::string_view materialId, MaterialKind legacyKind) const {
-    const ResolvedMaterialDefinition& resolved = definitionFor(materialId, legacyKind);
+static RenderMaterialData makeMagentaFallback() {
+    RenderMaterialData m;
+    m.id = "__missing__";
+    m.baseColor = glm::vec3(1.0f, 0.0f, 1.0f);
+    m.useMaterialMaps = false;
+    m.useProceduralDetail = false;
+    return m;
+}
+
+const RenderMaterialData& MaterialTextureLibrary::resolve(std::string_view materialId) const {
+    const ResolvedMaterialDefinition* resolvedPtr = definitionFor(materialId);
+    if (resolvedPtr == nullptr) {
+        static const RenderMaterialData kMagentaFallback = makeMagentaFallback();
+        spdlog::warn("MaterialTextureLibrary: unknown material '{}', using magenta fallback", materialId);
+        return kMagentaFallback;
+    }
+    const ResolvedMaterialDefinition& resolved = *resolvedPtr;
+
     auto cached = materials_.find(resolved.id);
     if (cached != materials_.end()) {
         return cached->second;
@@ -170,7 +186,13 @@ const RenderMaterialData& MaterialTextureLibrary::resolve(std::string_view mater
 
     RenderMaterialData renderMaterial;
     renderMaterial.id = resolved.id;
-    renderMaterial.shadingModel = resolved.shadingModel;
+    renderMaterial.specularLevel = resolved.specularLevel;
+    renderMaterial.animated = resolved.animated;
+    renderMaterial.subsurface = resolved.subsurface;
+    renderMaterial.detailBrick = resolved.detailBrick;
+    renderMaterial.detailWood = resolved.detailWood;
+    renderMaterial.detailStone = resolved.detailStone;
+    renderMaterial.detailFloor = resolved.detailFloor;
     renderMaterial.baseColor = resolved.baseColor;
     renderMaterial.useMaterialMaps = useMaterialMaps;
     renderMaterial.useProceduralDetail =
@@ -195,26 +217,14 @@ const RenderMaterialData& MaterialTextureLibrary::resolve(std::string_view mater
     return it->second;
 }
 
-const ResolvedMaterialDefinition& MaterialTextureLibrary::definitionFor(std::string_view materialId,
-                                                                        MaterialKind legacyKind) const {
+const ResolvedMaterialDefinition* MaterialTextureLibrary::definitionFor(std::string_view materialId) const {
     if (!materialId.empty()) {
         auto it = resolvedDefinitions_.find(std::string(materialId));
         if (it != resolvedDefinitions_.end()) {
-            return it->second;
+            return &it->second;
         }
     }
-
-    auto fallback = resolvedDefinitions_.find(std::string(defaultMaterialIdForKind(legacyKind)));
-    if (fallback != resolvedDefinitions_.end()) {
-        return fallback->second;
-    }
-
-    auto stone = resolvedDefinitions_.find("stone_default");
-    if (stone != resolvedDefinitions_.end()) {
-        return stone->second;
-    }
-
-    throw std::runtime_error("Material library missing stone_default fallback");
+    return nullptr;
 }
 
 const MaterialTextureLibrary::TextureSet& MaterialTextureLibrary::ensureTextureSet(const ResolvedMaterialDefinition& resolved) const {

@@ -43,12 +43,6 @@ glm::mat4 makeModelMatrix(const glm::vec3& position,
     return model;
 }
 
-RenderMaterialData resolveHelperMaterial(const MaterialTextureLibrary& materials,
-                                         MaterialKind kind,
-                                         const std::string& materialId = {}) {
-    return materials.resolve(materialId.empty() ? std::string(defaultMaterialIdForKind(kind)) : materialId, kind);
-}
-
 void appendDirectionalLight(std::vector<RenderLight>& lights,
                             const DirectionalLightSlot& slot,
                             const glm::vec3& fallbackDirection) {
@@ -141,7 +135,7 @@ std::vector<RenderObject> collectRenderObjects(const EditorPreviewWorld& world,
             mesh.mesh,
             mesh.useModelOverride ? mesh.modelOverride : transform.modelMatrix(),
             tint,
-            materials.resolve(mesh.materialId, mesh.material)
+            materials.resolve(mesh.materialId)
         });
     }
     return objects;
@@ -168,7 +162,7 @@ void appendHelperObjects(std::vector<RenderObject>& objects,
                     cube,
                     makeModelMatrix(collider.position, collider.halfExtents * 2.0f, collider.rotation),
                     tint,
-                    resolveHelperMaterial(materials, MaterialKind::Metal, "metal_default"),
+                    materials.resolve("metal_default"),
                     true,
                     true,
                     true,
@@ -179,7 +173,7 @@ void appendHelperObjects(std::vector<RenderObject>& objects,
                     cylinder,
                     makeModelMatrix(collider.position, glm::vec3(collider.radius, collider.halfHeight * 2.0f, collider.radius), collider.rotation),
                     tint,
-                    resolveHelperMaterial(materials, MaterialKind::Metal, "metal_default"),
+                    materials.resolve("metal_default"),
                     true,
                     true,
                     true,
@@ -199,7 +193,7 @@ void appendHelperObjects(std::vector<RenderObject>& objects,
                 cube,
                 makeModelMatrix(transform.position, glm::vec3(0.14f)),
                 tint,
-                resolveHelperMaterial(materials, MaterialKind::Wax, "wax_default")
+                materials.resolve("wax_default")
             });
         }
     }
@@ -215,7 +209,7 @@ void appendHelperObjects(std::vector<RenderObject>& objects,
                 cube,
                 makeModelMatrix(std::get<LevelPlayerSpawn>(object.payload).position, glm::vec3(0.22f, 0.80f, 0.22f)),
                 tint,
-                resolveHelperMaterial(materials, MaterialKind::Moss, "moss_default")
+                materials.resolve("moss_default")
             });
         }
     }
@@ -254,7 +248,7 @@ void appendSelectionOverlays(std::vector<RenderObject>& objects,
             cube,
             makeModelMatrix(center, size),
             tint,
-            resolveHelperMaterial(materials, MaterialKind::Metal, "metal_default"),
+            materials.resolve("metal_default"),
             true,
             true,
             true,

@@ -18,7 +18,6 @@ int main() {
         .rotation = glm::vec3(7.0f, 8.0f, 9.0f),
         .nodeId = "root_mesh",
         .materialId = "brick_default",
-        .material = MaterialKind::Brick,
         .tint = glm::vec3(0.4f, 0.5f, 0.6f),
     });
     level.meshes.push_back(LevelMeshPlacement{
@@ -29,7 +28,6 @@ int main() {
         .nodeId = "child_mesh",
         .parentNodeId = "root_mesh",
         .materialId = "stone_default",
-        .material = MaterialKind::Stone,
     });
     level.lights.push_back(LevelLightPlacement{
         .type = LightType::Spot,
@@ -106,7 +104,6 @@ int main() {
         .rotation = glm::vec3(0.0f, 90.0f, 0.0f),
         .nodeId = "parent",
         .materialId = "stone_default",
-        .material = MaterialKind::Stone,
     });
     hierarchy.meshes.push_back(LevelMeshPlacement{
         .meshId = "cube",
@@ -116,7 +113,6 @@ int main() {
         .nodeId = "child",
         .parentNodeId = "parent",
         .materialId = "stone_default",
-        .material = MaterialKind::Stone,
     });
     const LevelDef resolved = resolveLevelHierarchy(hierarchy);
     assert(resolved.meshes.size() == 2);

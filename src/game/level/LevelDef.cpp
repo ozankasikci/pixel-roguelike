@@ -1,8 +1,6 @@
 #include "game/level/LevelDef.h"
 
 #include "game/rendering/EnvironmentProfile.h"
-#include "game/rendering/MaterialDefinition.h"
-
 #include <filesystem>
 #include <cctype>
 #include <functional>
@@ -76,13 +74,6 @@ std::string resolvedEnvironmentId(const LevelDef& data) {
         return data.environmentId;
     }
     return environmentProfileName(data.environmentProfile);
-}
-
-std::string resolvedMaterialId(const LevelMeshPlacement& placement) {
-    if (!placement.materialId.empty()) {
-        return placement.materialId;
-    }
-    return std::string(defaultMaterialIdForKind(placement.material.value_or(MaterialKind::Stone)));
 }
 
 std::vector<std::string> collectRemainingTokens(std::istream& stream) {
@@ -221,15 +212,8 @@ LevelDef loadLevelDef(const std::string& path) {
                 if (!tokens.empty()) {
                     std::size_t index = 0;
                     while (index < tokens.size()) {
-                        MaterialKind legacyMaterial;
                         glm::vec3 tint{1.0f};
 
-                        if (index == 0 && tryParseMaterialKindToken(tokens[index], legacyMaterial)) {
-                            placement.material = legacyMaterial;
-                            placement.materialId = std::string(defaultMaterialIdForKind(legacyMaterial));
-                            ++index;
-                            continue;
-                        }
                         if (tokens[index] == "material") {
                             if (index + 1 >= tokens.size()) {
                                 throwParseError(path, lineNumber, "missing material id");
@@ -725,7 +709,7 @@ std::string serializeLevelDef(const LevelDef& data) {
             << formatFloat(placement.rotation.x) << ' '
             << formatFloat(placement.rotation.y) << ' '
             << formatFloat(placement.rotation.z) << ' '
-            << "material " << resolvedMaterialId(placement);
+            << "material " << (placement.materialId.empty() ? "stone_default" : placement.materialId);
         if (placement.tint.has_value()) {
             out << " tint "
                 << formatFloat(placement.tint->r) << ' '

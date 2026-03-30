@@ -102,13 +102,8 @@ ResolvedMaterialDefinition resolveMaterialDefinitionRecursive(
         resolved = parent;
         resolved.id = definition.id;
         resolved.parent = *definition.parent;
-    } else if (!definition.shadingModel.has_value()) {
-        throw std::runtime_error("Root material missing shading_model: " + definition.id);
     }
 
-    if (definition.shadingModel.has_value()) {
-        resolved.shadingModel = *definition.shadingModel;
-    }
     if (definition.albedoMapPath.has_value()) {
         resolved.albedoMapPath = *definition.albedoMapPath;
     }
@@ -183,42 +178,6 @@ ResolvedMaterialDefinition resolveMaterialDefinitionRecursive(
 
 } // namespace
 
-bool tryParseMaterialKindToken(const std::string& token, MaterialKind& materialKind) {
-    if (token == "stone") {
-        materialKind = MaterialKind::Stone;
-        return true;
-    }
-    if (token == "wood") {
-        materialKind = MaterialKind::Wood;
-        return true;
-    }
-    if (token == "metal") {
-        materialKind = MaterialKind::Metal;
-        return true;
-    }
-    if (token == "wax") {
-        materialKind = MaterialKind::Wax;
-        return true;
-    }
-    if (token == "moss") {
-        materialKind = MaterialKind::Moss;
-        return true;
-    }
-    if (token == "viewmodel") {
-        materialKind = MaterialKind::Viewmodel;
-        return true;
-    }
-    if (token == "floor") {
-        materialKind = MaterialKind::Floor;
-        return true;
-    }
-    if (token == "brick") {
-        materialKind = MaterialKind::Brick;
-        return true;
-    }
-    return false;
-}
-
 bool tryParseMaterialUvModeToken(const std::string& token, MaterialUvMode& uvMode) {
     if (token == "mesh") {
         uvMode = MaterialUvMode::Mesh;
@@ -259,28 +218,6 @@ bool tryParseMaterialProceduralSourceToken(const std::string& token, MaterialPro
     return false;
 }
 
-std::string_view defaultMaterialIdForKind(MaterialKind kind) {
-    switch (kind) {
-    case MaterialKind::Stone:
-        return "stone_default";
-    case MaterialKind::Wood:
-        return "wood_default";
-    case MaterialKind::Metal:
-        return "metal_default";
-    case MaterialKind::Wax:
-        return "wax_default";
-    case MaterialKind::Moss:
-        return "moss_default";
-    case MaterialKind::Viewmodel:
-        return "viewmodel_default";
-    case MaterialKind::Floor:
-        return "floor_default";
-    case MaterialKind::Brick:
-        return "brick_default";
-    }
-    return "stone_default";
-}
-
 MaterialDefinition loadMaterialDefinitionAsset(const std::string& path) {
     std::ifstream file(path);
     if (!file.is_open()) {
@@ -312,11 +249,7 @@ MaterialDefinition loadMaterialDefinitionAsset(const std::string& path) {
             continue;
         }
         if (key == "shading_model" && tokens.size() == 2) {
-            MaterialKind kind;
-            if (!tryParseMaterialKindToken(tokens[1], kind)) {
-                throwParseError(path, lineNumber, "unknown shading_model");
-            }
-            definition.shadingModel = kind;
+            // Legacy field — silently ignored; shading model is now derived from feature flags
             continue;
         }
         if (key == "albedo_map" && tokens.size() == 2) {
@@ -436,28 +369,6 @@ ResolvedMaterialDefinition resolveMaterialDefinition(
 
 namespace {
 
-std::string materialKindToken(MaterialKind kind) {
-    switch (kind) {
-    case MaterialKind::Stone:
-        return "stone";
-    case MaterialKind::Wood:
-        return "wood";
-    case MaterialKind::Metal:
-        return "metal";
-    case MaterialKind::Wax:
-        return "wax";
-    case MaterialKind::Moss:
-        return "moss";
-    case MaterialKind::Viewmodel:
-        return "viewmodel";
-    case MaterialKind::Floor:
-        return "floor";
-    case MaterialKind::Brick:
-        return "brick";
-    }
-    return "stone";
-}
-
 std::string materialUvModeToken(MaterialUvMode uvMode) {
     switch (uvMode) {
     case MaterialUvMode::Mesh:
@@ -514,9 +425,6 @@ std::string serializeMaterialDefinitionAsset(const MaterialDefinition& definitio
     out << "id " << definition.id << '\n';
     if (definition.parent.has_value() && !definition.parent->empty()) {
         out << "parent " << *definition.parent << '\n';
-    }
-    if (definition.shadingModel.has_value()) {
-        out << "shading_model " << materialKindToken(*definition.shadingModel) << '\n';
     }
     writeOptionalPath(out, "albedo_map", definition.albedoMapPath);
     writeOptionalPath(out, "normal_map", definition.normalMapPath);

@@ -13,7 +13,6 @@ int main() {
     const auto brickOld = loadMaterialDefinitionAsset(MATERIAL_BRICK_OLD_FILE);
 
     assert(base.id == "masonry_base");
-    assert(base.shadingModel.has_value() && *base.shadingModel == MaterialKind::Stone);
     assert(brick.id == "brick_default");
     assert(brick.parent.has_value() && *brick.parent == "masonry_base");
     assert(brickOld.parent.has_value() && *brickOld.parent == "brick_default");
@@ -24,7 +23,7 @@ int main() {
     definitions.emplace(brickOld.id, brickOld);
 
     const auto resolved = resolveMaterialDefinition("brick_wall_old", definitions);
-    assert(resolved.shadingModel == MaterialKind::Brick);
+    assert(resolved.detailBrick == true);
     assert(resolved.uvMode == MaterialUvMode::WorldProjected);
     assert(test_support::nearlyEqual(resolved.uvScale.x, 0.16f));
     assert(test_support::nearlyEqual(resolved.uvScale.y, 0.16f));
@@ -53,11 +52,9 @@ int main() {
         MaterialDefinition a;
         a.id = "a";
         a.parent = "b";
-        a.shadingModel = MaterialKind::Stone;
         MaterialDefinition b;
         b.id = "b";
         b.parent = "a";
-        b.shadingModel = MaterialKind::Brick;
         cycle.emplace(a.id, a);
         cycle.emplace(b.id, b);
         bool threw = false;
@@ -73,7 +70,6 @@ int main() {
         MaterialDefinition roundtrip;
         roundtrip.id = "editor_roundtrip_material";
         roundtrip.parent = "masonry_base";
-        roundtrip.shadingModel = MaterialKind::Stone;
         roundtrip.baseColor = glm::vec3(0.8f, 0.7f, 0.6f);
         roundtrip.uvMode = MaterialUvMode::WorldProjected;
         roundtrip.uvScale = glm::vec2(0.2f, 0.25f);
@@ -92,7 +88,6 @@ int main() {
 
         assert(loaded.id == roundtrip.id);
         assert(loaded.parent == roundtrip.parent);
-        assert(loaded.shadingModel == roundtrip.shadingModel);
         assert(test_support::nearlyEqual(loaded.baseColor->x, roundtrip.baseColor->x));
         assert(test_support::nearlyEqual(loaded.baseColor->y, roundtrip.baseColor->y));
         assert(test_support::nearlyEqual(loaded.baseColor->z, roundtrip.baseColor->z));
@@ -135,7 +130,6 @@ int main() {
         std::unordered_map<std::string, MaterialDefinition> defs;
         MaterialDefinition parent;
         parent.id = "parent_stone";
-        parent.shadingModel = MaterialKind::Stone;
         parent.detailStone = true;
         parent.specularLevel = 0.20f;
         defs.emplace(parent.id, parent);
@@ -155,7 +149,6 @@ int main() {
         std::unordered_map<std::string, MaterialDefinition> defs;
         MaterialDefinition parent;
         parent.id = "parent_brick_base";
-        parent.shadingModel = MaterialKind::Stone;
         parent.detailStone = true;
         defs.emplace(parent.id, parent);
 

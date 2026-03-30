@@ -157,7 +157,6 @@ void EditorPreviewWorld::rebuild(const EditorSceneDocument& document, const Cont
                             placement.scale,
                             placement.rotation,
                             placement.tint,
-                            placement.material,
                             placement.materialId.empty()
                                 ? std::optional<std::string>{}
                                 : std::optional<std::string>{placement.materialId});
@@ -238,13 +237,7 @@ void EditorPreviewWorld::syncMaterials(const EditorSceneDocument& document,
             continue;
         }
         const auto& placement = std::get<LevelMeshPlacement>(object->payload);
-        MaterialKind resolvedMaterial = placement.material.value_or(MaterialKind::Stone);
-        std::string resolvedMaterialId = placement.materialId;
-        if (resolvedMaterialId.empty()) {
-            resolvedMaterialId = std::string(defaultMaterialIdForKind(resolvedMaterial));
-        }
-        mesh.material = resolvedMaterial;
-        mesh.materialId = resolvedMaterialId;
+        mesh.materialId = placement.materialId.empty() ? "stone_default" : placement.materialId;
         mesh.tint = placement.tint.value_or(glm::vec3(1.0f));
     }
 }

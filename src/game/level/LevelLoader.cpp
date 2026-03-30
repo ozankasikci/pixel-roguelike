@@ -54,7 +54,6 @@ void LevelLoader::load(ContentRegistry& content,
                         placement.scale,
                         placement.rotation,
                         placement.tint,
-                        placement.material,
                         placement.materialId.empty()
                             ? std::optional<std::string>{}
                             : std::optional<std::string>{placement.materialId});

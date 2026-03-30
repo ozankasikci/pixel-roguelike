@@ -7,14 +7,18 @@
 #include <string>
 #include <vector>
 
-#include "game/rendering/MaterialKind.h"
-
 class Mesh;
 class Shader;
 
 struct RenderMaterialData {
     std::string id;
-    MaterialKind shadingModel = MaterialKind::Stone;
+    float specularLevel = 0.20f;
+    bool animated = false;
+    bool subsurface = false;
+    bool detailBrick = false;
+    bool detailWood = false;
+    bool detailStone = false;
+    bool detailFloor = false;
     glm::vec3 baseColor{1.0f};
     bool useMaterialMaps = false;
     bool useProceduralDetail = false;

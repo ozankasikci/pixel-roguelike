@@ -132,7 +132,6 @@ struct InspectorActionResult {
     bool contentReloaded = false;
 };
 
-MaterialKind resolvePlacementMaterialKind(const std::string& materialId, const ContentRegistry& content);
 void beginPlacement(EditorPlacementState& state,
                     EditorPlacementKind kind,
                     const std::string& primaryId = {},

@@ -38,12 +38,6 @@ glm::mat4 makeModelMatrix(const glm::vec3& position,
     return model;
 }
 
-RenderMaterialData resolveHelperMaterial(const MaterialTextureLibrary& materials,
-                                         MaterialKind kind,
-                                         const std::string& materialId = {}) {
-    return materials.resolve(materialId.empty() ? std::string(defaultMaterialIdForKind(kind)) : materialId, kind);
-}
-
 bool isViewportSelectableKind(const EditorSelectionHandle& handle, const EditorUiState& ui) {
     switch (handle.objectKind) {
     case EditorSceneObjectKind::BoxCollider:
@@ -418,7 +412,6 @@ void commitPlacement(EditorSceneDocument& document,
         placement.scale = glm::vec3(1.0f);
         placement.rotation = glm::vec3(0.0f);
         placement.materialId = state.materialId;
-        placement.material = resolvePlacementMaterialKind(state.materialId, content);
         document.addMesh(placement);
         break;
     }
@@ -505,7 +498,7 @@ void appendPlacementGhost(std::vector<RenderObject>& objects,
             mesh,
             makeModelMatrix(position, glm::vec3(1.0f)),
             tint,
-            materials.resolve(state.materialId, resolvePlacementMaterialKind(state.materialId, content))
+            materials.resolve(state.materialId)
         });
         break;
     }
@@ -517,7 +510,7 @@ void appendPlacementGhost(std::vector<RenderObject>& objects,
                 cube,
                 makeModelMatrix(position, glm::vec3(0.18f)),
                 tint,
-                resolveHelperMaterial(materials, MaterialKind::Wax, "wax_default")
+                materials.resolve("wax_default")
             });
         }
         break;
@@ -527,7 +520,7 @@ void appendPlacementGhost(std::vector<RenderObject>& objects,
                 cube,
                 makeModelMatrix(position, glm::vec3(1.0f)),
                 tint,
-                resolveHelperMaterial(materials, MaterialKind::Metal, "metal_default")
+                materials.resolve("metal_default")
             });
         }
         break;
@@ -537,7 +530,7 @@ void appendPlacementGhost(std::vector<RenderObject>& objects,
                 cylinder,
                 makeModelMatrix(position, glm::vec3(1.0f)),
                 tint,
-                resolveHelperMaterial(materials, MaterialKind::Metal, "metal_default")
+                materials.resolve("metal_default")
             });
         }
         break;
@@ -547,7 +540,7 @@ void appendPlacementGhost(std::vector<RenderObject>& objects,
                 cube,
                 makeModelMatrix(position, glm::vec3(0.22f, 0.80f, 0.22f)),
                 tint,
-                resolveHelperMaterial(materials, MaterialKind::Moss, "moss_default")
+                materials.resolve("moss_default")
             });
         }
         break;
@@ -557,7 +550,7 @@ void appendPlacementGhost(std::vector<RenderObject>& objects,
                 cube,
                 makeModelMatrix(position, glm::vec3(1.0f)),
                 tint,
-                resolveHelperMaterial(materials, MaterialKind::Metal, "metal_default")
+                materials.resolve("metal_default")
             });
         }
         break;

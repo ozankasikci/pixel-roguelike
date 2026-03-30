@@ -16,7 +16,6 @@ LevelMeshPlacement makeMesh(const glm::vec3& position) {
     placement.scale = glm::vec3(1.0f);
     placement.rotation = glm::vec3(0.0f);
     placement.materialId = "stone_default";
-    placement.material = MaterialKind::Stone;
     return placement;
 }
 

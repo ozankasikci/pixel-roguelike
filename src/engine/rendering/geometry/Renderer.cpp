@@ -105,7 +105,13 @@ void Renderer::drawScene(const std::vector<RenderObject>& objects,
         glActiveTexture(GL_TEXTURE0);
         shader_->setMat4("uModel", obj.modelMatrix);
         shader_->setVec3("uBaseColor", obj.tint * material.baseColor);
-        shader_->setInt("uMaterialKind", static_cast<int>(material.shadingModel));
+        shader_->setFloat("uMaterialSpecularLevel", material.specularLevel);
+        shader_->setInt("uMaterialAnimated", material.animated ? 1 : 0);
+        shader_->setInt("uMaterialSubsurface", material.subsurface ? 1 : 0);
+        shader_->setInt("uMaterialBrickDetail", material.detailBrick ? 1 : 0);
+        shader_->setInt("uMaterialWoodDetail", material.detailWood ? 1 : 0);
+        shader_->setInt("uMaterialStoneDetail", material.detailStone ? 1 : 0);
+        shader_->setInt("uMaterialFloorDetail", material.detailFloor ? 1 : 0);
         obj.mesh->draw();
     }
 

@@ -1,7 +1,5 @@
 #pragma once
 
-#include "game/rendering/MaterialKind.h"
-
 #include <glm/glm.hpp>
 
 #include <optional>
@@ -26,7 +24,6 @@ enum class MaterialProceduralSource {
 struct MaterialDefinition {
     std::string id;
     std::optional<std::string> parent;
-    std::optional<MaterialKind> shadingModel;
     std::optional<std::string> albedoMapPath;
     std::optional<std::string> normalMapPath;
     std::optional<std::string> roughnessMapPath;
@@ -54,7 +51,6 @@ struct MaterialDefinition {
 struct ResolvedMaterialDefinition {
     std::string id;
     std::string parent;
-    MaterialKind shadingModel = MaterialKind::Stone;
     std::string albedoMapPath;
     std::string normalMapPath;
     std::string roughnessMapPath;
@@ -86,8 +82,5 @@ ResolvedMaterialDefinition resolveMaterialDefinition(
 std::string serializeMaterialDefinitionAsset(const MaterialDefinition& definition);
 void saveMaterialDefinitionAsset(const std::string& path, const MaterialDefinition& definition);
 
-bool tryParseMaterialKindToken(const std::string& token, MaterialKind& materialKind);
 bool tryParseMaterialUvModeToken(const std::string& token, MaterialUvMode& uvMode);
 bool tryParseMaterialProceduralSourceToken(const std::string& token, MaterialProceduralSource& source);
-
-std::string_view defaultMaterialIdForKind(MaterialKind kind);

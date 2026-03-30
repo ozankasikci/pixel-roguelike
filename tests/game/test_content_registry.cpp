@@ -108,7 +108,7 @@ int main() {
     assert(registry.findEnvironment("editor_custom_test") == nullptr);
 
     const auto resolvedBrick = resolveMaterialDefinition("brick_wall_old", registry.materials());
-    assert(resolvedBrick.shadingModel == MaterialKind::Brick);
+    assert(resolvedBrick.detailBrick == true);
     assert(test_support::nearlyEqualVec3(resolvedBrick.baseColor, glm::vec3(0.98f, 0.95f, 0.92f)));
     assert(test_support::nearlyEqual(resolvedBrick.uvScale.x, 0.16f));
     assert(test_support::nearlyEqual(resolvedBrick.uvScale.y, 0.16f));
@@ -116,7 +116,7 @@ int main() {
     assert(resolvedBrick.proceduralSource == MaterialProceduralSource::GeneratedBrick);
 
     const auto resolvedStone = resolveMaterialDefinition("cloister_stone", registry.materials());
-    assert(resolvedStone.shadingModel == MaterialKind::Stone);
+    assert(resolvedStone.detailStone == true);
     assert(resolvedStone.proceduralSource == MaterialProceduralSource::GeneratedStone);
     assert(test_support::nearlyEqual(resolvedStone.normalStrength, 0.34f));
 

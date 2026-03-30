@@ -145,21 +145,17 @@ RenderMaterialData buildDraftMaterialPreview(const MaterialDefinition& draft,
                                              const ContentRegistry& content) {
     ensureMaterialLibraryReady(session, content);
 
-    MaterialKind previewKind = draft.shadingModel.value_or(MaterialKind::Stone);
     std::string previewMaterialId = draft.id;
     if (content.findMaterial(previewMaterialId) == nullptr) {
         if (draft.parent.has_value() && content.findMaterial(*draft.parent) != nullptr) {
             previewMaterialId = *draft.parent;
         } else {
-            previewMaterialId = std::string(defaultMaterialIdForKind(previewKind));
+            previewMaterialId = "stone_default";
         }
     }
 
-    RenderMaterialData material = session.materialLibrary.resolve(previewMaterialId, previewKind);
+    RenderMaterialData material = session.materialLibrary.resolve(previewMaterialId);
     material.id = draft.id;
-    if (draft.shadingModel.has_value()) {
-        material.shadingModel = *draft.shadingModel;
-    }
     if (draft.baseColor.has_value()) {
         material.baseColor = *draft.baseColor;
     }
@@ -195,25 +191,6 @@ void renderMaterialDraftFields(MaterialDefinition& draft, bool& dirty) {
     std::string parent = draft.parent.value_or("");
     if (editString("Parent", parent, "optional")) {
         draft.parent = parent.empty() ? std::optional<std::string>{} : std::optional<std::string>{parent};
-        dirty = true;
-    }
-
-    static constexpr const char* kShadingModels[] = {
-        "stone", "wood", "metal", "wax", "moss", "floor", "brick", "viewmodel"
-    };
-    int shadingIndex = 0;
-    switch (draft.shadingModel.value_or(MaterialKind::Stone)) {
-    case MaterialKind::Stone: shadingIndex = 0; break;
-    case MaterialKind::Wood: shadingIndex = 1; break;
-    case MaterialKind::Metal: shadingIndex = 2; break;
-    case MaterialKind::Wax: shadingIndex = 3; break;
-    case MaterialKind::Moss: shadingIndex = 4; break;
-    case MaterialKind::Floor: shadingIndex = 5; break;
-    case MaterialKind::Brick: shadingIndex = 6; break;
-    case MaterialKind::Viewmodel: shadingIndex = 7; break;
-    }
-    if (ImGui::Combo("Shading Model", &shadingIndex, kShadingModels, 8)) {
-        draft.shadingModel = static_cast<MaterialKind>(shadingIndex);
         dirty = true;
     }
 
@@ -465,7 +442,8 @@ void renderMeshAssetInspector(const EditorInspectedAsset& asset, AssetInspectorS
 
     RenderMaterialData material;
     material.id = "mesh_preview";
-    material.shadingModel = MaterialKind::Stone;
+    material.specularLevel = 0.20f;
+    material.detailStone = true;
     material.baseColor = glm::vec3(0.92f, 0.90f, 0.86f);
     if (session.previewRenderer.drawMeshPreview(asset.absolutePath, material, glm::vec3(0.08f, 0.09f, 0.10f), "mesh_asset_preview")) {
         const EditorPreviewMeshStats stats = session.previewRenderer.currentMeshStats();
@@ -785,9 +763,7 @@ void renderSceneSelectionInspector(EditorSceneDocument& document,
     switch (object->kind) {
     case EditorSceneObjectKind::Mesh: {
         auto& mesh = std::get<LevelMeshPlacement>(object->payload);
-        const std::string currentMaterialLabel = mesh.materialId.empty()
-            ? std::string(defaultMaterialIdForKind(mesh.material.value_or(MaterialKind::Stone)))
-            : mesh.materialId;
+        const std::string currentMaterialLabel = mesh.materialId.empty() ? "stone_default" : mesh.materialId;
         if (ImGui::BeginCombo("Mesh Id", mesh.meshId.c_str())) {
             for (const auto& meshId : meshIds) {
                 const bool selected = meshId == mesh.meshId;

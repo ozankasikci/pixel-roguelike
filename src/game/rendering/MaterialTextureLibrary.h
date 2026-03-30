@@ -16,7 +16,7 @@ public:
     void init(const ContentRegistry& content);
     std::size_t prewarmAllMaterialMaps() const;
 
-    const RenderMaterialData& resolve(std::string_view materialId, MaterialKind legacyKind) const;
+    const RenderMaterialData& resolve(std::string_view materialId) const;
 
 private:
     struct TextureSet {
@@ -27,7 +27,7 @@ private:
     };
 
     void createFallbackTextures();
-    const ResolvedMaterialDefinition& definitionFor(std::string_view materialId, MaterialKind legacyKind) const;
+    const ResolvedMaterialDefinition* definitionFor(std::string_view materialId) const;
     const TextureSet& ensureTextureSet(const ResolvedMaterialDefinition& resolved) const;
     std::string textureKeyFor(const ResolvedMaterialDefinition& resolved) const;
     struct ProceduralPixelData {

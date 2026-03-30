@@ -62,18 +62,16 @@ bool applyMaterialToMeshes(const std::vector<EditorSceneObject*>& meshObjects,
         return false;
     }
 
-    const MaterialKind materialKind = resolvePlacementMaterialKind(materialId, content);
     bool changed = false;
     for (EditorSceneObject* object : meshObjects) {
         if (object == nullptr || object->kind != EditorSceneObjectKind::Mesh) {
             continue;
         }
         auto& mesh = std::get<LevelMeshPlacement>(object->payload);
-        if (mesh.materialId == materialId && mesh.material == materialKind) {
+        if (mesh.materialId == materialId) {
             continue;
         }
         mesh.materialId = materialId;
-        mesh.material = materialKind;
         changed = true;
     }
 
@@ -89,15 +87,11 @@ std::string materialSelectionLabel(const std::vector<EditorSceneObject*>& meshOb
     }
 
     const auto& firstMesh = std::get<LevelMeshPlacement>(meshObjects.front()->payload);
-    const std::string firstMaterial = firstMesh.materialId.empty()
-        ? std::string(defaultMaterialIdForKind(firstMesh.material.value_or(MaterialKind::Stone)))
-        : firstMesh.materialId;
+    const std::string firstMaterial = firstMesh.materialId.empty() ? "stone_default" : firstMesh.materialId;
 
     for (std::size_t index = 1; index < meshObjects.size(); ++index) {
         const auto& mesh = std::get<LevelMeshPlacement>(meshObjects[index]->payload);
-        const std::string materialId = mesh.materialId.empty()
-            ? std::string(defaultMaterialIdForKind(mesh.material.value_or(MaterialKind::Stone)))
-            : mesh.materialId;
+        const std::string materialId = mesh.materialId.empty() ? "stone_default" : mesh.materialId;
         if (materialId != firstMaterial) {
             return "<mixed>";
         }
@@ -160,13 +154,6 @@ bool editString(const char* label, std::string& value, const char* hint) {
         value = buffer;
     }
     return changed;
-}
-
-MaterialKind resolvePlacementMaterialKind(const std::string& materialId, const ContentRegistry& content) {
-    if (const auto* material = content.findMaterial(materialId)) {
-        return resolveMaterialDefinition(material->id, content.materials()).shadingModel;
-    }
-    return MaterialKind::Stone;
 }
 
 void beginPlacement(EditorPlacementState& state,

@@ -38,11 +38,7 @@ void EditorRuntimePreviewSession::syncMaterials(const EditorSceneDocument& docum
     for (auto [entity, mesh] : meshView.each()) {
         if (meshIndex < level.meshes.size()) {
             const auto& placement = level.meshes[meshIndex];
-            mesh.material = placement.material.value_or(MaterialKind::Stone);
-            mesh.materialId = placement.materialId;
-            if (mesh.materialId.empty()) {
-                mesh.materialId = std::string(defaultMaterialIdForKind(mesh.material));
-            }
+            mesh.materialId = placement.materialId.empty() ? "stone_default" : placement.materialId;
             mesh.tint = placement.tint.value_or(glm::vec3(1.0f));
         }
         ++meshIndex;

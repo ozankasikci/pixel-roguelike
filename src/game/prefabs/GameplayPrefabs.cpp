@@ -27,7 +27,7 @@ entt::entity spawnDoorLeaf(LevelBuilder& builder,
         leafScale,
         glm::vec3(0.0f),
         tint,
-        MaterialKind::Wood
+        std::string("wood_default")
     );
     if (leaf == entt::null) {
         return entt::null;

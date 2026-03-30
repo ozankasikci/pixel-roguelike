@@ -2,7 +2,6 @@
 
 #include "game/components/LightComponent.h"
 #include "game/components/MeshComponent.h"
-#include "game/rendering/MaterialDefinition.h"
 #include "game/rendering/RetroPalette.h"
 #include "game/components/StaticColliderComponent.h"
 #include "game/components/TransformComponent.h"
@@ -67,24 +66,20 @@ glm::vec3 defaultTintForMesh(std::string_view meshName,
     return glm::vec3(1.0f);
 }
 
-MaterialKind defaultMaterialForMesh(std::string_view meshName) {
+std::string defaultMaterialIdForMesh(std::string_view meshName) {
     if (meshName == "door_leaf_left" || meshName == "door_leaf_right") {
-        return MaterialKind::Wood;
+        return "wood_default";
     }
     if (meshName == "door_frame_romanesque") {
-        return MaterialKind::Stone;
+        return "stone_default";
     }
     if (meshName == "gothic_door_static") {
-        return MaterialKind::Wood;
+        return "wood_default";
     }
     if (meshName == "hand") {
-        return MaterialKind::Viewmodel;
+        return "viewmodel_default";
     }
-    return MaterialKind::Stone;
-}
-
-std::string defaultMaterialIdForMesh(std::string_view meshName) {
-    return std::string(defaultMaterialIdForKind(defaultMaterialForMesh(meshName)));
+    return "stone_default";
 }
 
 } // namespace
@@ -119,14 +114,12 @@ entt::entity LevelBuilder::addMesh(Mesh* mesh,
                                    const glm::vec3& scale,
                                    const glm::vec3& rotation,
                                    std::optional<glm::vec3> tint,
-                                   std::optional<MaterialKind> material,
                                    std::optional<std::string> materialId) {
     if (mesh == nullptr) {
         spdlog::warn("Level builder received null mesh");
         return entt::null;
     }
 
-    const MaterialKind resolvedMaterial = material.value_or(MaterialKind::Stone);
     auto entity = createEntity();
     context_.registry.emplace<TransformComponent>(entity);
     context_.registry.emplace<MeshComponent>(
@@ -137,8 +130,7 @@ entt::entity LevelBuilder::addMesh(Mesh* mesh,
             makeModel(position, scale, rotation),
             true,
             tint.value_or(glm::vec3(1.0f)),
-            resolvedMaterial,
-            materialId.value_or(std::string(defaultMaterialIdForKind(resolvedMaterial)))
+            materialId.value_or("stone_default")
         }
     );
     return entity;
@@ -149,25 +141,19 @@ entt::entity LevelBuilder::addMesh(const std::string& meshName,
                                    const glm::vec3& scale,
                                    const glm::vec3& rotation,
                                    std::optional<glm::vec3> tint,
-                                   std::optional<MaterialKind> material,
                                    std::optional<std::string> materialId) {
     Mesh* found = mesh(meshName);
     if (found == nullptr) {
         spdlog::warn("Level builder missing mesh '{}'", meshName);
         return entt::null;
     }
-    const MaterialKind resolvedMaterial = material.value_or(defaultMaterialForMesh(meshName));
     auto entity = addMesh(
         found,
         position,
         scale,
         rotation,
         tint.value_or(defaultTintForMesh(meshName, position, scale)),
-        resolvedMaterial,
-        materialId.value_or(
-            material.has_value()
-                ? std::string(defaultMaterialIdForKind(*material))
-                : defaultMaterialIdForMesh(meshName))
+        materialId.value_or(defaultMaterialIdForMesh(meshName))
     );
     if (entity != entt::null) {
         context_.registry.get<MeshComponent>(entity).meshId = meshName;
