@@ -241,10 +241,12 @@ void renderMaterialDraftFields(MaterialDefinition& draft, bool& dirty) {
 
     dragOptionalFloat("Normal Strength", draft.normalStrength, 1.0f, 0.01f, 0.0f, 4.0f, "%.2f");
     dragOptionalFloat("Roughness Scale", draft.roughnessScale, 1.0f, 0.01f, 0.0f, 4.0f, "%.2f");
-    dragOptionalFloat("Roughness Bias", draft.roughnessBias, 0.0f, 0.01f, -1.0f, 1.0f, "%.2f");
+    dragOptionalFloat("Roughness Bias", draft.roughnessBias, 0.82f, 0.01f, 0.0f, 1.0f, "%.2f");
     dragOptionalFloat("Metalness", draft.metalness, 0.0f, 0.01f, 0.0f, 1.0f, "%.2f");
-    dragOptionalFloat("AO Strength", draft.aoStrength, 1.0f, 0.01f, 0.0f, 4.0f, "%.2f");
+    dragOptionalFloat("Specular Level", draft.specularLevel, 0.20f, 0.01f, 0.0f, 2.0f, "%.2f");
+    dragOptionalFloat("AO Strength", draft.aoStrength, 1.0f, 0.01f, 0.0f, 2.0f, "%.2f");
     dragOptionalFloat("Light Tint Response", draft.lightTintResponse, 0.18f, 0.01f, 0.0f, 1.0f, "%.2f");
+    dragOptionalFloat("Emissive Strength", draft.emissiveStrength, 0.0f, 0.05f, 0.0f, 10.0f, "%.2f");
 
     static constexpr const char* kProceduralSources[] = {
         "none", "generated_brick", "generated_stone", "generated_smooth", "generated_floor", "generated_ceiling"
@@ -263,6 +265,23 @@ void renderMaterialDraftFields(MaterialDefinition& draft, bool& dirty) {
     if (ImGui::Combo("Procedural Source", &proceduralIndex, kProceduralSources, 6)) {
         draft.proceduralSource = static_cast<MaterialProceduralSource>(proceduralIndex);
         dirty = true;
+    }
+
+    // Feature Flags
+    if (ImGui::CollapsingHeader("Feature Flags", ImGuiTreeNodeFlags_DefaultOpen)) {
+        auto editOptionalBool = [&](const char* label, std::optional<bool>& value) {
+            bool working = value.value_or(false);
+            if (ImGui::Checkbox(label, &working)) {
+                value = working;
+                dirty = true;
+            }
+        };
+        editOptionalBool("Animated (wax flame flicker)", draft.animated);
+        editOptionalBool("Subsurface (moss SSS)", draft.subsurface);
+        editOptionalBool("Detail: Brick", draft.detailBrick);
+        editOptionalBool("Detail: Wood", draft.detailWood);
+        editOptionalBool("Detail: Stone", draft.detailStone);
+        editOptionalBool("Detail: Floor", draft.detailFloor);
     }
 }
 
@@ -472,17 +491,28 @@ void renderMaterialAssetInspector(EditorUiState& ui,
 
     MaterialDefinition& material = *session.materialDraft;
     bool dirty = false;
+
+    // Validation error state (persists per frame)
+    static std::string validationError;
+
     if (ImGui::Button("Save Material")) {
-        try {
-            saveMaterialDefinitionAsset(asset.absolutePath, material);
-            content.loadDefaults();
-            session.materialLibraryDirty = true;
-            session.materialDirty = false;
-            ui.inspectedAsset.declaredId = material.id;
-            result.contentReloaded = true;
-            result.previewDirty = true;
-        } catch (const std::exception& ex) {
-            spdlog::error("Material save failed: {}", ex.what());
+        std::string errorOut;
+        if (!content.validateMaterialDefinition(material, errorOut)) {
+            validationError = errorOut;
+        } else {
+            validationError.clear();
+            try {
+                saveMaterialDefinitionAsset(asset.absolutePath, material);
+                content.addMaterial(material, asset.absolutePath);
+                session.materialLibraryDirty = true;
+                session.materialDirty = false;
+                ui.inspectedAsset.declaredId = material.id;
+                result.contentReloaded = true;
+                result.previewDirty = true;
+            } catch (const std::exception& ex) {
+                spdlog::error("Material save failed: {}", ex.what());
+                validationError = ex.what();
+            }
         }
     }
     ImGui::SameLine();
@@ -491,23 +521,30 @@ void renderMaterialAssetInspector(EditorUiState& ui,
             material = loadMaterialDefinitionAsset(asset.absolutePath);
             session.materialLibraryDirty = true;
             session.materialDirty = false;
+            validationError.clear();
         } catch (const std::exception& ex) {
             spdlog::error("Material reload failed: {}", ex.what());
         }
     }
 
+    if (!validationError.empty()) {
+        ImGui::TextColored(ImVec4(1.0f, 0.3f, 0.3f, 1.0f), "Validation error: %s", validationError.c_str());
+    }
+
+    // Preview sphere at top of inspector (before property groups)
+    RenderMaterialData previewMaterial = buildDraftMaterialPreview(material, session, content);
+    session.previewRenderer.drawMaterialPreview(previewMaterial, glm::vec3(0.08f, 0.09f, 0.10f), "material_asset_preview");
+    if (session.materialDirty) {
+        ImGui::TextDisabled("Preview uses current draft values; save to persist.");
+    }
+
+    ImGui::Separator();
     renderMaterialDraftFields(material, dirty);
     if (dirty) {
         session.materialDirty = true;
     }
     if (session.materialDirty) {
         ImGui::TextDisabled("Unsaved changes");
-    }
-
-    RenderMaterialData previewMaterial = buildDraftMaterialPreview(material, session, content);
-    session.previewRenderer.drawMaterialPreview(previewMaterial, glm::vec3(0.08f, 0.09f, 0.10f), "material_asset_preview");
-    if (session.materialDirty) {
-        ImGui::TextDisabled("Preview uses the current draft for scalar/color overrides and saved maps.");
     }
 }
 
