@@ -124,6 +124,12 @@ struct AssetBrowserActionResult {
     bool newSceneRequested = false;
     std::optional<std::string> deleteScenePath;
     std::optional<std::string> renameScenePath;
+    // Material CRUD — caller must apply to ContentRegistry
+    std::optional<std::string> newMaterialId;    // material was created; call content.addMaterial()
+    std::optional<std::string> deletedMaterialId; // material was deleted; call content.removeMaterial()
+    // Rename: caller removes old id and adds new definition
+    std::optional<std::string> renamedMaterialOldId;
+    std::optional<std::string> renamedMaterialNewId;
 };
 
 struct InspectorActionResult {

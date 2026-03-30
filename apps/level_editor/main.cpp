@@ -942,6 +942,36 @@ int main(int argc, char* argv[]) {
             meshIds = sortedMeshNames(previewWorld.meshLibrary());
             previewDirty = true;
         }
+        if (assetBrowserActions.newMaterialId.has_value()) {
+            const std::string newId = *assetBrowserActions.newMaterialId;
+            const std::string matPath = resolveProjectPath("assets/materials/" + newId + ".material");
+            try {
+                MaterialDefinition def = loadMaterialDefinitionAsset(matPath);
+                content.addMaterial(std::move(def), matPath);
+                materialIds = sortedMaterialIds(content);
+                materialTextures.init(content);
+            } catch (const std::exception& ex) {
+                spdlog::error("Failed to register new material '{}': {}", newId, ex.what());
+            }
+        }
+        if (assetBrowserActions.deletedMaterialId.has_value()) {
+            content.removeMaterial(*assetBrowserActions.deletedMaterialId);
+            materialIds = sortedMaterialIds(content);
+        }
+        if (assetBrowserActions.renamedMaterialOldId.has_value() && assetBrowserActions.renamedMaterialNewId.has_value()) {
+            const std::string oldId = *assetBrowserActions.renamedMaterialOldId;
+            const std::string newId = *assetBrowserActions.renamedMaterialNewId;
+            const std::string newPath = resolveProjectPath("assets/materials/" + newId + ".material");
+            content.removeMaterial(oldId);
+            try {
+                MaterialDefinition def = loadMaterialDefinitionAsset(newPath);
+                content.addMaterial(std::move(def), newPath);
+                materialIds = sortedMaterialIds(content);
+                materialTextures.init(content);
+            } catch (const std::exception& ex) {
+                spdlog::error("Failed to register renamed material '{}': {}", newId, ex.what());
+            }
+        }
         if (assetBrowserActions.consumedExternalDrops) {
             pendingDroppedAssetPaths.clear();
         }

@@ -5,12 +5,14 @@
 #include "engine/core/ProjectConfig.h"
 #include "game/content/ContentRegistry.h"
 #include "game/level/LevelDef.h"
+#include "game/rendering/MaterialDefinition.h"
 
 #include <algorithm>
 #include <cstdlib>
 #include <filesystem>
 #include <functional>
 #include <imgui.h>
+#include <spdlog/spdlog.h>
 
 namespace {
 
@@ -52,6 +54,27 @@ struct SceneRenameState {
 
 SceneRenameState& sceneRenameState() {
     static SceneRenameState state;
+    return state;
+}
+
+struct MaterialCrudState {
+    // New Material popup
+    bool newPopupOpen = false;
+    char newIdBuffer[128] = {};
+    char newParentBuffer[128] = {};
+    // Rename popup
+    bool renamePopupOpen = false;
+    std::string renamingId;
+    std::string renamingAbsolutePath;
+    char renameBuffer[128] = {};
+    // Delete popup
+    bool deletePopupOpen = false;
+    std::string deletingId;
+    std::string deletingAbsolutePath;
+};
+
+MaterialCrudState& materialCrudState() {
+    static MaterialCrudState state;
     return state;
 }
 
@@ -355,6 +378,19 @@ AssetBrowserActionResult renderAssetBrowser(EditorUiState& ui,
                     ImGui::SetTooltip("New Scene");
                 }
             }
+            if (node.name == "materials") {
+                ImGui::SameLine();
+                if (ImGui::SmallButton("+##NewMaterial")) {
+                    MaterialCrudState& crud = materialCrudState();
+                    crud.newPopupOpen = true;
+                    crud.newIdBuffer[0] = '\0';
+                    crud.newParentBuffer[0] = '\0';
+                    ImGui::OpenPopup("NewMaterialPopup");
+                }
+                if (ImGui::IsItemHovered()) {
+                    ImGui::SetTooltip("New Material");
+                }
+            }
             if (ImGui::BeginPopupContextItem("AssetFolderContext")) {
                 setSelectedAsset(ui, node);
                 if (ImGui::MenuItem("Reveal in Finder")) {
@@ -515,6 +551,37 @@ AssetBrowserActionResult renderAssetBrowser(EditorUiState& ui,
                     }
                     ImGui::EndDisabled();
                 }
+                ImGui::Separator();
+                if (ImGui::MenuItem("New Material...")) {
+                    MaterialCrudState& crud = materialCrudState();
+                    crud.newPopupOpen = true;
+                    crud.newIdBuffer[0] = '\0';
+                    // Pre-fill parent with current material
+                    if (!declaredId.empty()) {
+                        std::strncpy(crud.newParentBuffer, declaredId.c_str(), sizeof(crud.newParentBuffer) - 1);
+                        crud.newParentBuffer[sizeof(crud.newParentBuffer) - 1] = '\0';
+                    } else {
+                        crud.newParentBuffer[0] = '\0';
+                    }
+                    ImGui::OpenPopup("NewMaterialPopup");
+                }
+                if (!declaredId.empty() && ImGui::MenuItem("Rename...")) {
+                    MaterialCrudState& crud = materialCrudState();
+                    crud.renamePopupOpen = true;
+                    crud.renamingId = declaredId;
+                    crud.renamingAbsolutePath = node.absolutePath;
+                    std::strncpy(crud.renameBuffer, declaredId.c_str(), sizeof(crud.renameBuffer) - 1);
+                    crud.renameBuffer[sizeof(crud.renameBuffer) - 1] = '\0';
+                    ImGui::OpenPopup("RenameMaterialPopup");
+                }
+                ImGui::Separator();
+                if (!declaredId.empty() && ImGui::MenuItem("Delete...")) {
+                    MaterialCrudState& crud = materialCrudState();
+                    crud.deletePopupOpen = true;
+                    crud.deletingId = declaredId;
+                    crud.deletingAbsolutePath = node.absolutePath;
+                    ImGui::OpenPopup("DeleteMaterialPopup");
+                }
                 break;
             case EditorAssetBrowserKind::Prefab:
                 if (archetypeKnown && ImGui::MenuItem("Place Archetype")) {
@@ -593,6 +660,114 @@ AssetBrowserActionResult renderAssetBrowser(EditorUiState& ui,
         if (ImGui::Button("Cancel Placement")) {
             placementState.clear();
         }
+    }
+
+    // ---------- Material CRUD popups ----------
+
+    // New Material popup
+    if (ImGui::BeginPopupModal("NewMaterialPopup", nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
+        ImGui::TextUnformatted("New Material");
+        ImGui::Separator();
+        MaterialCrudState& crud = materialCrudState();
+        ImGui::InputText("Id##NewMatId", crud.newIdBuffer, sizeof(crud.newIdBuffer));
+        ImGui::InputText("Parent (optional)##NewMatParent", crud.newParentBuffer, sizeof(crud.newParentBuffer));
+        ImGui::Separator();
+        if (ImGui::Button("Create") || ImGui::IsKeyPressed(ImGuiKey_Enter)) {
+            const std::string newId(crud.newIdBuffer);
+            if (!newId.empty()) {
+                namespace fs = std::filesystem;
+                const std::string matDir = resolveProjectPath("assets/materials");
+                const std::string matPath = matDir + "/" + newId + ".material";
+                MaterialDefinition def;
+                def.id = newId;
+                const std::string parentStr(crud.newParentBuffer);
+                if (!parentStr.empty()) {
+                    def.parent = parentStr;
+                }
+                def.roughnessBias = 0.82f;
+                def.specularLevel = 0.20f;
+                try {
+                    fs::create_directories(matDir);
+                    saveMaterialDefinitionAsset(matPath, def);
+                    result.newMaterialId = newId;
+                    result.assetCatalogChanged = true;
+                    refreshAssetTree = true;
+                    spdlog::info("Created material '{}' at {}", newId, matPath);
+                } catch (const std::exception& ex) {
+                    spdlog::error("Failed to create material '{}': {}", newId, ex.what());
+                }
+                ImGui::CloseCurrentPopup();
+            }
+        }
+        ImGui::SameLine();
+        if (ImGui::Button("Cancel")) {
+            ImGui::CloseCurrentPopup();
+        }
+        ImGui::EndPopup();
+    }
+
+    // Rename Material popup
+    if (ImGui::BeginPopupModal("RenameMaterialPopup", nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
+        MaterialCrudState& crud = materialCrudState();
+        ImGui::Text("Rename material '%s'", crud.renamingId.c_str());
+        ImGui::Separator();
+        ImGui::InputText("New Id##RenameMatId", crud.renameBuffer, sizeof(crud.renameBuffer));
+        ImGui::Separator();
+        if (ImGui::Button("Rename") || ImGui::IsKeyPressed(ImGuiKey_Enter)) {
+            const std::string newId(crud.renameBuffer);
+            if (!newId.empty() && newId != crud.renamingId) {
+                namespace fs = std::filesystem;
+                const fs::path oldPath(crud.renamingAbsolutePath);
+                const fs::path newPath = oldPath.parent_path() / (newId + ".material");
+                try {
+                    // Load, update id, save under new name, remove old file
+                    MaterialDefinition def = loadMaterialDefinitionAsset(crud.renamingAbsolutePath);
+                    def.id = newId;
+                    saveMaterialDefinitionAsset(newPath.string(), def);
+                    std::error_code ec;
+                    fs::remove(oldPath, ec);
+                    result.renamedMaterialOldId = crud.renamingId;
+                    result.renamedMaterialNewId = newId;
+                    result.assetCatalogChanged = true;
+                    refreshAssetTree = true;
+                    spdlog::info("Renamed material '{}' to '{}'", crud.renamingId, newId);
+                } catch (const std::exception& ex) {
+                    spdlog::error("Failed to rename material '{}': {}", crud.renamingId, ex.what());
+                }
+            }
+            ImGui::CloseCurrentPopup();
+        }
+        ImGui::SameLine();
+        if (ImGui::Button("Cancel")) {
+            ImGui::CloseCurrentPopup();
+        }
+        ImGui::EndPopup();
+    }
+
+    // Delete Material popup
+    if (ImGui::BeginPopupModal("DeleteMaterialPopup", nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
+        MaterialCrudState& crud = materialCrudState();
+        ImGui::Text("Delete material '%s'? This cannot be undone.", crud.deletingId.c_str());
+        ImGui::Separator();
+        if (ImGui::Button("Delete")) {
+            namespace fs = std::filesystem;
+            std::error_code ec;
+            fs::remove(fs::path(crud.deletingAbsolutePath), ec);
+            if (!ec) {
+                result.deletedMaterialId = crud.deletingId;
+                result.assetCatalogChanged = true;
+                refreshAssetTree = true;
+                spdlog::info("Deleted material '{}'", crud.deletingId);
+            } else {
+                spdlog::error("Failed to delete material '{}': {}", crud.deletingId, ec.message());
+            }
+            ImGui::CloseCurrentPopup();
+        }
+        ImGui::SameLine();
+        if (ImGui::Button("Cancel")) {
+            ImGui::CloseCurrentPopup();
+        }
+        ImGui::EndPopup();
     }
 
     result.assetCatalogChanged = result.assetCatalogChanged || refreshAssetTree;
