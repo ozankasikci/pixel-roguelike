@@ -10,6 +10,7 @@
 #include "engine/rendering/post/PostProcessParams.h"
 #include "engine/rendering/post/StylizePass.h"
 #include "engine/ui/ImGuiLayer.h"
+#include "engine/ui/Screenshot.h"
 #include "game/ui/GameOverlays.h"
 #include "editor/build/EditorBuildSystem.h"
 #include "editor/core/EditorCommand.h"
@@ -45,6 +46,7 @@
 #include <array>
 #include <chrono>
 #include <cmath>
+#include <csignal>
 #include <cstdint>
 #include <cstdio>
 #include <cstring>
@@ -59,6 +61,9 @@
 #include <vector>
 
 namespace {
+
+volatile std::sig_atomic_t g_editorScreenshotRequested = 0;
+void editorSignalHandler(int) { g_editorScreenshotRequested = 1; }
 
 using Clock = std::chrono::steady_clock;
 
@@ -250,6 +255,7 @@ void renderStartupProgress(Window& window,
 
 int main(int argc, char* argv[]) {
     spdlog::set_level(spdlog::level::info);
+    std::signal(SIGUSR1, editorSignalHandler);
 
     const std::string initialScene = argc > 1 ? argv[1] : "assets/scenes/silos_cloister.scene";
 
@@ -1170,6 +1176,12 @@ int main(int argc, char* argv[]) {
             glEnable(GL_DEPTH_TEST);
             glClearColor(0.04f, 0.04f, 0.045f, 1.0f);
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+            // Set uniforms for phase-4 features not available in editor preview
+            sceneShader->use();
+            sceneShader->setInt("uCsmEnabled", 0);
+            sceneShader->setInt("uCsmCascadeCount", 0);
+
             renderer.drawScene(objects,
                                lights,
                                makeLightingEnvironment(previewEnvironment),
@@ -1754,6 +1766,13 @@ int main(int argc, char* argv[]) {
         }
 
         imgui.endFrame();
+        if (g_editorScreenshotRequested) {
+            g_editorScreenshotRequested = 0;
+            // Read from viewport FBO, not window framebuffer
+            glBindFramebuffer(GL_FRAMEBUFFER, finalFbo.framebuffer());
+            saveScreenshot(finalFbo.width(), finalFbo.height(), "/tmp/editor_screenshot.png");
+            glBindFramebuffer(GL_FRAMEBUFFER, 0);
+        }
         window.swapBuffers();
         if (startupViewportHandoffFramesRemaining > 0) {
             --startupViewportHandoffFramesRemaining;

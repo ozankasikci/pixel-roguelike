@@ -38,22 +38,26 @@ void main() {
     mat3 TBN = mat3(tangent, bitangent, normal);
 
     float occlusion = 0.0;
+    float sampleCount = 0.0;
     for (int i = 0; i < 32; ++i) {
         vec3 samplePos = viewPos + TBN * uSamples[i] * uAoRadius;
         vec4 offset = uProjection * vec4(samplePos, 1.0);
         offset.xyz /= offset.w;
         offset.xyz = offset.xyz * 0.5 + 0.5;
         float rawSampleDepth = texture(uDepthTex, offset.xy).r;
-        // Sky pixels: no occlusion, but still count in denominator (32)
         if (rawSampleDepth >= 0.9999) continue;
         float sampleDepth = reconstructViewPos(offset.xy, rawSampleDepth).z;
         float depthDiff = abs(viewPos.z - sampleDepth);
-        // Range check: fade contribution for distant samples to avoid
-        // false occlusion from unrelated surfaces far away.
-        // But keep nearby surfaces (like furniture above floor) as valid occluders.
+        // Skip samples hitting a much closer surface (different object above this surface)
+        // These would reduce self-occlusion and create bright halos
+        if (sampleDepth > viewPos.z + uAoBias && depthDiff > uAoRadius * 0.5) continue;
         float rangeCheck = smoothstep(0.0, 1.0, uAoRadius / max(depthDiff, 0.001));
-        occlusion += (sampleDepth >= samplePos.z + uAoBias) ? 0.0 : 1.0 * rangeCheck;
+        sampleCount += 1.0;
+        occlusion += (sampleDepth >= samplePos.z + uAoBias) ? 0.0 : rangeCheck;
     }
 
-    fragColor = vec4(vec3(1.0 - (occlusion / 32.0) * uAoStrength), 1.0);
+    // Clamp denominator: never go below 75% of total to prevent bright halos
+    // when many samples are skipped near depth edges
+    float denom = max(sampleCount, 24.0);
+    fragColor = vec4(vec3(1.0 - (occlusion / denom) * uAoStrength), 1.0);
 }
