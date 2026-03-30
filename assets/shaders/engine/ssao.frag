@@ -38,24 +38,22 @@ void main() {
     mat3 TBN = mat3(tangent, bitangent, normal);
 
     float occlusion = 0.0;
-    float validSamples = 0.0;
     for (int i = 0; i < 32; ++i) {
         vec3 samplePos = viewPos + TBN * uSamples[i] * uAoRadius;
         vec4 offset = uProjection * vec4(samplePos, 1.0);
         offset.xyz /= offset.w;
         offset.xyz = offset.xyz * 0.5 + 0.5;
         float rawSampleDepth = texture(uDepthTex, offset.xy).r;
-        // Skip sky/background samples entirely
+        // Sky pixels: no occlusion, but still count in denominator (32)
         if (rawSampleDepth >= 0.9999) continue;
         float sampleDepth = reconstructViewPos(offset.xy, rawSampleDepth).z;
         float depthDiff = abs(viewPos.z - sampleDepth);
-        // Skip samples at depth discontinuities (different surface)
-        if (depthDiff > uAoRadius * 2.0) continue;
-        float rangeCheck = smoothstep(0.0, 1.0, uAoRadius / depthDiff);
-        validSamples += rangeCheck;
-        occlusion += (sampleDepth >= samplePos.z + uAoBias) ? 0.0 : rangeCheck;
+        // Range check: fade contribution for distant samples to avoid
+        // false occlusion from unrelated surfaces far away.
+        // But keep nearby surfaces (like furniture above floor) as valid occluders.
+        float rangeCheck = smoothstep(0.0, 1.0, uAoRadius / max(depthDiff, 0.001));
+        occlusion += (sampleDepth >= samplePos.z + uAoBias) ? 0.0 : 1.0 * rangeCheck;
     }
 
-    float ao = (validSamples > 0.5) ? (1.0 - (occlusion / validSamples) * uAoStrength) : 1.0;
-    fragColor = vec4(vec3(ao), 1.0);
+    fragColor = vec4(vec3(1.0 - (occlusion / 32.0) * uAoStrength), 1.0);
 }
