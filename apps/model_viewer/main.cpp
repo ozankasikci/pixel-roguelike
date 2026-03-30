@@ -329,6 +329,8 @@ int main(int argc, char* argv[]) {
         compositePass.apply(sceneFbo.colorTexture(),
                             sceneFbo.depthTexture(),
                             sceneFbo.normalTexture(),
+                            0,  // no bloom in model viewer
+                            0,  // no SSAO in model viewer
                             compositeFbo.framebuffer(),
                             params,
                             compositeFbo.width(),

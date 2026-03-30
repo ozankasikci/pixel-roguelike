@@ -1,25 +1,13 @@
 #pragma once
 
-#include "engine/rendering/core/Framebuffer.h"
-#include "engine/rendering/core/Shader.h"
-#include "engine/rendering/geometry/Renderer.h"
-#include "engine/rendering/lighting/CascadedShadowMap.h"
-#include "engine/rendering/lighting/LtcData.h"
-#include "engine/rendering/lighting/ShadowMap.h"
-#include "engine/rendering/post/BloomPass.h"
-#include "engine/rendering/post/CompositePass.h"
-#include "engine/rendering/post/SsaoPass.h"
-#include "engine/rendering/post/StylizePass.h"
+#include "engine/rendering/SceneRenderPipeline.h"
 #include "engine/ui/ImGuiLayer.h"
 #include "game/rendering/EnvironmentDebugSync.h"
 #include "game/rendering/MaterialTextureLibrary.h"
 
-#include <array>
-#include <memory>
 #include <vector>
 
 class ContentRegistry;
-class Shader;
 
 struct RuntimeSceneRenderOutput {
     std::vector<RenderLight> lights;
@@ -45,12 +33,10 @@ public:
                 bool preserveEnvironmentOverrides = false,
                 RuntimeSceneRenderOutput* output = nullptr);
 
-    Framebuffer& sceneFBO() { return sceneFBO_; }
-    const Framebuffer& sceneFBO() const { return sceneFBO_; }
+    Framebuffer& sceneFBO() { return pipeline_.sceneFBO(); }
+    const Framebuffer& sceneFBO() const { return pipeline_.sceneFBO(); }
 
 private:
-    static constexpr int kMaxShadowedSpotLights = 8;
-
     struct CameraState {
         glm::vec3 position{0.0f};
         glm::mat4 viewMatrix{1.0f};
@@ -68,45 +54,11 @@ private:
                                                       float deltaTime) const;
     std::vector<RenderLight> collectLights(entt::registry& registry,
                                            const DebugParams& params) const;
-    void assignShadowSlots(std::vector<RenderLight>& lights, const DebugParams& params) const;
-    LightingEnvironment lightingEnvironment(const DebugParams& params) const;
-    int shadowResolution(const DebugParams& params) const;
-    glm::mat4 buildShadowMatrix(const RenderLight& light) const;
-    void renderShadowPass(const std::vector<RenderObject>& objects,
-                          const std::vector<RenderLight>& lights,
-                          const DebugParams& params,
-                          const CameraState& camera,
-                          ShadowRenderData& shadowData);
-    void renderScenePass(const CameraState& camera,
-                         const std::vector<RenderObject>& objects,
-                         const std::vector<RenderObject>& viewmodelObjects,
-                         const std::vector<RenderLight>& lights,
-                         const DebugParams& params,
-                         int internalWidth,
-                         int internalHeight);
-    void renderPostProcess(const CameraState& camera,
-                           DebugParams& params,
-                           int outputWidth,
-                           int outputHeight,
-                           GLuint targetFramebuffer);
     void updateDebugParams(DebugParams& params,
                            const CameraState& camera,
                            float deltaTime,
                            std::size_t drawCalls) const;
-    void ensureFramebuffers(int internalWidth, int internalHeight);
 
-    Framebuffer sceneFBO_;
-    Framebuffer compositeFBO_;
-    std::unique_ptr<Shader> sceneShader_;
-    std::unique_ptr<Shader> shadowShader_;
-    std::unique_ptr<Shader> csmShader_;
-    std::unique_ptr<Renderer> renderer_;
-    BloomPass bloomPass_;
-    SsaoPass ssaoPass_;
-    CompositePass compositePass_;
-    StylizePass stylizePass_;
+    SceneRenderPipeline pipeline_;
     MaterialTextureLibrary materialTextureLibrary_;
-    LtcData ltcData_;
-    std::array<ShadowMap, kMaxShadowedSpotLights> shadowMaps_{};
-    CascadedShadowMap csmShadowMap_;
 };
