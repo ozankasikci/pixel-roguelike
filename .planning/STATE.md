@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: Ready to execute
-stopped_at: Completed 05-unify-editor-runtime-build-rendering-parity/05-01-PLAN.md
-last_updated: "2026-03-30T16:38:36.642Z"
+status: Phase complete — ready for verification
+stopped_at: Completed 05-unify-editor-runtime-build-rendering-parity 05-02-PLAN.md
+last_updated: "2026-03-30T16:47:32.976Z"
 last_activity: 2026-03-30
 progress:
   total_phases: 7
-  completed_phases: 5
+  completed_phases: 6
   total_plans: 18
-  completed_plans: 16
+  completed_plans: 18
 ---
 
 # Project State
@@ -25,7 +25,7 @@ See: .planning/PROJECT.md (updated 2026-03-23)
 ## Current Position
 
 Phase: 05 (unify-editor-runtime-build-rendering-parity) — EXECUTING
-Plan: 2 of 3
+Plan: 3 of 3
 
 ## Performance Metrics
 
@@ -62,6 +62,8 @@ Plan: 2 of 3
 | Phase 04-improve-lighting-quality P04 | 5 | 2 tasks | 11 files |
 | Phase 04-improve-lighting-quality P05 | 9 | 2 tasks | 12 files |
 | Phase 05-unify-editor-runtime-build-rendering-parity P01 | 6 | 2 tasks | 6 files |
+| Phase 05-unify-editor-runtime-build-rendering-parity P02 | 6 | 2 tasks | 10 files |
+| Phase 05-unify-editor-runtime-build-rendering-parity P03 | 30 | 2 tasks | 7 files |
 
 ## Accumulated Context
 
@@ -109,6 +111,8 @@ Recent decisions affecting current work:
 - [Phase 04-improve-lighting-quality]: LTC texture units 10/11 sit between shadow map units (8-9) and material map units (12-15) without collision
 - [Phase 04-improve-lighting-quality]: emissive_strength=0 default for all materials; non-zero values combine with bloom for perceived light emission
 - [Phase 05-unify-editor-runtime-build-rendering-parity]: SceneRenderPipeline in engine_rendering with no game-layer headers — enforces D-06 layering; viewmodelObjects in SceneRenderInput for glDepthRange trick; safeNormalize duplicated as file-local in both pipeline and RSR
+- [Phase 05-unify-editor-runtime-build-rendering-parity]: EditorViewportRenderer does NOT own MaterialTextureLibrary -- objects arrive pre-resolved from main.cpp's library, keeping material resolution in one place
+- [Phase 05-unify-editor-runtime-build-rendering-parity]: PSSM lambda default 0.5 (balanced linear+log) replaces hardcoded fixed CSM splits (0-5m, 5-20m, 20-far) in CascadedShadowMap
 
 ### Pending Todos
 
@@ -143,6 +147,6 @@ None yet.
 ## Session Continuity
 
 Last activity: 2026-03-30
-Last session: 2026-03-30T16:38:36.638Z
-Stopped at: Completed 05-unify-editor-runtime-build-rendering-parity/05-01-PLAN.md
+Last session: 2026-03-30T16:47:28.935Z
+Stopped at: Completed 05-unify-editor-runtime-build-rendering-parity 05-02-PLAN.md
 Resume file: None

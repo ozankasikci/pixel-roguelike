@@ -112,9 +112,9 @@ Plans:
 **Goal:** Extract a shared SceneRenderPipeline from RuntimeSceneRenderer so the editor viewport, runtime game, and model viewer all render identically through the same code path — including bloom, SSAO, cascaded shadow maps, LTC area lights, tube lights, and emissive materials
 **Requirements**: None (rendering architecture phase; not mapped to REQUIREMENTS.md IDs)
 **Depends on:** Phase 4
-**Plans:** 1/3 plans executed
+**Plans:** 3/3 plans complete
 
 Plans:
 - [x] 05-01-PLAN.md — Extract SceneRenderPipeline into engine_rendering and refactor RuntimeSceneRenderer to compose it
-- [ ] 05-02-PLAN.md — Create EditorViewportRenderer, wire editor to shared pipeline, extend environment panel
-- [ ] 05-03-PLAN.md — Wire model viewer to shared pipeline, add pipeline stats, update asset preview LTC
+- [x] 05-02-PLAN.md — Create EditorViewportRenderer, wire editor to shared pipeline, extend environment panel
+- [x] 05-03-PLAN.md — Wire model viewer to shared pipeline, add pipeline stats, update asset preview LTC
