@@ -17,22 +17,20 @@ int main() {
     assert(data.meshes.front().meshId == "plane");
     assert(data.meshes[2].position == glm::vec3(0.0f, 9.0f, -6.5f));
     assert(std::count_if(data.meshes.begin(), data.meshes.end(), [](const LevelMeshPlacement& mesh) {
-        return mesh.material.has_value() && *mesh.material == MaterialKind::Brick;
-    }) == 15);
+        return mesh.materialId == "brick_default";
+    }) == 16);
     assert(std::any_of(data.meshes.begin(), data.meshes.end(), [](const LevelMeshPlacement& mesh) {
         return mesh.position == glm::vec3(-9.0f, 4.5f, -6.5f)
             && mesh.materialId == "brick_default";
     }));
     assert(std::count_if(data.meshes.begin(), data.meshes.end(), [](const LevelMeshPlacement& mesh) {
-        return mesh.material.has_value()
-            && *mesh.material == MaterialKind::Wax
+        return mesh.materialId == "wax_default"
             && mesh.position.y > 3.5f;
     }) == 6);
     assert(std::any_of(data.meshes.begin(), data.meshes.end(), [](const LevelMeshPlacement& mesh) {
         return mesh.meshId == "cube"
             && mesh.position == glm::vec3(-5.8f, 0.07f, 2.8f)
-            && mesh.material.has_value()
-            && *mesh.material == MaterialKind::Wood
+            && mesh.materialId == "wood_default"
             && mesh.tint.has_value()
             && *mesh.tint == glm::vec3(0.60f, 0.45f, 0.29f);
     }));

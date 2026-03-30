@@ -5,7 +5,9 @@ uv_mode mesh
 uv_scale 1.0 1.0
 normal_strength 1.0
 roughness_scale 1.0
-roughness_bias 0.0
+roughness_bias 0.58
 metalness 0.0
 ao_strength 1.0
 light_tint_response 0.18
+specular_level 0.46
+animated true

@@ -6,6 +6,7 @@ uv_mode world_projected
 uv_scale 0.55 0.55
 normal_strength 0.42
 roughness_scale 1.0
-roughness_bias 0.0
+roughness_bias 0.82
 ao_strength 0.8
 light_tint_response 0.08
+specular_level 0.20

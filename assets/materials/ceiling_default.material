@@ -5,7 +5,9 @@ uv_mode world_projected
 uv_scale 0.45 0.45
 normal_strength 0.5
 roughness_scale 1.0
-roughness_bias 0.0
+roughness_bias 0.82
 metalness 0.0
 ao_strength 0.8
 light_tint_response 0.08
+specular_level 0.20
+detail_stone true
