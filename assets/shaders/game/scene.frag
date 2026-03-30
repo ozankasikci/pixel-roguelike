@@ -270,8 +270,10 @@ vec2 materialUv(vec3 N) {
 
 vec3 applyMaterialMapNormal(vec3 geometricNormal, vec2 uv) {
     vec3 mapped;
-    if (uUseProceduralDetail == 0 && uMaterialBrickDetail == 0) {
+    if (uUseProceduralDetail == 0 && uMaterialBrickDetail == 0 && uMaterialUvMode != 0) {
         mapped = normalMapNoTile(uNormalMap, uv);
+    } else if (uMaterialUvMode == 0 && uMaterialBrickDetail == 0) {
+        mapped = texture(uNormalMap, uv).xyz * 2.0 - 1.0;
     } else if (uMaterialBrickDetail != 0) {
         mapped = sampleBrickNormalTangent(uv, brickMacroMasks(geometricNormal));
     } else {
@@ -935,7 +937,7 @@ void main() {
     }
     vec3 materialBaseColor = baseColor;
     if (uUseMaterialMaps != 0 && uMaterialBrickDetail == 0) {
-        vec3 albedoSample = (uUseProceduralDetail == 0)
+        vec3 albedoSample = (uUseProceduralDetail == 0 && uMaterialUvMode != 0)
             ? textureNoTile(uAlbedoMap, uv).rgb
             : texture(uAlbedoMap, uv).rgb;
         materialBaseColor = clamp(baseColor * albedoSample, 0.0, 1.0);
@@ -955,10 +957,10 @@ void main() {
             roughness = clamp(sampleBrickRoughness(uv, brickMacro) * uMaterialRoughnessScale + uMaterialRoughnessBias, 0.08, 0.98);
             materialAo = mix(1.0, sampleBrickAo(uv, brickMacro), clamp(uMaterialAoStrength, 0.0, 1.0));
         } else {
-            float roughSample = (uUseProceduralDetail == 0)
+            float roughSample = (uUseProceduralDetail == 0 && uMaterialUvMode != 0)
                 ? textureNoTile(uRoughnessMap, uv).r
                 : texture(uRoughnessMap, uv).r;
-            float aoSample = (uUseProceduralDetail == 0)
+            float aoSample = (uUseProceduralDetail == 0 && uMaterialUvMode != 0)
                 ? textureNoTile(uAoMap, uv).r
                 : texture(uAoMap, uv).r;
             roughness = clamp(roughSample * uMaterialRoughnessScale + uMaterialRoughnessBias, 0.08, 0.98);
