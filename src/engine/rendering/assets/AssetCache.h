@@ -27,8 +27,23 @@ public:
     // Look up a cached mesh by source file path. Returns nullopt on miss or stale cache.
     static std::optional<CachedMeshData> findMeshCache(const std::string& filepath);
 
+    // Look up a cached mesh using separate source file path (for hashing) and cache label (for
+    // filename). Use this for multi-mesh FBX where the cache key contains a virtual "#submesh"
+    // suffix that cannot be opened as a file.
+    static std::optional<CachedMeshData> findMeshCache(const std::string& sourceFilePath,
+                                                        const std::string& cacheLabel);
+
     // Write a processed mesh to the disk cache.
     static void writeMeshCache(const std::string& filepath,
+                               const std::vector<float>& interleavedVertices,
+                               const std::vector<uint32_t>& indices,
+                               const glm::vec3& aabbMin,
+                               const glm::vec3& aabbMax);
+
+    // Write a processed mesh to the disk cache using separate source file path (for hashing) and
+    // cache label (for filename). Use this for multi-mesh FBX submeshes.
+    static void writeMeshCache(const std::string& sourceFilePath,
+                               const std::string& cacheLabel,
                                const std::vector<float>& interleavedVertices,
                                const std::vector<uint32_t>& indices,
                                const glm::vec3& aabbMin,

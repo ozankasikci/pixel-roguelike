@@ -156,6 +156,67 @@ std::optional<CachedMeshData> AssetCache::findMeshCache(const std::string& filep
     return result;
 }
 
+std::optional<CachedMeshData> AssetCache::findMeshCache(const std::string& sourceFilePath,
+                                                         const std::string& cacheLabel) {
+    const uint64_t sourceHash = hashFileContents(sourceFilePath);
+    if (sourceHash == 0) {
+        return std::nullopt;
+    }
+
+    const std::filesystem::path cachePath =
+        cacheRoot() / "meshes" / (cacheLabel + "_" + toHexString(sourceHash) + ".mesh.bin");
+
+    std::ifstream file(cachePath, std::ios::binary);
+    if (!file.is_open()) {
+        spdlog::info("AssetCache: mesh cache miss for '{}'", cacheLabel);
+        return std::nullopt;
+    }
+
+    MeshCacheHeader header{};
+    file.read(reinterpret_cast<char*>(&header), sizeof(header));
+    if (!file || file.gcount() != sizeof(header)) {
+        spdlog::warn("AssetCache: corrupt mesh cache header for '{}'", cacheLabel);
+        return std::nullopt;
+    }
+
+    if (std::memcmp(header.magic, "MSH", 3) != 0 || header.magic[3] != '\0') {
+        spdlog::warn("AssetCache: invalid mesh cache magic for '{}'", cacheLabel);
+        return std::nullopt;
+    }
+
+    if (header.version != 1) {
+        spdlog::info("AssetCache: mesh cache version mismatch for '{}' (got {})", cacheLabel, header.version);
+        return std::nullopt;
+    }
+
+    if (header.contentHash != sourceHash) {
+        spdlog::info("AssetCache: mesh cache stale for '{}' (hash mismatch)", cacheLabel);
+        return std::nullopt;
+    }
+
+    const size_t vertexFloats = static_cast<size_t>(header.vertexCount) * 11;
+    const size_t indexCount = static_cast<size_t>(header.indexCount);
+
+    CachedMeshData result;
+    result.interleavedVertices.resize(vertexFloats);
+    result.indices.resize(indexCount);
+    result.aabbMin = glm::vec3(header.aabbMin[0], header.aabbMin[1], header.aabbMin[2]);
+    result.aabbMax = glm::vec3(header.aabbMax[0], header.aabbMax[1], header.aabbMax[2]);
+
+    file.read(reinterpret_cast<char*>(result.interleavedVertices.data()),
+              static_cast<std::streamsize>(vertexFloats * sizeof(float)));
+    file.read(reinterpret_cast<char*>(result.indices.data()),
+              static_cast<std::streamsize>(indexCount * sizeof(uint32_t)));
+
+    if (!file) {
+        spdlog::warn("AssetCache: truncated mesh cache data for '{}'", cacheLabel);
+        return std::nullopt;
+    }
+
+    spdlog::info("AssetCache: mesh cache hit for '{}'", cacheLabel);
+    return result;
+}
+
 void AssetCache::writeMeshCache(const std::string& filepath,
                                 const std::vector<float>& interleavedVertices,
                                 const std::vector<uint32_t>& indices,
@@ -204,6 +265,56 @@ void AssetCache::writeMeshCache(const std::string& filepath,
 
     spdlog::info("AssetCache: wrote mesh cache for '{}' ({} verts, {} indices)",
                  stem, header.vertexCount, header.indexCount);
+}
+
+void AssetCache::writeMeshCache(const std::string& sourceFilePath,
+                                const std::string& cacheLabel,
+                                const std::vector<float>& interleavedVertices,
+                                const std::vector<uint32_t>& indices,
+                                const glm::vec3& aabbMin,
+                                const glm::vec3& aabbMax) {
+    const uint64_t sourceHash = hashFileContents(sourceFilePath);
+    if (sourceHash == 0) {
+        return;
+    }
+
+    const std::filesystem::path cacheDir = cacheRoot() / "meshes";
+    std::filesystem::create_directories(cacheDir);
+
+    const std::filesystem::path cachePath =
+        cacheDir / (cacheLabel + "_" + toHexString(sourceHash) + ".mesh.bin");
+
+    MeshCacheHeader header{};
+    header.magic[0] = 'M';
+    header.magic[1] = 'S';
+    header.magic[2] = 'H';
+    header.magic[3] = '\0';
+    header.version = 1;
+    std::memset(header.padding, 0, sizeof(header.padding));
+    header.contentHash = sourceHash;
+    header.vertexCount = static_cast<uint32_t>(interleavedVertices.size() / 11);
+    header.indexCount = static_cast<uint32_t>(indices.size());
+    header.aabbMin[0] = aabbMin.x;
+    header.aabbMin[1] = aabbMin.y;
+    header.aabbMin[2] = aabbMin.z;
+    header.aabbMax[0] = aabbMax.x;
+    header.aabbMax[1] = aabbMax.y;
+    header.aabbMax[2] = aabbMax.z;
+
+    std::ofstream file(cachePath, std::ios::binary);
+    if (!file.is_open()) {
+        spdlog::warn("AssetCache: cannot write mesh cache for '{}'", cacheLabel);
+        return;
+    }
+
+    file.write(reinterpret_cast<const char*>(&header), sizeof(header));
+    file.write(reinterpret_cast<const char*>(interleavedVertices.data()),
+               static_cast<std::streamsize>(interleavedVertices.size() * sizeof(float)));
+    file.write(reinterpret_cast<const char*>(indices.data()),
+               static_cast<std::streamsize>(indices.size() * sizeof(uint32_t)));
+
+    spdlog::info("AssetCache: wrote mesh cache for '{}' ({} verts, {} indices)",
+                 cacheLabel, header.vertexCount, header.indexCount);
 }
 
 std::optional<CachedTextureData> AssetCache::findTextureCache(const std::string& name,

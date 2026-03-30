@@ -125,7 +125,6 @@ void RuntimeGameSession::rebuild(const LevelDef& level,
     if (rendererInitialized_) {
         renderer_.reloadContent(content);
     }
-    bootstrapRuntimeMeshLibrary(meshLibrary_);
     clearEntities();
     runSession_ = RunSession{};
     inputSystem_.reset();

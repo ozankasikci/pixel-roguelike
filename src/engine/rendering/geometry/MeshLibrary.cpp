@@ -123,6 +123,19 @@ void MeshLibrary::loadFromFile(const std::string& name, const std::string& filep
 void MeshLibrary::loadFromFileMulti(const std::string& baseName, const std::string& filepath) {
     std::string resolvedPath = resolveProjectPath(filepath);
 
+    // Early-exit if submeshes already registered (avoids re-parsing FBX on second call)
+    bool alreadyLoaded = false;
+    const std::string prefix = baseName + "#";
+    for (const auto& [name, mesh] : meshes_) {
+        if (name.compare(0, prefix.size(), prefix) == 0) {
+            alreadyLoaded = true;
+            break;
+        }
+    }
+    if (alreadyLoaded) {
+        return;
+    }
+
     std::vector<NamedRawMeshData> groups = ModelLoader::loadRawMulti(resolvedPath);
     if (groups.empty()) {
         spdlog::error("MeshLibrary: loadFromFileMulti failed for '{}' (no material groups)", filepath);
@@ -131,10 +144,11 @@ void MeshLibrary::loadFromFileMulti(const std::string& baseName, const std::stri
 
     for (auto& entry : groups) {
         const std::string meshName = baseName + "#" + entry.name;
-        const std::string cacheKey = resolvedPath + "#" + entry.name;
+        // Use two-arg overload: hash the actual FBX file, use baseName_entryName as cache label
+        const std::string cacheLabel = baseName + "_" + entry.name;
 
         // Try disk cache first
-        auto cached = AssetCache::findMeshCache(cacheKey);
+        auto cached = AssetCache::findMeshCache(resolvedPath, cacheLabel);
         if (cached) {
             registerMesh(meshName, std::make_unique<Mesh>(
                 cached->interleavedVertices, cached->indices,
@@ -171,7 +185,7 @@ void MeshLibrary::loadFromFileMulti(const std::string& baseName, const std::stri
             interleaved.push_back(t.y);
             interleaved.push_back(t.z);
         }
-        AssetCache::writeMeshCache(cacheKey, interleaved, raw.indices,
+        AssetCache::writeMeshCache(resolvedPath, cacheLabel, interleaved, raw.indices,
                                    mesh->aabbMin(), mesh->aabbMax());
 
         registerMesh(meshName, std::move(mesh));
