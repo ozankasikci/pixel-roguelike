@@ -5,10 +5,10 @@ environment_profile default
 # At scale 0.01: house spans X[-7.41..+7.41], Y[0..+7.89], Z[-5.06..+6.85]
 
 # Main house structure — split by material for per-part material assignment
-mesh country_house#OldHouseMapWood02 0.0 0.0 0.0 0.01 0.01 0.01 0.0 0.0 0.0 material ch_wood_exterior tint 1.0 1.0 1.0 node node_house_wood02
+mesh country_house#OldHouseMapWood02 0.0 0.0 0.0 0.01 0.01 0.01 0.0 0.0 0.0 material ch_wood_plank tint 1.0 1.0 1.0 node node_house_wood02
 mesh country_house#OldHouseMapIndoorWall01 0.0 0.0 0.0 0.01 0.01 0.01 0.0 0.0 0.0 material ch_indoor_wall tint 1.0 1.0 1.0 node node_house_walls
-mesh country_house#OldHouseMapWood01 0.0 0.0 0.0 0.01 0.01 0.01 0.0 0.0 0.0 material ch_wood_struct tint 1.0 1.0 1.0 node node_house_wood01
-mesh country_house#WindowsMat01 0.0 0.0 0.0 0.01 0.01 0.01 0.0 0.0 0.0 material ch_window_frame tint 1.0 1.0 1.0 node node_house_windows
+mesh country_house#OldHouseMapWood01 0.0 0.0 0.0 0.01 0.01 0.01 0.0 0.0 0.0 material ch_wood_exterior tint 1.0 1.0 1.0 node node_house_wood01
+mesh country_house#WindowsMat01 0.0 0.0 0.0 0.01 0.01 0.01 0.0 0.0 0.0 material ch_window tint 1.0 1.0 1.0 node node_house_windows
 mesh country_house#q11:Glass 0.0 0.0 0.0 0.01 0.01 0.01 0.0 0.0 0.0 material ch_glass tint 1.0 1.0 1.0 node node_house_glass
 
 # Doors — positioned at main entry (front of house near Z=-5.06, centered in X)
