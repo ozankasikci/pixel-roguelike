@@ -95,6 +95,7 @@ void RuntimeSceneRenderer::init(const ContentRegistry& content) {
     sceneShader_ = std::make_unique<Shader>("assets/shaders/game/scene.vert", "assets/shaders/game/scene.frag");
     shadowShader_ = std::make_unique<Shader>("assets/shaders/engine/shadow_depth.vert", "assets/shaders/engine/shadow_depth.frag");
     renderer_ = std::make_unique<Renderer>(sceneShader_.get());
+    bloomPass_.init();
     materialTextureLibrary_.init(content);
     ensureFramebuffers(1280, 720);
 }
@@ -456,9 +457,12 @@ void RuntimeSceneRenderer::renderPostProcess(const CameraState& camera,
     params.post.inverseViewProjection = glm::inverse(camera.projectionMatrix * camera.viewMatrix);
     syncSkySunFromDirectional(params);
 
+    bloomPass_.render(sceneFBO_.colorTexture(), params.post.bloomRadius * 0.003f);
+
     compositePass_.apply(sceneFBO_.colorTexture(),
                          sceneFBO_.depthTexture(),
                          sceneFBO_.normalTexture(),
+                         bloomPass_.bloomTexture(),
                          compositeFBO_.framebuffer(),
                          params.post,
                          compositeFBO_.width(),
@@ -501,6 +505,8 @@ void RuntimeSceneRenderer::ensureFramebuffers(int internalWidth, int internalHei
     } else if (compositeFBO_.width() != safeW || compositeFBO_.height() != safeH) {
         compositeFBO_.resize(safeW, safeH);
     }
+
+    bloomPass_.resize(safeW, safeH);
 }
 
 void RuntimeSceneRenderer::render(entt::registry& registry,
