@@ -223,7 +223,7 @@ void SsaoPass::render(GLuint sceneDepthTex,
     glDrawArrays(GL_TRIANGLES, 0, 6);
     glBindVertexArray(0);
 
-    // Pass 2: Blur
+    // Pass 2: Depth-aware bilateral blur
     glBindFramebuffer(GL_FRAMEBUFFER, blurFbo_);
     glViewport(0, 0, width_, height_);
     glClear(GL_COLOR_BUFFER_BIT);
@@ -233,6 +233,10 @@ void SsaoPass::render(GLuint sceneDepthTex,
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, ssaoColorTex_);
     blurShader_->setInt("uSsaoInput", 0);
+
+    glActiveTexture(GL_TEXTURE1);
+    glBindTexture(GL_TEXTURE_2D, sceneDepthTex);
+    blurShader_->setInt("uDepthTex", 1);
 
     glBindVertexArray(quadVAO_);
     glDrawArrays(GL_TRIANGLES, 0, 6);

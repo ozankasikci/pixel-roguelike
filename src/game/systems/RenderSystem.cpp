@@ -15,6 +15,23 @@
 #include <GLFW/glfw3.h>
 #include <spdlog/spdlog.h>
 
+#include <csignal>
+
+namespace {
+volatile std::sig_atomic_t g_screenshotRequested = 0;
+
+void signalScreenshotHandler(int) {
+    g_screenshotRequested = 1;
+}
+
+bool installSignalHandler() {
+    std::signal(SIGUSR1, signalScreenshotHandler);
+    return true;
+}
+
+[[maybe_unused]] static bool s_signalInstalled = installSignalHandler();
+} // namespace
+
 // constexpr definitions (needed in pre-C++17 out-of-line)
 constexpr int RenderSystem::RES_W[];
 constexpr int RenderSystem::RES_H[];
@@ -95,6 +112,11 @@ void RenderSystem::handleCapture(Application& app, int displayW, int displayH) {
     }
     if (glfwGetKey(win, GLFW_KEY_F12) == GLFW_RELEASE) {
         f12Pressed_ = false;
+    }
+
+    if (g_screenshotRequested) {
+        g_screenshotRequested = 0;
+        saveScreenshot(displayW, displayH, "/tmp/game_screenshot.png");
     }
 
     if (autoCapture_.tick(displayW, displayH)) {
