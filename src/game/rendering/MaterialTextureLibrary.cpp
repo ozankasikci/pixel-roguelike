@@ -544,7 +544,6 @@ MaterialTextureLibrary::ProceduralPixelData MaterialTextureLibrary::generateSmoo
 
 MaterialTextureLibrary::ProceduralPixelData MaterialTextureLibrary::generateFloorPixels() const {
     constexpr int kSize = 512;
-    constexpr float kTileCount = 4.0f; // Large-format institutional floor tiles
 
     ProceduralPixelData result;
     result.size = kSize;
@@ -560,45 +559,26 @@ MaterialTextureLibrary::ProceduralPixelData MaterialTextureLibrary::generateFloo
             const float v = (static_cast<float>(y) + 0.5f) / static_cast<float>(kSize);
             glm::vec2 p(u, v);
 
-            // Tile grid — faint seams between large-format floor tiles
-            // Offset by half a tile so seams land at tile centers, not texture edges
-            const float tileU = u * kTileCount + 0.5f;
-            const float tileV = v * kTileCount + 0.5f;
-            const float seamDistX = std::min(glm::fract(tileU), 1.0f - glm::fract(tileU));
-            const float seamDistY = std::min(glm::fract(tileV), 1.0f - glm::fract(tileV));
-            const float seamDist = std::min(seamDistX, seamDistY);
-            const float seam = 1.0f - smooth01(0.010f, 0.030f, seamDist); // Very thin, subtle seam
-
-            // Per-tile color variation — wrap cell index so edges tile seamlessly
-            const glm::vec2 tileCell(std::fmod(std::floor(tileU), kTileCount),
-                                     std::fmod(std::floor(tileV), kTileCount));
-            const float tileVariation = hash21(tileCell) * 0.03f - 0.015f;
-
-            // Tileable noise layers for surface micro-variation
+            // All tileable noise — smooth continuous surface, no tile grid
             const float broad = tileableFbm(p, 2.0f, glm::vec2(9.3f, 3.7f));
-            const float mid = tileableFbm(p, 6.0f, glm::vec2(2.1f, 15.4f));
-            const float fine = tileableFbm(p, 14.0f, glm::vec2(13.8f, 6.2f));
+            const float mid   = tileableFbm(p, 4.0f, glm::vec2(2.1f, 15.4f));
+            const float fine  = tileableFbm(p, 16.0f, glm::vec2(13.8f, 6.2f));
+            const float patch = tileableFbm(p, 2.0f, glm::vec2(6.4f, 11.9f));
 
             // Warm beige-tan base — Stanley Parable institutional linoleum
             glm::vec3 baseWarm(0.82f, 0.76f, 0.67f);
             glm::vec3 baseCool(0.78f, 0.74f, 0.68f);
-            glm::vec3 color = glm::mix(baseWarm, baseCool, broad * 0.4f + 0.3f);
-            color += glm::vec3(tileVariation, tileVariation * 0.8f, tileVariation * 0.5f);
+            glm::vec3 color = glm::mix(baseWarm, baseCool, broad * 0.4f + patch * 0.2f);
             color *= 0.97f + mid * 0.04f + fine * 0.015f;
 
-            // Seam darkening — subtle joint lines
-            color = glm::mix(color, color * 0.88f, seam * 0.6f);
-
             // Slightly glossier than walls — polished linoleum surface
-            float localRoughness = 0.45f + mid * 0.10f + fine * 0.06f;
-            localRoughness = glm::mix(localRoughness, localRoughness + 0.15f, seam); // Seams rougher
+            float localRoughness = 0.48f + mid * 0.08f + fine * 0.04f;
 
-            // Subtle height — nearly flat with faint seam indentation
+            // Very subtle height for normal map — smooth surface with micro-grain
             float localHeight = (mid - 0.5f) * 0.003f + (fine - 0.5f) * 0.001f;
-            localHeight -= seam * 0.008f; // Seams dip slightly
 
-            // AO — faint darkening at seam joints
-            float localAo = 0.98f - seam * 0.08f - broad * 0.02f;
+            // Minimal AO variation
+            float localAo = 0.98f - patch * 0.02f;
 
             const size_t pixelIndex = static_cast<size_t>(y * kSize + x);
             const size_t colorIndex = pixelIndex * 4;
