@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: Executing Phase 06
-stopped_at: Phase 7 context gathered
-last_updated: "2026-03-30T18:32:22.241Z"
+status: Ready to execute
+stopped_at: Completed 06-01-PLAN.md
+last_updated: "2026-03-30T18:37:31.075Z"
 last_activity: 2026-03-30
 progress:
   total_phases: 9
   completed_phases: 6
   total_plans: 21
-  completed_plans: 18
+  completed_plans: 19
 ---
 
 # Project State
@@ -25,7 +25,7 @@ See: .planning/PROJECT.md (updated 2026-03-23)
 ## Current Position
 
 Phase: 06 (data-driven-scene-management) — EXECUTING
-Plan: 1 of 3
+Plan: 2 of 3
 
 ## Performance Metrics
 
@@ -64,6 +64,7 @@ Plan: 1 of 3
 | Phase 05-unify-editor-runtime-build-rendering-parity P01 | 6 | 2 tasks | 6 files |
 | Phase 05-unify-editor-runtime-build-rendering-parity P02 | 6 | 2 tasks | 10 files |
 | Phase 05-unify-editor-runtime-build-rendering-parity P03 | 30 | 2 tasks | 7 files |
+| Phase 06-data-driven-scene-management P01 | 5 | 2 tasks | 11 files |
 
 ## Accumulated Context
 
@@ -116,6 +117,9 @@ Recent decisions affecting current work:
 - [Phase 05-unify-editor-runtime-build-rendering-parity]: Model viewer uses SceneRenderPipeline (shadows disabled, no directional lights in viewer setup) per D-10
 - [Phase 05-unify-editor-runtime-build-rendering-parity]: SceneRenderPipelineStats uses CPU glfwGetTime() timing (not GPU queries) to avoid sync stalls per D-16
 - [Phase 05-unify-editor-runtime-build-rendering-parity]: EditorAssetPreviewRenderer owns its own LtcData instance -- preview renderer is standalone, not routed through SceneRenderPipeline per D-12
+- [Phase 06-data-driven-scene-management]: registerAllGameAssets() calls registerDefaults() exactly once — deduplication required since both CathedralAssets and PrisonAssets each called it
+- [Phase 06-data-driven-scene-management]: project.cfg stores bare scene filename only (e.g. warden_office.scene), callers prepend assets/scenes/ path — avoids working-directory pitfalls
+- [Phase 06-data-driven-scene-management]: runtime main.cpp WardenOfficeScene fallback replaced with GenericFileScene path bridge until Plan 02 adds project.cfg reading
 
 ### Pending Todos
 
@@ -153,6 +157,6 @@ None yet.
 ## Session Continuity
 
 Last activity: 2026-03-30
-Last session: 2026-03-30T18:32:22.236Z
-Stopped at: Phase 7 context gathered
-Resume file: .planning/phases/07-data-driven-material-system-replace-hardcoded-materials-with-a-proper-material-pipeline/07-CONTEXT.md
+Last session: 2026-03-30T18:37:31.070Z
+Stopped at: Completed 06-01-PLAN.md
+Resume file: None
