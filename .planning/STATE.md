@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: Ready to execute
-stopped_at: Completed 06-02-PLAN.md
-last_updated: "2026-03-30T18:44:14.447Z"
+status: Phase complete — ready for verification
+stopped_at: Completed 06-03-PLAN.md Task 1 — awaiting human verification checkpoint
+last_updated: "2026-03-30T18:53:15.338Z"
 last_activity: 2026-03-30
 progress:
   total_phases: 9
-  completed_phases: 6
-  total_plans: 21
-  completed_plans: 20
+  completed_phases: 7
+  total_plans: 22
+  completed_plans: 21
 ---
 
 # Project State
@@ -66,6 +66,7 @@ Plan: 3 of 3
 | Phase 05-unify-editor-runtime-build-rendering-parity P03 | 30 | 2 tasks | 7 files |
 | Phase 06-data-driven-scene-management P01 | 5 | 2 tasks | 11 files |
 | Phase 06-data-driven-scene-management P02 | 10 | 2 tasks | 3 files |
+| Phase 06-data-driven-scene-management P03 | 15 | 1 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -123,6 +124,8 @@ Recent decisions affecting current work:
 - [Phase 06-data-driven-scene-management]: runtime main.cpp WardenOfficeScene fallback replaced with GenericFileScene path bridge until Plan 02 adds project.cfg reading
 - [Phase 06-data-driven-scene-management]: Pre-loop ImGuiLayer for runtime scene picker is safe — RenderSystem owns its own ImGuiLayer in app.run(), no double-init conflict
 - [Phase 06-data-driven-scene-management]: ui.pendingScenePath.empty() is the single empty-state sentinel — all scene-dependent rendering guards on this flag
+- [Phase 06-data-driven-scene-management]: doLoadScene lambda defined inline in renderFrame to DRY up loadSceneIntoEditor across Save/Don't Save/direct load paths
+- [Phase 06-data-driven-scene-management]: NewScenePopup/DeleteSceneConfirm modals placed outside root window (after assetBrowserActions) matching Save Before Building? pattern
 
 ### Pending Todos
 
@@ -160,6 +163,6 @@ None yet.
 ## Session Continuity
 
 Last activity: 2026-03-30
-Last session: 2026-03-30T18:44:14.441Z
-Stopped at: Completed 06-02-PLAN.md
+Last session: 2026-03-30T18:53:15.334Z
+Stopped at: Completed 06-03-PLAN.md Task 1 — awaiting human verification checkpoint
 Resume file: None
