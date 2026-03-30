@@ -8,6 +8,7 @@ uniform sampler2D uCloudLayerB;
 uniform sampler2D uHorizonLayer;
 uniform sampler2D uSkyPanorama;
 uniform samplerCube uSkyCubemap;
+uniform sampler2D uBloomTex;
 
 uniform int uEnableSky;
 uniform int uEnableFog;
@@ -137,28 +138,6 @@ vec3 sharpenScene(vec2 uv, vec2 texelSize) {
         + sampleSceneColor(uv - vec2(0.0, texelSize.y));
     vec3 blurred = neighbors * 0.25;
     return max(center + (center - blurred) * uSharpenAmount, 0.0);
-}
-
-vec3 bloomGlow(vec2 uv, vec2 texelSize) {
-    vec2 radius = texelSize * max(uBloomRadius, 0.0);
-    vec2 offsets[8] = vec2[8](
-        vec2( 1.0,  0.0), vec2(-1.0,  0.0),
-        vec2( 0.0,  1.0), vec2( 0.0, -1.0),
-        vec2( 0.7,  0.7), vec2(-0.7,  0.7),
-        vec2( 0.7, -0.7), vec2(-0.7, -0.7)
-    );
-
-    vec3 glow = vec3(0.0);
-    float totalWeight = 0.0;
-    for (int i = 0; i < 8; ++i) {
-        vec3 sampleColor = sampleSceneColor(uv + offsets[i] * radius);
-        float luma = dot(sampleColor, lumaWeights);
-        float weight = smoothstep(uBloomThreshold, 1.2, luma);
-        glow += sampleColor * weight;
-        totalWeight += weight;
-    }
-
-    return totalWeight > 0.0 ? glow / totalWeight : vec3(0.0);
 }
 
 vec3 reconstructWorldDir(vec2 uv) {
@@ -312,7 +291,8 @@ void main() {
     }
 
     if (uEnableBloom != 0) {
-        color += bloomGlow(vTexCoord, texelSize) * uBloomIntensity;
+        vec3 bloom = texture(uBloomTex, vTexCoord).rgb;
+        color += bloom * uBloomIntensity;
     }
 
     color = max(color * uExposure, 0.0);

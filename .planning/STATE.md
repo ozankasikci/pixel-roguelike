@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: Ready to execute
-stopped_at: Completed 04-improve-lighting-quality 04-01-PLAN.md
-last_updated: "2026-03-30T01:16:48.462Z"
+stopped_at: Completed 04-improve-lighting-quality 04-02-PLAN.md
+last_updated: "2026-03-30T01:24:06.364Z"
 last_activity: 2026-03-30
 progress:
   total_phases: 6
@@ -57,6 +57,7 @@ Plan: 2 of 5
 | Phase 03-build-menu-in-editor-macos-build-from-editor-with-progress-and-output P01 | 90 | 2 tasks | 7 files |
 | Phase 03-build-menu-in-editor-macos-build-from-editor-with-progress-and-output P02 | 25 | 1 tasks | 5 files |
 | Phase 04-improve-lighting-quality P01 | 18 | 2 tasks | 7 files |
+| Phase 04-improve-lighting-quality P02 | 13 | 2 tasks | 12 files |
 
 ## Accumulated Context
 
@@ -94,6 +95,8 @@ Recent decisions affecting current work:
 - [Phase 04-improve-lighting-quality]: Explicit if/else chains (not dynamic array indexing) for all shadow sampler accesses — macOS OpenGL driver requirement
 - [Phase 04-improve-lighting-quality]: 16-tap Poisson disk PCF with per-fragment hash rotation replaces 9-tap box PCF for banding-free soft shadows
 - [Phase 04-improve-lighting-quality]: kMaxShadowedSpotLights expanded from 2 to 8; ShadowRenderData arrays use fill()/loop instead of hardcoded 2-element initializers
+- [Phase 04-improve-lighting-quality]: Mip-chain bloom: BloomPass uses 5 GL_RGBA16F half-resolution FBOs, 13-tap downsample + tent upsample, no threshold extraction — HDR values naturally emphasize bright pixels
+- [Phase 04-improve-lighting-quality]: Bloom texture bound to unit 8 in CompositePass (units 0-7 pre-occupied by scene/sky/cloud textures); bloomGlow() 8-tap function removed from composite.frag
 
 ### Pending Todos
 
@@ -126,6 +129,6 @@ None yet.
 ## Session Continuity
 
 Last activity: 2026-03-30
-Last session: 2026-03-30T01:16:48.457Z
-Stopped at: Completed 04-improve-lighting-quality 04-01-PLAN.md
+Last session: 2026-03-30T01:24:06.361Z
+Stopped at: Completed 04-improve-lighting-quality 04-02-PLAN.md
 Resume file: None

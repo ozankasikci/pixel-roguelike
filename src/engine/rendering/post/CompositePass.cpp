@@ -47,6 +47,7 @@ CompositePass::~CompositePass() {
 void CompositePass::apply(GLuint sceneColorTex,
                           GLuint sceneDepthTex,
                           GLuint sceneNormalTex,
+                          GLuint bloomTex,
                           GLuint targetFbo,
                           const PostProcessParams& params,
                           int targetW,
@@ -89,6 +90,10 @@ void CompositePass::apply(GLuint sceneColorTex,
     glActiveTexture(GL_TEXTURE7);
     glBindTexture(GL_TEXTURE_CUBE_MAP, skyTextures_.resolveCube(params.sky.cubemapFacePaths));
     shader_->setInt("uSkyCubemap", 7);
+
+    glActiveTexture(GL_TEXTURE8);
+    glBindTexture(GL_TEXTURE_2D, bloomTex);
+    shader_->setInt("uBloomTex", 8);
 
     shader_->setInt("uEnableSky", (params.enableSky && params.sky.enabled) ? 1 : 0);
     shader_->setInt("uEnableFog", params.enableFog ? 1 : 0);

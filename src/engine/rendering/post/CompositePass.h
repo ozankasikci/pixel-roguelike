@@ -19,6 +19,7 @@ public:
     void apply(GLuint sceneColorTex,
                GLuint sceneDepthTex,
                GLuint sceneNormalTex,
+               GLuint bloomTex,
                GLuint targetFbo,
                const PostProcessParams& params,
                int targetW,
