@@ -379,10 +379,10 @@ std::unique_ptr<Mesh> createPrisonBaseboard() {
 }
 
 // ---------------------------------------------------------------------------
-// Prison door
+// Office door (warden's office — clean Stanley Parable style)
 // ---------------------------------------------------------------------------
 
-std::unique_ptr<Mesh> createPrisonDoor() {
+std::unique_ptr<Mesh> createOfficeDoor() {
     auto cube = generateCube(2.0f);
     auto cylinder = generateCylinder(1.0f, 1.0f, 12);
     std::vector<std::pair<RawMeshData, glm::mat4>> parts;
@@ -399,45 +399,58 @@ std::unique_ptr<Mesh> createPrisonDoor() {
         parts.push_back({cylinder, makeModel(position, scale, rotation)});
     };
 
-    // Main door slab: 0.9m wide, 2.1m tall, 0.05m thick
+    // Main door slab: 0.9m wide, 2.1m tall, 0.045m thick
     // Origin at bottom-center, hinge side on left (-X)
-    addBox(glm::vec3(0.0f, 1.05f, 0.0f), glm::vec3(0.45f, 1.05f, 0.025f));
+    addBox(glm::vec3(0.0f, 1.05f, 0.0f), glm::vec3(0.45f, 1.05f, 0.0225f));
 
-    // Observation window frame at eye height (~1.5m)
-    // Window void: 0.25m wide, 0.3m tall
-    // We build a raised frame around the window area
-    addBox(glm::vec3(0.0f, 1.5f, 0.028f), glm::vec3(0.16f, 0.18f, 0.004f));  // recessed plate
-    // Frame strips around the window
-    addBox(glm::vec3(0.0f, 1.65f, 0.03f), glm::vec3(0.14f, 0.01f, 0.005f));  // top
-    addBox(glm::vec3(0.0f, 1.35f, 0.03f), glm::vec3(0.14f, 0.01f, 0.005f));  // bottom
-    addBox(glm::vec3(-0.13f, 1.5f, 0.03f), glm::vec3(0.01f, 0.15f, 0.005f)); // left
-    addBox(glm::vec3(0.13f, 1.5f, 0.03f), glm::vec3(0.01f, 0.15f, 0.005f));  // right
+    // Raised stile and rail frame on front face
+    // Left stile
+    addBox(glm::vec3(-0.39f, 1.05f, 0.026f), glm::vec3(0.04f, 0.98f, 0.004f));
+    // Right stile
+    addBox(glm::vec3(0.39f, 1.05f, 0.026f), glm::vec3(0.04f, 0.98f, 0.004f));
+    // Top rail
+    addBox(glm::vec3(0.0f, 2.0f, 0.026f), glm::vec3(0.35f, 0.04f, 0.004f));
+    // Bottom rail
+    addBox(glm::vec3(0.0f, 0.10f, 0.026f), glm::vec3(0.35f, 0.05f, 0.004f));
+    // Lock rail (divides upper window from lower panel)
+    addBox(glm::vec3(0.0f, 1.18f, 0.026f), glm::vec3(0.35f, 0.035f, 0.004f));
 
-    // 2 vertical bars in observation window
-    addCylinder(glm::vec3(-0.04f, 1.35f, 0.0f), glm::vec3(0.008f, 0.3f, 0.008f));
-    addCylinder(glm::vec3(0.04f, 1.35f, 0.0f), glm::vec3(0.008f, 0.3f, 0.008f));
+    // Upper panel: rectangular office vision window
+    // Glass pane (recessed into door face)
+    addBox(glm::vec3(0.0f, 1.62f, 0.020f), glm::vec3(0.26f, 0.30f, 0.003f));
+    // Window frame strips
+    addBox(glm::vec3(0.0f, 1.925f, 0.026f), glm::vec3(0.27f, 0.008f, 0.004f));  // top
+    addBox(glm::vec3(0.0f, 1.315f, 0.026f), glm::vec3(0.27f, 0.008f, 0.004f));  // bottom
+    addBox(glm::vec3(-0.265f, 1.62f, 0.026f), glm::vec3(0.008f, 0.305f, 0.004f));  // left
+    addBox(glm::vec3(0.265f, 1.62f, 0.026f), glm::vec3(0.008f, 0.305f, 0.004f));  // right
 
-    // Handle (right side, ~1.0m height)
-    addBox(glm::vec3(0.3f, 1.0f, 0.035f), glm::vec3(0.04f, 0.015f, 0.015f));
-    // Handle grip bar
-    addBox(glm::vec3(0.3f, 1.0f, 0.055f), glm::vec3(0.005f, 0.06f, 0.005f));
+    // Lower panel: solid recessed area
+    addBox(glm::vec3(0.0f, 0.60f, 0.018f), glm::vec3(0.30f, 0.44f, 0.003f));
 
-    // Three hinge plates on left edge
-    for (float y : {0.3f, 1.05f, 1.8f}) {
-        addBox(glm::vec3(-0.42f, y, 0.02f), glm::vec3(0.04f, 0.06f, 0.012f));
-        // Hinge barrel
-        addCylinder(glm::vec3(-0.465f, y - 0.06f, 0.02f), glm::vec3(0.012f, 0.12f, 0.012f));
-    }
+    // Lever handle (right side, 1.0m height)
+    // Escutcheon plate
+    addBox(glm::vec3(0.30f, 1.0f, 0.026f), glm::vec3(0.022f, 0.032f, 0.006f));
+    // Lever arm
+    addBox(glm::vec3(0.30f, 1.0f, 0.040f), glm::vec3(0.05f, 0.007f, 0.007f));
+    // Lever return (grip tip)
+    addBox(glm::vec3(0.35f, 0.985f, 0.040f), glm::vec3(0.006f, 0.015f, 0.006f));
 
-    // Lock plate below handle
-    addBox(glm::vec3(0.3f, 0.85f, 0.03f), glm::vec3(0.04f, 0.06f, 0.008f));
-    // Keyhole (small cylinder)
-    addCylinder(glm::vec3(0.3f, 0.85f, 0.04f),
-                glm::vec3(0.006f, 0.004f, 0.006f),
+    // Lock plate and keyhole
+    addBox(glm::vec3(0.30f, 0.87f, 0.026f), glm::vec3(0.018f, 0.04f, 0.004f));
+    addCylinder(glm::vec3(0.30f, 0.87f, 0.032f),
+                glm::vec3(0.005f, 0.003f, 0.005f),
                 glm::vec3(90.0f, 0.0f, 0.0f));
 
-    // Reinforcement strip across bottom
-    addBox(glm::vec3(0.0f, 0.08f, 0.028f), glm::vec3(0.44f, 0.04f, 0.005f));
+    // Three butt hinges on left edge
+    for (float y : {0.25f, 1.05f, 1.85f}) {
+        // Hinge plate
+        addBox(glm::vec3(-0.43f, y, 0.0f), glm::vec3(0.025f, 0.04f, 0.01f));
+        // Hinge barrel
+        addCylinder(glm::vec3(-0.46f, y - 0.04f, 0.0f), glm::vec3(0.008f, 0.08f, 0.008f));
+    }
+
+    // Kick plate at bottom
+    addBox(glm::vec3(0.0f, 0.04f, 0.026f), glm::vec3(0.38f, 0.035f, 0.003f));
 
     RawMeshData merged = mergeMeshes(parts);
     return std::make_unique<Mesh>(merged.positions, merged.normals, merged.uvs, merged.tangents,
@@ -696,7 +709,7 @@ void registerAllGameAssets(MeshLibrary& meshLibrary) {
     meshLibrary.registerMesh("prison_ceiling", createPrisonCeiling());
     meshLibrary.registerMesh("prison_baseboard", createPrisonBaseboard());
     // Door
-    meshLibrary.registerMesh("prison_door", createPrisonDoor());
+    meshLibrary.registerMesh("office_door", createOfficeDoor());
     // Furniture
     meshLibrary.registerMesh("prison_desk", createPrisonDesk());
     meshLibrary.registerMesh("prison_chair", createPrisonChair());

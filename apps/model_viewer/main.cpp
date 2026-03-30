@@ -62,7 +62,7 @@ std::vector<ViewerPreset> buildPresets() {
         {"prison_floor",       RetroPalette::Stone, MaterialKind::Stone, glm::vec3(1.0f),                glm::vec3(0.0f),  glm::vec3(0.0f),              3.6f, 60.0f, 50.0f},
         {"prison_ceiling",     RetroPalette::Stone, MaterialKind::Stone, glm::vec3(1.0f),                glm::vec3(0.0f),  glm::vec3(0.0f),              3.6f, 60.0f, -50.0f},
         {"prison_baseboard",   RetroPalette::Iron,  MaterialKind::Metal, glm::vec3(1.0f),                glm::vec3(0.0f),  glm::vec3(0.0f, 0.075f, 0.0f), 2.0f, 90.0f, 10.0f},
-        {"prison_door",        RetroPalette::Iron,  MaterialKind::Metal, glm::vec3(1.0f),                glm::vec3(0.0f),  glm::vec3(0.0f, 1.05f, 0.0f), 3.6f, 90.0f, 8.0f},
+        {"office_door",        RetroPalette::OldWood, MaterialKind::Wood, glm::vec3(1.0f),               glm::vec3(0.0f),  glm::vec3(0.0f, 1.05f, 0.0f), 3.6f, 90.0f, 8.0f},
         {"prison_desk",        RetroPalette::Iron,  MaterialKind::Metal, glm::vec3(1.0f),                glm::vec3(0.0f),  glm::vec3(0.0f, 0.4f, 0.0f),  3.0f, 60.0f, 20.0f},
         {"prison_chair",       RetroPalette::Iron,  MaterialKind::Metal, glm::vec3(1.0f),                glm::vec3(0.0f),  glm::vec3(0.0f, 0.4f, 0.0f),  2.4f, 60.0f, 20.0f},
         {"warden_chair",       RetroPalette::OldWood, MaterialKind::Wood, glm::vec3(1.0f),              glm::vec3(0.0f),  glm::vec3(0.0f, 0.42f, 0.0f), 2.6f, 50.0f, 18.0f},

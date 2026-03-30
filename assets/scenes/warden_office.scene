@@ -38,7 +38,7 @@ mesh prison_wall 3.0 0.0 1.0 1.0 1.0 1.0 0.0 -90.0 0.0 material concrete_wall ti
 mesh prison_wall 3.0 0.0 3.0 1.0 1.0 1.0 0.0 -90.0 0.0 material concrete_wall tint 0.8 0.76 0.68 node node_36
 mesh prison_wall 3.0 0.0 5.0 1.0 1.0 1.0 0.0 -90.0 0.0 material concrete_wall tint 0.8 0.76 0.68 node node_37
 mesh prison_wall 3.0 0.0 7.0 1.0 1.0 1.0 0.0 -90.0 0.0 material concrete_wall tint 0.8 0.76 0.68 node node_38
-mesh prison_door 0.0 0.0 0.05 1.0 1.0 1.0 0.0 0.0 0.0 material wood_default tint 0.5 0.38 0.24 node node_39
+mesh office_door 0.0 0.0 0.05 1.0 1.0 1.0 0.0 0.0 0.0 material wood_default tint 0.5 0.38 0.24 node node_39
 mesh prison_desk 0.0 0.0 4.5 1.0 1.0 1.0 0.0 180.0 0.0 material wood_default tint 0.55 0.4 0.22 node node_40
 mesh warden_chair 0.0 0.0 3.6 1.0 1.0 1.0 0.0 0.0 0.0 material wood_default tint 0.5 0.38 0.24 node node_41
 mesh prison_cabinet 2.2 0.0 7.4 1.0 1.0 1.0 0.0 180.0 0.0 material metal_default tint 0.55 0.53 0.5 node node_42
