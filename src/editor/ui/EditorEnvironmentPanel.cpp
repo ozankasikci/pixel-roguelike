@@ -238,8 +238,6 @@ bool renderEnvironmentPanel(EditorSceneDocument& document,
         // --- Effects ---
         ImGui::SeparatorText("Effects");
         beforeState = document.captureState();
-        trackEnvItem(beforeState, "Toggle Sky In Post", ImGui::Checkbox("Sky Compositing", &environment.post.enableSky));
-        beforeState = document.captureState();
         trackEnvItem(beforeState, "Toggle Vignette", ImGui::Checkbox("Enable Vignette", &environment.post.enableVignette));
         if (environment.post.enableVignette) {
             beforeState = document.captureState();
@@ -279,6 +277,8 @@ bool renderEnvironmentPanel(EditorSceneDocument& document,
 
         auto beforeState = document.captureState();
         trackEnvItem(beforeState, "Toggle Sky System", ImGui::Checkbox("Sky Enabled", &environment.sky.enabled));
+        beforeState = document.captureState();
+        trackEnvItem(beforeState, "Toggle Sky In Post", ImGui::Checkbox("Show Sky", &environment.post.enableSky));
 
         // --- Sky Colors ---
         ImGui::SeparatorText("Sky Colors");
