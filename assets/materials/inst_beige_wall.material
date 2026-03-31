@@ -1,0 +1,15 @@
+id inst_beige_wall
+parent masonry_base
+shading_model stone
+procedural_source generated_smooth
+uv_mode world_projected
+uv_scale 0.55 0.55
+base_color 0.82 0.76 0.68
+normal_strength 0.35
+roughness_scale 1.0
+roughness_bias 0.78
+metalness 0.0
+ao_strength 0.85
+light_tint_response 0.08
+specular_level 0.18
+detail_stone true

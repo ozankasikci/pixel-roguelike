@@ -1,0 +1,25 @@
+id institutional
+enable_sky false
+sky_enabled false
+lighting_enable_directional false
+lighting_enable_shadows false
+lighting_hemi_sky_color 0.95 0.92 0.86
+lighting_hemi_ground_color 0.40 0.37 0.32
+lighting_hemi_strength 0.15
+enable_fog true
+fog_density 0.02
+fog_start 4.0
+fog_near_color 0.95 0.92 0.86
+fog_far_color 0.90 0.88 0.82
+enable_bloom true
+bloom_intensity 0.35
+bloom_radius 0.6
+enable_tone_map true
+exposure 1.0
+enable_vignette true
+vignette_strength 0.18
+vignette_softness 0.6
+ssao_enabled true
+ssao_radius 0.4
+ssao_bias 0.015
+ssao_strength 0.7
