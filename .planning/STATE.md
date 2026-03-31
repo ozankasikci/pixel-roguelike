@@ -3,9 +3,9 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: Milestone complete
-stopped_at: Completed 07-03-PLAN.md
-last_updated: "2026-03-30T20:13:47.740Z"
-last_activity: 2026-03-30
+stopped_at: Completed 08-01-PLAN.md
+last_updated: "2026-03-31T21:35:08.381Z"
+last_activity: "2026-03-30 - Completed quick task 260330-wt0: Improve environment inspector panel UX"
 progress:
   total_phases: 9
   completed_phases: 8
@@ -71,6 +71,7 @@ Plan: Not started
 | Phase 07 P02 | 5 | 3 tasks | 26 files |
 | Phase 07 P04 | 525609 | 2 tasks | 6 files |
 | Phase 07 P03 | 10 | 2 tasks | 4 files |
+| Phase 08-create-institutional-room-scene-from-concept-art P01 | 3 | 2 tasks | 5 files |
 
 ## Accumulated Context
 
@@ -141,6 +142,9 @@ Recent decisions affecting current work:
 - [Phase 07]: test_content_registry links game_rendering (not just game_content) because ContentRegistry.cpp now calls MaterialTextureLibrary methods
 - [Phase 07]: Material CRUD popups inline in asset browser panel; file I/O in panel, ContentRegistry mutations delegated to main.cpp via AssetBrowserActionResult
 - [Phase 07]: content.addMaterial() replaces content.loadDefaults() for targeted in-memory update on material inspector save
+- [Phase 08]: inst_glossy_floor has no parent to avoid detail_floor feature flag contamination; low roughness_bias 0.30 achieves gloss directly
+- [Phase 08]: institutional.environment uses only parser-verified keys; enable_sky+sky_enabled+lighting_enable_directional all false for interior-only
+- [Phase 08]: Chain padlock links constructed from cylinder segments (no torus primitive); 4 cylinders per link in rectangular loop
 
 ### Pending Todos
 
@@ -180,6 +184,6 @@ None yet.
 ## Session Continuity
 
 Last activity: 2026-03-30 - Completed quick task 260330-wt0: Improve environment inspector panel UX
-Last session: 2026-03-30T20:16:53.291Z
-Stopped at: Completed quick task 260330-wt0: Reorganize Environment inspector panel UX
+Last session: 2026-03-31T21:35:08.378Z
+Stopped at: Completed 08-01-PLAN.md
 Resume file: None
