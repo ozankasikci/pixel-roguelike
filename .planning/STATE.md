@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: Executing Phase 08
-stopped_at: Completed 08-01-PLAN.md
-last_updated: "2026-04-01T00:00:00.000Z"
-last_activity: 2026-04-01
+status: Ready to execute
+stopped_at: Completed 08-02-PLAN.md Task 1 — awaiting visual checkpoint (Task 2)
+last_updated: "2026-03-31T21:42:40.129Z"
+last_activity: 2026-03-31
 progress:
-  total_phases: 9
-  completed_phases: 8
+  total_phases: 10
+  completed_phases: 9
   total_plans: 27
-  completed_plans: 25
+  completed_plans: 27
 ---
 
 # Project State
@@ -25,7 +25,7 @@ See: .planning/PROJECT.md (updated 2026-03-23)
 ## Current Position
 
 Phase: 08 (create-institutional-room-scene-from-concept-art) — EXECUTING
-Plan: 1 of 2
+Plan: 2 of 2
 
 ## Performance Metrics
 
@@ -72,6 +72,7 @@ Plan: 1 of 2
 | Phase 07 P04 | 525609 | 2 tasks | 6 files |
 | Phase 07 P03 | 10 | 2 tasks | 4 files |
 | Phase 08-create-institutional-room-scene-from-concept-art P01 | 3 | 2 tasks | 5 files |
+| Phase 08 P02 | 2 | 1 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -145,6 +146,7 @@ Recent decisions affecting current work:
 - [Phase 08]: inst_glossy_floor has no parent to avoid detail_floor feature flag contamination; low roughness_bias 0.30 achieves gloss directly
 - [Phase 08]: institutional.environment uses only parser-verified keys; enable_sky+sky_enabled+lighting_enable_directional all false for interior-only
 - [Phase 08]: Chain padlock links constructed from cylinder segments (no torus primitive); 4 cylinders per link in rectangular loop
+- [Phase 08]: Metal and chained doors from buildScriptedGeometry (not .scene file) so InteractableComponent can be attached — .scene format has no component syntax
 
 ### Pending Todos
 
@@ -183,7 +185,7 @@ None yet.
 
 ## Session Continuity
 
-Last activity: 2026-04-01
-Last session: 2026-04-01T00:00:00.000Z
-Stopped at: Completed 08-02-PLAN.md Task 1 - awaiting visual checkpoint
+Last activity: 2026-03-31
+Last session: 2026-03-31T21:42:40.125Z
+Stopped at: Completed 08-02-PLAN.md Task 1 — awaiting visual checkpoint (Task 2)
 Resume file: None
