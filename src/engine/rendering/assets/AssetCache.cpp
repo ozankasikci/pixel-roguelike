@@ -82,10 +82,13 @@ std::string AssetCache::sanitizeCacheName(const std::string& name) {
             safe += '_';
         }
     }
-    // Truncate if too long for filesystem (keep prefix + hash suffix room)
-    constexpr size_t kMaxLen = 120;
-    if (safe.size() > kMaxLen) {
-        safe = safe.substr(0, kMaxLen);
+    // Truncate long names but append a hash of the full name to prevent collisions.
+    // Previous approach truncated to 120 chars without a hash, causing different cache
+    // keys (e.g. _file_albedo vs _file_ao) to collide when they shared a long prefix.
+    constexpr size_t kMaxPrefix = 80;
+    if (safe.size() > kMaxPrefix) {
+        const uint64_t nameHash = hashBytes(name.data(), name.size());
+        safe = safe.substr(0, kMaxPrefix) + "_" + toHexString(nameHash);
     }
     return safe;
 }
