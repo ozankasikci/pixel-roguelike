@@ -3,11 +3,11 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: Milestone complete
-stopped_at: Phase 8 context gathered
-last_updated: "2026-03-31T21:06:27.496Z"
-last_activity: "2026-03-31 - Completed quick task 260331-3ew: Fix country house scene slow loading"
+stopped_at: Completed 08-01-PLAN.md
+last_updated: "2026-03-31T21:35:08.381Z"
+last_activity: "2026-03-30 - Completed quick task 260330-wt0: Improve environment inspector panel UX"
 progress:
-  total_phases: 10
+  total_phases: 9
   completed_phases: 8
   total_plans: 25
   completed_plans: 25
@@ -71,6 +71,7 @@ Plan: Not started
 | Phase 07 P02 | 5 | 3 tasks | 26 files |
 | Phase 07 P04 | 525609 | 2 tasks | 6 files |
 | Phase 07 P03 | 10 | 2 tasks | 4 files |
+| Phase 08-create-institutional-room-scene-from-concept-art P01 | 3 | 2 tasks | 5 files |
 
 ## Accumulated Context
 
@@ -141,6 +142,9 @@ Recent decisions affecting current work:
 - [Phase 07]: test_content_registry links game_rendering (not just game_content) because ContentRegistry.cpp now calls MaterialTextureLibrary methods
 - [Phase 07]: Material CRUD popups inline in asset browser panel; file I/O in panel, ContentRegistry mutations delegated to main.cpp via AssetBrowserActionResult
 - [Phase 07]: content.addMaterial() replaces content.loadDefaults() for targeted in-memory update on material inspector save
+- [Phase 08]: inst_glossy_floor has no parent to avoid detail_floor feature flag contamination; low roughness_bias 0.30 achieves gloss directly
+- [Phase 08]: institutional.environment uses only parser-verified keys; enable_sky+sky_enabled+lighting_enable_directional all false for interior-only
+- [Phase 08]: Chain padlock links constructed from cylinder segments (no torus primitive); 4 cylinders per link in rectangular loop
 
 ### Pending Todos
 
@@ -155,7 +159,6 @@ None yet.
 - Phase 5 added: Unify editor/runtime/build rendering parity — shared render path so all three modes produce identical visual output
 - Phase 6 added: Data-driven scene management — New/Delete Scene in editor, configurable runtime default, remove legacy hardcoded scene classes
 - Phase 7 added: Data-driven material system — replace hardcoded materials with a proper material pipeline
-- Phase 8 added: Create institutional room scene from concept art
 
 ### Blockers/Concerns
 
@@ -177,14 +180,10 @@ None yet.
 | 260330-rwe | Create a Claude Code skill for procedural texture generation | 2026-03-30 | e976302 | [260330-rwe-create-a-claude-code-skill-for-procedura](./quick/260330-rwe-create-a-claude-code-skill-for-procedura/) |
 | 260330-wc2 | Fix too-fast scrollbar scrolling in the editor asset browser panel | 2026-03-30 | 156472e | [260330-wc2-fix-too-fast-scrollbar-scrolling-in-the-](./quick/260330-wc2-fix-too-fast-scrollbar-scrolling-in-the-/) |
 | 260330-wt0 | Reorganize Environment inspector panel into logical sub-groups | 2026-03-30 | 1824913 | [260330-wt0-improve-environment-inspector-panel-ux-b](./quick/260330-wt0-improve-environment-inspector-panel-ux-b/) |
-| 260331-089 | Deduplicate shared utils and remove CMake ImGui patch | 2026-03-31 | 9d5f1a5 | [260331-089-deduplicate-shared-utils-and-remove-cmak](./quick/260331-089-deduplicate-shared-utils-and-remove-cmak/) |
-| 260331-071 | Create new scene using external ALP_Assets mesh and texture assets | 2026-03-31 | d332018 | [260331-071-create-new-scene-using-external-alp-asse](./quick/260331-071-create-new-scene-using-external-alp-asse/) |
-| 260331-0mj | Add multi-submesh FBX loading for country_house.fbx (5 per-material groups) | 2026-03-31 | 5a3a32d | [260331-0mj-add-multi-submesh-fbx-loading-to-support](./quick/260331-0mj-add-multi-submesh-fbx-loading-to-support/) |
-| 260331-3ew | Fix country house scene slow loading: mesh cache key, double-parse, file texture caching | 2026-03-31 | c348e97 | [260331-3ew-fix-country-house-scene-slow-loading-mes](./quick/260331-3ew-fix-country-house-scene-slow-loading-mes/) |
 
 ## Session Continuity
 
-Last activity: 2026-03-31 - Completed quick task 260331-3ew: Fix country house scene slow loading
-Last session: 2026-03-31T21:06:27.491Z
-Stopped at: Phase 8 context gathered
-Resume file: .planning/phases/08-create-institutional-room-scene-from-concept-art/08-CONTEXT.md
+Last activity: 2026-03-30 - Completed quick task 260330-wt0: Improve environment inspector panel UX
+Last session: 2026-03-31T21:35:08.378Z
+Stopped at: Completed 08-01-PLAN.md
+Resume file: None

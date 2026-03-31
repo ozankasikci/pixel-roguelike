@@ -686,6 +686,120 @@ std::unique_ptr<Mesh> createPrisonWallLargeWindow() {
                                   merged.indices);
 }
 
+// ---------------------------------------------------------------------------
+// Institutional room assets
+// ---------------------------------------------------------------------------
+
+std::unique_ptr<Mesh> createInstHvacVent() {
+    auto cube = generateCube(2.0f);
+    std::vector<std::pair<RawMeshData, glm::mat4>> parts;
+
+    auto addBox = [&](const glm::vec3& position, const glm::vec3& scale,
+                      const glm::vec3& rotation = glm::vec3(0.0f)) {
+        parts.push_back({cube, makeModel(position, scale, rotation)});
+    };
+
+    // Outer frame
+    addBox(glm::vec3(0.0f,  0.225f, 0.0f), glm::vec3(0.30f, 0.015f, 0.008f)); // top rail
+    addBox(glm::vec3(0.0f, -0.225f, 0.0f), glm::vec3(0.30f, 0.015f, 0.008f)); // bottom rail
+    addBox(glm::vec3(-0.285f, 0.0f, 0.0f), glm::vec3(0.015f, 0.225f, 0.008f)); // left jamb
+    addBox(glm::vec3( 0.285f, 0.0f, 0.0f), glm::vec3(0.015f, 0.225f, 0.008f)); // right jamb
+
+    // Horizontal slats (5 evenly spaced)
+    for (int i = -2; i <= 2; ++i) {
+        float y = static_cast<float>(i) * 0.08f;
+        addBox(glm::vec3(0.0f, y, 0.002f), glm::vec3(0.27f, 0.006f, 0.006f));
+    }
+
+    // Vertical slats (3 evenly spaced, behind horizontal)
+    for (int i = -1; i <= 1; ++i) {
+        float x = static_cast<float>(i) * 0.13f;
+        addBox(glm::vec3(x, 0.0f, -0.002f), glm::vec3(0.005f, 0.21f, 0.005f));
+    }
+
+    RawMeshData merged = mergeMeshes(parts);
+    return std::make_unique<Mesh>(merged.positions, merged.normals,
+                                  merged.uvs, merged.tangents, merged.indices);
+}
+
+std::unique_ptr<Mesh> createInstSmokeDetector() {
+    auto cylinder = generateCylinder(1.0f, 1.0f, 16);
+    std::vector<std::pair<RawMeshData, glm::mat4>> parts;
+
+    auto addCylinder = [&](const glm::vec3& p, const glm::vec3& s,
+                           const glm::vec3& r = glm::vec3(0.0f)) {
+        parts.push_back({cylinder, makeModel(p, s, r)});
+    };
+
+    // Main disc body (flat cylinder, hanging from ceiling)
+    addCylinder(glm::vec3(0.0f, -0.02f, 0.0f), glm::vec3(0.08f, 0.02f, 0.08f));
+    // Mounting base (thinner ring at top)
+    addCylinder(glm::vec3(0.0f, 0.005f, 0.0f), glm::vec3(0.05f, 0.005f, 0.05f));
+    // Small LED bump (tiny cylinder on underside)
+    addCylinder(glm::vec3(0.0f, -0.042f, 0.0f), glm::vec3(0.008f, 0.003f, 0.008f));
+
+    RawMeshData merged = mergeMeshes(parts);
+    return std::make_unique<Mesh>(merged.positions, merged.normals,
+                                  merged.uvs, merged.tangents, merged.indices);
+}
+
+std::unique_ptr<Mesh> createInstChainPadlock() {
+    auto cube = generateCube(2.0f);
+    auto cylinder = generateCylinder(1.0f, 1.0f, 8);
+    std::vector<std::pair<RawMeshData, glm::mat4>> parts;
+
+    auto addBox = [&](const glm::vec3& position, const glm::vec3& scale,
+                      const glm::vec3& rotation = glm::vec3(0.0f)) {
+        parts.push_back({cube, makeModel(position, scale, rotation)});
+    };
+    auto addCylinder = [&](const glm::vec3& p, const glm::vec3& s,
+                           const glm::vec3& r = glm::vec3(0.0f)) {
+        parts.push_back({cylinder, makeModel(p, s, r)});
+    };
+
+    // --- Chain links (3 links, alternating orientation) ---
+    // Each link: 4 cylinders in a rectangular loop
+    // Link dimensions: ~0.05m wide, 0.03m tall, 0.008m bar thickness
+    auto addLink = [&](float yOffset, float zRotDeg) {
+        // Top bar (horizontal)
+        addCylinder(glm::vec3(0.0f, yOffset + 0.015f, 0.0f),
+                    glm::vec3(0.004f, 0.022f, 0.004f),
+                    glm::vec3(0.0f, 0.0f, 90.0f + zRotDeg));
+        // Bottom bar (horizontal)
+        addCylinder(glm::vec3(0.0f, yOffset - 0.015f, 0.0f),
+                    glm::vec3(0.004f, 0.022f, 0.004f),
+                    glm::vec3(0.0f, 0.0f, 90.0f + zRotDeg));
+        // Left bar (vertical)
+        addCylinder(glm::vec3(-0.018f, yOffset, 0.0f),
+                    glm::vec3(0.004f, 0.015f, 0.004f));
+        // Right bar (vertical)
+        addCylinder(glm::vec3(0.018f, yOffset, 0.0f),
+                    glm::vec3(0.004f, 0.015f, 0.004f));
+    };
+
+    addLink(0.12f, 0.0f);    // Link 1 (top, flat)
+    addLink(0.06f, 90.0f);   // Link 2 (middle, rotated 90 deg)
+    addLink(0.0f, 0.0f);     // Link 3 (bottom, flat)
+
+    // --- Padlock body ---
+    addBox(glm::vec3(0.0f, -0.055f, 0.0f), glm::vec3(0.02f, 0.025f, 0.01f)); // main body
+    // Keyhole detail (tiny inset box)
+    addBox(glm::vec3(0.0f, -0.06f, 0.011f), glm::vec3(0.004f, 0.006f, 0.001f)); // keyhole plate
+
+    // --- Padlock shackle (U-shape above body) ---
+    // Left vertical
+    addCylinder(glm::vec3(-0.012f, -0.025f, 0.0f), glm::vec3(0.003f, 0.012f, 0.003f));
+    // Right vertical
+    addCylinder(glm::vec3(0.012f, -0.025f, 0.0f), glm::vec3(0.003f, 0.012f, 0.003f));
+    // Top horizontal connecting bar
+    addCylinder(glm::vec3(0.0f, -0.013f, 0.0f), glm::vec3(0.003f, 0.012f, 0.003f),
+                glm::vec3(0.0f, 0.0f, 90.0f));
+
+    RawMeshData merged = mergeMeshes(parts);
+    return std::make_unique<Mesh>(merged.positions, merged.normals,
+                                  merged.uvs, merged.tangents, merged.indices);
+}
+
 } // namespace
 
 void registerAllGameAssets(MeshLibrary& meshLibrary) {
@@ -727,4 +841,9 @@ void registerAllGameAssets(MeshLibrary& meshLibrary) {
     // Office additions
     meshLibrary.registerMesh("ceiling_light_panel", createCeilingLightPanel());
     meshLibrary.registerMesh("prison_wall_large_window", createPrisonWallLargeWindow());
+
+    // Institutional room assets
+    meshLibrary.registerMesh("inst_hvac_vent", createInstHvacVent());
+    meshLibrary.registerMesh("inst_smoke_detector", createInstSmokeDetector());
+    meshLibrary.registerMesh("inst_chain_padlock", createInstChainPadlock());
 }

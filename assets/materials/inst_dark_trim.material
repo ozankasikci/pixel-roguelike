@@ -1,0 +1,12 @@
+id inst_dark_trim
+shading_model wood
+uv_mode mesh
+uv_scale 1.0 1.0
+base_color 0.25 0.18 0.12
+normal_strength 0.4
+roughness_scale 1.0
+roughness_bias 0.65
+metalness 0.0
+ao_strength 1.0
+light_tint_response 0.14
+specular_level 0.20

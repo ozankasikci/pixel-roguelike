@@ -152,5 +152,5 @@ Plans:
 **Plans:** 2 plans
 
 Plans:
-- [ ] 08-01-PLAN.md — Create materials (inst_beige_wall, inst_glossy_floor, inst_dark_trim), environment profile (institutional), and three procedural meshes (HVAC vent, smoke detector, chain/padlock)
+- [x] 08-01-PLAN.md — Create materials (inst_beige_wall, inst_glossy_floor, inst_dark_trim), environment profile (institutional), and three procedural meshes (HVAC vent, smoke detector, chain/padlock)
 - [ ] 08-02-PLAN.md — Assemble the institutional_room.scene file with all geometry/lighting/colliders/props, wire locked door interaction stubs, visual verification
