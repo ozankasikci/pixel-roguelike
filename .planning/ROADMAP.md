@@ -143,3 +143,14 @@ Plans:
 - [x] 07-02-PLAN.md — Delete MaterialKind enum, refactor scene.frag/scene.vert to property-driven uber-shader, update all call sites
 - [x] 07-03-PLAN.md — Editor material browser category, inspector panel with feature flags and preview sphere, CRUD operations
 - [x] 07-04-PLAN.md — File watcher hot-reload, material validation at load/save, per-material cache invalidation
+
+### Phase 8: Create institutional room scene from concept art
+
+**Goal:** Build a complete institutional room scene from concept art: an 8m x 6m Stanley Parable-inspired corridor room with warm beige walls, dark brown trim, glossy floor, fluorescent ceiling panels, and three doors on the far wall (open wooden door with warm light, locked gray metal door with HVAC vent, locked white chained door with padlock) plus props (smoke detector with red LED)
+**Requirements**: None (content creation phase; not mapped to REQUIREMENTS.md IDs)
+**Depends on:** Phase 7
+**Plans:** 2 plans
+
+Plans:
+- [ ] 08-01-PLAN.md — Create materials (inst_beige_wall, inst_glossy_floor, inst_dark_trim), environment profile (institutional), and three procedural meshes (HVAC vent, smoke detector, chain/padlock)
+- [ ] 08-02-PLAN.md — Assemble the institutional_room.scene file with all geometry/lighting/colliders/props, wire locked door interaction stubs, visual verification
