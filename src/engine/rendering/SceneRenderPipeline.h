@@ -31,6 +31,7 @@ struct SceneRenderPipelineStats {
     int drawCalls = 0;
     int objectCount = 0;
     int lightCount = 0;
+    int culledCount = 0;  // Objects culled by frustum test
 };
 
 // Input struct for SceneRenderPipeline::render(). All fields are engine-layer types.
