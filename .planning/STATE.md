@@ -124,10 +124,11 @@ None for v1.1. All APIs exist; work is wiring and one renderer fix.
 | 260401-rt2 | Cache shader uniform locations, guard Jolt body ID, deduplicate MathUtils, reuse renderer vectors | 2026-04-01 | 639ae43 | [260401-rt2-codebase-cleanup-cache-uniform-locations](./quick/260401-rt2-codebase-cleanup-cache-uniform-locations/) |
 | 260401-uie | Selection undo/redo: Ctrl+Z restores selection changes in level editor | 2026-04-01 | b871d75 | [260401-uie-make-ctrl-z-also-work-for-selection-dese](./quick/260401-uie-make-ctrl-z-also-work-for-selection-dese/) |
 | 260401-uvc | Fix FBX mesh import scaling: AI_CONFIG_FBX_CONVERT_TO_M eliminates 0.01 workarounds | 2026-04-01 | 5d0b37e | [260401-uvc-investigate-mesh-import-scaling-research](./quick/260401-uvc-investigate-mesh-import-scaling-research/) |
+| 260401-x6s | Fix editor high CPU usage with industry-standard idle throttling | 2026-04-01 | 7e0c66f | [260401-x6s-fix-editor-high-cpu-usage-with-industry-](./quick/260401-x6s-fix-editor-high-cpu-usage-with-industry-/) |
 
 ## Session Continuity
 
-Last activity: 2026-04-01 - Completed quick task 260401-uie: Selection undo/redo
-Last session: 2026-04-01T19:28:01.377Z
-Stopped at: Completed quick task 260401-uvc: FBX cm-to-m auto-conversion
+Last activity: 2026-04-01 - Completed quick task 260401-x6s: Editor idle throttling
+Last session: 2026-04-01T20:53:44.628Z
+Stopped at: Completed quick task 260401-x6s: Editor idle CPU throttling
 Resume file: None
