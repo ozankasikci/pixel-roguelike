@@ -103,10 +103,11 @@ None for v1.1. All APIs exist; work is wiring and one renderer fix.
 | 260330-wc2 | Fix too-fast scrollbar scrolling in the editor asset browser panel | 2026-03-30 | 156472e | [260330-wc2-fix-too-fast-scrollbar-scrolling-in-the-](./quick/260330-wc2-fix-too-fast-scrollbar-scrolling-in-the-/) |
 | 260330-wt0 | Reorganize Environment inspector panel into logical sub-groups | 2026-03-30 | 1824913 | [260330-wt0-improve-environment-inspector-panel-ux-b](./quick/260330-wt0-improve-environment-inspector-panel-ux-b/) |
 | 260401-qau | Fix delete key on macOS: add ImGuiKey_Backspace as alternative trigger | 2026-04-01 | 698ccf3 | [260401-qau-fix-delete-key-on-macos-add-imguikey-bac](./quick/260401-qau-fix-delete-key-on-macos-add-imguikey-bac/) |
+| 260401-rt2 | Cache shader uniform locations, guard Jolt body ID, deduplicate MathUtils, reuse renderer vectors | 2026-04-01 | 639ae43 | [260401-rt2-codebase-cleanup-cache-uniform-locations](./quick/260401-rt2-codebase-cleanup-cache-uniform-locations/) |
 
 ## Session Continuity
 
-Last activity: 2026-04-01 - Completed quick task 260401-qau: Fix delete key on macOS
-Last session: 2026-04-01T15:56:12.696Z
-Stopped at: Completed quick task 260401-qau: Fix delete key on macOS
+Last activity: 2026-04-01 - Completed quick task 260401-rt2: Codebase cleanup — cache uniform locations
+Last session: 2026-04-01T00:00:00.000Z
+Stopped at: Completed quick task 260401-rt2: Codebase cleanup — cache uniform locations
 Resume file: None
