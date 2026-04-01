@@ -3,10 +3,12 @@
 #include "editor/scene/EditorSelectionSystem.h"
 #include "editor/ui/LevelEditorUi.h"
 
+#include <glm/glm.hpp>
 #include <imgui.h>
 
 #include <cstdint>
 #include <optional>
+#include <unordered_map>
 #include <vector>
 
 class ContentRegistry;
@@ -51,13 +53,32 @@ void renderSelectionPicker(EditorSelectionPickerState& picker,
                            EditorSceneDocument& document,
                            std::vector<std::uint64_t>& selectedIds,
                            double nowSeconds);
+struct MultiGizmoState {
+    bool active = false;
+    glm::vec3 cachedCentroid{0.0f};
+    std::unordered_map<std::uint64_t, glm::mat4> cachedTransforms;
+
+    struct LightSnapshot {
+        glm::vec3 position{0.0f};
+        glm::vec3 direction{0.0f, -1.0f, 0.0f};
+    };
+    std::unordered_map<std::uint64_t, LightSnapshot> cachedLightData;
+
+    void clear() {
+        active = false;
+        cachedTransforms.clear();
+        cachedLightData.clear();
+    }
+};
+
 bool applyGizmoToSelectedObject(EditorSceneDocument& document,
                                 const std::vector<std::uint64_t>& selectedIds,
                                 const EditorViewportState& viewport,
                                 const glm::mat4& view,
                                 const glm::mat4& projection,
                                 const EditorUiState& ui,
-                                const EditorPreviewWorld& previewWorld);
+                                const EditorPreviewWorld& previewWorld,
+                                MultiGizmoState& multiGizmoState);
 std::optional<glm::vec3> computePlacementPoint(const std::vector<EditorSelectionHandle>& handles,
                                                const EditorRay& ray,
                                                const EditorCamera& camera,

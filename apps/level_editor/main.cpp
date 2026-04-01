@@ -405,6 +405,7 @@ int main(int argc, char* argv[]) {
     PlayEnterTraceState playEnterTrace;
     EditorPendingCommand widgetCommand;
     EditorPendingCommand gizmoCommand;
+    MultiGizmoState multiGizmoState;
     std::vector<std::filesystem::path> pendingDroppedAssetPaths;
     ImGuiFontPreset editorFontPreset = imgui.fontPreset();
 
@@ -1633,7 +1634,7 @@ int main(int argc, char* argv[]) {
             }
             const EditorSceneDocumentState gizmoBeforeState = document.captureState();
             if (!ui.playPreview && !startupViewportHandoffActive) {
-                if (applyGizmoToSelectedObject(document, selectedIds, renderViewportState, view, projection, ui, previewWorld)) {
+                if (applyGizmoToSelectedObject(document, selectedIds, renderViewportState, view, projection, ui, previewWorld, multiGizmoState)) {
                     previewDirty = true;
                 }
                 if (editorGizmoIsHot() && !gizmoCommand.active) {

@@ -264,7 +264,8 @@ bool applyGizmoToSelectedObject(EditorSceneDocument& document,
                                 const glm::mat4& view,
                                 const glm::mat4& projection,
                                 const EditorUiState& ui,
-                                const EditorPreviewWorld& previewWorld) {
+                                const EditorPreviewWorld& previewWorld,
+                                MultiGizmoState& multiGizmoState) {
     if (selectedIds.empty() || ui.playPreview) {
         return false;
     }
@@ -372,81 +373,94 @@ bool applyGizmoToSelectedObject(EditorSceneDocument& document,
     }
 
     // Multi-object path: gizmo at centroid, apply pivot transform to all selected objects.
+    // Uses cached original transforms so the delta doesn't compound across frames of a single drag.
     glm::vec3 centroid(0.0f);
     int count = 0;
     for (auto id : selectedIds) {
         const EditorSceneObject* obj = document.findObject(id);
-        if (!obj) {
-            continue;
-        }
+        if (!obj) continue;
         centroid += editorSceneObjectAnchor(*obj);
         ++count;
     }
-    if (count == 0) {
-        return false;
-    }
+    if (count == 0) return false;
     centroid /= static_cast<float>(count);
 
-    // Build gizmo matrix at centroid with identity rotation and unit scale.
-    glm::mat4 gizmoMatrix = glm::translate(glm::mat4(1.0f), centroid);
+    // Cache original transforms on the first frame of a new drag.
+    if (!multiGizmoState.active) {
+        multiGizmoState.cachedCentroid = centroid;
+        multiGizmoState.cachedTransforms.clear();
+        multiGizmoState.cachedLightData.clear();
+        for (auto id : selectedIds) {
+            const EditorSceneObject* obj = document.findObject(id);
+            if (!obj) continue;
+            switch (obj->kind) {
+            case EditorSceneObjectKind::Light: {
+                const auto& light = std::get<LevelLightPlacement>(obj->payload);
+                multiGizmoState.cachedLightData[id] = {light.position, light.direction};
+                break;
+            }
+            default:
+                multiGizmoState.cachedTransforms[id] = document.worldTransformMatrix(id);
+                break;
+            }
+        }
+    }
 
-    if (!manipulateEditorGizmo(viewport,
-                               view,
-                               projection,
-                               ui.tool,
-                               ui.snappingEnabled,
-                               ui.moveSnap,
-                               ui.rotateSnap,
-                               ui.scaleSnap,
+    // Use the cached centroid so the pivot doesn't drift during the drag.
+    glm::mat4 gizmoMatrix = glm::translate(glm::mat4(1.0f), multiGizmoState.cachedCentroid);
+
+    if (!manipulateEditorGizmo(viewport, view, projection, ui.tool,
+                               ui.snappingEnabled, ui.moveSnap, ui.rotateSnap, ui.scaleSnap,
                                gizmoMatrix)) {
+        multiGizmoState.clear();
         return false;
     }
 
-    // Compute the pivot-relative local delta.
-    // before = T(centroid), localDelta = T(-centroid) * gizmoMatrix
-    // For each object: newWorld = T(centroid) * localDelta * T(-centroid) * objectWorld
-    const glm::mat4 before = glm::translate(glm::mat4(1.0f), centroid);
+    multiGizmoState.active = true;
+
+    // Compute delta relative to the cached centroid (not current positions).
+    const glm::mat4 before = glm::translate(glm::mat4(1.0f), multiGizmoState.cachedCentroid);
     const glm::mat4 invBefore = glm::inverse(before);
     const glm::mat4 localDelta = invBefore * gizmoMatrix;
     const glm::mat3 localDeltaRot(localDelta);
 
     for (auto id : selectedIds) {
         EditorSceneObject* obj = document.findObject(id);
-        if (!obj) {
-            continue;
-        }
+        if (!obj) continue;
 
         switch (obj->kind) {
         case EditorSceneObjectKind::Mesh:
         case EditorSceneObjectKind::BoxCollider:
         case EditorSceneObjectKind::CylinderCollider:
         case EditorSceneObjectKind::Archetype: {
-            const glm::mat4 objectWorld = document.worldTransformMatrix(obj->id);
-            const glm::mat4 newWorld = before * localDelta * invBefore * objectWorld;
-            document.applyWorldTransform(obj->id, newWorld);
+            auto it = multiGizmoState.cachedTransforms.find(id);
+            if (it == multiGizmoState.cachedTransforms.end()) continue;
+            const glm::mat4 newWorld = before * localDelta * invBefore * it->second;
+            document.applyWorldTransform(id, newWorld);
             break;
         }
         case EditorSceneObjectKind::Light: {
+            auto it = multiGizmoState.cachedLightData.find(id);
+            if (it == multiGizmoState.cachedLightData.end()) continue;
             auto& light = std::get<LevelLightPlacement>(obj->payload);
-            const glm::vec3 anchor = editorSceneObjectAnchor(*obj);
-            const glm::vec3 newAnchor = glm::vec3(before * localDelta * invBefore * glm::vec4(anchor, 1.0f));
+            const glm::vec3 newPos = glm::vec3(before * localDelta * invBefore * glm::vec4(it->second.position, 1.0f));
             if (light.type != LightType::Directional) {
-                light.position = newAnchor;
+                light.position = newPos;
             }
             if (light.type == LightType::Spot || light.type == LightType::Directional) {
-                light.direction = safeNormalize(localDeltaRot * light.direction, light.direction);
+                light.direction = safeNormalize(localDeltaRot * it->second.direction, it->second.direction);
             }
             document.markSceneDirty();
             break;
         }
         case EditorSceneObjectKind::PlayerSpawn: {
-            const glm::mat4 objectWorld = document.worldTransformMatrix(obj->id);
-            glm::mat4 newWorld = before * localDelta * invBefore * objectWorld;
-            // Strip rotation/scale columns — player spawn only stores position.
+            auto it = multiGizmoState.cachedTransforms.find(id);
+            if (it == multiGizmoState.cachedTransforms.end()) continue;
+            glm::mat4 newWorld = before * localDelta * invBefore * it->second;
             newWorld[0] = glm::vec4(1.0f, 0.0f, 0.0f, 0.0f);
             newWorld[1] = glm::vec4(0.0f, 1.0f, 0.0f, 0.0f);
             newWorld[2] = glm::vec4(0.0f, 0.0f, 1.0f, 0.0f);
-            document.applyWorldTransform(obj->id, newWorld);
+            document.applyWorldTransform(id, newWorld);
             break;
         }
         }
