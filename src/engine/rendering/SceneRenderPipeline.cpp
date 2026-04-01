@@ -1,6 +1,7 @@
 #include "engine/rendering/SceneRenderPipeline.h"
 
 #include "engine/core/MathUtils.h"
+#include "engine/rendering/FrustumCulling.h"
 #include "engine/rendering/TextureUnits.h"
 #include "engine/rendering/core/Shader.h"
 #include "engine/rendering/geometry/Mesh.h"
@@ -49,20 +50,38 @@ void SceneRenderPipeline::render(const SceneRenderInput& input,
     const double t0 = glfwGetTime();
     ensureFramebuffers(internalWidth, internalHeight);
 
+    // Frustum culling (D-01: AABB only, D-02: at pipeline level)
+    const glm::mat4 vp = input.projectionMatrix * input.viewMatrix;
+    const auto frustumPlanes = extractFrustumPlanes(vp);
+    std::vector<RenderObject> culledObjects;
+    culledObjects.reserve(input.objects->size());
+    for (const auto& obj : *input.objects) {
+        if (obj.mesh && isAabbInsideFrustum(obj.mesh->aabbMin(), obj.mesh->aabbMax(),
+                                             obj.modelMatrix, frustumPlanes)) {
+            culledObjects.push_back(obj);
+        } else if (!obj.mesh) {
+            culledObjects.push_back(obj);  // Keep objects without mesh (safety)
+        }
+    }
+
+    // Create a view of the input with culled objects
+    SceneRenderInput culledInput = input;
+    culledInput.objects = &culledObjects;
+
     // Make mutable copy of lights for shadow slot assignment
     std::vector<RenderLight> lights = *input.lights;
     assignShadowSlots(lights, input.shadowsEnabled);
 
     ShadowRenderData shadowData;
     const double tShadowStart = glfwGetTime();
-    renderShadowPass(*input.objects, lights, input, shadowData);
+    renderShadowPass(culledObjects, lights, culledInput, shadowData);
     const double tShadowEnd = glfwGetTime();
 
     const double tSceneStart = glfwGetTime();
-    renderScenePass(input, lights, shadowData, internalWidth, internalHeight);
+    renderScenePass(culledInput, lights, shadowData, internalWidth, internalHeight);
     const double tSceneEnd = glfwGetTime();
 
-    renderPostProcess(input, outputWidth, outputHeight, targetFramebuffer);
+    renderPostProcess(culledInput, outputWidth, outputHeight, targetFramebuffer);
 
     const double tEnd = glfwGetTime();
     lastStats_.totalRenderMs = (tEnd - t0) * 1000.0;
@@ -70,7 +89,8 @@ void SceneRenderPipeline::render(const SceneRenderInput& input,
     lastStats_.scenePassMs = (tSceneEnd - tSceneStart) * 1000.0;
     lastStats_.objectCount = static_cast<int>(input.objects->size());
     lastStats_.lightCount = static_cast<int>(lights.size());
-    lastStats_.drawCalls = lastStats_.objectCount;
+    lastStats_.drawCalls = static_cast<int>(culledObjects.size());
+    lastStats_.culledCount = static_cast<int>(input.objects->size()) - static_cast<int>(culledObjects.size());
 }
 
 void SceneRenderPipeline::assignShadowSlots(std::vector<RenderLight>& lights, bool enabled) {
