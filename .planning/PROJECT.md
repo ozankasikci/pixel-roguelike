@@ -92,9 +92,9 @@ This document evolves at phase transitions and milestone boundaries.
 
 ## Current State
 
-Phase 11 complete — "Add Mesh" toolbar button with filtered popup picker and auto-select. Users can now add meshes to the scene without knowing keyboard shortcuts or right-click menus. The button opens a searchable popup showing all available meshes, entering click-to-place mode on selection, with automatic selection of the placed object.
+Phase 12 complete — engine quality improvements: AABB frustum culling in SceneRenderPipeline, named TextureUnits enum replacing magic numbers, file-based mesh auto-discovery in all loading paths, EventBus RAII subscription tokens, DebugParams decomposition into CameraDebugInfo + RuntimeLightingOverride, LevelLoader unified API, GenericFileScene scripted geometry extraction.
 
-v1.1 Editor UX milestone complete — all planned editor UX improvements shipped (selection overlay depth fix, global keyboard shortcuts, hover highlight, mesh discoverability).
+v1.1 Editor UX milestone complete — all planned editor UX improvements shipped (selection overlay depth fix, global keyboard shortcuts, hover highlight, mesh discoverability). Phase 12 added engine quality polish.
 
 ---
-*Last updated: 2026-04-01 after Phase 11 completion*
+*Last updated: 2026-04-01 after Phase 12 completion*
