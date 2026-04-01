@@ -176,10 +176,11 @@ None yet.
 | 260330-rwe | Create a Claude Code skill for procedural texture generation | 2026-03-30 | e976302 | [260330-rwe-create-a-claude-code-skill-for-procedura](./quick/260330-rwe-create-a-claude-code-skill-for-procedura/) |
 | 260330-wc2 | Fix too-fast scrollbar scrolling in the editor asset browser panel | 2026-03-30 | 156472e | [260330-wc2-fix-too-fast-scrollbar-scrolling-in-the-](./quick/260330-wc2-fix-too-fast-scrollbar-scrolling-in-the-/) |
 | 260330-wt0 | Reorganize Environment inspector panel into logical sub-groups | 2026-03-30 | 1824913 | [260330-wt0-improve-environment-inspector-panel-ux-b](./quick/260330-wt0-improve-environment-inspector-panel-ux-b/) |
+| 260401-qau | Fix delete key on macOS: add ImGuiKey_Backspace as alternative trigger | 2026-04-01 | 698ccf3 | [260401-qau-fix-delete-key-on-macos-add-imguikey-bac](./quick/260401-qau-fix-delete-key-on-macos-add-imguikey-bac/) |
 
 ## Session Continuity
 
-Last activity: 2026-03-30 - Completed quick task 260330-wt0: Improve environment inspector panel UX
-Last session: 2026-03-30T20:16:53.291Z
-Stopped at: Completed quick task 260330-wt0: Reorganize Environment inspector panel UX
+Last activity: 2026-04-01 - Completed quick task 260401-qau: Fix delete key on macOS
+Last session: 2026-04-01T00:00:00Z
+Stopped at: Completed quick task 260401-qau: Fix delete key on macOS
 Resume file: None
