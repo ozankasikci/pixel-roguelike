@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: Editor UX
-status: verifying
-stopped_at: Phase 12 context gathered
-last_updated: "2026-04-01T17:42:16.691Z"
+status: executing
+stopped_at: Completed 12-02-PLAN.md
+last_updated: "2026-04-01T18:14:33.526Z"
 last_activity: 2026-04-01
 progress:
   total_phases: 14
   completed_phases: 12
-  total_plans: 31
-  completed_plans: 31
+  total_plans: 35
+  completed_plans: 32
   percent: 0
 ---
 
@@ -21,13 +21,13 @@ progress:
 See: .planning/PROJECT.md (updated 2026-04-01)
 
 **Core value:** The Stanley Parable-inspired art style — clean, minimalist environments with warm soft lighting, muted color palette, and stylized realism
-**Current focus:** Phase 11 — add-mesh-discoverability
+**Current focus:** Phase 12 — engine-quality-frustum-culling-texture-unit-enum-generic-asset-system-eventbus-raii-tokens
 
 ## Current Position
 
-Phase: 11
-Plan: Not started
-Status: Phase complete — ready for verification
+Phase: 12 (engine-quality-frustum-culling-texture-unit-enum-generic-asset-system-eventbus-raii-tokens) — EXECUTING
+Plan: 2 of 4
+Status: Ready to execute
 Last activity: 2026-04-01
 
 Progress: [░░░░░░░░░░] 0% (v1.1 milestone)
@@ -53,6 +53,7 @@ Progress: [░░░░░░░░░░] 0% (v1.1 milestone)
 | Phase 10 P01 | 2 | 2 tasks | 3 files |
 | Phase 10 P02 | 30min | 2 tasks | 3 files |
 | Phase 11-add-mesh-discoverability P01 | 2 | 2 tasks | 3 files |
+| Phase 12 P02 | 15 | 2 tasks | 6 files |
 
 ## Accumulated Context
 
@@ -77,6 +78,9 @@ Recent decisions affecting current work:
 - [Phase 10]: Selection picker popup overlay removed during verification — hover highlight provides equivalent pre-click affordance without intrusive UI
 - [Phase 11]: commitPlacement returns std::optional<uint64_t>: result variable pattern with Mesh case setting it, all others returning nullopt
 - [Phase 11]: Add Mesh button placed immediately after Add button with SameLine; filter cleared on each popup open
+- [Phase 12]: CameraDebugInfo lives in engine/rendering (camera display data is engine-layer concern, not game-layer)
+- [Phase 12]: RuntimeLightingOverride lives in game/rendering (lighting overrides are game-layer concern)
+- [Phase 12]: DebugParams retains only UI overlay state plus two embedded sub-structs (CameraDebugInfo camera, RuntimeLightingOverride lighting)
 
 ### Roadmap Evolution
 
@@ -112,6 +116,6 @@ None for v1.1. All APIs exist; work is wiring and one renderer fix.
 ## Session Continuity
 
 Last activity: 2026-04-01 - Completed quick task 260401-rt2: Codebase cleanup — cache uniform locations
-Last session: 2026-04-01T17:42:16.687Z
-Stopped at: Phase 12 context gathered
-Resume file: .planning/phases/12-engine-quality-frustum-culling-texture-unit-enum-generic-asset-system-eventbus-raii-tokens/12-CONTEXT.md
+Last session: 2026-04-01T18:14:33.523Z
+Stopped at: Completed 12-02-PLAN.md
+Resume file: None

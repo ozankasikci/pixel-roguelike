@@ -141,7 +141,8 @@ void RuntimeGameSession::rebuild(const LevelDef& level,
     LevelLoadRequest resolvedRequest = request;
     resolvedRequest.levelId = levelId;
     resolvedRequest.levelPath = levelPath;
-    loader.load(content, runSession_, resolvedRequest, level);
+    LevelLoadArgs args{&content, &runSession_, &level};
+    loader.load(resolvedRequest, args);
 
     initializeRuntimeInteraction(registry_);
     initializeRuntimeInventory(registry_);
