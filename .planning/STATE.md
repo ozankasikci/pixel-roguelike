@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: Editor UX
-status: executing
-stopped_at: Completed 10-01-PLAN.md
-last_updated: "2026-04-01T13:09:31.325Z"
+status: verifying
+stopped_at: Completed 10-02-PLAN.md
+last_updated: "2026-04-01T14:44:11.283Z"
 last_activity: 2026-04-01
 progress:
   total_phases: 13
-  completed_phases: 10
+  completed_phases: 11
   total_plans: 30
-  completed_plans: 29
+  completed_plans: 30
   percent: 0
 ---
 
@@ -27,7 +27,7 @@ See: .planning/PROJECT.md (updated 2026-04-01)
 
 Phase: 10 (global-keyboard-shortcuts-and-hover-highlight) — EXECUTING
 Plan: 2 of 2
-Status: Ready to execute
+Status: Phase complete — ready for verification
 Last activity: 2026-04-01
 
 Progress: [░░░░░░░░░░] 0% (v1.1 milestone)
@@ -51,6 +51,7 @@ Progress: [░░░░░░░░░░] 0% (v1.1 milestone)
 *Updated after each plan completion*
 | Phase 09 P01 | 5min | 2 tasks | 1 files |
 | Phase 10 P01 | 2 | 2 tasks | 3 files |
+| Phase 10 P02 | 30min | 2 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -70,6 +71,9 @@ Recent decisions affecting current work:
 - [Phase 10]: Camera animation uses ease-out cubic (1-(1-t)^3) for natural deceleration; user input (RMB/MMB/alt+LMB/scroll) cancels in-progress framing animation
 - [Phase 10]: Duplicate offset is world-space translation (0.5,0,0) via applyWorldTransform, preserving rotation and scale of duplicated object
 - [Phase 10]: Escape guard uses !io.WantTextInput so text field Escape deactivates field first; second Escape clears selectedIds+selectionPicker+inspector context
+- [Phase 10]: Hover color (0.55, 0.85, 1.00) produces cool blue-white visually distinct from selection gold without a separate alpha channel
+- [Phase 10]: appendHoverOverlay self-guards against selected objects; ignoreDepth=false for depth-tested single pass only (no ghost through geometry)
+- [Phase 10]: Selection picker popup overlay removed during verification — hover highlight provides equivalent pre-click affordance without intrusive UI
 
 ### Pending Todos
 
@@ -82,6 +86,6 @@ None for v1.1. All APIs exist; work is wiring and one renderer fix.
 ## Session Continuity
 
 Last activity: 2026-04-01
-Last session: 2026-04-01T13:09:31.322Z
-Stopped at: Completed 10-01-PLAN.md
+Last session: 2026-04-01T14:44:11.279Z
+Stopped at: Completed 10-02-PLAN.md
 Resume file: None

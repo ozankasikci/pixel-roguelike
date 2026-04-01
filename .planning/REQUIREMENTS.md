@@ -55,7 +55,7 @@ Requirements for Editor UX milestone. Each maps to roadmap phases.
 ### Selection
 
 - [x] **SEL-01**: Selection overlay renders depth-correctly (no wireframe bleeding through geometry in front)
-- [ ] **SEL-02**: Objects highlight on mouse hover before clicking
+- [x] **SEL-02**: Objects highlight on mouse hover before clicking
 - [x] **SEL-03**: Escape key clears all selection
 
 ### Object Manipulation
@@ -138,7 +138,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | GSYS-03 | Phase 4 | Pending |
 | GSYS-04 | Phase 4 | Pending |
 | SEL-01 | Phase 9 | Complete |
-| SEL-02 | Phase 10 | Pending |
+| SEL-02 | Phase 10 | Complete |
 | SEL-03 | Phase 10 | Complete |
 | OBJ-01 | Phase 10 | Complete |
 | OBJ-02 | Phase 10 | Complete |

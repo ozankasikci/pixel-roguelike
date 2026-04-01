@@ -38,7 +38,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 **Milestone Goal:** Bring the level editor to professional quality — matching Unity/Unreal workflows for scene object manipulation.
 
 - [x] **Phase 9: Selection Overlay Depth Fix** - Depth-correct selection highlight that does not bleed through occluding geometry (completed 2026-04-01)
-- [ ] **Phase 10: Global Keyboard Shortcuts and Hover Highlight** - Delete, Ctrl+D, Escape, F, and hover feedback all work from any editor panel
+- [x] **Phase 10: Global Keyboard Shortcuts and Hover Highlight** - Delete, Ctrl+D, Escape, F, and hover feedback all work from any editor panel (completed 2026-04-01)
 - [ ] **Phase 11: Add Mesh Discoverability** - Mesh picker button lets the user add meshes to the scene without knowing keyboard shortcuts
 
 ## Phase Details
@@ -209,7 +209,7 @@ Plans:
 
 Plans:
 - [x] 10-01-PLAN.md — Keyboard shortcut guards (Delete/F/Escape with WantTextInput), Escape clears selection, duplicate offset, smooth animated multi-select camera framing
-- [ ] 10-02-PLAN.md — Hover highlight overlay (blue-white wireframe on unselected objects), per-frame raycast, visual verification
+- [x] 10-02-PLAN.md — Hover highlight overlay (blue-white wireframe on unselected objects), per-frame raycast, visual verification
 
 ### Phase 11: Add Mesh Discoverability
 
@@ -242,5 +242,5 @@ Phases execute in numeric order: 1 → 1.1 → 2 → 2.1 → 3 → 4 → 5 → 6
 | 7. Data-driven Material System | v1.0 | 4/4 | Complete | 2026-03-30 |
 | 8. Institutional Room Scene | v1.0 | 2/2 | Complete | 2026-04-01 |
 | 9. Selection Overlay Depth Fix | v1.1 | 1/1 | Complete   | 2026-04-01 |
-| 10. Global Keyboard Shortcuts and Hover Highlight | v1.1 | 1/2 | In Progress|  |
+| 10. Global Keyboard Shortcuts and Hover Highlight | v1.1 | 2/2 | Complete   | 2026-04-01 |
 | 11. Add Mesh Discoverability | v1.1 | 0/TBD | Not started | - |
