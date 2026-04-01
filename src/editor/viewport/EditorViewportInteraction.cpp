@@ -393,11 +393,12 @@ std::optional<glm::vec3> computePlacementPoint(const std::vector<EditorSelection
     return snappingEnabled ? snappedVec3(*planeHit, moveSnap) : *planeHit;
 }
 
-void commitPlacement(EditorSceneDocument& document,
-                     const EditorPlacementState& state,
-                     const glm::vec3& position,
-                     const ContentRegistry& content,
-                     const EditorCamera& camera) {
+std::optional<std::uint64_t> commitPlacement(EditorSceneDocument& document,
+                                              const EditorPlacementState& state,
+                                              const glm::vec3& position,
+                                              const ContentRegistry& content,
+                                              const EditorCamera& camera) {
+    std::optional<std::uint64_t> result;
     switch (state.kind) {
     case EditorPlacementKind::Mesh: {
         LevelMeshPlacement placement;
@@ -406,7 +407,7 @@ void commitPlacement(EditorSceneDocument& document,
         placement.scale = glm::vec3(1.0f);
         placement.rotation = glm::vec3(0.0f);
         placement.materialId = state.materialId;
-        document.addMesh(placement);
+        result = document.addMesh(placement);
         break;
     }
     case EditorPlacementKind::PointLight: {
@@ -470,6 +471,7 @@ void commitPlacement(EditorSceneDocument& document,
     case EditorPlacementKind::None:
         break;
     }
+    return result;
 }
 
 void appendPlacementGhost(std::vector<RenderObject>& objects,
