@@ -128,10 +128,11 @@ None for v1.1. All APIs exist; work is wiring and one renderer fix.
 | 260402-0nx | Extend mesh asset discovery to scan assets/packs/ in addition to assets/meshes/ | 2026-04-02 | 24dcba0 | [260402-0nx-extend-mesh-asset-discovery-to-scan-asse](./quick/260402-0nx-extend-mesh-asset-discovery-to-scan-asse/) |
 | 260402-0wi | Fix inspector transform not updating mesh: add EditorPreviewWorld::syncTransforms() | 2026-04-02 | 818a2c4 | [260402-0wi-fix-inspector-transform-not-updating-mes](./quick/260402-0wi-fix-inspector-transform-not-updating-mes/) |
 | 260402-1l5 | Fix QuestDoorsPack door scale: measured FBX AABB (~9.2m height), corrected scene scale from 0.25 to 0.21 | 2026-04-02 | 5d97e82 | [260402-1l5-investigate-and-fix-questdoorspack-fbx-d](./quick/260402-1l5-investigate-and-fix-questdoorspack-fbx-d/) |
+| 260402-2lb | Fix multi-object gizmo scale compounding: MultiGizmoState caches original transforms per drag | 2026-04-02 | b9a2d31 | [260402-2lb-fix-multi-object-scaling-gizmo-losing-pr](./quick/260402-2lb-fix-multi-object-scaling-gizmo-losing-pr/) |
 
 ## Session Continuity
 
-Last activity: 2026-04-02 - Completed quick task 260402-1l5: Fix QuestDoorsPack door scale
+Last activity: 2026-04-02 - Completed quick task 260402-2lb: Fix multi-object gizmo scale compounding
 Last session: 2026-04-02T01:14:00.000Z
-Stopped at: Completed quick task 260402-1l5: Fix QuestDoorsPack door scale
+Stopped at: Completed quick task 260402-2lb: Fix multi-object gizmo scale compounding
 Resume file: None
