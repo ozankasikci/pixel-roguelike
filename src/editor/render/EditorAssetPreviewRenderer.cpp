@@ -1,5 +1,7 @@
 #include "editor/render/EditorAssetPreviewRenderer.h"
 
+#include "engine/core/MathUtils.h"
+#include "engine/rendering/TextureUnits.h"
 #include "engine/rendering/assets/ModelLoader.h"
 #include "engine/rendering/core/Shader.h"
 #include "engine/rendering/lighting/RenderLight.h"
@@ -17,14 +19,6 @@
 #include <vector>
 
 namespace {
-
-glm::vec3 safeNormalize(const glm::vec3& value, const glm::vec3& fallback) {
-    const float lengthSq = glm::dot(value, value);
-    if (lengthSq <= 1e-6f) {
-        return fallback;
-    }
-    return value / std::sqrt(lengthSq);
-}
 
 RenderLight makeDirectionalLight(const glm::vec3& direction,
                                  const glm::vec3& color,
@@ -196,22 +190,20 @@ void EditorAssetPreviewRenderer::renderPreviewMesh(Mesh* mesh,
     material.useMaterialMaps = material.useMaterialMaps || material.albedoTexture != fallbackAlbedo_.id();
 
     // Bind LTC lookup textures for area light support in previews (per D-12)
-    constexpr int kLtcMatUnit = 10;
-    constexpr int kLtcAmpUnit = 11;
     sceneShader_->use();
-    glActiveTexture(GL_TEXTURE0 + kLtcMatUnit);
+    glActiveTexture(GL_TEXTURE0 + TextureUnits::kLtcMat);
     glBindTexture(GL_TEXTURE_2D, ltcData_.ltcMatTexture());
-    sceneShader_->setInt("uLtcMat", kLtcMatUnit);
-    glActiveTexture(GL_TEXTURE0 + kLtcAmpUnit);
+    sceneShader_->setInt("uLtcMat", TextureUnits::kLtcMat);
+    glActiveTexture(GL_TEXTURE0 + TextureUnits::kLtcAmp);
     glBindTexture(GL_TEXTURE_2D, ltcData_.ltcAmpTexture());
-    sceneShader_->setInt("uLtcAmp", kLtcAmpUnit);
+    sceneShader_->setInt("uLtcAmp", TextureUnits::kLtcAmp);
     glActiveTexture(GL_TEXTURE0);
 
     // Disable CSM in asset previews (no directional shadow cascades needed for thumbnails)
     sceneShader_->setInt("uCsmEnabled", 0);
     sceneShader_->setInt("uCsmCascadeCount", 0);
-    sceneShader_->setInt("uCsmShadowMap", 16);
-    glActiveTexture(GL_TEXTURE16);
+    sceneShader_->setInt("uCsmShadowMap", TextureUnits::kCsmShadowMap);
+    glActiveTexture(GL_TEXTURE0 + TextureUnits::kCsmShadowMap);
     glBindTexture(GL_TEXTURE_2D_ARRAY, 0);
     glActiveTexture(GL_TEXTURE0);
 

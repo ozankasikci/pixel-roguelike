@@ -46,6 +46,9 @@ struct MaterialDefinition {
     std::optional<bool> detailWood;
     std::optional<bool> detailStone;
     std::optional<bool> detailFloor;
+    std::optional<bool> normalMapFlipY;
+    std::optional<bool> alphaTest;
+    std::optional<float> alphaCutoff;
 };
 
 struct ResolvedMaterialDefinition {
@@ -72,6 +75,9 @@ struct ResolvedMaterialDefinition {
     bool detailBrick = false;
     bool detailWood = false;
     bool detailStone = false;
+    bool normalMapFlipY = false;
+    bool alphaTest = false;
+    float alphaCutoff = 0.5f;
     bool detailFloor = false;
 };
 

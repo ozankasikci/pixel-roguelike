@@ -51,12 +51,6 @@ FetchContent_Declare(imgui
 )
 FetchContent_MakeAvailable(imgui)
 
-# Patch ImGui scroll speed: reduce Y-axis from 5 lines/notch to 1 (hardcoded in UpdateMouseWheel)
-file(READ "${imgui_SOURCE_DIR}/imgui.cpp" _imgui_src)
-string(REPLACE "ImMin(5 * window->FontRefSize" "ImMin(1 * window->FontRefSize" _imgui_src "${_imgui_src}")
-file(WRITE "${imgui_SOURCE_DIR}/imgui.cpp" "${_imgui_src}")
-# imgui_SOURCE_DIR is set after MakeAvailable
-
 add_library(imgui STATIC
     ${imgui_SOURCE_DIR}/imgui.cpp
     ${imgui_SOURCE_DIR}/imgui_demo.cpp

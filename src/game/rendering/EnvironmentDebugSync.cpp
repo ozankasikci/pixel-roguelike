@@ -1,17 +1,11 @@
 #include "game/rendering/EnvironmentDebugSync.h"
 
+#include "engine/core/MathUtils.h"
 #include "game/content/ContentRegistry.h"
 
 #include <algorithm>
 
 namespace {
-
-glm::vec3 safeNormalize(const glm::vec3& value, const glm::vec3& fallback) {
-    if (glm::dot(value, value) <= 0.0001f) {
-        return fallback;
-    }
-    return glm::normalize(value);
-}
 
 struct PreservedDebugFields {
     int debugViewMode = 0;
@@ -64,8 +58,8 @@ void storeApplied(RuntimeEnvironmentSyncState* syncState,
 } // namespace
 
 void syncSkySunFromDirectional(DebugParams& params) {
-    params.post.sky.sunDirection = safeNormalize(params.sunDirectional.direction, params.post.sky.sunDirection);
-    params.post.sky.sunColor = glm::max(params.sunDirectional.color, glm::vec3(0.0f));
+    params.post.sky.sunDirection = safeNormalize(params.lighting.sunDirectional.direction, params.post.sky.sunDirection);
+    params.post.sky.sunColor = glm::max(params.lighting.sunDirectional.color, glm::vec3(0.0f));
 }
 
 void applyEnvironmentSettings(DebugParams& params,
@@ -82,12 +76,12 @@ void applyEnvironmentSettings(DebugParams& params,
         restoreDebugFields(params, preserved);
     }
 
-    params.hemisphereSkyColor = settings.lighting.hemisphereSkyColor;
-    params.hemisphereGroundColor = settings.lighting.hemisphereGroundColor;
-    params.hemisphereStrength = settings.lighting.hemisphereStrength;
-    params.enableDirectionalLights = settings.lighting.enableDirectionalLights;
-    params.sunDirectional = settings.lighting.sun;
-    params.fillDirectional = settings.lighting.fill;
+    params.lighting.hemisphereSkyColor = settings.lighting.hemisphereSkyColor;
+    params.lighting.hemisphereGroundColor = settings.lighting.hemisphereGroundColor;
+    params.lighting.hemisphereStrength = settings.lighting.hemisphereStrength;
+    params.lighting.enableDirectionalLights = settings.lighting.enableDirectionalLights;
+    params.lighting.sunDirectional = settings.lighting.sun;
+    params.lighting.fillDirectional = settings.lighting.fill;
     syncSkySunFromDirectional(params);
 }
 

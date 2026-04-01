@@ -4,6 +4,7 @@
 #include <glm/glm.hpp>
 #include <memory>
 #include <string>
+#include <unordered_map>
 
 class Shader {
 public:
@@ -31,7 +32,9 @@ public:
 
 private:
     GLuint program_ = 0;
+    mutable std::unordered_map<std::string, GLint> uniform_cache_;
 
+    GLint uniformLocation(const std::string& name) const;
     static GLuint compileShader(GLenum type, const std::string& source, const std::string& path);
     static std::string readFile(const std::string& path);
 };

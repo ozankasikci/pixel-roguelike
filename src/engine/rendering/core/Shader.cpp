@@ -90,36 +90,46 @@ void Shader::use() const {
     glUseProgram(program_);
 }
 
-void Shader::setMat4(const std::string& name, const glm::mat4& mat) const {
+GLint Shader::uniformLocation(const std::string& name) const {
+    auto it = uniform_cache_.find(name);
+    if (it != uniform_cache_.end()) {
+        return it->second;
+    }
     GLint loc = glGetUniformLocation(program_, name.c_str());
+    uniform_cache_.emplace(name, loc);
+    return loc;
+}
+
+void Shader::setMat4(const std::string& name, const glm::mat4& mat) const {
+    GLint loc = uniformLocation(name);
     if (loc != -1) {
         glUniformMatrix4fv(loc, 1, GL_FALSE, glm::value_ptr(mat));
     }
 }
 
 void Shader::setVec3(const std::string& name, const glm::vec3& v) const {
-    GLint loc = glGetUniformLocation(program_, name.c_str());
+    GLint loc = uniformLocation(name);
     if (loc != -1) {
         glUniform3fv(loc, 1, glm::value_ptr(v));
     }
 }
 
 void Shader::setVec2(const std::string& name, const glm::vec2& v) const {
-    GLint loc = glGetUniformLocation(program_, name.c_str());
+    GLint loc = uniformLocation(name);
     if (loc != -1) {
         glUniform2fv(loc, 1, glm::value_ptr(v));
     }
 }
 
 void Shader::setFloat(const std::string& name, float v) const {
-    GLint loc = glGetUniformLocation(program_, name.c_str());
+    GLint loc = uniformLocation(name);
     if (loc != -1) {
         glUniform1f(loc, v);
     }
 }
 
 void Shader::setInt(const std::string& name, int v) const {
-    GLint loc = glGetUniformLocation(program_, name.c_str());
+    GLint loc = uniformLocation(name);
     if (loc != -1) {
         glUniform1i(loc, v);
     }

@@ -1,8 +1,35 @@
 # Feature Research
 
-**Domain:** First-person 3D roguelike dungeon crawler with 1-bit dithered aesthetic
-**Researched:** 2026-03-23
-**Confidence:** MEDIUM-HIGH (verified via multiple sources; custom-engine specifics from training data)
+**Domain:** Level editor UX — professional scene object manipulation (Unity/Unreal parity)
+**Researched:** 2026-04-01
+**Confidence:** HIGH (cross-verified against Unity Manual, Unreal Engine docs, and existing codebase)
+**Milestone:** v1.1 Editor UX
+
+---
+
+## Context: What Already Exists
+
+The editor has substantial infrastructure. Before calling something a new feature, confirm against what the codebase already ships:
+
+| Already Built | Evidence |
+|---------------|----------|
+| Ray-cast click selection (single object) | `EditorSelectionSystem.cpp`, `pickEditorObject()` |
+| Multi-select with Shift (range in outliner) | `EditorOutlinerPanel.cpp` lines 107–124 |
+| Multi-select with Ctrl/Cmd click (toggle) | `EditorOutlinerPanel.cpp` line 51–52 |
+| Selection cycling popup (multiple overlapping hits) | `EditorSelectionPickerState`, `refreshSelectionPicker()`, `renderSelectionPicker()` |
+| Translate/Rotate/Scale gizmos via ImGuizmo | `applyGizmoToSelectedObject()` in `EditorViewportInteraction.h` |
+| Grid snapping (configurable move/rotate/scale snap) | `EditorUiState::snappingEnabled`, `moveSnap`, `rotateSnap`, `scaleSnap` |
+| Delete key in outliner panel (when outliner focused) | `EditorOutlinerPanel.cpp` line 81, `ImGuiKey_Delete` |
+| Delete button in outliner UI | `EditorOutlinerPanel.cpp` line 71 |
+| `duplicateObject()` method on `EditorSceneDocument` | `EditorSceneDocument.cpp` line 602 |
+| Drag-to-viewport mesh placement from asset browser | `commitPlacement()`, `EditorDragPayload`, `emitPlacementDragSource()` |
+| Placement ghost preview while dragging | `appendPlacementGhost()` |
+| Undo/Redo command stack (256-step) | `EditorCommandStack`, `EditorDocumentStateCommand` |
+| Object parenting / hierarchy (parent-child relationships) | `setParent()`, `clearParent()`, `childObjectIds()` in `EditorSceneDocument.h` |
+| Drag-to-reorder in outliner | `moveObjectBefore()`, `moveObjectAfter()`, `moveObjectToRootEnd()` |
+| Collider, light, archetype, spawn placement objects | `EditorSceneObjectKind` enum (6 kinds) |
+| Scene save/load | `EditorSceneDocument::save()`, `loadFromSceneFile()` |
+| Frame selection camera focus request | `EditorUiState::frameSelectionRequested` flag |
 
 ---
 
@@ -10,161 +37,103 @@
 
 ### Table Stakes (Users Expect These)
 
-Features users assume exist. Missing these = product feels incomplete or broken.
+Features that define a professional-quality level editor. Their absence signals "incomplete tooling" to level designers comparing against Unity/Unreal.
 
-| Feature | Why Expected | Complexity | Notes |
-|---------|--------------|------------|-------|
-| First-person camera with smooth mouse look | Genre standard; anything else feels wrong | LOW | WASD + mouse, adjustable sensitivity required |
-| Player health system with visible HP indicator | Every combat game has this; absence is disorienting | LOW | HUD element; must work in 1-bit (no color coding — use shape/size) |
-| Melee combat with hit feedback | Core loop of dungeon crawlers; players expect tactile impact | MEDIUM | Swing animation, hit detection, enemy reaction, sound effect — all must land together |
-| Enemy AI (patrol, detect, engage) | Without enemies that react, it's a walking simulator | MEDIUM | Minimum: idle patrol, line-of-sight detection, chase, attack state machine |
-| Multiple enemy types with distinct behaviors | Single enemy type feels like a tech demo, not a game | MEDIUM | 3-5 types minimum; behavior differentiation more important than visual differentiation given 1-bit aesthetic |
-| Basic weapon variety (at least melee + ranged) | Players expect tactical options in dungeon crawlers | MEDIUM | One melee archetype + one ranged archetype covers genre expectations |
-| Boss encounter(s) | Genre standard; telegraphs that the game has a "climax" | HIGH | At least one boss; clear visual/audio distinction from regular enemies |
-| Lighting that works with 1-bit rendering | Gothic atmosphere demands light/dark contrast; point lights (torches) are expected in this setting | HIGH | Torch flicker, shadows, light falloff all rendered through dithering — the hardest technical piece |
-| FOV slider | First-person games without this generate motion sickness complaints immediately; Obra Dinn had this exact problem | LOW | Must be in options menu; 60–120 degree range |
-| Mouse sensitivity settings | Any first-person game without this is unshippable | LOW | Separate horizontal/vertical sliders |
-| Save / checkpoint system | Players expect to be able to stop and resume; losing all progress on exit is not acceptable even in a roguelike | MEDIUM | Can be minimal (save at level start/end) — but must exist |
-| Basic audio: footsteps, hit sounds, ambient | Audio absence breaks immersion immediately; silence reads as broken | MEDIUM | Three categories minimum: movement, combat, ambience |
-| Clear death / game over state | Players need to understand when they've died and what their options are | LOW | Death screen with restart option |
-| Options / settings menu | Expected on every PC game; without it players assume the game is unfinished | LOW | At minimum: FOV, sensitivity, audio volume, window/fullscreen toggle |
-
----
+| Feature | Why Expected | Complexity | Depends On | Notes |
+|---------|--------------|------------|------------|-------|
+| Delete key works when viewport is focused | Unity/Unreal both respond to Delete wherever focus is — currently only works when Outliner panel is focused | LOW | Existing `ImGuiKey_Delete` handling in Outliner | Move key check to global scope (viewport-focused or any editor window focused, not just Outliner); `ImGuiKey_Delete` already used, just needs scope expansion |
+| Cmd+D / Ctrl+D duplicate selected object | Industry standard shortcut; Unity uses Ctrl+D, Unreal uses Ctrl+W for duplicate | LOW | `duplicateObject()` already exists on `EditorSceneDocument` | Wire keyboard shortcut to existing method + push undo command; duplicate should place copy slightly offset from original |
+| Delete + Duplicate accessible from viewport right-click context menu | Both Unity and Unreal surface these in viewport right-click; prevents needing to hunt through panels | LOW | Selection state, existing menu patterns | Standard ImGui `BeginPopupContextItem` on viewport |
+| Selection clearing with Escape or click-on-empty | Unity: Escape deselects; Unreal: clicking empty space deselects | LOW | Selection state (`selectedIds`) | Click-on-empty already partially handled; Escape key clear needs adding |
+| Frame/focus selected object (F key) | Unity uses F in Scene view; Unreal uses F to frame selected — universally expected in 3D editors | LOW | `frameSelectionRequested` flag exists | Flag already exists; verify F key is bound in viewport input handling |
+| Selection highlight: outline on hovered object | Unity shows orange outline on selected, different color on hovered; absence of hover feedback makes editors feel unresponsive | MEDIUM | Rendering pipeline (stencil/outline pass) | Requires stencil buffer or object-ID pass for hover; selection highlight may already exist for selected — hover is the gap |
+| Add mesh from asset browser double-click (not just drag) | Unity: double-clicking an asset in Project window adds it to scene at world origin | LOW | `commitPlacement()`, content registry | Fallback for users who prefer click over drag; places at camera focus point or world origin |
 
 ### Differentiators (Competitive Advantage)
 
-Features that set this game apart. Aligned with core value: the 1-bit dithered aesthetic as primary identity.
+Features beyond parity that improve workflow velocity specifically for this project's solo developer usage pattern.
 
-| Feature | Value Proposition | Complexity | Notes |
-|---------|-------------------|------------|-------|
-| 1-bit ordered dithering post-process | The entire visual identity of the game; instantly recognizable; no competitor in the dungeon crawler space | HIGH | Stabilized dither (not animated noise) — Obra Dinn proved randomized > ordered for video compression. Spherical mapping prevents crawling artifacts during movement |
-| Gothic cathedral architecture rendered in 1-bit | Unusual combination; arched ceilings, stone pillars, and torch light rendered in pure black/white creates a striking aesthetic not seen in the genre | HIGH | Environmental design effort; every architectural element must read clearly in 1-bit — test early |
-| Dithering-responsive point lighting | Torches that visibly shift the dither density/pattern around them creates a unique atmospheric effect | HIGH | Requires dither threshold to sample from scene luminance; a purely technical differentiator that has visual payoff |
-| Handcrafted levels (vs procedural) | Tighter atmosphere and pacing control; allows "authored" moments of discovery and surprise; contradicts the flood of procedural dungeon crawlers | MEDIUM | Design-intensive; but the gothic cathedral setting makes handcrafting worthwhile because architecture has to look plausible |
-| Weapon-based progression (find/upgrade) | Player attachment to specific weapons feels more personal than loot treadmill; choosing between a known sword and an unidentified crossbow is a meaningful moment | MEDIUM | Sparse inventory (1 melee + 1 ranged slot) keeps it simple without feeling bare |
-| Ranged magic/spell projectiles | Bows are expected; spells/magic projectiles in a gothic cathedral setting add thematic coherence and a higher skill ceiling | MEDIUM | Projectile travel, hit detection, visual effect that reads clearly in 1-bit (glowing orb → dithered bright circle) |
-| Atmospheric enemy design readable in 1-bit | Enemies designed specifically for high-contrast silhouette readability — skeletal figures, armored knights, spectral shapes — are more visually distinctive than color-coded enemies | MEDIUM | Silhouette-first enemy design process |
-| Screen-space ambient occlusion contributing to dither density | Corners and crevices darker via AO → denser dither patterns → visual depth without color | HIGH | Optional; adds significant visual quality but is technically demanding |
-
----
+| Feature | Value Proposition | Complexity | Depends On | Notes |
+|---------|-------------------|------------|------------|-------|
+| Duplicate-in-place with auto-offset | Ctrl+D places duplicate at original position offset by a small amount (e.g. 0.5 units on X); eliminates the "where did my duplicate go?" confusion | LOW | `duplicateObject()` + transform offset logic | More ergonomic than Unity's same-position duplicate |
+| Selection stays active after delete+undo | After Ctrl+Z undoes a delete, the previously deleted objects should be re-selected; many editors lose selection on undo | LOW | `restoreState()` + selection sync | Improves iterative delete/undo workflows |
+| Selection cycling popup (pick behind overlapping meshes) | Already partially built via `EditorSelectionPickerState` — surface it as a popup menu when multiple objects are under the cursor | MEDIUM | `EditorSelectionPickerState`, `renderSelectionPicker()` | The "distracting selection overlay" bug the user mentioned — make this feel intentional and polished rather than broken |
+| Viewport-focused keyboard shortcuts (global hotkeys) | All shortcuts work regardless of which panel is focused (as long as no text field is active) — mirrors Unreal's behavior | LOW | ImGui focus management, `WantTextInput` guard | The current Delete-only-in-Outliner limitation; generalize to a global shortcut dispatch layer |
 
 ### Anti-Features (Commonly Requested, Often Problematic)
 
-Features that seem good but create disproportionate problems.
-
-| Feature | Why Requested | Why Problematic | Alternative |
-|---------|---------------|-----------------|-------------|
-| Procedural level generation | Replayability; "infinite content" | Destroys the handcrafted gothic atmosphere; rooms must fit together architecturally and procedural systems don't maintain that; undermines the authored pacing of boss reveals; explicitly out of scope per PROJECT.md | 3-5 handcrafted levels with strong internal variety; hidden rooms and branching paths deliver discovery without proceduralism |
-| Inventory management UI | Genre tradition; player agency over loadout | Kills the lean, atmospheric experience; forces HUD complexity that fights the 1-bit visual aesthetic; v1 explicitly defers this per PROJECT.md | Simple weapon slots (one melee, one ranged found/swapped in world); no inventory screen needed |
-| Stamina/dodge roll system | Soulslike feel; prevents button mashing | Adds a third combat resource on top of health and ammo; substantially increases combat design complexity; the gothic dungeon crawler identity doesn't require it | Deliberate enemy attack telegraphs and room layout that forces positioning; challenge through environment and timing, not stamina gates |
-| Character class / RPG stats | Depth; replayability | Stat systems imply a character creation screen, leveling progression, and balance across multiple builds; all require significant design and testing work; undermines simplicity of the core loop | Weapon variety as the only "class" distinction; different weapon types serve different playstyles without class UI |
-| Multiplayer co-op | Obvious social appeal | Multiplayer requires synchronization, session management, and netcode — none of which exist in the custom C++ engine; explicitly out of scope per PROJECT.md; Obra Dinn's success proves solo first-person can be commercially viable | Single-player only; design for intimate, atmospheric solo experience |
-| Animated dithering (noise patterns that shift per frame) | "Living" dithering looks cool in motion | Destroys video stream/screenshot readability (YouTube and Twitch compression destroys dithered images; random patterns compress better but still degrade); creates visual noise fatigue for long sessions; harder to make readable | Stabilized ordered dithering with spherical mapping so patterns are anchored to world geometry, not screen pixels — patterns shift naturally with camera movement but don't flutter on static objects |
-| Narrative/story system | Atmosphere and motivation | Story + cutscene systems are expensive to build and maintain; the 1-bit aesthetic actually supports absence of explicit narrative (the visual ambiguity invites player interpretation); explicitly out of scope | Environmental storytelling through level geometry: broken altars, scattered bones, torch patterns, door configurations — imply history without cutscenes |
-| Procedural audio generation | Unique per playthrough | Technically complex to implement in custom C++ with no audio middleware; the aesthetic payoff is marginal | High-quality curated SFX + dynamic mixing via parameterized volume/pitch randomization; achieves variety without proceduralism |
-| Full controller remapping | Player-friendliness | Low priority for v1; adds UI complexity; the default WASD + mouse mapping is genre-standard and needs to just work well | Sensible defaults with mouse sensitivity and FOV exposed; controller support can be v2 feature |
+| Feature | Why Requested | Why Problematic | Better Approach |
+|---------|---------------|-----------------|-----------------|
+| Box/marquee select (drag rectangle to select multiple) | Standard in Unity/Unreal | High complexity: requires separate interaction mode, hit testing against screen-space rectangle for all objects in viewport, conflicts with existing camera pan on mouse drag | Use Shift+click multi-select in outliner (already works) + Ctrl+click additive selection; marquee can be deferred to v2 |
+| Copy-paste between scenes (Ctrl+C / Ctrl+V) | Seems intuitive — copy a door, paste it | Requires clipboard serialization format, handling of material/mesh ID references across scenes; cross-scene paste is ambiguous about world position | Duplicate (Ctrl+D) within same scene covers 90% of use cases; cross-scene copy is v2+ |
+| Multi-object transform gizmo (single gizmo for multiple selected) | Unity/Unreal both support this | ImGuizmo `Manipulate()` operates on a single 4x4 matrix; multi-select gizmo requires computing a group pivot, applying delta transforms to each object, then decomposing — non-trivial with the existing single-object gizmo path | Move gizmo works on the primary selected object for now; multi-move can be a phase-2 improvement |
+| Undo history panel (visual timeline) | Looks professional | Marginal DX gain over Ctrl+Z; significant UI surface area to build and maintain; the undo label in menu is sufficient | Surface undo/redo labels in Edit menu (already exists via `undoLabel()` / `redoLabel()`) |
+| Asset drag from OS Finder/Explorer into viewport | Drag an FBX from Finder into the editor | Requires native OS drag-drop interop via GLFW/platform API — significant engineering; not worth the complexity for a solo project | Use the in-editor asset browser drag-to-viewport (already built) |
+| Real-time multi-user collaboration | Some editors support this | Completely out of scope for a solo project engine | Single-writer scene file; no need |
 
 ---
 
 ## Feature Dependencies
 
 ```
-[1-bit Dither Post-Process]
-    └──requires──> [3D scene rendering with depth buffer]
-                       └──requires──> [Custom rendering pipeline (OpenGL/Vulkan)]
+[Delete key global shortcut]
+    └──requires──> [Viewport focus detection (ImGui IsWindowFocused)]
+    └──requires──> [WantTextInput guard (already used in Outliner)]
 
-[Dithering-responsive lighting]
-    └──requires──> [1-bit Dither Post-Process]
-    └──requires──> [Point light sources in scene]
-                       └──requires──> [Custom rendering pipeline]
+[Ctrl+D duplicate shortcut]
+    └──requires──> [duplicateObject() on EditorSceneDocument (already exists)]
+    └──requires──> [EditorCommandStack.pushDocumentStateCommand() (already exists)]
+    └──requires──> [Transform offset after duplicate]
 
-[Boss encounter]
-    └──requires──> [Enemy AI state machine]
-    └──requires──> [Melee + ranged combat]
-    └──requires──> [Player health system]
+[Selection cycling popup polish]
+    └──requires──> [EditorSelectionPickerState (already exists)]
+    └──requires──> [renderSelectionPicker() (already exists)]
+    └──enhances──> [viewport click selection UX]
 
-[Weapon progression]
-    └──requires──> [Melee combat]
-    └──requires──> [Ranged combat]
-    └──requires──> [Weapon pickup / swap mechanic]
+[Viewport context menu (right-click)]
+    └──requires──> [Selection state (selectedIds)]
+    └──contains──> [Delete, Duplicate, Frame Selected]
 
-[Ranged combat (projectiles)]
-    └──requires──> [Hit detection system]
-    └──requires──> [Projectile physics/trajectory]
+[Frame selected (F key)]
+    └──requires──> [frameSelectionRequested flag (already exists)]
+    └──requires──> [Camera orbit / zoom to bounds logic in EditorViewportController]
 
-[Handcrafted level design]
-    └──requires──> [Level geometry loading]
-    └──requires──> [Gothic architectural asset set]
-
-[Save / checkpoint system]
-    └──requires──> [Level progression state tracking]
-
-[Options menu (FOV, sensitivity)]
-    └──requires──> [Windowing/input system]
-
-[Audio: footsteps, combat, ambient]
-    └──requires──> [Audio playback system]
-
-[Enemy AI (patrol, detect, attack)]
-    └──enhances──> [Multiple enemy types]
-
-[Point lighting (torches)]
-    └──enhances──> [Gothic cathedral environment]
-    └──enhances──> [Dithering-responsive lighting]
-
-[1-bit dither visual style]
-    ──conflicts──> [Color-coded HUD elements]
-    ──conflicts──> [Animated/flickering dither noise]
+[Global hotkey dispatch layer]
+    └──enhances──> [Delete key, Ctrl+D, F key, Escape clear selection]
+    └──prevents──> [Duplicate key handling across every panel separately]
 ```
 
 ### Dependency Notes
 
-- **1-bit dither requires depth buffer:** The dither threshold must sample scene luminance and depth; a plain framebuffer capture is insufficient.
-- **Dithering-responsive lighting requires point lights:** Without dynamic point lights (torches), the dither density is uniform and flat — the differentiating visual effect doesn't manifest.
-- **Boss requires full AI + combat systems:** A boss is a specialized enemy; both melee and ranged combat systems must be solid before a boss encounter is designed.
-- **1-bit conflicts with color-coded HUD:** Standard game UI conventions (red = danger, green = health) are unavailable. All HUD information must be conveyed through shape, size, position, or animation rather than color.
-- **Handcrafted levels conflict with late design changes to the rendering pipeline:** Level geometry authored against early renderer assumptions will need re-work if the rendering pipeline changes significantly. Build rendering first, levels second.
+- **Ctrl+D requires duplicateObject():** The method already exists on `EditorSceneDocument`. The shortcut just needs wiring through the command stack with a before/after state capture. Complexity is very low — the infrastructure is complete.
+- **Delete global requires focus management:** Currently `ImGuiKey_Delete` is checked inside `if (ImGui::IsWindowFocused(ImGuiFocusedFlags_RootAndChildWindows))` scoped to the Outliner. The fix is to move this check to the top-level editor update, guarded by `!ImGui::GetIO().WantTextInput && !ImGui::IsAnyItemActive()`.
+- **Selection cycling polish depends on existing infrastructure:** `EditorSelectionPickerState` and `renderSelectionPicker()` already exist. The "distracting overlay" the user mentioned is likely a UX refinement of the existing cycling behavior, not a new feature build.
+- **Frame selected (F key) may already be wired:** `frameSelectionRequested` flag exists in `EditorUiState`. Verify whether the viewport input handling already sets this on F keypress before building it.
 
 ---
 
 ## MVP Definition
 
-### Launch With (v1)
+### Launch With (v1.1)
 
-Minimum viable to validate the core concept: does the 1-bit first-person dungeon combat feel good?
+Minimum to call the editor "Unity/Unreal parity for basic workflows."
 
-- [ ] Custom C++ renderer with 1-bit dithering post-process — the entire visual identity; without this, nothing else is on-brand
-- [ ] First-person camera with WASD + mouse look, FOV slider, sensitivity settings — locomotion must feel smooth before any other mechanic is tested
-- [ ] Player health system with 1-bit-readable HUD indicator — shape-based, not color-coded
-- [ ] Melee combat with hit detection and feedback (audio + enemy reaction) — core loop validation
-- [ ] Ranged combat (at least one projectile weapon) — differentiates from pure melee dungeon crawlers
-- [ ] 3 enemy types minimum (grunt, ranged, heavy) with patrol/detect/attack AI — enough variety to make combat interesting
-- [ ] One boss encounter — climax; confirms the game has a shape
-- [ ] Point light sources (torches) that affect dither density — the signature visual effect
-- [ ] 2-3 handcrafted levels in gothic cathedral setting — enough content to feel like a game, not a prototype
-- [ ] Save at level boundaries — players must be able to stop and resume
-- [ ] Basic audio: footsteps, weapon impacts, ambient dungeon sounds — silence breaks immersion
-- [ ] Options menu: FOV, mouse sensitivity, audio volume, fullscreen toggle
+- [ ] **Delete key works when viewport is focused** — currently breaks the most fundamental expected behavior (press Delete to remove selected object while working in viewport)
+- [ ] **Ctrl+D duplicate shortcut** — second most expected shortcut; `duplicateObject()` already exists, just needs wiring
+- [ ] **Selection cycling popup polished** — the "distracting overlay" bug; make it feel intentional (popup menu) rather than broken stencil artifact
+- [ ] **Escape clears selection** — nearly zero-complexity; standard UX expectation
+- [ ] **Right-click context menu in viewport** — surfaces Delete, Duplicate, Frame Selected without requiring knowledge of keyboard shortcuts
 
 ### Add After Validation (v1.x)
 
-Add once core loop is confirmed fun:
-
-- [ ] Weapon upgrade mechanic — trigger: players ask "can I improve my weapon?" or express attachment to specific weapons
-- [ ] Additional enemy types (4-6 total) — trigger: combat feels repetitive after 30 minutes
-- [ ] Additional handcrafted levels (4-6 total) — trigger: players express desire for more content
-- [ ] Screen-space effects that enhance dithering (AO, depth of field approximation) — trigger: visuals feel flat in playtesting
-- [ ] Additional boss encounters — trigger: core boss design is validated as fun
-- [ ] Death/run statistics screen — trigger: players ask "how far did I get?"
+- [ ] **Hover highlight on objects** — improves discoverability significantly but requires rendering pipeline work (stencil pass); worth adding after core manipulation UX is correct
+- [ ] **Selection persists through undo of delete** — polish; depends on selection state being included in undo state or synced after redo
 
 ### Future Consideration (v2+)
 
-Defer until product-market fit is established:
-
-- [ ] Full controller support — defer: WASD + mouse is genre standard; controller adds input mapping complexity
-- [ ] Mod/level editor support — defer: significant infrastructure; only relevant if the game has an active community
-- [ ] Advanced accessibility options (colorblind mode is irrelevant for 1-bit; subtitles for ambient audio cues) — defer: validate concept first
-- [ ] Steam achievements / leaderboards — defer: platform integration is non-trivial in custom C++; has zero impact on game quality
+- [ ] **Box/marquee selection** — valid feature but high complexity relative to benefit for solo developer; outliner multi-select is sufficient for now
+- [ ] **Multi-object gizmo (group pivot)** — requires ImGuizmo extension or custom group-pivot math
+- [ ] **Copy-paste across scenes** — requires clipboard serialization format
 
 ---
 
@@ -172,65 +141,65 @@ Defer until product-market fit is established:
 
 | Feature | User Value | Implementation Cost | Priority |
 |---------|------------|---------------------|----------|
-| 1-bit dithering post-process | HIGH | HIGH | P1 — core identity, build first |
-| First-person camera + locomotion | HIGH | MEDIUM | P1 — nothing works without this |
-| Player health + HUD | HIGH | LOW | P1 — trivial, do immediately |
-| Melee combat with feedback | HIGH | MEDIUM | P1 — core loop |
-| Enemy AI (3 states) | HIGH | MEDIUM | P1 — core loop enabler |
-| Point light sources (torches) | HIGH | HIGH | P1 — differentiating visual effect |
-| Ranged combat (projectiles) | MEDIUM | MEDIUM | P1 — expected for genre variety |
-| Boss encounter | HIGH | HIGH | P1 — confirms game has a shape |
-| Gothic level geometry (2-3 levels) | HIGH | HIGH | P1 — content needed for validation |
-| Audio (footsteps, combat, ambient) | HIGH | MEDIUM | P1 — absence breaks immersion |
-| Save / checkpoint system | HIGH | LOW | P1 — unshippable without it |
-| FOV + sensitivity options | HIGH | LOW | P1 — motion sickness mitigation |
-| Multiple enemy types (3+) | MEDIUM | MEDIUM | P2 — adds combat depth |
-| Weapon variety / upgrade | MEDIUM | MEDIUM | P2 — adds progression arc |
-| Weapon pickup / swap | MEDIUM | LOW | P2 — enables weapon progression |
-| Screen-space AO / depth effects | MEDIUM | HIGH | P2 — visual polish |
-| Run statistics / death screen | LOW | LOW | P2 — player feedback |
-| Full controller support | LOW | MEDIUM | P3 — niche for keyboard-first genre |
-| Steam integration | LOW | MEDIUM | P3 — post-validation |
+| Delete key global (not just outliner) | HIGH | LOW | P1 |
+| Ctrl+D duplicate shortcut | HIGH | LOW | P1 |
+| Selection cycling popup polish | HIGH | LOW (infrastructure exists) | P1 |
+| Escape clears selection | MEDIUM | LOW | P1 |
+| Right-click viewport context menu | MEDIUM | LOW | P1 |
+| Frame selected (F key) | MEDIUM | LOW (flag exists, verify wiring) | P1 |
+| Hover highlight on objects | MEDIUM | MEDIUM | P2 |
+| Selection persists through undo | LOW | LOW | P2 |
+| Box/marquee select | MEDIUM | HIGH | P3 |
+| Multi-object group gizmo | MEDIUM | HIGH | P3 |
+| Copy-paste across scenes | LOW | HIGH | P3 |
 
 **Priority key:**
-- P1: Must have for launch
-- P2: Should have, add when possible
-- P3: Nice to have, future consideration
+- P1: Required for v1.1 milestone
+- P2: Add when core is done, before v1.2
+- P3: Defer to v2+
 
 ---
 
 ## Competitor Feature Analysis
 
-| Feature | Return of the Obra Dinn | Gunfire Reborn / Roboquest (FPS Roguelites) | Our Approach |
-|---------|------------------------|----------------------------------------------|--------------|
-| Visual style | 1-bit dithered (investigation game, not action) | Full color, stylized | 1-bit dithered action — unique combination |
-| Perspective | First-person | First-person | First-person |
-| Level structure | Handcrafted, linear | Procedurally generated | Handcrafted, gothic cathedral |
-| Combat | None (exploration/puzzle) | Fast-paced gunplay | Melee + ranged, deliberate pacing |
-| Progression | Item identification (mystery) | Roguelite meta-progression + run upgrades | Weapon find/upgrade per run |
-| Enemy variety | N/A | Many enemy types + boss waves | 3-5 types + boss(es) |
-| Audio | Atmospheric, minimal music | Energetic soundtrack | Gothic ambient, deliberate sound design |
-| FOV control | Present (community mods exist for it) | Standard | Required; Obra Dinn's oversight is a cautionary note |
-| Story / narrative | Central to the game | Absent / minimal | Absent; environmental only |
-| Accessibility | Limited (motion sickness was a complaint) | Standard FPS accessibility | FOV slider + sensitivity as minimum mitigation |
+Unity and Unreal are the reference implementations. This editor targets parity on manipulation primitives, not feature completeness.
+
+| Feature | Unity | Unreal Engine 5 | This Editor |
+|---------|-------|-----------------|-------------|
+| Delete selected | Delete key (any focused window) | Delete key | Delete in Outliner only — needs global |
+| Duplicate | Ctrl+D | Ctrl+W | `duplicateObject()` exists, shortcut not wired |
+| Copy/Paste | Ctrl+C / Ctrl+V | Ctrl+C / Ctrl+V | Not yet built |
+| Undo/Redo | Ctrl+Z / Ctrl+Shift+Z | Ctrl+Z / Ctrl+Y | Built (256-step stack) |
+| Frame selected | F (Scene view) | F (Viewport) | Flag exists; verify wiring |
+| Clear selection | Escape / click empty | Escape / click empty | Partially (click empty); Escape not wired |
+| Multi-select (additive) | Ctrl+click | Ctrl+click | Built in Outliner; verify in viewport |
+| Multi-select (range) | Shift+click | Shift+click | Built in Outliner |
+| Selection highlight | Orange outline | Yellow outline | Exists for selected; hover state TBD |
+| Selection cycling (overlapping) | "Selection piercing menu" popup | Alt+click cycles | `EditorSelectionPickerState` exists |
+| Translate gizmo | W key | W key | Built (ImGuizmo) |
+| Rotate gizmo | E key | E key | Built (ImGuizmo) |
+| Scale gizmo | R key | R key | Built (ImGuizmo) |
+| Grid snapping | Snap to grid toggle | Ctrl disables snap | Built |
+| Right-click context menu | Yes (Create, Delete, Duplicate) | Yes | Not yet built |
+| Drag mesh from browser | Yes (Project window → Scene) | Yes (Content Browser → Viewport) | Built |
+| Scene hierarchy (outliner) | Hierarchy panel | World Outliner | Built |
+| Inspector panel | Inspector | Details Panel | Built |
 
 ---
 
 ## Sources
 
-- [The Best First-Person Roguelike Video Games — The Gamer](https://www.thegamer.com/best-first-person-roguelikes/)
-- [The Best First-Person Roguelites — Rogueliker](https://rogueliker.com/fps-roguelikes/)
-- [First-Person Dungeon Crawler RPGs: Their Resurrection — Turn Based Lovers](https://turnbasedlovers.com/originals/first-person-dungeon-crawler-rpgs-their-resurrection-what-to-play-now-and-what-lies-ahead/)
-- [Lucas Pope and the rise of the 1-bit dither-punk aesthetic — Game Developer](https://www.gamedeveloper.com/design/lucas-pope-and-the-rise-of-the-1-bit-dither-punk-aesthetic)
-- [Lucas Pope on the challenge of creating Obra Dinn's 1-bit aesthetic — PC Gamer](https://www.pcgamer.com/lucas-pope-on-the-challenge-of-creating-obra-dinns-1-bit-aesthetic/)
-- [Fix Obra Dinn Motion Sickness — GameHelper](https://www.gamehelper.io/games/return-of-the-obra-dinn/articles/common-issues-and-fixes-in-return-of-the-obra-dinn-complete-resolution-guide)
-- [Analysis: The Eight Rules of Roguelike Design — Game Developer](https://www.gamedeveloper.com/game-platforms/analysis-the-eight-rules-of-roguelike-design)
-- [What makes a dungeon crawl good? — Skeleton Code Machine](https://www.skeletoncodemachine.com/p/what-makes-a-dungeon-crawl-good)
-- [Scope Creep: The Silent Killer of Solo Indie Game Development — Wayline](https://www.wayline.io/blog/scope-creep-solo-indie-game-development)
-- [Juicy damage UI feedback in video games — Lennart Nacke / Medium](https://acagamic.medium.com/juicy-damage-feedback-in-games-7c1758d69a42)
-- [HUD (video games) — Wikipedia](https://en.wikipedia.org/wiki/HUD_(video_gaming))
+- Unity Manual: Pick and select GameObjects — https://docs.unity3d.com/Manual/ScenePicking.html (MEDIUM confidence — excerpt available)
+- Unity Hotkeys reference — https://oxmond.com/unity-shortcuts/ (MEDIUM confidence — third-party verified against Unity docs structure)
+- Unreal Engine Actor Selection — https://dev.epicgames.com/documentation/en-us/unreal-engine/level-editor-in-unreal-engine (HIGH confidence — official docs)
+- Unreal Engine Viewport Controls — https://dev.epicgames.com/documentation/en-us/unreal-engine/viewport-controls-in-unreal-engine (HIGH confidence — official docs)
+- Unreal Engine Keyboard Shortcuts blog — https://www.domestika.org/en/blog/4733-basic-keyboard-shortcuts-for-unreal-engine-4-and-5 (MEDIUM confidence)
+- ImGuizmo GitHub — multi-select issue #150 — https://github.com/CedricGuillemet/ImGuizmo/issues/150 (HIGH confidence — library maintainer's own repo)
+- Hazel Engine 2023.1 (ImGuizmo multi-select, Ctrl+D duplicate) — https://docs.hazelengine.com/HazelReleaseNotes/Hazel-2023.1 (MEDIUM confidence)
+- Existing codebase: `src/editor/` — HIGH confidence (direct inspection)
 
 ---
 
-*Feature research for: first-person 3D roguelike dungeon crawler with 1-bit dithered aesthetic*
-*Researched: 2026-03-23*
+*Feature research for: Level editor UX — professional scene object manipulation*
+*Milestone: v1.1 Editor UX*
+*Researched: 2026-04-01*

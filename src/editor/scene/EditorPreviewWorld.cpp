@@ -8,7 +8,7 @@
 #include "game/components/TransformComponent.h"
 #include "game/content/ContentRegistry.h"
 #include "game/level/LevelBuilder.h"
-#include "game/levels/GameAssets.h"
+#include "game/levels/ProceduralGameAssets.h"
 #include "game/prefabs/GameplayPrefabs.h"
 #include "game/rendering/EnvironmentProfile.h"
 #include "game/rendering/MaterialDefinition.h"
@@ -16,6 +16,7 @@
 
 #define GLM_ENABLE_EXPERIMENTAL
 #include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtx/euler_angles.hpp>
 #include <glm/gtx/matrix_decompose.hpp>
 #include <glm/gtx/quaternion.hpp>
 
@@ -80,7 +81,9 @@ bool decomposeTransformMatrix(const glm::mat4& matrix,
     if (!glm::decompose(matrix, scale, orientation, position, skew, perspective)) {
         return false;
     }
-    rotationDegrees = glm::degrees(glm::eulerAngles(orientation));
+    float rx, ry, rz;
+    glm::extractEulerAngleXYZ(glm::mat4_cast(orientation), rx, ry, rz);
+    rotationDegrees = glm::degrees(glm::vec3(rx, ry, rz));
     return true;
 }
 
@@ -115,7 +118,7 @@ void EditorObjectBounds::expand(const EditorObjectBounds& other) {
 }
 
 EditorPreviewWorld::EditorPreviewWorld() {
-    registerAllGameAssets(meshLibrary_);
+    registerProceduralAssets(meshLibrary_);
     reloadMeshAssets();
 }
 

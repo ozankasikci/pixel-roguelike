@@ -7,6 +7,7 @@
 
 #include <glm/glm.hpp>
 #include <spdlog/spdlog.h>
+#include <stb_image.h>
 
 #include <algorithm>
 #include <array>
@@ -213,6 +214,9 @@ const RenderMaterialData& MaterialTextureLibrary::resolve(std::string_view mater
     renderMaterial.detailWood = resolved.detailWood;
     renderMaterial.detailStone = resolved.detailStone;
     renderMaterial.detailFloor = resolved.detailFloor;
+    renderMaterial.normalMapFlipY = resolved.normalMapFlipY;
+    renderMaterial.alphaTest = resolved.alphaTest;
+    renderMaterial.alphaCutoff = resolved.alphaCutoff;
     renderMaterial.baseColor = resolved.baseColor;
     renderMaterial.useMaterialMaps = useMaterialMaps;
     renderMaterial.useProceduralDetail =
@@ -307,18 +311,89 @@ const MaterialTextureLibrary::TextureSet& MaterialTextureLibrary::ensureTextureS
         AssetCache::writeTextureCache(key + "_roughness", paramHash, pixels.roughness, sz, sz, 1);
         AssetCache::writeTextureCache(key + "_ao", paramHash, pixels.ao, sz, sz, 1);
     } else {
-        // File-based textures: not cached per design doc (diminishing returns)
-        if (!resolved.albedoMapPath.empty()) {
-            textures.albedo.createRGBA8FromFile(resolveProjectPath(resolved.albedoMapPath));
+        // File-based textures: cached to disk (206 MB of PNGs makes caching essential)
+        uint64_t paramHash = AssetCache::hashBytes(key.data(), key.size());
+
+        // Try cache first for all requested channels
+        auto cachedAlbedo = !resolved.albedoMapPath.empty()
+            ? AssetCache::findTextureCache(key + "_file_albedo", paramHash)
+            : std::nullopt;
+        auto cachedNormal = !resolved.normalMapPath.empty()
+            ? AssetCache::findTextureCache(key + "_file_normal", paramHash)
+            : std::nullopt;
+        auto cachedRoughness = !resolved.roughnessMapPath.empty()
+            ? AssetCache::findTextureCache(key + "_file_roughness", paramHash)
+            : std::nullopt;
+        auto cachedAo = !resolved.aoMapPath.empty()
+            ? AssetCache::findTextureCache(key + "_file_ao", paramHash)
+            : std::nullopt;
+
+        // Check if all requested channels have cache hits
+        bool allCached = true;
+        if ((!resolved.albedoMapPath.empty() && !cachedAlbedo) ||
+            (!resolved.normalMapPath.empty() && !cachedNormal) ||
+            (!resolved.roughnessMapPath.empty() && !cachedRoughness) ||
+            (!resolved.aoMapPath.empty() && !cachedAo)) {
+            allCached = false;
         }
-        if (!resolved.normalMapPath.empty()) {
-            textures.normal.createRGBA8FromFile(resolveProjectPath(resolved.normalMapPath));
-        }
-        if (!resolved.roughnessMapPath.empty()) {
-            textures.roughness.createR8FromFile(resolveProjectPath(resolved.roughnessMapPath));
-        }
-        if (!resolved.aoMapPath.empty()) {
-            textures.ao.createR8FromFile(resolveProjectPath(resolved.aoMapPath));
+
+        if (allCached) {
+            if (cachedAlbedo) {
+                textures.albedo.createRGBA8(cachedAlbedo->width, cachedAlbedo->height, cachedAlbedo->pixels);
+            }
+            if (cachedNormal) {
+                textures.normal.createRGBA8(cachedNormal->width, cachedNormal->height, cachedNormal->pixels);
+            }
+            if (cachedRoughness) {
+                textures.roughness.createR8(cachedRoughness->width, cachedRoughness->height, cachedRoughness->pixels);
+            }
+            if (cachedAo) {
+                textures.ao.createR8(cachedAo->width, cachedAo->height, cachedAo->pixels);
+            }
+        } else {
+            // Cache miss: load textures from files, create GL textures
+            if (!resolved.albedoMapPath.empty()) {
+                textures.albedo.createRGBA8FromFile(resolveProjectPath(resolved.albedoMapPath));
+            }
+            if (!resolved.normalMapPath.empty()) {
+                textures.normal.createRGBA8FromFile(resolveProjectPath(resolved.normalMapPath));
+            }
+            if (!resolved.roughnessMapPath.empty()) {
+                textures.roughness.createR8FromFile(resolveProjectPath(resolved.roughnessMapPath));
+            }
+            if (!resolved.aoMapPath.empty()) {
+                textures.ao.createR8FromFile(resolveProjectPath(resolved.aoMapPath));
+            }
+
+            // Re-read pixel data from files to write to disk cache for next launch.
+            // stb_image is fast for sequential re-reads; cheaper than refactoring Texture2D
+            // to expose pixel data. On warm cache, files are not re-read at all.
+            auto writeFileTextureCache = [&](const std::string& mapPath,
+                                             const std::string& suffix,
+                                             int reqChannels) {
+                if (mapPath.empty()) {
+                    return;
+                }
+                std::string resolvedMapPath = resolveProjectPath(mapPath);
+                int w = 0;
+                int h = 0;
+                int ch = 0;
+                stbi_uc* px = stbi_load(resolvedMapPath.c_str(), &w, &h, &ch, reqChannels);
+                if (px) {
+                    const size_t count = static_cast<size_t>(w) * static_cast<size_t>(h) *
+                                         static_cast<size_t>(reqChannels);
+                    std::vector<uint8_t> pixels(px, px + count);
+                    stbi_image_free(px);
+                    AssetCache::writeTextureCache(key + suffix, paramHash, pixels,
+                                                  static_cast<uint16_t>(w),
+                                                  static_cast<uint16_t>(h),
+                                                  static_cast<uint8_t>(reqChannels));
+                }
+            };
+            writeFileTextureCache(resolved.albedoMapPath, "_file_albedo", 4);
+            writeFileTextureCache(resolved.normalMapPath, "_file_normal", 4);
+            writeFileTextureCache(resolved.roughnessMapPath, "_file_roughness", 1);
+            writeFileTextureCache(resolved.aoMapPath, "_file_ao", 1);
         }
     }
 

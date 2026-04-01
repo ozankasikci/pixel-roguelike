@@ -2,6 +2,7 @@
 
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
+#include <string>
 #include <vector>
 #include <cmath>
 #include <cstdint>
@@ -13,6 +14,13 @@ struct RawMeshData {
     std::vector<glm::vec2> uvs;
     std::vector<glm::vec3> tangents;
     std::vector<uint32_t> indices;
+};
+
+// A named mesh group returned by multi-material loaders.
+// The name corresponds to the material name from the source file.
+struct NamedRawMeshData {
+    std::string name;  // Material name from the source file
+    RawMeshData mesh;
 };
 
 inline void generateTangents(RawMeshData& mesh) {

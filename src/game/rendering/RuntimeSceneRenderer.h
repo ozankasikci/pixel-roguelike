@@ -48,12 +48,15 @@ private:
     };
 
     CameraState captureCamera(entt::registry& registry, float aspect) const;
-    std::vector<RenderObject> collectSceneObjects(entt::registry& registry) const;
-    std::vector<RenderObject> collectViewmodelObjects(entt::registry& registry,
-                                                      const CameraState& camera,
-                                                      float deltaTime) const;
-    std::vector<RenderLight> collectLights(entt::registry& registry,
-                                           const DebugParams& params) const;
+    void collectSceneObjects(entt::registry& registry,
+                             std::vector<RenderObject>& out) const;
+    void collectViewmodelObjects(entt::registry& registry,
+                                 const CameraState& camera,
+                                 float deltaTime,
+                                 std::vector<RenderObject>& out) const;
+    void collectLights(entt::registry& registry,
+                       const DebugParams& params,
+                       std::vector<RenderLight>& out) const;
     void updateDebugParams(DebugParams& params,
                            const CameraState& camera,
                            float deltaTime,
@@ -61,4 +64,9 @@ private:
 
     SceneRenderPipeline pipeline_;
     MaterialTextureLibrary materialTextureLibrary_;
+
+    // Reused per-frame scratch vectors (mutable to allow const callers)
+    mutable std::vector<RenderObject> scene_objects_;
+    mutable std::vector<RenderObject> viewmodel_objects_;
+    mutable std::vector<RenderLight> lights_;
 };

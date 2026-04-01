@@ -114,3 +114,27 @@ RawMeshData ModelLoader::loadRaw(const std::string& filepath) {
     spdlog::error("ModelLoader::loadRaw: unsupported model format '{}'", filepath);
     return {};
 }
+
+std::vector<NamedRawMeshData> ModelLoader::loadRawMulti(const std::string& filepath) {
+    const std::string extension = lowercased(std::filesystem::path(filepath).extension().string());
+    if (extension == ".fbx") {
+        return AssimpLoader::loadRawMulti(filepath);
+    }
+    if (extension == ".glb" || extension == ".gltf") {
+        // glTF loader returns a single merged mesh; wrap it in a single-element vector.
+        RawMeshData raw = GltfLoader::loadRaw(filepath);
+        if (raw.positions.empty() || raw.indices.empty()) {
+            return {};
+        }
+        const std::string stem = std::filesystem::path(filepath).stem().string();
+        NamedRawMeshData entry;
+        entry.name = stem;
+        entry.mesh = std::move(raw);
+        std::vector<NamedRawMeshData> result;
+        result.push_back(std::move(entry));
+        return result;
+    }
+
+    spdlog::error("ModelLoader::loadRawMulti: unsupported model format '{}'", filepath);
+    return {};
+}

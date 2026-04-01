@@ -19,6 +19,9 @@ struct RenderMaterialData {
     bool detailWood = false;
     bool detailStone = false;
     bool detailFloor = false;
+    bool normalMapFlipY = false;
+    bool alphaTest = false;
+    float alphaCutoff = 0.5f;
     glm::vec3 baseColor{1.0f};
     bool useMaterialMaps = false;
     bool useProceduralDetail = false;

@@ -1,5 +1,6 @@
 #include "game/rendering/RuntimeSceneRenderer.h"
 
+#include "engine/core/MathUtils.h"
 #include "engine/rendering/geometry/Mesh.h"
 #include "engine/rendering/geometry/MeshLibrary.h"
 #include "game/components/CameraComponent.h"
@@ -41,13 +42,6 @@ constexpr float kPlayerHandGlowIntensity = 0.08f;
 constexpr float kPlayerHandGlowForwardOffset = 0.08f;
 constexpr float kPlayerHandGlowRightOffset = -0.14f;
 constexpr float kPlayerHandGlowDownOffset = 0.06f;
-
-glm::vec3 safeNormalize(const glm::vec3& value, const glm::vec3& fallback) {
-    if (glm::dot(value, value) <= 0.0001f) {
-        return fallback;
-    }
-    return glm::normalize(value);
-}
 
 void appendDirectionalLight(std::vector<RenderLight>& lights,
                             const DirectionalLightSlot& slot,
@@ -127,8 +121,9 @@ RuntimeSceneRenderer::CameraState RuntimeSceneRenderer::captureCamera(entt::regi
     };
 }
 
-std::vector<RenderObject> RuntimeSceneRenderer::collectSceneObjects(entt::registry& registry) const {
-    std::vector<RenderObject> objects;
+void RuntimeSceneRenderer::collectSceneObjects(entt::registry& registry,
+                                               std::vector<RenderObject>& out) const {
+    out.clear();
     MeshAssetProvider* provider = registry.ctx().contains<MeshAssetProvider>()
         ? &registry.ctx().get<MeshAssetProvider>()
         : nullptr;
@@ -143,21 +138,20 @@ std::vector<RenderObject> RuntimeSceneRenderer::collectSceneObjects(entt::regist
         }
 
         const glm::mat4 model = mesh.useModelOverride ? mesh.modelOverride : transform.modelMatrix();
-        objects.push_back({
+        out.push_back({
             mesh.mesh,
             model,
             mesh.tint,
             materialTextureLibrary_.resolve(mesh.materialId)
         });
     }
-
-    return objects;
 }
 
-std::vector<RenderObject> RuntimeSceneRenderer::collectViewmodelObjects(entt::registry& registry,
-                                                                        const CameraState& camera,
-                                                                        float deltaTime) const {
-    std::vector<RenderObject> objects;
+void RuntimeSceneRenderer::collectViewmodelObjects(entt::registry& registry,
+                                                    const CameraState& camera,
+                                                    float deltaTime,
+                                                    std::vector<RenderObject>& out) const {
+    out.clear();
     MeshAssetProvider* provider = registry.ctx().contains<MeshAssetProvider>()
         ? &registry.ctx().get<MeshAssetProvider>()
         : nullptr;
@@ -186,20 +180,20 @@ std::vector<RenderObject> RuntimeSceneRenderer::collectViewmodelObjects(entt::re
         model = model * glm::scale(glm::mat4(1.0f), vm.scale);
         model = model * glm::translate(glm::mat4(1.0f), -vm.meshCenter);
 
-        objects.push_back({
+        out.push_back({
             mesh.mesh,
             model,
             mesh.tint,
             materialTextureLibrary_.resolve(mesh.materialId)
         });
     }
-
-    return objects;
 }
 
-std::vector<RenderLight> RuntimeSceneRenderer::collectLights(entt::registry& registry,
-                                                             const DebugParams& params) const {
-    std::vector<RenderLight> lights;
+void RuntimeSceneRenderer::collectLights(entt::registry& registry,
+                                          const DebugParams& params,
+                                          std::vector<RenderLight>& out) const {
+    std::vector<RenderLight>& lights = out;
+    lights.clear();
 
     auto cameraView = registry.view<TransformComponent, CameraComponent, PrimaryCameraTag>();
     for (auto [entity, transform, camera] : cameraView.each()) {
@@ -265,8 +259,8 @@ std::vector<RenderLight> RuntimeSceneRenderer::collectLights(entt::registry& reg
         break;
     }
 
-    appendDirectionalLight(lights, params.sunDirectional, glm::vec3(0.0f, -1.0f, 0.0f));
-    appendDirectionalLight(lights, params.fillDirectional, glm::vec3(0.0f, -1.0f, 0.0f));
+    appendDirectionalLight(lights, params.lighting.sunDirectional, glm::vec3(0.0f, -1.0f, 0.0f));
+    appendDirectionalLight(lights, params.lighting.fillDirectional, glm::vec3(0.0f, -1.0f, 0.0f));
 
     auto lightView = registry.view<TransformComponent, LightComponent>();
     for (auto [entity, transform, light] : lightView.each()) {
@@ -289,18 +283,16 @@ std::vector<RenderLight> RuntimeSceneRenderer::collectLights(entt::registry& reg
         }
         lights.push_back(renderLight);
     }
-
-    return lights;
 }
 
 void RuntimeSceneRenderer::updateDebugParams(DebugParams& params,
                                              const CameraState& camera,
                                              float deltaTime,
                                              std::size_t drawCalls) const {
-    params.cameraPos = camera.position;
-    params.cameraDir = camera.direction;
-    params.cameraFov = glm::degrees(2.0f * std::atan(1.0f / camera.projectionMatrix[1][1]));
-    params.cameraSpeed = camera.moveSpeed;
+    params.camera.position = camera.position;
+    params.camera.direction = camera.direction;
+    params.camera.fov = glm::degrees(2.0f * std::atan(1.0f / camera.projectionMatrix[1][1]));
+    params.camera.moveSpeed = camera.moveSpeed;
     params.fps = deltaTime > 0.0f ? (1.0f / deltaTime) : 0.0f;
     params.frameTimeMs = deltaTime * 1000.0f;
     params.drawCalls = static_cast<int>(drawCalls);
@@ -321,44 +313,44 @@ void RuntimeSceneRenderer::render(entt::registry& registry,
 
     const float aspect = static_cast<float>(std::max(internalWidth, 1)) / static_cast<float>(std::max(internalHeight, 1));
     const CameraState camera = captureCamera(registry, aspect);
-    std::vector<RenderObject> objects = collectSceneObjects(registry);
-    std::vector<RenderObject> viewmodelObjects = collectViewmodelObjects(registry, camera, deltaTime);
-    std::vector<RenderLight> lights = collectLights(registry, params);
+    collectSceneObjects(registry, scene_objects_);
+    collectViewmodelObjects(registry, camera, deltaTime, viewmodel_objects_);
+    collectLights(registry, params, lights_);
 
     // Build SceneRenderInput from ECS-collected data
     SceneRenderInput input;
-    input.objects = &objects;
-    input.viewmodelObjects = &viewmodelObjects;
-    input.lights = &lights;
+    input.objects = &scene_objects_;
+    input.viewmodelObjects = &viewmodel_objects_;
+    input.lights = &lights_;
     input.viewMatrix = camera.viewMatrix;
     input.projectionMatrix = camera.projectionMatrix;
     input.cameraPosition = camera.position;
     input.nearPlane = camera.nearPlane;
     input.farPlane = camera.farPlane;
     input.postParams = &params.post;
-    input.shadowsEnabled = params.shadowsEnabled;
-    input.shadowResolutionIndex = params.shadowMapResolutionIndex;
+    input.shadowsEnabled = params.lighting.shadowsEnabled;
+    input.shadowResolutionIndex = params.lighting.shadowMapResolutionIndex;
 
     // Build LightingEnvironment from DebugParams
-    input.lightingEnvironment.hemisphereSkyColor = params.hemisphereSkyColor;
-    input.lightingEnvironment.hemisphereGroundColor = params.hemisphereGroundColor;
-    input.lightingEnvironment.hemisphereStrength = params.hemisphereStrength;
-    input.lightingEnvironment.enableDirectionalLights = params.enableDirectionalLights;
-    input.lightingEnvironment.sun = params.sunDirectional;
+    input.lightingEnvironment.hemisphereSkyColor = params.lighting.hemisphereSkyColor;
+    input.lightingEnvironment.hemisphereGroundColor = params.lighting.hemisphereGroundColor;
+    input.lightingEnvironment.hemisphereStrength = params.lighting.hemisphereStrength;
+    input.lightingEnvironment.enableDirectionalLights = params.lighting.enableDirectionalLights;
+    input.lightingEnvironment.sun = params.lighting.sunDirectional;
     input.lightingEnvironment.sun.direction = safeNormalize(input.lightingEnvironment.sun.direction,
                                                              glm::vec3(0.0f, -1.0f, 0.0f));
-    input.lightingEnvironment.fill = params.fillDirectional;
+    input.lightingEnvironment.fill = params.lighting.fillDirectional;
     input.lightingEnvironment.fill.direction = safeNormalize(input.lightingEnvironment.fill.direction,
                                                               glm::vec3(0.0f, -1.0f, 0.0f));
-    input.lightingEnvironment.enableShadows = params.shadowsEnabled;
-    input.lightingEnvironment.shadowBias = params.shadowBias;
-    input.lightingEnvironment.shadowNormalBias = params.shadowNormalBias;
+    input.lightingEnvironment.enableShadows = params.lighting.shadowsEnabled;
+    input.lightingEnvironment.shadowBias = params.lighting.shadowBias;
+    input.lightingEnvironment.shadowNormalBias = params.lighting.shadowNormalBias;
 
     pipeline_.render(input, internalWidth, internalHeight, outputWidth, outputHeight, targetFramebuffer);
-    updateDebugParams(params, camera, deltaTime, objects.size());
+    updateDebugParams(params, camera, deltaTime, scene_objects_.size());
 
     if (output != nullptr) {
-        output->lights = std::move(lights);
-        output->drawCalls = objects.size();
+        output->lights = lights_;
+        output->drawCalls = scene_objects_.size();
     }
 }

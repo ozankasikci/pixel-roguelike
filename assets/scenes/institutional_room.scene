@@ -1,0 +1,137 @@
+environment_profile institutional
+
+# Floor tiles - 4x3 grid (8m wide, 6m deep) using inst_glossy_floor material
+mesh prison_floor -3.0 0.0 1.0 1.0 1.0 1.0 0.0 0.0 0.0 material inst_glossy_floor tint 1.00 1.00 1.00 node node_1
+mesh prison_floor -1.0 0.0 1.0 1.0 1.0 1.0 0.0 0.0 0.0 material inst_glossy_floor tint 1.01 1.01 1.00 node node_2
+mesh prison_floor  1.0 0.0 1.0 1.0 1.0 1.0 0.0 0.0 0.0 material inst_glossy_floor tint 1.00 1.00 1.00 node node_3
+mesh prison_floor  3.0 0.0 1.0 1.0 1.0 1.0 0.0 0.0 0.0 material inst_glossy_floor tint 1.01 1.01 1.01 node node_4
+mesh prison_floor -3.0 0.0 3.0 1.0 1.0 1.0 0.0 0.0 0.0 material inst_glossy_floor tint 1.01 1.00 1.00 node node_5
+mesh prison_floor -1.0 0.0 3.0 1.0 1.0 1.0 0.0 0.0 0.0 material inst_glossy_floor tint 1.00 1.00 1.00 node node_6
+mesh prison_floor  1.0 0.0 3.0 1.0 1.0 1.0 0.0 0.0 0.0 material inst_glossy_floor tint 1.01 1.01 1.00 node node_7
+mesh prison_floor  3.0 0.0 3.0 1.0 1.0 1.0 0.0 0.0 0.0 material inst_glossy_floor tint 1.00 1.00 1.01 node node_8
+mesh prison_floor -3.0 0.0 5.0 1.0 1.0 1.0 0.0 0.0 0.0 material inst_glossy_floor tint 1.00 1.01 1.00 node node_9
+mesh prison_floor -1.0 0.0 5.0 1.0 1.0 1.0 0.0 0.0 0.0 material inst_glossy_floor tint 1.01 1.00 1.00 node node_10
+mesh prison_floor  1.0 0.0 5.0 1.0 1.0 1.0 0.0 0.0 0.0 material inst_glossy_floor tint 1.00 1.00 1.00 node node_11
+mesh prison_floor  3.0 0.0 5.0 1.0 1.0 1.0 0.0 0.0 0.0 material inst_glossy_floor tint 1.01 1.01 1.00 node node_12
+
+# Ceiling tiles - 4x3 grid at Y=4.0
+mesh prison_ceiling -3.0 4.0 1.0 1.0 1.0 1.0 0.0 0.0 0.0 material ceiling_default tint 0.94 0.92 0.88 node node_13
+mesh prison_ceiling -1.0 4.0 1.0 1.0 1.0 1.0 0.0 0.0 0.0 material ceiling_default tint 0.93 0.91 0.87 node node_14
+mesh prison_ceiling  1.0 4.0 1.0 1.0 1.0 1.0 0.0 0.0 0.0 material ceiling_default tint 0.94 0.92 0.88 node node_15
+mesh prison_ceiling  3.0 4.0 1.0 1.0 1.0 1.0 0.0 0.0 0.0 material ceiling_default tint 0.93 0.91 0.87 node node_16
+mesh prison_ceiling -3.0 4.0 3.0 1.0 1.0 1.0 0.0 0.0 0.0 material ceiling_default tint 0.93 0.91 0.87 node node_17
+mesh prison_ceiling -1.0 4.0 3.0 1.0 1.0 1.0 0.0 0.0 0.0 material ceiling_default tint 0.94 0.92 0.88 node node_18
+mesh prison_ceiling  1.0 4.0 3.0 1.0 1.0 1.0 0.0 0.0 0.0 material ceiling_default tint 0.93 0.91 0.87 node node_19
+mesh prison_ceiling  3.0 4.0 3.0 1.0 1.0 1.0 0.0 0.0 0.0 material ceiling_default tint 0.94 0.92 0.88 node node_20
+mesh prison_ceiling -3.0 4.0 5.0 1.0 1.0 1.0 0.0 0.0 0.0 material ceiling_default tint 0.94 0.92 0.88 node node_21
+mesh prison_ceiling -1.0 4.0 5.0 1.0 1.0 1.0 0.0 0.0 0.0 material ceiling_default tint 0.93 0.91 0.87 node node_22
+mesh prison_ceiling  1.0 4.0 5.0 1.0 1.0 1.0 0.0 0.0 0.0 material ceiling_default tint 0.94 0.92 0.88 node node_23
+mesh prison_ceiling  3.0 4.0 5.0 1.0 1.0 1.0 0.0 0.0 0.0 material ceiling_default tint 0.93 0.91 0.87 node node_24
+
+# South wall (Z=0, player's back) - 4 panels facing +Z
+mesh prison_wall -3.0 0.0 0.0 1.0 1.0 1.0 0.0 0.0 0.0 material inst_beige_wall tint 1.0 1.0 1.0 node node_25
+mesh prison_wall -1.0 0.0 0.0 1.0 1.0 1.0 0.0 0.0 0.0 material inst_beige_wall tint 1.0 1.0 1.0 node node_26
+mesh prison_wall  1.0 0.0 0.0 1.0 1.0 1.0 0.0 0.0 0.0 material inst_beige_wall tint 1.0 1.0 1.0 node node_27
+mesh prison_wall  3.0 0.0 0.0 1.0 1.0 1.0 0.0 0.0 0.0 material inst_beige_wall tint 1.0 1.0 1.0 node node_28
+
+# East wall (X=4.0) - 3 panels facing -X (rotation 0,-90,0)
+mesh prison_wall 4.0 0.0 1.0 1.0 1.0 1.0 0.0 -90.0 0.0 material inst_beige_wall tint 1.0 1.0 1.0 node node_29
+mesh prison_wall 4.0 0.0 3.0 1.0 1.0 1.0 0.0 -90.0 0.0 material inst_beige_wall tint 1.0 1.0 1.0 node node_30
+mesh prison_wall 4.0 0.0 5.0 1.0 1.0 1.0 0.0 -90.0 0.0 material inst_beige_wall tint 1.0 1.0 1.0 node node_31
+
+# West wall (X=-4.0) - 3 panels facing +X (rotation 0,90,0)
+mesh prison_wall -4.0 0.0 1.0 1.0 1.0 1.0 0.0 90.0 0.0 material inst_beige_wall tint 1.0 1.0 1.0 node node_32
+mesh prison_wall -4.0 0.0 3.0 1.0 1.0 1.0 0.0 90.0 0.0 material inst_beige_wall tint 1.0 1.0 1.0 node node_33
+mesh prison_wall -4.0 0.0 5.0 1.0 1.0 1.0 0.0 90.0 0.0 material inst_beige_wall tint 1.0 1.0 1.0 node node_34
+
+# North wall (Z=6.0, door wall) - 3 door panels + edge fillers, facing south (rotation 0,180,0)
+# Left wooden door opening at X=-2.5
+mesh prison_wall_door -2.5 0.0 6.0 1.0 1.0 1.0 0.0 180.0 0.0 material inst_beige_wall tint 1.0 1.0 1.0 node node_35
+# Center metal door opening at X=0.0 (door entity comes from buildScriptedGeometry)
+mesh prison_wall_door  0.0 0.0 6.0 1.0 1.0 1.0 0.0 180.0 0.0 material inst_beige_wall tint 1.0 1.0 1.0 node node_36
+# Right chained door opening at X=+2.5 (door entity comes from buildScriptedGeometry)
+mesh prison_wall_door  2.5 0.0 6.0 1.0 1.0 1.0 0.0 180.0 0.0 material inst_beige_wall tint 1.0 1.0 1.0 node node_37
+# Edge fillers at X=-3.5 and X=+3.5 (narrow 1m gaps on each side)
+mesh prison_wall -3.5 0.0 6.0 0.5 1.0 1.0 0.0 180.0 0.0 material inst_beige_wall tint 1.0 1.0 1.0 node node_38
+mesh prison_wall  3.5 0.0 6.0 0.5 1.0 1.0 0.0 180.0 0.0 material inst_beige_wall tint 1.0 1.0 1.0 node node_39
+
+# Open wooden door (left, X=-2.5) - swung open into north room, rotated 90 degrees
+mesh office_door -2.5 0.0 5.95 1.0 1.0 1.0 0.0 -90.0 0.0 material wood_default tint 0.65 0.50 0.30 node node_door_wood
+
+# Baseboards - floor level along all walls using inst_dark_trim material
+# South wall baseboards
+mesh prison_baseboard -3.0 0.0 0.1 1.0 1.0 1.0 0.0 0.0 0.0 material inst_dark_trim tint 1.0 1.0 1.0 node node_bb_s1
+mesh prison_baseboard -1.0 0.0 0.1 1.0 1.0 1.0 0.0 0.0 0.0 material inst_dark_trim tint 1.0 1.0 1.0 node node_bb_s2
+mesh prison_baseboard  1.0 0.0 0.1 1.0 1.0 1.0 0.0 0.0 0.0 material inst_dark_trim tint 1.0 1.0 1.0 node node_bb_s3
+mesh prison_baseboard  3.0 0.0 0.1 1.0 1.0 1.0 0.0 0.0 0.0 material inst_dark_trim tint 1.0 1.0 1.0 node node_bb_s4
+# North wall baseboards
+mesh prison_baseboard -3.0 0.0 5.9 1.0 1.0 1.0 0.0 180.0 0.0 material inst_dark_trim tint 1.0 1.0 1.0 node node_bb_n1
+mesh prison_baseboard -1.0 0.0 5.9 1.0 1.0 1.0 0.0 180.0 0.0 material inst_dark_trim tint 1.0 1.0 1.0 node node_bb_n2
+mesh prison_baseboard  1.0 0.0 5.9 1.0 1.0 1.0 0.0 180.0 0.0 material inst_dark_trim tint 1.0 1.0 1.0 node node_bb_n3
+mesh prison_baseboard  3.0 0.0 5.9 1.0 1.0 1.0 0.0 180.0 0.0 material inst_dark_trim tint 1.0 1.0 1.0 node node_bb_n4
+# East wall baseboards
+mesh prison_baseboard 3.9 0.0 1.0 1.0 1.0 1.0 0.0 -90.0 0.0 material inst_dark_trim tint 1.0 1.0 1.0 node node_bb_e1
+mesh prison_baseboard 3.9 0.0 3.0 1.0 1.0 1.0 0.0 -90.0 0.0 material inst_dark_trim tint 1.0 1.0 1.0 node node_bb_e2
+mesh prison_baseboard 3.9 0.0 5.0 1.0 1.0 1.0 0.0 -90.0 0.0 material inst_dark_trim tint 1.0 1.0 1.0 node node_bb_e3
+# West wall baseboards
+mesh prison_baseboard -3.9 0.0 1.0 1.0 1.0 1.0 0.0 90.0 0.0 material inst_dark_trim tint 1.0 1.0 1.0 node node_bb_w1
+mesh prison_baseboard -3.9 0.0 3.0 1.0 1.0 1.0 0.0 90.0 0.0 material inst_dark_trim tint 1.0 1.0 1.0 node node_bb_w2
+mesh prison_baseboard -3.9 0.0 5.0 1.0 1.0 1.0 0.0 90.0 0.0 material inst_dark_trim tint 1.0 1.0 1.0 node node_bb_w3
+
+# Crown molding at ceiling junction (Y=3.95), flipped upside down (rotation 180,<yaw>,0)
+# South wall crown molding
+mesh prison_baseboard -3.0 3.95 0.1 1.0 1.0 1.0 180.0 0.0 0.0 material inst_dark_trim tint 1.0 1.0 1.0 node node_cm_s1
+mesh prison_baseboard -1.0 3.95 0.1 1.0 1.0 1.0 180.0 0.0 0.0 material inst_dark_trim tint 1.0 1.0 1.0 node node_cm_s2
+mesh prison_baseboard  1.0 3.95 0.1 1.0 1.0 1.0 180.0 0.0 0.0 material inst_dark_trim tint 1.0 1.0 1.0 node node_cm_s3
+mesh prison_baseboard  3.0 3.95 0.1 1.0 1.0 1.0 180.0 0.0 0.0 material inst_dark_trim tint 1.0 1.0 1.0 node node_cm_s4
+# North wall crown molding
+mesh prison_baseboard -3.0 3.95 5.9 1.0 1.0 1.0 180.0 180.0 0.0 material inst_dark_trim tint 1.0 1.0 1.0 node node_cm_n1
+mesh prison_baseboard -1.0 3.95 5.9 1.0 1.0 1.0 180.0 180.0 0.0 material inst_dark_trim tint 1.0 1.0 1.0 node node_cm_n2
+mesh prison_baseboard  1.0 3.95 5.9 1.0 1.0 1.0 180.0 180.0 0.0 material inst_dark_trim tint 1.0 1.0 1.0 node node_cm_n3
+mesh prison_baseboard  3.0 3.95 5.9 1.0 1.0 1.0 180.0 180.0 0.0 material inst_dark_trim tint 1.0 1.0 1.0 node node_cm_n4
+# East wall crown molding
+mesh prison_baseboard 3.9 3.95 1.0 1.0 1.0 1.0 180.0 -90.0 0.0 material inst_dark_trim tint 1.0 1.0 1.0 node node_cm_e1
+mesh prison_baseboard 3.9 3.95 3.0 1.0 1.0 1.0 180.0 -90.0 0.0 material inst_dark_trim tint 1.0 1.0 1.0 node node_cm_e2
+mesh prison_baseboard 3.9 3.95 5.0 1.0 1.0 1.0 180.0 -90.0 0.0 material inst_dark_trim tint 1.0 1.0 1.0 node node_cm_e3
+# West wall crown molding
+mesh prison_baseboard -3.9 3.95 1.0 1.0 1.0 1.0 180.0 90.0 0.0 material inst_dark_trim tint 1.0 1.0 1.0 node node_cm_w1
+mesh prison_baseboard -3.9 3.95 3.0 1.0 1.0 1.0 180.0 90.0 0.0 material inst_dark_trim tint 1.0 1.0 1.0 node node_cm_w2
+mesh prison_baseboard -3.9 3.95 5.0 1.0 1.0 1.0 180.0 90.0 0.0 material inst_dark_trim tint 1.0 1.0 1.0 node node_cm_w3
+
+# Ceiling light panels - two pairs
+mesh ceiling_light_panel -1.0 3.99 2.0 1.0 1.0 1.0 0.0 0.0 0.0 material stone_default tint 0.98 0.96 0.90 node node_clp_1
+mesh ceiling_light_panel  1.0 3.99 2.0 1.0 1.0 1.0 0.0 0.0 0.0 material stone_default tint 0.98 0.96 0.90 node node_clp_2
+mesh ceiling_light_panel -1.0 3.99 4.0 1.0 1.0 1.0 0.0 0.0 0.0 material stone_default tint 0.98 0.96 0.90 node node_clp_3
+mesh ceiling_light_panel  1.0 3.99 4.0 1.0 1.0 1.0 0.0 0.0 0.0 material stone_default tint 0.98 0.96 0.90 node node_clp_4
+
+# HVAC vent above center metal door
+mesh inst_hvac_vent 0.0 3.2 5.95 1.0 1.0 1.0 0.0 180.0 0.0 material metal_default tint 0.55 0.53 0.50 node node_hvac
+
+# Smoke detector on ceiling center
+mesh inst_smoke_detector 0.0 3.97 3.0 1.0 1.0 1.0 0.0 0.0 0.0 material stone_default tint 0.92 0.90 0.88 node node_smoke_det
+
+# Chain/padlock on chained door (right door, X=+2.5)
+mesh inst_chain_padlock 2.5 1.1 5.93 1.0 1.0 1.0 0.0 180.0 0.0 material metal_default tint 0.20 0.16 0.12 node node_chain
+
+# Point lights below ceiling panels - warm white
+light -1.0 3.7 2.0 1.0 0.97 0.88 5.5 4.5 node node_l1
+light  1.0 3.7 2.0 1.0 0.97 0.88 5.5 4.5 node node_l2
+light -1.0 3.7 4.0 1.0 0.97 0.88 5.5 4.5 node node_l3
+light  1.0 3.7 4.0 1.0 0.97 0.88 5.5 4.5 node node_l4
+
+# Warm golden light behind open wooden doorway (spills onto floor)
+light -2.5 1.5 6.5 1.0 0.90 0.65 8.0 5.0 node node_l_door
+
+# Red LED below smoke detector
+light 0.0 3.85 3.0 1.0 0.05 0.02 0.5 0.3 node node_led_red
+
+# Colliders
+collider_box  0.0 -0.05 3.0 4.0 0.05 3.0 node node_col_floor
+collider_box  0.0  4.05 3.0 4.0 0.05 3.0 node node_col_ceil
+collider_box  0.0  2.0  0.0 4.0 2.0 0.1 node node_col_south
+collider_box  0.0  2.0  6.0 4.0 2.0 0.1 node node_col_north
+collider_box  4.0  2.0  3.0 0.1 2.0 3.0 node node_col_east
+collider_box -4.0  2.0  3.0 0.1 2.0 3.0 node node_col_west
+
+# Player spawn near south wall, facing north (+Z)
+player_spawn 0.0 1.0 1.5 0.0 node node_spawn

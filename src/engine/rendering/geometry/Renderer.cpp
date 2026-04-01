@@ -1,6 +1,7 @@
 #include "engine/rendering/geometry/Renderer.h"
 #include "engine/rendering/core/Shader.h"
 #include "engine/rendering/geometry/Mesh.h"
+#include "engine/rendering/TextureUnits.h"
 
 #include <algorithm>
 #include <cmath>
@@ -37,16 +38,16 @@ void Renderer::drawScene(const std::vector<RenderObject>& objects,
     shader_->setInt("uShadowCount", shadowData.shadowCount);
     for (int i = 0; i < kMaxShadowedSpotLights; ++i) {
         shader_->setMat4("uShadowMatrices[" + std::to_string(i) + "]", shadowData.matrices[static_cast<std::size_t>(i)]);
-        const int textureUnit = 8 + i;
+        const int textureUnit = TextureUnits::kShadowMap0 + i;
         shader_->setInt("uShadowMaps[" + std::to_string(i) + "]", textureUnit);
         glActiveTexture(GL_TEXTURE0 + textureUnit);
         glBindTexture(GL_TEXTURE_2D, shadowData.textures[static_cast<std::size_t>(i)]);
     }
     glActiveTexture(GL_TEXTURE0);
-    shader_->setInt("uAlbedoMap", 12);
-    shader_->setInt("uNormalMap", 13);
-    shader_->setInt("uRoughnessMap", 14);
-    shader_->setInt("uAoMap", 15);
+    shader_->setInt("uAlbedoMap", TextureUnits::kAlbedo);
+    shader_->setInt("uNormalMap", TextureUnits::kNormalMap);
+    shader_->setInt("uRoughnessMap", TextureUnits::kRoughnessMap);
+    shader_->setInt("uAoMap", TextureUnits::kAoMap);
 
     for (int i = 0; i < numLights; ++i) {
         const RenderLight& light = lights[static_cast<std::size_t>(i)];
@@ -94,13 +95,13 @@ void Renderer::drawScene(const std::vector<RenderObject>& objects,
         shader_->setFloat("uMaterialAoStrength", material.aoStrength);
         shader_->setFloat("uMaterialLightTintResponse", material.lightTintResponse);
         shader_->setFloat("uEmissiveStrength", material.emissiveStrength);
-        glActiveTexture(GL_TEXTURE12);
+        glActiveTexture(GL_TEXTURE0 + TextureUnits::kAlbedo);
         glBindTexture(GL_TEXTURE_2D, material.albedoTexture);
-        glActiveTexture(GL_TEXTURE13);
+        glActiveTexture(GL_TEXTURE0 + TextureUnits::kNormalMap);
         glBindTexture(GL_TEXTURE_2D, material.normalTexture);
-        glActiveTexture(GL_TEXTURE14);
+        glActiveTexture(GL_TEXTURE0 + TextureUnits::kRoughnessMap);
         glBindTexture(GL_TEXTURE_2D, material.roughnessTexture);
-        glActiveTexture(GL_TEXTURE15);
+        glActiveTexture(GL_TEXTURE0 + TextureUnits::kAoMap);
         glBindTexture(GL_TEXTURE_2D, material.aoTexture);
         glActiveTexture(GL_TEXTURE0);
         shader_->setMat4("uModel", obj.modelMatrix);
@@ -112,6 +113,9 @@ void Renderer::drawScene(const std::vector<RenderObject>& objects,
         shader_->setInt("uMaterialWoodDetail", material.detailWood ? 1 : 0);
         shader_->setInt("uMaterialStoneDetail", material.detailStone ? 1 : 0);
         shader_->setInt("uMaterialFloorDetail", material.detailFloor ? 1 : 0);
+        shader_->setInt("uNormalMapFlipY", material.normalMapFlipY ? 1 : 0);
+        shader_->setInt("uAlphaTest", material.alphaTest ? 1 : 0);
+        shader_->setFloat("uAlphaCutoff", material.alphaCutoff);
         obj.mesh->draw();
     }
 

@@ -319,6 +319,7 @@ int main(int argc, char* argv[]) {
     finalFbo.create(1280, 720);
 
     EditorCamera editCamera;
+    EditorCameraAnimation cameraAnim;
     if (!initialScene.empty()) {
         if (!syncEditorCameraToRuntimeStart(document, editCamera) && previewWorld.sceneBounds().valid) {
             focusEditorCameraOnBounds(editCamera, previewWorld.sceneBounds().min, previewWorld.sceneBounds().max);
@@ -349,9 +350,16 @@ int main(int argc, char* argv[]) {
     if (!archetypeIds.empty()) {
         ui.selectedArchetypeId = archetypeIds.front();
     }
+    // On startup, restore only panel visibility from the active layout preset.
+    // ImGui auto-loads dock node sizes (panel sizes) from imgui.ini at the first
+    // NewFrame() call; calling LoadIniSettingsFromMemory here would overwrite those
+    // user-customized sizes with the preset's stored sizes, discarding any
+    // resizing the user did in previous sessions.
     if (std::find(layoutPresetNames.begin(), layoutPresetNames.end(), ui.activeLayoutPreset) != layoutPresetNames.end()) {
         try {
-            loadLayoutPresetIntoUi(ui, ui.activeLayoutPreset);
+            const EditorLayoutPreset preset = loadEditorLayoutPreset(editorLayoutPresetPath(ui.activeLayoutPreset));
+            applyLayoutVisibility(ui, preset.visibility);
+            std::snprintf(ui.layoutNameBuffer, sizeof(ui.layoutNameBuffer), "%s", preset.name.c_str());
         } catch (const std::exception& ex) {
             spdlog::warn("Failed to load editor layout '{}': {}", ui.activeLayoutPreset, ex.what());
             dockLayoutResetRequested = true;
@@ -366,7 +374,9 @@ int main(int argc, char* argv[]) {
     int startupViewportHandoffFramesRemaining = 3;
     bool savePressed = false;
     bool newScenePopupRequested = false;
+    bool saveLayoutPopupRequested = false;
     char newSceneNameBuffer[128] = "new_scene";
+    char addMeshFilter[128] = {};
     std::string pendingDeleteScenePath;
     std::optional<std::string> pendingSceneSwitch;
     bool focusPressed = false;
@@ -428,8 +438,8 @@ int main(int argc, char* argv[]) {
         }
 
         if (!gameplayPreviewCaptured) {
-            if (ImGui::IsKeyPressed(ImGuiKey_F)) focusPressed = true;
-            if (ImGui::IsKeyPressed(ImGuiKey_Delete)) deletePressed = true;
+            if (!io.WantTextInput && ImGui::IsKeyPressed(ImGuiKey_F)) focusPressed = true;
+            if (!io.WantTextInput && (ImGui::IsKeyPressed(ImGuiKey_Delete) || ImGui::IsKeyPressed(ImGuiKey_Backspace))) deletePressed = true;
             if ((io.KeyCtrl || io.KeySuper) && ImGui::IsKeyPressed(ImGuiKey_D)) duplicatePressed = true;
             if ((io.KeyCtrl || io.KeySuper) && ImGui::IsKeyPressed(ImGuiKey_Z)) {
                 if (io.KeyShift) {
@@ -453,10 +463,13 @@ int main(int argc, char* argv[]) {
                 glfwGetMouseButton(window.handle(), GLFW_MOUSE_BUTTON_RIGHT) != GLFW_PRESS) {
                 buildAndRunPressed = true;
             }
-            if (ImGui::IsKeyPressed(ImGuiKey_Escape)) {
+            if (!io.WantTextInput && ImGui::IsKeyPressed(ImGuiKey_Escape)) {
                 placementState.clear();
                 widgetCommand.clear();
                 gizmoCommand.clear();
+                selectedIds.clear();
+                selectionPicker.clear();
+                ui.inspectorContext = EditorInspectorContext::SceneSelection;
             }
         }
 
@@ -549,7 +562,7 @@ int main(int argc, char* argv[]) {
                 if (ImGui::MenuItem("Duplicate", "Ctrl/Cmd+D", false, !selectedIds.empty())) {
                     duplicatePressed = true;
                 }
-                if (ImGui::MenuItem("Delete", "Delete", false, !selectedIds.empty())) {
+                if (ImGui::MenuItem("Delete", "Delete/Backspace", false, !selectedIds.empty())) {
                     deletePressed = true;
                 }
                 if (ImGui::MenuItem("Focus Selected", "F", false, selectedIds.size() == 1)) {
@@ -668,7 +681,7 @@ int main(int argc, char* argv[]) {
                     renderLayoutMenuItems();
                     ImGui::Separator();
                     if (ImGui::MenuItem("Save Current Layout As...")) {
-                        ImGui::OpenPopup("Save Layout As");
+                        saveLayoutPopupRequested = true;
                     }
                     if (ImGui::MenuItem("Reload Current Layout")) {
                         requestedLayoutPresetName = ui.activeLayoutPreset;
@@ -754,7 +767,7 @@ int main(int argc, char* argv[]) {
                     renderLayoutMenuItems();
                     ImGui::Separator();
                     if (ImGui::MenuItem("Save Current Layout As...")) {
-                        ImGui::OpenPopup("Save Layout As");
+                        saveLayoutPopupRequested = true;
                     }
                     if (ImGui::MenuItem("Reload Current Layout")) {
                         requestedLayoutPresetName = ui.activeLayoutPreset;
@@ -795,6 +808,10 @@ int main(int argc, char* argv[]) {
             }
         }
 
+        if (saveLayoutPopupRequested) {
+            ImGui::OpenPopup("Save Layout As");
+            saveLayoutPopupRequested = false;
+        }
         ImGui::SetNextWindowSize(ImVec2(420.0f, 0.0f), ImGuiCond_Appearing);
         if (ImGui::BeginPopupModal("Save Layout As", nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
             if (ImGui::IsWindowAppearing()) {
@@ -1168,6 +1185,41 @@ int main(int argc, char* argv[]) {
                         renderCreateCommands();
                         ImGui::EndPopup();
                     }
+                    ImGui::SameLine();
+                    if (ImGui::Button("Add Mesh")) {
+                        addMeshFilter[0] = '\0';
+                        ImGui::OpenPopup("AddMeshPicker");
+                    }
+                    ImGui::SetNextWindowSize(ImVec2(300.0f, 400.0f), ImGuiCond_Appearing);
+                    if (ImGui::BeginPopup("AddMeshPicker")) {
+                        if (ImGui::IsWindowAppearing()) {
+                            ImGui::SetKeyboardFocusHere();
+                        }
+                        ImGui::SetNextItemWidth(-1.0f);
+                        ImGui::InputText("##addmesh_filter", addMeshFilter, sizeof(addMeshFilter));
+                        ImGui::Separator();
+                        const std::string filterStr(addMeshFilter);
+                        if (ImGui::BeginChild("##addmesh_list", ImVec2(0.0f, 0.0f), false)) {
+                            for (const auto& id : meshIds) {
+                                if (!filterStr.empty()) {
+                                    std::string lowerId = id;
+                                    std::string lowerFilter = filterStr;
+                                    std::transform(lowerId.begin(), lowerId.end(), lowerId.begin(), ::tolower);
+                                    std::transform(lowerFilter.begin(), lowerFilter.end(), lowerFilter.begin(), ::tolower);
+                                    if (lowerId.find(lowerFilter) == std::string::npos) {
+                                        continue;
+                                    }
+                                }
+                                if (ImGui::Selectable(id.c_str())) {
+                                    ui.selectedMeshId = id;
+                                    beginPlacement(placementState, EditorPlacementKind::Mesh, id, ui.selectedMaterialId);
+                                    ImGui::CloseCurrentPopup();
+                                }
+                            }
+                        }
+                        ImGui::EndChild();
+                        ImGui::EndPopup();
+                    }
                     if (placementState.active()) {
                         ImGui::SameLine();
                         if (ImGui::Button("Cancel Placement")) {
@@ -1309,7 +1361,16 @@ int main(int argc, char* argv[]) {
         glm::mat4 inverseViewProjection(1.0f);
 
         if (!ui.pendingScenePath.empty() && !ui.playPreview && !startupViewportHandoffActive) {
-            updateEditorFlyCamera(editCamera, window.handle(), renderViewportState, deltaTime);
+            tickCameraAnimation(editCamera, cameraAnim, deltaTime);
+            if (!cameraAnim.active) {
+                updateEditorFlyCamera(editCamera, window.handle(), renderViewportState, deltaTime);
+            } else if (glfwGetMouseButton(window.handle(), GLFW_MOUSE_BUTTON_RIGHT) == GLFW_PRESS
+                       || glfwGetMouseButton(window.handle(), GLFW_MOUSE_BUTTON_MIDDLE) == GLFW_PRESS
+                       || (io.KeyAlt && glfwGetMouseButton(window.handle(), GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS)
+                       || io.MouseWheel != 0.0f) {
+                cameraAnim.active = false;
+                updateEditorFlyCamera(editCamera, window.handle(), renderViewportState, deltaTime);
+            }
 
             view = editorCameraView(editCamera);
             projection = editorCameraProjection(editCamera, static_cast<float>(targetW) / static_cast<float>(targetH));
@@ -1319,6 +1380,27 @@ int main(int argc, char* argv[]) {
             appendHelperObjects(objects, previewWorld, document, materialTextures, selectedIds,
                                 ui.showColliders, ui.showLightHelpers, ui.showSpawnMarker);
             appendSelectionOverlays(objects, previewWorld, materialTextures, selectedIds);
+
+            // Per-frame hover highlight: blue-white wireframe on unselected objects under cursor
+            std::uint64_t hoveredObjectId = 0;
+            const bool suppressHover = gameplayPreviewCaptured
+                || placementState.active()
+                || editorGizmoIsHot()
+                || glfwGetMouseButton(window.handle(), GLFW_MOUSE_BUTTON_RIGHT) == GLFW_PRESS
+                || glfwGetMouseButton(window.handle(), GLFW_MOUSE_BUTTON_MIDDLE) == GLFW_PRESS
+                || (io.KeyAlt && glfwGetMouseButton(window.handle(), GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS);
+
+            if (!suppressHover && renderViewportState.hovered) {
+                const EditorRay hoverRay = buildEditorRay(
+                    inverseViewProjection,
+                    glm::vec2(renderViewportState.origin.x, renderViewportState.origin.y),
+                    glm::vec2(renderViewportState.size.x, renderViewportState.size.y),
+                    glm::vec2(io.MousePos.x, io.MousePos.y));
+                if (const auto hit = pickEditorObject(viewportSelectionHandles, hoverRay)) {
+                    hoveredObjectId = hit->objectId;
+                }
+            }
+            appendHoverOverlay(objects, previewWorld, materialTextures, hoveredObjectId, selectedIds);
 
             EditorPlacementState dragPlacement;
             if (viewportState.hovered) {
@@ -1562,13 +1644,17 @@ int main(int argc, char* argv[]) {
                         if (payload->Delivery && placementPoint.has_value() && payload->DataSize == sizeof(EditorDragPayload)) {
                             const EditorPlacementState droppedState = makePlacementState(*static_cast<const EditorDragPayload*>(payload->Data));
                             const EditorSceneDocumentState beforeState = document.captureState();
-                            commitPlacement(document, droppedState, *placementPoint, content, editCamera);
+                            const auto placedId = commitPlacement(document, droppedState, *placementPoint, content, editCamera);
                             commandStack.pushDocumentStateCommand(
                                 "Place Object",
                                 beforeState,
                                 document.captureState(),
                                 document);
                             selectionPicker.clear();
+                            if (placedId.has_value()) {
+                                selectedIds = { *placedId };
+                                ui.inspectorContext = EditorInspectorContext::SceneSelection;
+                            }
                             previewDirty = true;
                         }
                     }
@@ -1583,7 +1669,7 @@ int main(int argc, char* argv[]) {
                     && !orbitModifierActive
                     && !editorGizmoIsHot()) {
                     const EditorSceneDocumentState beforeState = document.captureState();
-                    commitPlacement(document, placementState, *placementPoint, content, editCamera);
+                    const auto placedId = commitPlacement(document, placementState, *placementPoint, content, editCamera);
                     commandStack.pushDocumentStateCommand(
                         "Place Object",
                         beforeState,
@@ -1591,6 +1677,10 @@ int main(int argc, char* argv[]) {
                         document);
                     placementState.clear();
                     selectionPicker.clear();
+                    if (placedId.has_value()) {
+                        selectedIds = { *placedId };
+                        ui.inspectorContext = EditorInspectorContext::SceneSelection;
+                    }
                     previewDirty = true;
                 } else if (renderViewportState.hovered
                            && ImGui::IsMouseClicked(ImGuiMouseButton_Left)
@@ -1622,9 +1712,7 @@ int main(int argc, char* argv[]) {
                 }
             }
 
-            if (!ui.playPreview && !startupViewportHandoffActive) {
-                renderSelectionPicker(selectionPicker, document, selectedIds, glfwGetTime());
-            }
+            // Selection picker overlay removed — hover highlight replaces it
         }
 
         if (viewportWindowBegun) {
@@ -1705,11 +1793,17 @@ int main(int argc, char* argv[]) {
             ui.frameSelectionRequested = false;
         }
 
-        if (focusPressed && selectedIds.size() == 1) {
-            if (const EditorObjectBounds* bounds = previewWorld.findObjectBounds(selectedIds.front())) {
-                focusEditorCameraOnBounds(editCamera, bounds->min, bounds->max);
-            } else if (const EditorSceneObject* object = document.findObject(selectedIds.front())) {
-                focusEditorCameraOnPoint(editCamera, editorSceneObjectAnchor(*object));
+        if (focusPressed && !selectedIds.empty()) {
+            EditorObjectBounds unionBounds;
+            for (const auto id : selectedIds) {
+                if (const EditorObjectBounds* b = previewWorld.findObjectBounds(id)) {
+                    unionBounds.expand(*b);
+                } else if (const EditorSceneObject* obj = document.findObject(id)) {
+                    unionBounds.expand(editorSceneObjectAnchor(*obj));
+                }
+            }
+            if (unionBounds.valid) {
+                beginFocusAnimation(editCamera, cameraAnim, unionBounds.min, unionBounds.max);
             }
             focusPressed = false;
         } else {
@@ -1746,6 +1840,9 @@ int main(int argc, char* argv[]) {
             for (auto id : selectedIds) {
                 const std::uint64_t newId = document.duplicateObject(id);
                 if (newId != 0) {
+                    const glm::mat4 currentWorld = document.worldTransformMatrix(newId);
+                    const glm::mat4 offsetWorld = glm::translate(glm::mat4(1.0f), glm::vec3(0.5f, 0.0f, 0.0f)) * currentWorld;
+                    document.applyWorldTransform(newId, offsetWorld);
                     duplicated.push_back(newId);
                 }
             }
@@ -1979,6 +2076,9 @@ int main(int argc, char* argv[]) {
     g_editorRenderFrame = nullptr;
     saveWindowGeometry(window.handle());
     saveBuildConfig(buildConfig, kBuildConfigFile);
+    // Explicitly save ImGui state before shutdown so panel sizes are always
+    // persisted, even if the user closes within the periodic auto-save window.
+    ImGui::SaveIniSettingsToDisk(ImGui::GetIO().IniFilename);
     runtimePreviewSession.endCapture(window.handle());
     imgui.shutdown();
     return 0;

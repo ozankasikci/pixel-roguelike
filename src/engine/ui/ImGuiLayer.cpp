@@ -341,28 +341,28 @@ void ImGuiLayer::renderOverlay(DebugParams& params, std::vector<RenderLight>& li
 
     if (ImGui::CollapsingHeader("Lighting", ImGuiTreeNodeFlags_DefaultOpen)) {
         const char* shadowSizeOptions[] = {"512", "1024", "2048"};
-        ImGui::Checkbox("Enable Shadows", &params.shadowsEnabled);
-        ImGui::Combo("Shadow Map Size", &params.shadowMapResolutionIndex, shadowSizeOptions, 3);
-        ImGui::SliderFloat("Shadow Bias", &params.shadowBias, 0.0001f, 0.02f, "%.4f", ImGuiSliderFlags_Logarithmic);
-        ImGui::SliderFloat("Shadow Normal Bias", &params.shadowNormalBias, 0.0f, 0.20f, "%.3f");
-        ImGui::ColorEdit3("Hemi Sky", &params.hemisphereSkyColor.x, ImGuiColorEditFlags_Float | ImGuiColorEditFlags_NoInputs);
-        ImGui::ColorEdit3("Hemi Ground", &params.hemisphereGroundColor.x, ImGuiColorEditFlags_Float | ImGuiColorEditFlags_NoInputs);
-        ImGui::SliderFloat("Hemi Strength", &params.hemisphereStrength, 0.0f, 1.2f, "%.2f");
-        ImGui::Checkbox("Enable Directional System", &params.enableDirectionalLights);
-        ImGui::BeginDisabled(!params.enableDirectionalLights);
+        ImGui::Checkbox("Enable Shadows", &params.lighting.shadowsEnabled);
+        ImGui::Combo("Shadow Map Size", &params.lighting.shadowMapResolutionIndex, shadowSizeOptions, 3);
+        ImGui::SliderFloat("Shadow Bias", &params.lighting.shadowBias, 0.0001f, 0.02f, "%.4f", ImGuiSliderFlags_Logarithmic);
+        ImGui::SliderFloat("Shadow Normal Bias", &params.lighting.shadowNormalBias, 0.0f, 0.20f, "%.3f");
+        ImGui::ColorEdit3("Hemi Sky", &params.lighting.hemisphereSkyColor.x, ImGuiColorEditFlags_Float | ImGuiColorEditFlags_NoInputs);
+        ImGui::ColorEdit3("Hemi Ground", &params.lighting.hemisphereGroundColor.x, ImGuiColorEditFlags_Float | ImGuiColorEditFlags_NoInputs);
+        ImGui::SliderFloat("Hemi Strength", &params.lighting.hemisphereStrength, 0.0f, 1.2f, "%.2f");
+        ImGui::Checkbox("Enable Directional System", &params.lighting.enableDirectionalLights);
+        ImGui::BeginDisabled(!params.lighting.enableDirectionalLights);
         if (ImGui::TreeNodeEx("Sun", ImGuiTreeNodeFlags_DefaultOpen)) {
-            ImGui::Checkbox("Sun Enabled", &params.sunDirectional.enabled);
-            ImGui::ColorEdit3("Sun Color", &params.sunDirectional.color.x, ImGuiColorEditFlags_Float | ImGuiColorEditFlags_NoInputs);
-            ImGui::SliderFloat("Sun Intensity", &params.sunDirectional.intensity, 0.0f, 3.0f, "%.2f");
-            ImGui::DragFloat3("Sun Direction", &params.sunDirectional.direction.x, 0.01f, -1.0f, 1.0f, "%.2f");
+            ImGui::Checkbox("Sun Enabled", &params.lighting.sunDirectional.enabled);
+            ImGui::ColorEdit3("Sun Color", &params.lighting.sunDirectional.color.x, ImGuiColorEditFlags_Float | ImGuiColorEditFlags_NoInputs);
+            ImGui::SliderFloat("Sun Intensity", &params.lighting.sunDirectional.intensity, 0.0f, 3.0f, "%.2f");
+            ImGui::DragFloat3("Sun Direction", &params.lighting.sunDirectional.direction.x, 0.01f, -1.0f, 1.0f, "%.2f");
             ImGui::TreePop();
         }
         if (ImGui::TreeNodeEx("Fill", ImGuiTreeNodeFlags_DefaultOpen)) {
-            ImGui::Checkbox("Fill Enabled", &params.fillDirectional.enabled);
-            ImGui::BeginDisabled(!params.fillDirectional.enabled);
-            ImGui::ColorEdit3("Fill Color", &params.fillDirectional.color.x, ImGuiColorEditFlags_Float | ImGuiColorEditFlags_NoInputs);
-            ImGui::SliderFloat("Fill Intensity", &params.fillDirectional.intensity, 0.0f, 2.0f, "%.2f");
-            ImGui::DragFloat3("Fill Direction", &params.fillDirectional.direction.x, 0.01f, -1.0f, 1.0f, "%.2f");
+            ImGui::Checkbox("Fill Enabled", &params.lighting.fillDirectional.enabled);
+            ImGui::BeginDisabled(!params.lighting.fillDirectional.enabled);
+            ImGui::ColorEdit3("Fill Color", &params.lighting.fillDirectional.color.x, ImGuiColorEditFlags_Float | ImGuiColorEditFlags_NoInputs);
+            ImGui::SliderFloat("Fill Intensity", &params.lighting.fillDirectional.intensity, 0.0f, 2.0f, "%.2f");
+            ImGui::DragFloat3("Fill Direction", &params.lighting.fillDirectional.direction.x, 0.01f, -1.0f, 1.0f, "%.2f");
             ImGui::EndDisabled();
             ImGui::TreePop();
         }
@@ -374,11 +374,11 @@ void ImGuiLayer::renderOverlay(DebugParams& params, std::vector<RenderLight>& li
     // ------------------------------------------------------------------
     if (ImGui::CollapsingHeader("Camera")) {
         ImGui::Text("Position: %.1f, %.1f, %.1f",
-                    params.cameraPos.x, params.cameraPos.y, params.cameraPos.z);
+                    params.camera.position.x, params.camera.position.y, params.camera.position.z);
         ImGui::Text("Direction: %.2f, %.2f, %.2f",
-                    params.cameraDir.x, params.cameraDir.y, params.cameraDir.z);
-        ImGui::SliderFloat("FOV", &params.cameraFov, 45.0f, 120.0f);
-        ImGui::SliderFloat("Speed", &params.cameraSpeed, 0.5f, 10.0f);
+                    params.camera.direction.x, params.camera.direction.y, params.camera.direction.z);
+        ImGui::SliderFloat("FOV", &params.camera.fov, 45.0f, 120.0f);
+        ImGui::SliderFloat("Speed", &params.camera.moveSpeed, 0.5f, 10.0f);
     }
 
     // ------------------------------------------------------------------

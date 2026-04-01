@@ -2,6 +2,7 @@
 
 #include "editor/scene/EditorPreviewWorld.h"
 #include "editor/viewport/EditorViewportController.h"
+#include "engine/core/MathUtils.h"
 #include "engine/rendering/geometry/MeshLibrary.h"
 #include "game/content/ContentRegistry.h"
 #include "game/rendering/MaterialDefinition.h"
@@ -19,24 +20,6 @@
 #include <memory>
 
 namespace {
-
-glm::vec3 safeNormalize(const glm::vec3& value, const glm::vec3& fallback) {
-    if (glm::dot(value, value) <= 0.0001f) {
-        return fallback;
-    }
-    return glm::normalize(value);
-}
-
-glm::mat4 makeModelMatrix(const glm::vec3& position,
-                          const glm::vec3& scale,
-                          const glm::vec3& rotation = glm::vec3(0.0f)) {
-    glm::mat4 model = glm::translate(glm::mat4(1.0f), position);
-    model = glm::rotate(model, glm::radians(rotation.x), glm::vec3(1.0f, 0.0f, 0.0f));
-    model = glm::rotate(model, glm::radians(rotation.y), glm::vec3(0.0f, 1.0f, 0.0f));
-    model = glm::rotate(model, glm::radians(rotation.z), glm::vec3(0.0f, 0.0f, 1.0f));
-    model = glm::scale(model, scale);
-    return model;
-}
 
 bool isViewportSelectableKind(const EditorSelectionHandle& handle, const EditorUiState& ui) {
     switch (handle.objectKind) {
@@ -94,7 +77,9 @@ bool decomposeModelMatrix(const glm::mat4& matrix,
     if (!glm::decompose(matrix, scale, orientation, position, skew, perspective)) {
         return false;
     }
-    rotationDegrees = glm::degrees(glm::eulerAngles(orientation));
+    float rx, ry, rz;
+    glm::extractEulerAngleXYZ(glm::mat4_cast(orientation), rx, ry, rz);
+    rotationDegrees = glm::degrees(glm::vec3(rx, ry, rz));
     return true;
 }
 
@@ -399,11 +384,12 @@ std::optional<glm::vec3> computePlacementPoint(const std::vector<EditorSelection
     return snappingEnabled ? snappedVec3(*planeHit, moveSnap) : *planeHit;
 }
 
-void commitPlacement(EditorSceneDocument& document,
-                     const EditorPlacementState& state,
-                     const glm::vec3& position,
-                     const ContentRegistry& content,
-                     const EditorCamera& camera) {
+std::optional<std::uint64_t> commitPlacement(EditorSceneDocument& document,
+                                              const EditorPlacementState& state,
+                                              const glm::vec3& position,
+                                              const ContentRegistry& content,
+                                              const EditorCamera& camera) {
+    std::optional<std::uint64_t> result;
     switch (state.kind) {
     case EditorPlacementKind::Mesh: {
         LevelMeshPlacement placement;
@@ -412,7 +398,7 @@ void commitPlacement(EditorSceneDocument& document,
         placement.scale = glm::vec3(1.0f);
         placement.rotation = glm::vec3(0.0f);
         placement.materialId = state.materialId;
-        document.addMesh(placement);
+        result = document.addMesh(placement);
         break;
     }
     case EditorPlacementKind::PointLight: {
@@ -476,6 +462,7 @@ void commitPlacement(EditorSceneDocument& document,
     case EditorPlacementKind::None:
         break;
     }
+    return result;
 }
 
 void appendPlacementGhost(std::vector<RenderObject>& objects,

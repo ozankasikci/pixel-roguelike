@@ -13,7 +13,7 @@
 #include "game/components/PrimaryCameraTag.h"
 #include "game/components/TransformComponent.h"
 #include "game/content/ContentRegistry.h"
-#include "game/levels/GameAssets.h"
+#include "game/levels/ProceduralGameAssets.h"
 #include "game/rendering/EnvironmentProfile.h"
 #include "game/rendering/MeshAssetProvider.h"
 #include "game/runtime/RuntimeGameplay.h"
@@ -52,7 +52,7 @@ double elapsedMilliseconds(Clock::time_point start, Clock::time_point end) {
 }
 
 void bootstrapRuntimeMeshLibrary(MeshLibrary& meshLibrary) {
-    registerAllGameAssets(meshLibrary);
+    registerProceduralAssets(meshLibrary);
 
     const std::filesystem::path meshDirectory(resolveProjectPath("assets/meshes"));
     for (const auto& asset : ModelLoader::discoverProjectAssets(meshDirectory, std::filesystem::current_path())) {
@@ -125,7 +125,6 @@ void RuntimeGameSession::rebuild(const LevelDef& level,
     if (rendererInitialized_) {
         renderer_.reloadContent(content);
     }
-    bootstrapRuntimeMeshLibrary(meshLibrary_);
     clearEntities();
     runSession_ = RunSession{};
     inputSystem_.reset();
@@ -142,7 +141,8 @@ void RuntimeGameSession::rebuild(const LevelDef& level,
     LevelLoadRequest resolvedRequest = request;
     resolvedRequest.levelId = levelId;
     resolvedRequest.levelPath = levelPath;
-    loader.load(content, runSession_, resolvedRequest, level);
+    LevelLoadArgs args{&content, &runSession_, &level};
+    loader.load(resolvedRequest, args);
 
     initializeRuntimeInteraction(registry_);
     initializeRuntimeInventory(registry_);

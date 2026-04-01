@@ -1,7 +1,7 @@
 add_library(game_content STATIC
     content/ContentRegistry.cpp
     level/LevelDef.cpp
-    levels/GameAssets.cpp
+    levels/ProceduralGameAssets.cpp
     rendering/EnvironmentDefinition.cpp
     rendering/EnvironmentProfile.cpp
     rendering/MaterialDefinition.cpp
@@ -22,6 +22,7 @@ target_link_libraries(game_rendering PUBLIC
     game_content
     engine_ui
 )
+target_link_libraries(game_rendering PRIVATE tinygltf)
 
 add_library(gameplay STATIC
     level/LevelBuilder.cpp

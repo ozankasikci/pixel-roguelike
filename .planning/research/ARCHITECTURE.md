@@ -1,8 +1,8 @@
 # Architecture Research
 
-**Domain:** Custom C++ first-person 3D game engine with 1-bit dithered rendering
-**Researched:** 2026-03-23
-**Confidence:** MEDIUM — Core patterns are well-established (HIGH for engine layers, ECS, rendering pipeline). Dithering pipeline specifics and roguelike game-state patterns partially from single sources (MEDIUM). Build order recommendations synthesized from multiple projects.
+**Domain:** Custom C++ game engine level editor — UX feature integration
+**Researched:** 2026-04-01
+**Confidence:** HIGH (all findings from direct source code inspection)
 
 ---
 
@@ -10,383 +10,250 @@
 
 ### System Overview
 
-A custom C++ game engine for this project follows a strict five-layer dependency model where upper layers call downward only. No layer calls upward.
-
 ```
-┌────────────────────────────────────────────────────────────────┐
-│                        GAME LAYER                              │
-│  ┌───────────┐  ┌──────────┐  ┌──────────┐  ┌─────────────┐  │
-│  │  Game     │  │  Combat  │  │  Enemy   │  │  Level      │  │
-│  │  State    │  │  System  │  │  AI      │  │  Manager    │  │
-│  └─────┬─────┘  └────┬─────┘  └────┬─────┘  └──────┬──────┘  │
-└────────┼─────────────┼─────────────┼────────────────┼─────────┘
-         │             │             │                │
-┌────────┴─────────────┴─────────────┴────────────────┴─────────┐
-│                        FUNCTION LAYER                          │
-│  ┌───────────┐  ┌──────────┐  ┌──────────┐  ┌─────────────┐  │
-│  │  ECS      │  │  Physics │  │  Camera  │  │  Audio      │  │
-│  │  World    │  │  /Collis.│  │  System  │  │  System     │  │
-│  └─────┬─────┘  └────┬─────┘  └────┬─────┘  └──────┬──────┘  │
-└────────┼─────────────┼─────────────┼────────────────┼─────────┘
-         │             │             │                │
-┌────────┴─────────────┴─────────────┴────────────────┴─────────┐
-│                        RENDERING LAYER                         │
-│  ┌────────────────────────────────────────────────────────┐   │
-│  │  Scene Renderer → Framebuffer → Dither Post-Process    │   │
-│  │  (3D geometry + lighting)   (FBO)   (Bayer shader)     │   │
-│  └────────────────────────────────────────────────────────┘   │
-│  ┌───────────┐  ┌──────────┐  ┌──────────────────────────┐   │
-│  │  Shader   │  │  Texture │  │  Mesh / VAO / VBO        │   │
-│  │  Manager  │  │  Manager │  │  Manager                 │   │
-│  └───────────┘  └──────────┘  └──────────────────────────┘   │
-└────────────────────────────────────────────────────────────────┘
-         │
-┌────────┴───────────────────────────────────────────────────────┐
-│                        CORE LAYER                              │
-│  ┌───────────┐  ┌──────────┐  ┌──────────┐  ┌─────────────┐  │
-│  │  Math     │  │  Memory  │  │  Event   │  │  Resource   │  │
-│  │  (GLM)    │  │  Mgmt    │  │  Bus     │  │  Manager    │  │
-│  └───────────┘  └──────────┘  └──────────┘  └─────────────┘  │
-└────────────────────────────────────────────────────────────────┘
-         │
-┌────────┴───────────────────────────────────────────────────────┐
-│                        PLATFORM LAYER                          │
-│  ┌───────────┐  ┌──────────┐  ┌──────────┐  ┌─────────────┐  │
-│  │  Window   │  │  Input   │  │  OpenGL  │  │  File       │  │
-│  │  (GLFW)   │  │  (GLFW)  │  │  Context │  │  System     │  │
-│  └───────────┘  └──────────┘  └──────────┘  └─────────────┘  │
-└────────────────────────────────────────────────────────────────┘
+apps/level_editor/main.cpp   (orchestrator — owns all state, runs the frame loop)
+  |
+  +-- EditorSceneDocument     (authoritative scene graph — add/delete/duplicate/transform)
+  +-- EditorCommandStack      (undo/redo — snapshot-based, 256-command ring buffer)
+  +-- EditorPreviewWorld      (ECS preview — entt registry + MeshLibrary + bounds cache)
+  +-- EditorUiState           (all panel toggle flags, selected tool, snapping state)
+  +-- std::vector<uint64_t> selectedIds  (current selection — lives in main)
+  +-- EditorSelectionPickerState         (overlap cycle state)
+  +-- EditorPlacementState               (active drag-to-place operation)
+  +-- EditorPendingCommand widgetCommand (inspector widget drag tracking)
+  +-- EditorPendingCommand gizmoCommand  (gizmo drag tracking)
+  |
+  +- UI panels (render and return action results — no state ownership)
+  |   +-- renderOutliner()        -> returns deleteRequests vector
+  |   +-- renderInspector()       -> returns InspectorActionResult
+  |   +-- renderAssetBrowser()    -> returns AssetBrowserActionResult
+  |   +-- renderEnvironmentPanel()
+  |
+  +- Viewport pipeline (edit mode path only)
+  |   +-- collectRenderObjects()          -> builds RenderObject list from PreviewWorld
+  |   +-- appendHelperObjects()           -> colliders, light helpers, spawn
+  |   +-- appendSelectionOverlays()       -> wireframe AABB overlays per selectedId
+  |   +-- EditorViewportRenderer::render() -> SceneRenderPipeline -> OpenGL FBO
+  |   +-- applyGizmoToSelectedObject()    -> ImGuizmo -> document.applyWorldTransform()
+  |
+  +- Action dispatch (end of frame, after all panels)
+      +-- deletePressed / outlinerDeleteRequests
+      +-- duplicatePressed
+      +-- undoPressed / redoPressed
+      +-- focusPressed
 ```
-
----
 
 ### Component Responsibilities
 
-| Component | Responsibility | Communicates With |
-|-----------|----------------|-------------------|
-| **Platform / Window** | OS window creation, OpenGL context init, raw input events | Input system (delivers events upward) |
-| **Input System** | Translate raw GLFW events to game actions (WASD, mouse delta, attack button) | Camera system, Game State |
-| **Event Bus** | Decouple senders from receivers via publish/subscribe | All layers (used as loose coupling mechanism) |
-| **Math (GLM)** | vec3/mat4/quaternion operations, frustum math | Used by all layers above |
-| **Resource Manager** | Load, cache, and reference-count textures, meshes, shaders; no duplicate GPU uploads | Texture Manager, Mesh Manager, Shader Manager |
-| **Shader Manager** | Compile GLSL, link programs, cache by path, set uniforms | Renderer, Dither Post-Process |
-| **Texture Manager** | Load images (stb_image), upload to GPU, cache handles | Renderer, Dither Post-Process |
-| **Mesh Manager** | Parse OBJ/custom format, create VAO/VBO/EBO, cache by path | Renderer |
-| **Scene Renderer** | Submit draw calls for visible entities; deferred or forward shading; point lights | Mesh Manager, Shader Manager, Framebuffer |
-| **Framebuffer (FBO)** | Offscreen render target at scene resolution; color + depth attachments | Scene Renderer (writes to it), Dither Post-Process (reads from it) |
-| **Dither Post-Process** | Fullscreen quad pass that reads FBO color, applies luminance + Bayer matrix threshold, outputs pure black/white | Framebuffer (source), Default framebuffer (output) |
-| **Camera System** | First-person view/projection matrix from position + pitch/yaw; mouse-look smoothing | Input System (consumes mouse delta), Renderer (provides matrices) |
-| **Physics / Collision** | AABB and capsule collision vs level geometry; gravity; sweep tests for melee | ECS World, Level Manager |
-| **ECS World** | Entity IDs, component storage (position, health, AI state, renderable, etc.), system iteration | All game-layer systems |
-| **Audio System** | Positional sound effects and ambient; wraps miniaudio or OpenAL | ECS World (entity positions), Event Bus (trigger sounds on events) |
-| **Enemy AI** | Patrol / detect / attack state machine per enemy entity | ECS World, Physics/Collision, Combat System |
-| **Combat System** | Melee hit detection (swept sphere vs AABB), ranged projectile lifecycle, damage application | ECS World (health components), Physics |
-| **Game State** | FSM: MainMenu / Playing / Paused / Dead / LevelComplete; orchestrates transitions | All game systems |
-| **Level Manager** | Load handcrafted level data (geometry, entity spawn points, light positions), stream into ECS and Renderer | ECS World, Renderer, Resource Manager |
+| Component | Responsibility | Key API |
+|-----------|---------------|---------|
+| `EditorSceneDocument` | Authoritative scene state — objects, environment, node IDs, parent/child hierarchy | `addMesh()`, `eraseObjects()`, `duplicateObject()`, `applyWorldTransform()`, `captureState()`, `restoreState()` |
+| `EditorSceneDocumentState` | Plain serializable snapshot for undo/redo — contains `vector<EditorSceneObject>`, `EnvironmentDefinition`, `nextObjectId`, dirty flags | Value type copied by `captureState()` |
+| `EditorCommandStack` | Snapshot-based undo/redo, 256-command ring, dirty-flag sync, serialize-then-diff deduplication | `pushDocumentStateCommand()`, `undo()`, `redo()` |
+| `EditorPreviewWorld` | Mirrors document into an entt ECS registry for rendering; maintains per-object bounds and scene AABB | `rebuild()`, `syncMaterials()`, `syncLights()`, `findObjectBounds()` |
+| `EditorSelectionPickerState` | Overlap-cycle popup state (hit list, current index, expiry timer) | Pure data; managed in main.cpp |
+| `EditorUiState` | All panel visibility flags, active tool, snapping params, selected mesh/material/archetype IDs | `EditorTransformTool`, `snappingEnabled`, `selectedMeshId` |
+| `EditorPlacementState` | Active drag-to-place operation (kind + ids) | `active()`, `clear()` |
+| `EditorPendingCommand` | Tracks before-state for ongoing widget/gizmo drags; finalized on release | `beginPendingCommand()`, `finalizePendingCommand()` |
+| `appendSelectionOverlays()` | Generates wireframe AABB RenderObjects for all selected IDs; uses `ignoreDepth=true` | Called each frame in edit path |
 
 ---
 
-## Recommended Project Structure
+## How New Features Integrate
 
-```
-src/
-├── platform/            # OS and graphics API surface
-│   ├── Window.h/.cpp    # GLFW window + OpenGL context
-│   └── Input.h/.cpp     # Raw GLFW callback -> InputEvent structs
-├── core/                # Cross-cutting low-level utilities
-│   ├── math/            # Convenience wrappers on GLM
-│   ├── memory/          # Pool allocator, arena (optional for v1)
-│   ├── events/          # EventBus — simple observer/publish-subscribe
-│   └── resources/       # ResourceManager — handle-based cache
-├── rendering/           # All GPU concerns
-│   ├── ShaderManager.h/.cpp
-│   ├── TextureManager.h/.cpp
-│   ├── MeshManager.h/.cpp
-│   ├── Framebuffer.h/.cpp   # FBO wrapper
-│   ├── Renderer.h/.cpp      # Scene submission, draw calls, lighting
-│   └── DitherPass.h/.cpp    # Fullscreen Bayer dither post-process
-├── ecs/                 # Entity-Component-System
-│   ├── World.h/.cpp     # Registry (wraps EnTT or custom)
-│   └── components/      # Plain structs: Transform, Health, AIState, Renderable, Light…
-├── gameplay/            # Game-specific systems
-│   ├── Camera.h/.cpp
-│   ├── Physics.h/.cpp       # AABB collision, sweep tests
-│   ├── CombatSystem.h/.cpp  # Melee + projectile logic
-│   ├── EnemyAI.h/.cpp       # Patrol/detect/attack FSM
-│   ├── LevelManager.h/.cpp  # Level load, spawn entities
-│   └── GameState.h/.cpp     # Top-level FSM
-├── audio/               # Sound effects and ambient
-│   └── AudioSystem.h/.cpp   # miniaudio or OpenAL wrapper
-├── assets/              # Raw source assets (OBJ, PNG, GLSL, level data)
-│   ├── shaders/
-│   ├── meshes/
-│   ├── textures/
-│   └── levels/
-└── main.cpp             # Engine init, game loop
-```
+### Delete
 
-### Structure Rationale
+**Status: Already implemented and fully wired.**
 
-- **platform/ vs core/ vs rendering/:** Strict separation ensures platform code never leaks into game logic. The rendering layer knows about OpenGL; nothing above it does.
-- **ecs/components/ as plain structs:** No methods on components — systems in gameplay/ own the logic. This prevents data/logic coupling that kills cache performance.
-- **rendering/DitherPass.h separate from Renderer.h:** The dither is a distinct post-process pass. Keeping it isolated makes it easy to toggle, tune parameters, or replace the dithering algorithm without touching scene rendering.
-- **assets/ in source tree for v1:** For a solo/small project, embedding asset paths at build time is fine. A content pipeline (asset cooking) is unnecessary complexity for v1.
+Both code paths are undo-tracked:
+
+1. **Global hotkey** (`Delete` key, checked in main frame loop): sets `deletePressed = true`. Dispatched at end of frame — captures before-state, calls `document.eraseObjects(selectedIds)`, pushes command, clears selection, sets `previewDirty = true`.
+2. **Outliner panel**: `renderOutliner()` returns a `deleteRequests` vector (populated by "Delete Selected" button, `Delete` key when outliner focused, or right-click context menu). Dispatched in main after panel call with the same snapshot pattern.
+3. `eraseObjects()` automatically expands the ID list to include all children before erasing — child cascade is built in.
+
+No new code is needed.
 
 ---
 
-## Architectural Patterns
+### Duplicate
 
-### Pattern 1: Offscreen Framebuffer + Post-Process Pass (1-bit Dithering)
+**Status: Already implemented and fully wired.**
 
-**What:** Render the entire 3D scene to a high-precision offscreen FBO. Then run a single fullscreen quad pass through the dither shader, outputting to the default framebuffer. The scene renderer never knows about the dithering.
+`Ctrl/Cmd+D` sets `duplicatePressed = true`. Dispatched at end of frame: iterates `selectedIds`, calls `document.duplicateObject(id)` for each, collects new IDs, replaces `selectedIds` with the duplicated IDs, pushes "Duplicate Selection" command, sets `previewDirty = true`.
 
-**When to use:** Any visual effect that needs the full composited scene as input — dithering, bloom, CRT scanlines, SSAO. Always the correct architecture for post-process effects.
+`duplicateObject()` calls `addObject(kind, payload)` — copies the payload verbatim. Node IDs are cleared and regenerated in `addObject()` via `ensureObjectNodeId()`. Parent relationship in the payload is preserved in the copy. PlayerSpawn duplicates are blocked at the document level (returns 0).
 
-**Trade-offs:** One extra FBO and texture copy per frame. Negligible cost at 1080p with modern hardware. Huge DX win: scene renderer stays clean, dither parameters are hot-reloadable at runtime.
+No new code is needed.
 
-**Example:**
-```cpp
-// Per-frame render loop
-sceneFBO.bind();
-renderer.drawScene(camera, ecs);   // all 3D geometry + lighting
-sceneFBO.unbind();
+---
 
-ditherPass.apply(sceneFBO.colorTexture()); // reads scene, writes to default FBO
-```
+### Add Mesh (via Asset Browser)
 
-### Pattern 2: Entity-Component-System (Data-Oriented)
+**Status: Already implemented.**
 
-**What:** Entities are integer IDs. Components are plain data structs stored contiguously in typed arrays. Systems iterate arrays and transform data. No virtual dispatch, no inheritance hierarchies on game objects.
+Flow: Asset browser emits `ImGui::SetDragDropPayload("EDITOR_PLACE", ...)` with an `EditorDragPayload`. The viewport receives the drop (or the user clicks with an active `EditorPlacementState`). `commitPlacement()` in `EditorViewportInteraction.cpp` calls `document.addMesh()`. A "Place Object" command is pushed.
 
-**When to use:** Always for game objects in a 3D game. Especially valuable when iterating 100s of enemies each frame — cache locality matters.
+The asset browser also calls `beginPlacement()` to set a placement mode that persists until the user clicks. Both flows go through `commitPlacement()` then `document.addMesh()`.
 
-**Trade-offs:** Initial conceptual overhead vs OOP. Pays off immediately with more than ~50 entities. EnTT is the recommended library — mature, header-only, battle-tested in production games.
+No new code is needed for the core flow. Any work here is discoverability polish — e.g., a dedicated "Add Mesh" button in the viewport toolbar or outliner header that opens a picker modal rather than requiring a drag.
 
-**Example:**
-```cpp
-// Define components as plain structs
-struct Transform { glm::vec3 pos; float yaw, pitch; };
-struct Health    { int current, max; };
-struct AIState   { enum class Mode { Patrol, Alert, Attack } mode; float alertTimer; };
+---
 
-// System iterates only entities with the components it cares about
-auto view = world.view<Transform, AIState>();
-for (auto [entity, xform, ai] : view.each()) {
-    enemyAI.update(entity, xform, ai, dt);
-}
-```
+### Selection Overlay Fix (visible through solid geometry in front)
 
-### Pattern 3: Game Loop with Fixed Physics Timestep
+**Status: Needs implementation.**
 
-**What:** The main loop separates physics/logic updates (fixed timestep, e.g. 60Hz) from rendering (variable, uncapped or vsync). Input is polled once per frame before the update tick.
+**The problem:** `appendSelectionOverlays()` in `EditorScenePreviewRenderer.cpp` generates one wireframe AABB `RenderObject` per selected ID with `ignoreDepth = true` and `wireframe = true`. `Renderer::drawScene()` disables `GL_DEPTH_TEST` when `ignoreDepth` is set. This causes the wireframe box to render on top of geometry that is physically in front of the selected object — the "ghost outline through walls" issue.
 
-**When to use:** Any game with physics or deterministic simulation. Prevents physics behaving differently at different framerates.
+**The fix — two-pass overlay (recommended):**
 
-**Trade-offs:** Slightly more complex loop. The "accumulator" pattern handles partial timesteps. This is the industry standard — there is no good reason not to use it.
+Split each selection overlay into two `RenderObject` entries:
+- Pass 1: `ignoreDepth = false`, `wireframe = true`, `lineWidth = 4.0f`, full tint — renders correctly clipped by geometry.
+- Pass 2: `ignoreDepth = true`, `wireframe = true`, `lineWidth = 1.5f`, tint scaled down to ~25% — faint depth-independent hint, visible when object is behind walls.
 
-**Example:**
-```cpp
-const float FIXED_DT = 1.0f / 60.0f;
-float accumulator = 0.0f;
+This is the Unity selection approach. Pass 2 ensures you can always locate a selected but occluded object without the bright box overpowering what is in front.
 
-while (running) {
-    float frameTime = timer.delta();
-    accumulator += frameTime;
+**Simpler alternative:** Remove `ignoreDepth = true` from the overlay entirely. The wireframe clips at geometry boundaries. You lose visibility when the selected object is fully occluded but gain correct rendering.
 
-    input.poll();
+**Architectural change required:**
+- Modify `appendSelectionOverlays()` in `src/editor/render/EditorScenePreviewRenderer.cpp`
+- Change `ignoreDepth = true` to `ignoreDepth = false` for the primary pass
+- Optionally `push_back` a second entry per selected ID with reduced tint and `ignoreDepth = true`
+- No changes to `RenderObject` struct, `Renderer`, or any other system
 
-    while (accumulator >= FIXED_DT) {
-        world.update(FIXED_DT);     // physics, AI, combat
-        accumulator -= FIXED_DT;
-    }
+---
 
-    float alpha = accumulator / FIXED_DT; // for interpolated rendering (optional v1)
-    renderer.drawScene(camera, world);
-    ditherPass.apply(sceneFBO.colorTexture());
-    window.swapBuffers();
-}
-```
+### Move/Translate with Gizmos
 
-### Pattern 4: Finite State Machine for Game State and Enemy AI
+**Status: Already implemented.**
 
-**What:** A clearly enumerated set of states with explicit transition conditions. Used at two levels: top-level game state (Menu/Playing/Paused/Dead) and per-enemy AI (Patrol/Alert/Attack/Dead).
+`applyGizmoToSelectedObject()` in `EditorViewportInteraction.cpp` handles all three tools (Translate/Rotate/Scale via `EditorTransformTool`). It delegates to `manipulateEditorGizmo()` → ImGuizmo, then feeds the result back into `document.applyWorldTransform()`. Pending command tracking uses `gizmoCommand` (`EditorPendingCommand`) in main.
 
-**When to use:** Any entity with discrete behavioral modes. Prevents "flag soup" — booleans and conditionals scattered across update functions.
+The gizmo currently requires exactly one object selected (`selectedIds.size() != 1` exits early). Multi-object gizmo is not implemented.
 
-**Trade-offs:** Slight boilerplate. Far simpler than behavior trees for the AI complexity this game requires.
+No new code is needed for single-object transform.
 
 ---
 
 ## Data Flow
 
-### Frame Render Flow
+### Command Lifecycle (any mutating operation)
 
 ```
-[Player Mouse/Keyboard]
-        |
-        v
-[Input::poll()]  -->  [InputEvent queue]
-        |
-        v
-[Camera::update(mouseDeltas)]  -->  [View/Projection matrices]
-        |
-        v
-[World::fixedUpdate(dt)]  -->  [Physics, AI, Combat, Damage]
-        |
-        v
-[LevelManager]  -->  [ECS: Renderable + Transform components]
-        |
-        v
-[Renderer::drawScene(camera, ecs)]  -->  [Writes to sceneFBO]
-        |
-        v
-[DitherPass::apply(sceneFBO.color)]  -->  [Default framebuffer]
-        |
-        v
-[Window::swapBuffers()]  -->  [Screen]
+User action (key, button, outliner, viewport)
+    |
+beforeState = document.captureState()   [snapshot EditorSceneDocumentState]
+    |
+document.eraseObjects() / addMesh() / duplicateObject() / applyWorldTransform() etc.
+    |
+commandStack.pushDocumentStateCommand(label, beforeState, document.captureState(), document)
+    |  [internally diffs serialized scene strings -- no-op if nothing changed]
+previewDirty = true
+    |
+next frame: previewWorld.rebuild(document, content)
 ```
 
-### Combat Hit Detection Flow
+### Selection Flow
 
 ```
-[Player input: swing/fire]
-        |
-        v
-[CombatSystem::triggerAttack(playerEntity)]
-        |
-        +--> Melee: sweep sphere from hand position along attack arc
-        |         |
-        |         v
-        |    Physics::sweepTest()  -->  [hits EnemyEntity]
-        |         |
-        |         v
-        |    ECS: Health component decremented, HitEvent dispatched
-        |
-        +--> Ranged: spawn ProjectileEntity at weapon muzzle
-                  |
-                  v
-             Physics::update() moves projectile each tick
-                  |
-                  v
-             CollisionResponse: ProjectileEntity + EnemyEntity
-                  |
-                  v
-             ECS: Health decremented, ProjectileEntity destroyed
+Left click in viewport
+    |
+buildEditorRay() -> pickEditorObjects(viewportSelectionHandles, ray)
+    |  [returns sorted hit list by distance]
+refreshSelectionPicker()  [multi-hit overlap cycle -- click again to cycle]
+    |
+applySelectionHit() -> toggleSelection(selectedIds, id, additive)
+    |
+selectedIds updated -> next frame: appendSelectionOverlays() uses updated list
 ```
 
-### Game State Transitions
+### Preview Sync Model
+
+Two tiers of update cost:
 
 ```
-[GameState::MainMenu]
-        |
-        v  (player starts game)
-[GameState::Playing]  <-->  [GameState::Paused]
-        |
-        +-- (player dies) --> [GameState::Dead]
-        |                         |
-        |                         v (restart)
-        +-- (level cleared) --> [GameState::LevelComplete]
-                                  |
-                                  v (next level)
-                             [GameState::Playing]
+document mutation -> markSceneDirty() -> ++sceneRevision_
+
+main.cpp per-frame check:
+  if (previewDirty)              -> previewWorld.rebuild()          [full ECS rebuild -- expensive]
+  elif (sceneRevision mismatch)  -> previewWorld.syncMaterials()
+                                    + previewWorld.syncLights()     [cheap -- no ECS rebuild]
+  elif (envRevision mismatch)    -> runtime session environment sync only
+```
+
+`previewDirty = true` is the expensive path. It is set when objects are added, removed, or a mesh ID changes. Transform-only changes (gizmo drag) go through the cheap `syncMaterials`/`syncLights` path via revision counters automatically.
+
+---
+
+## Recommended File Layout
+
+No new directories needed. All changes stay in existing files:
+
+```
+src/editor/
++-- scene/
+|   +-- EditorSceneDocument.h/.cpp    [NO CHANGES -- add/delete/duplicate already complete]
+|   +-- EditorSelectionSystem.h/.cpp  [NO CHANGES]
++-- render/
+|   +-- EditorScenePreviewRenderer.cpp  [MODIFY: appendSelectionOverlays() depth fix]
++-- ui/
+|   +-- EditorOutlinerPanel.cpp       [NO CHANGES -- delete path complete]
+|   +-- EditorPanels.h                [NO CHANGES]
++-- viewport/
+    +-- EditorViewportInteraction.cpp [NO CHANGES -- gizmo/placement complete]
+
+apps/level_editor/
++-- main.cpp   [NO CHANGES -- delete/duplicate/undo/redo all dispatched correctly]
 ```
 
 ---
 
-## Build Order (Component Dependencies)
+## Architectural Patterns
 
-Build in this order. Each phase depends on the layers below it being functional.
+### Pattern 1: Snapshot Command (all mutations)
 
-```
-Phase 1 — Foundation (no deps)
-  Platform: Window, OpenGL context, input events
+**What:** Capture full `EditorSceneDocumentState` before and after each mutation. Push to `EditorCommandStack`. Undo/redo restores snapshots.
 
-Phase 2 — Rendering Primitives (requires Phase 1)
-  ShaderManager, TextureManager, MeshManager
-  Framebuffer (FBO wrapper)
-  Basic Renderer (draw a static mesh)
+**When to use:** Every operation that mutates `EditorSceneDocument`.
 
-Phase 3 — 1-Bit Dither Pipeline (requires Phase 2)
-  DitherPass — fullscreen quad + Bayer matrix shader
-  Scene renders to FBO, dither outputs to screen
-  *** Validate the visual style before building gameplay ***
+**Trade-offs:** Full snapshot per command. At 200 objects, roughly 50-200 KB per entry. 256-command limit caps peak memory at ~50 MB. Acceptable for an editor tool.
 
-Phase 4 — ECS and Camera (requires Phase 1, Phase 2)
-  ECS World (EnTT), core components
-  Camera system (first-person mouse-look + WASD)
-  Player can move through a scene with dithered rendering
-
-Phase 5 — Level and Collision (requires Phase 4)
-  LevelManager: load geometry + light positions
-  Physics: AABB collision, gravity, sweep tests
-  Player walks around gothic level geometry
-
-Phase 6 — Lighting Integration (requires Phase 3, Phase 5)
-  Point lights (torches) fed to scene shader
-  Lighting affects luminance, dithering responds correctly
-  Atmospheric quality validated
-
-Phase 7 — Combat (requires Phase 4, Phase 5)
-  CombatSystem: melee swing detection, projectile lifecycle
-  Health components, damage application
-  Player can hit targets
-
-Phase 8 — Enemy AI (requires Phase 7)
-  EnemyAI: patrol/detect/attack FSM
-  Multiple enemy types as ECS component variations
-  Enemy hit detection, death
-
-Phase 9 — Game State and Audio (requires Phase 7, Phase 8)
-  GameState FSM, level transitions
-  AudioSystem for combat and ambient sounds
-
-Phase 10 — Content (requires all systems)
-  Handcrafted levels, weapon variants, boss encounters
+**Correct pattern:**
+```cpp
+const EditorSceneDocumentState beforeState = document.captureState();
+document.eraseObjects(selectedIds);
+commandStack.pushDocumentStateCommand(
+    "Delete Selection", beforeState, document.captureState(), document);
+previewDirty = true;
 ```
 
----
+### Pattern 2: Deferred Action via Flag (avoid re-entrancy mid-render)
 
-## Anti-Patterns
+**What:** UI panels set boolean flags or return result structs. Actions are dispatched after all panels render, at the bottom of the frame lambda.
 
-### Anti-Pattern 1: Rendering Dithering In-Shader Per-Object
+**When to use:** All destructive or selection-modifying operations triggered from panels.
 
-**What people do:** Apply the Bayer dither threshold inside the fragment shader of every mesh, at draw time.
+**Why:** ImGui panels render mid-frame. Mutating `document` or `selectedIds` during rendering invalidates panel state for panels that render later in the same frame.
 
-**Why it's wrong:** Each mesh shader must carry the dithering logic and Bayer matrix. You cannot composite transparent objects or particles correctly — each is dithered in isolation, not as part of the final image. The effect does not work correctly with lighting that spans multiple objects. Tuning requires recompiling all shaders.
+### Pattern 3: PendingCommand for Drag Operations
 
-**Do this instead:** Render the scene normally to an FBO. Apply dither as a single post-process pass that sees the entire composited luminance image. This matches how Return of the Obra Dinn and similar games achieve the correct look.
+**What:** For operations spanning multiple frames (gizmo drag, inspector DragFloat), `EditorPendingCommand` holds the `beforeState` from drag start. Finalized with `finalizePendingCommand()` on drag release, producing a single undo entry.
 
-### Anti-Pattern 2: God Object "Engine" Class
+**Example:**
+```cpp
+// Frame N: gizmo just became hot
+beginPendingCommand(gizmoCommand, beforeState, "Transform Object");
 
-**What people do:** Create a single `Engine` class that owns the window, renderer, input, physics, audio, ECS, and game state. Everything calls `engine.getRenderer()`, `engine.getInput()`, etc.
+// Frame N+k: gizmo released
+finalizePendingCommand(gizmoCommand, commandStack, document);
+```
 
-**Why it's wrong:** Every system becomes coupled to everything else through the Engine object. Adding a new system requires modifying Engine. Unit testing is impossible. This is the most common mistake in first-time engine projects and consistently causes full rewrites.
+### Pattern 4: previewDirty vs. sceneRevision (two-tier sync)
 
-**Do this instead:** Use an EventBus or explicit dependency injection. Each system receives only the specific interfaces it needs at construction time. `CombatSystem` gets a reference to the `ECSWorld` and `Physics` — nothing else.
+**What:** `previewDirty = true` forces full ECS rebuild. The light path activates automatically when `sceneRevision` ticks without `previewDirty`.
 
-### Anti-Pattern 3: Inheritance Hierarchies for Game Objects
-
-**What people do:** `class Enemy : public Character : public Entity { ... }` with virtual `update()`, `render()`, `takeDamage()`.
-
-**Why it's wrong:** Deep inheritance prevents sharing components selectively. A flying enemy that shoots also needs the Patrol component — impossible without multiple inheritance or interface explosion. Virtual dispatch on 200 enemies per frame is measurable overhead. Adding a new enemy type requires a new class file.
-
-**Do this instead:** ECS composition. A "flying shooting enemy" is an entity with `[Transform, Health, AIState, PatrolPath, ProjectileShooter, FlyMovement]` components. New enemy types are new component combinations, not new classes.
-
-### Anti-Pattern 4: Variable-Timestep Physics
-
-**What people do:** Pass raw frame delta time directly to physics and collision — `physics.update(frameTime)`.
-
-**Why it's wrong:** At 30fps the player clips through walls. At 144fps the game runs too fast or physics is unstable. Frame drops cause non-deterministic collision results.
-
-**Do this instead:** Fixed-timestep physics accumulator (see Pattern 3 above). Physics always runs at 60Hz regardless of display framerate.
-
-### Anti-Pattern 5: Dithering at Full Resolution Without Considering Pixel Size
-
-**What people do:** Render at 1920x1080, apply 4x4 Bayer matrix dither — the pattern becomes invisibly fine.
-
-**Why it's wrong:** The 1-bit aesthetic requires visible dithering pixels. At full HD the pattern is sub-pixel and the result looks like random noise, losing the ordered Bayer character entirely.
-
-**Do this instead:** Render the scene at a lower internal resolution (e.g., 480p or 720p) and upscale with nearest-neighbor to the display. This gives the dither pattern the chunky, legible character that defines the aesthetic. The Obra Dinn pipeline uses a double-resolution-then-collapse-to-half trick to the same end.
+**When to set `previewDirty = true`:** Object added, removed, mesh ID changed, scene loaded.
+**Let revision sync handle:** Material edits, light tweaks, gizmo-only transforms.
 
 ---
 
@@ -396,61 +263,115 @@ Phase 10 — Content (requires all systems)
 
 | Boundary | Communication | Notes |
 |----------|---------------|-------|
-| Platform → Function | GLFW callbacks → InputEvent structs pushed to queue | Platform layer never knows about ECS or gameplay |
-| Renderer → ECS | Renderer queries ECS for `[Transform, Renderable]` components | Read-only access — renderer does not write game state |
-| Physics → ECS | Physics reads `Transform`, writes corrected `Transform` on collision response | Only system that mutates Transform externally |
-| CombatSystem → ECS | Reads `Transform`, `Health`; writes `Health`; dispatches `HitEvent` via EventBus | EventBus decouples UI damage numbers, sound triggers from combat logic |
-| DitherPass → Renderer | Reads `sceneFBO` color texture only | Zero knowledge of scene contents — pure image processing |
-| LevelManager → ECS + Renderer | Spawns entities into ECS world; registers static geometry with Renderer | LevelManager owns the level-data schema |
-| AudioSystem → EventBus | Subscribes to game events (hit, death, ambient triggers) | No direct coupling to combat or AI code |
+| main.cpp <-> EditorSceneDocument | Direct method calls | main owns the instance; all mutations go through document methods |
+| main.cpp <-> EditorCommandStack | `pushDocumentStateCommand()` + `undo()`/`redo()` | Stack takes ownership of before/after state snapshots |
+| main.cpp <-> UI panels | Function call in / result struct out | Panels do not mutate document directly |
+| EditorOutlinerPanel <-> main | Returns `vector<uint64_t> deleteRequests` | Deletion deferred to main for dispatch consistency |
+| EditorPreviewWorld <-> EditorSceneDocument | `rebuild(document, content)` called from main | EditorPreviewWorld reads document; document does not know about PreviewWorld |
+| appendSelectionOverlays <-> RenderObject | Writes `wireframe=true`, `ignoreDepth=true` to RenderObject entries | This is the single point to change for the depth fix |
 
-### External Dependencies
+### New vs Modified for Each Feature
 
-| Library | Purpose | Integration Point |
-|---------|---------|-------------------|
-| GLFW | Window, OpenGL context, input | Platform layer only |
-| OpenGL (via glad) | GPU rendering | Rendering layer only — nothing above includes GL headers |
-| GLM | Math (vec3, mat4, quaternions) | Core/math — used everywhere above Platform |
-| EnTT | ECS registry | ecs/World.h wraps it — game code uses World interface, not EnTT directly |
-| stb_image | PNG/JPG texture loading | TextureManager only |
-| Assimp (optional) | OBJ mesh loading | MeshManager only — can be replaced with custom loader later |
-| miniaudio or OpenAL | Audio playback | AudioSystem only |
+| Feature | Status | Files to Change |
+|---------|--------|-----------------|
+| Delete (hotkey + outliner) | Complete | None |
+| Duplicate (Ctrl+D) | Complete | None |
+| Add mesh via asset browser / drag | Complete | None |
+| Move with gizmo (single selection) | Complete | None |
+| Selection overlay depth fix | Needs implementation | `src/editor/render/EditorScenePreviewRenderer.cpp` only |
 
 ---
 
 ## Scaling Considerations
 
-This is a single-player desktop game, not a networked service. "Scaling" means handling more entities and larger levels without framerate drops.
+Single-user desktop editor. No distributed scaling concerns. Only relevant performance boundary:
 
-| Concern | At Level Scale (100 entities) | At Complex Boss Level (500 entities) | At Theoretical Limit |
-|---------|-------------------------------|--------------------------------------|----------------------|
-| ECS iteration | No problem, cache-friendly | Still fine with EnTT | Profile if >2000 entities |
-| Draw calls | Batch static geometry | Instanced rendering for repeated meshes | Frustum culling + spatial partitioning |
-| Collision | Brute-force AABB fine | Spatial grid (cells by level chunk) | BVH tree |
-| AI updates | Update all enemies each tick | Throttle distant enemies to 10Hz | Distance-based LOD for AI |
-| Dither pass | O(pixels), not O(entities) — always fast | Same | Not a bottleneck |
+| Concern | Current Approach | Threshold |
+|---------|-----------------|-----------|
+| Undo command memory | 256-entry ring, snapshot per command | ~50 MB at 200 objects; acceptable |
+| PreviewWorld rebuild | Full ECS teardown + rebuild | Visible latency at >500 objects; use syncMaterials path for transform-only |
+| Selection overlay CPU | One or two RenderObjects per selected ID per frame | Negligible for typical selections (<20 objects) |
 
-### First Bottleneck
+---
 
-Draw calls from static level geometry, not enemy count. The gothic cathedral mesh is large. Fix: merge static geometry into a single batched VBO at level load time. This is the first optimization to make if framerate suffers.
+## Anti-Patterns
+
+### Anti-Pattern 1: Mutating Document During Panel Render
+
+**What people do:** Call `document.eraseObjects()` or `document.addMesh()` directly inside an ImGui panel function.
+
+**Why it's wrong:** ImGui renders panels sequentially in a single frame. Mutating `selectedIds` or `document` mid-frame means later panels get stale data or hit iterator invalidation.
+
+**Do this instead:** Return an action result struct or set a deferred flag. Dispatch mutations after all panels finish (the pattern throughout main.cpp).
+
+### Anti-Pattern 2: Setting previewDirty on Every Frame During Gizmo Drag
+
+**What people do:** Call `previewDirty = true` every frame inside gizmo drag handling.
+
+**Why it's wrong:** `previewWorld.rebuild()` tears down and recreates the entire ECS. At 60 fps during a drag, this causes visible stutter.
+
+**Do this instead:** Gizmo drag calls `document.applyWorldTransform()` which increments `sceneRevision_`. main.cpp's cheap revision check handles it via `syncMaterials()` + `syncLights()` automatically.
+
+### Anti-Pattern 3: Capturing Before-State After Mutation
+
+**What people do:** Capture state after the mutation, then pass it as both before and after to `pushDocumentStateCommand()`.
+
+**Why it's wrong:** `pushDocumentStateCommand()` diffs serialized scene strings. Before == after means no command is pushed — the undo entry is silently dropped.
+
+**Do this instead:** Always `const EditorSceneDocumentState beforeState = document.captureState()` before any mutation.
+
+### Anti-Pattern 4: Using ignoreDepth for Primary Selection Overlay
+
+**What people do (current implementation):** Set `ignoreDepth = true` on the selection wireframe so it always shows on top.
+
+**Why it's wrong:** The overlay renders on top of geometry in front of the selected object, making it appear to "bleed through walls." Distracting when selecting objects behind other geometry.
+
+**Do this instead:** Two-pass overlay — primary pass with depth testing enabled (correct clipping), optional secondary pass with `ignoreDepth = true` at very low opacity for occluded hint.
+
+---
+
+## Build Order for the Milestone
+
+All core operations (delete, duplicate, move, add mesh) are already shipped. The only remaining implementation work is:
+
+```
+Step 1: Selection overlay depth fix
+        File: src/editor/render/EditorScenePreviewRenderer.cpp
+        Change: appendSelectionOverlays() -- remove ignoreDepth=true from primary pass,
+                optionally add a secondary low-opacity pass for occluded hint
+        No blockers, no dependencies, immediately visible result
+
+Step 2 (if needed): Multi-selection gizmo
+        File: src/editor/viewport/EditorViewportInteraction.cpp
+        Change: applyGizmoToSelectedObject() -- remove selectedIds.size() != 1 guard,
+                compute centroid/average transform for multi-selection
+        Depends on: Step 1 complete (so overlays show correctly during multi-selection)
+
+Step 3 (if needed): Add Mesh UX polish (modal picker vs. drag-only)
+        File: src/editor/ui/EditorOutlinerPanel.cpp or apps/level_editor/main.cpp
+        Change: Add "Add Mesh" button to outliner/viewport toolbar that opens a searchable
+                picker popup calling beginPlacement()
+        Depends on: Nothing
+```
 
 ---
 
 ## Sources
 
-- Isetta Engine — Engine architecture blog: https://isetta.io/blogs/engine-architecture/ (TLS error on fetch, cited from WebSearch findings)
-- GAMES104 Layered Architecture: https://alalba221.github.io/blog/engine/LayeredArchitectureOfGameEngine
-- Preshing — How to Write Your Own C++ Game Engine: https://preshing.com/20171218/how-to-write-your-own-cpp-game-engine/
-- Whiskers Engine (modern C++ engine example): https://www.rhelmer.org/blog/building-whiskers-engine-cpp-game-engine/
-- Return-of-the-One-Bit (OpenGL 1-bit dithering implementation): https://github.com/yunjay/Return-of-the-One-Bit
-- Ultra Effects Part 9 — Obra Dithering (Unity but pipeline logic applies): https://danielilett.com/2020-02-26-tut3-9-obra-dithering/
-- LearnOpenGL Framebuffers (FBO architecture): https://learnopengl.com/Advanced-OpenGL/Framebuffers
-- EnTT ECS library: https://github.com/skypjack/entt
-- GLEngine (OpenGL + SDL2 + ECS reference project): https://github.com/kaminskyalexander/GLEngine
-- Pikuma — Tools & Libraries for C++ Game Engine: https://pikuma.com/blog/how-to-make-your-own-cpp-game-engine
-- GameDev.net — Entity-Component-System pattern: https://www.gamedeveloper.com/design/the-entity-component-system---an-awesome-game-design-pattern-in-c-part-1-
+All findings from direct source code inspection (no training-data assumptions):
+
+- `apps/level_editor/main.cpp` — orchestrator, frame loop, action dispatch
+- `src/editor/scene/EditorSceneDocument.h/.cpp` — scene graph API
+- `src/editor/core/EditorCommand.h/.cpp` — undo/redo stack
+- `src/editor/viewport/EditorViewportInteraction.h/.cpp` — selection, gizmo, placement
+- `src/editor/render/EditorScenePreviewRenderer.h/.cpp` — selection overlays, helper objects
+- `src/editor/ui/EditorOutlinerPanel.cpp` — outliner delete path
+- `src/editor/ui/LevelEditorUi.h` — shared UI structs, pending command helpers
+- `src/editor/core/LevelEditorCore.h` — layout/scene load helpers
+- `src/engine/rendering/geometry/Renderer.h/.cpp` — RenderObject struct, wireframe/depth rendering
+
+Confidence: HIGH — all claims verified against current source.
 
 ---
-
-*Architecture research for: Custom C++ first-person 3D roguelike with 1-bit dithered rendering*
-*Researched: 2026-03-23*
+*Architecture research for: custom C++ game engine level editor UX features*
+*Researched: 2026-04-01*

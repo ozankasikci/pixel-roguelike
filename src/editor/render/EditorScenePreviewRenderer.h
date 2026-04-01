@@ -38,6 +38,12 @@ void appendSelectionOverlays(std::vector<RenderObject>& objects,
                              const MaterialTextureLibrary& materials,
                              const std::vector<std::uint64_t>& selectedIds);
 
+void appendHoverOverlay(std::vector<RenderObject>& objects,
+                        const EditorPreviewWorld& world,
+                        const MaterialTextureLibrary& materials,
+                        std::uint64_t hoveredId,
+                        const std::vector<std::uint64_t>& selectedIds);
+
 void renderShadowPass(const std::vector<RenderObject>& objects,
                       const std::vector<RenderLight>& lights,
                       const Shader& shadowShader,

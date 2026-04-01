@@ -1,0 +1,49 @@
+environment_profile outdoor_bright
+
+# Country house — external FBX asset (ALP_Assets)
+# FBX is in cm; scale 0.01 converts to meters.
+# At scale 0.01: house spans X[-7.41..+7.41], Y[0..+7.89], Z[-5.06..+6.85]
+
+# Main house structure — split by material for per-part material assignment
+mesh country_house#OldHouseMapWood02 0.0 0.0 0.0 0.01 0.01 0.01 0.0 0.0 0.0 material ch_wood_plank tint 1.0 1.0 1.0 node node_house_wood02
+mesh country_house#OldHouseMapIndoorWall01 0.0 0.0 0.0 0.01 0.01 0.01 0.0 0.0 0.0 material ch_indoor_wall tint 1.0 1.0 1.0 node node_house_walls
+mesh country_house#OldHouseMapWood01 0.0 0.0 0.0 0.01 0.01 0.01 0.0 0.0 0.0 material ch_wood_exterior_green tint 1.0 1.0 1.0 node node_house_wood01
+mesh country_house#WindowsMat01 0.0 0.0 0.0 0.01 0.01 0.01 0.0 0.0 0.0 material ch_window tint 1.0 1.0 1.0 node node_house_windows
+mesh country_house#q11:Glass 0.0 0.0 0.0 0.01 0.01 0.01 0.0 0.0 0.0 material ch_glass tint 1.0 1.0 1.0 node node_house_glass
+
+# Doors — positioned at main entry (front of house near Z=-5.06, centered in X)
+mesh country_house_doors 0.0 0.0 -4.5 0.01 0.01 0.01 0.0 0.0 0.0 material ch_door tint 1.0 1.0 1.0 node node_doors
+mesh country_house_door -2.5 0.0 -4.5 0.01 0.01 0.01 0.0 0.0 0.0 material ch_door tint 1.0 1.0 1.0 node node_door1
+mesh country_house_door 2.5 0.0 -4.5 0.01 0.01 0.01 0.0 180.0 0.0 material ch_door tint 1.0 1.0 1.0 node node_door2
+
+# Interior warm lighting — strong, warm white
+light -3.0 6.5 0.0 1.0 0.97 0.9 20.0 8.0 node node_light_int_1
+light 3.0 6.5 0.0 1.0 0.97 0.9 20.0 8.0 node node_light_int_2
+light 0.0 6.5 3.5 1.0 0.97 0.9 20.0 8.0 node node_light_int_3
+light 0.0 6.5 -2.0 1.0 0.97 0.9 20.0 8.0 node node_light_int_4
+light -3.5 4.0 5.5 1.0 0.97 0.9 16.0 6.0 node node_light_int_5
+light 3.5 4.0 5.5 1.0 0.97 0.9 16.0 6.0 node node_light_int_6
+
+# Exterior fill lights — surround the house from all sides
+light 0.0 6.0 -10.0 1.0 0.98 0.92 30.0 8.0 node node_light_ext_front
+light 0.0 10.0 -8.0 1.0 0.98 0.92 30.0 6.0 node node_light_ext_front_high
+light 12.0 6.0 1.0 1.0 0.98 0.92 30.0 6.0 node node_light_ext_right
+light -12.0 6.0 1.0 1.0 0.98 0.92 30.0 6.0 node node_light_ext_left
+light 0.0 10.0 10.0 1.0 0.98 0.92 30.0 6.0 node node_light_ext_back
+light 0.0 14.0 0.0 1.0 0.99 0.95 40.0 5.0 node node_light_ext_sky
+
+# Floor collider — extended to cover around the house
+collider_box 0.0 -0.05 0.0 12.0 0.05 12.0 node node_col_floor
+
+# Perimeter wall colliders — approximate the house exterior walls
+# North wall (Z = +6.85)
+collider_box 0.0 4.0 7.0 7.5 4.0 0.15 node node_col_wall_n
+# South wall (Z = -5.06)
+collider_box 0.0 4.0 -5.2 7.5 4.0 0.15 node node_col_wall_s
+# East wall (X = +7.41)
+collider_box 7.6 4.0 0.9 0.15 4.0 6.1 node node_col_wall_e
+# West wall (X = -7.41)
+collider_box -7.6 4.0 0.9 0.15 4.0 6.1 node node_col_wall_w
+
+# Player spawn — inside the house
+player_spawn 0.0 1.6 2.0 -5.0 node node_spawn

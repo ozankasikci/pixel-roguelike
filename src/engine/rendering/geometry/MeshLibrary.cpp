@@ -6,6 +6,9 @@
 #include "engine/rendering/geometry/MeshGeometry.h"
 
 #include <spdlog/spdlog.h>
+
+#include <filesystem>
+#include <fstream>
 #include <stdexcept>
 
 void MeshLibrary::registerMesh(const std::string& name, std::unique_ptr<Mesh> mesh) {
@@ -118,6 +121,126 @@ void MeshLibrary::loadFromFile(const std::string& name, const std::string& filep
                                mesh->aabbMin(), mesh->aabbMax());
 
     registerMesh(name, std::move(mesh));
+}
+
+void MeshLibrary::loadFromFileMulti(const std::string& baseName, const std::string& filepath) {
+    std::string resolvedPath = resolveProjectPath(filepath);
+
+    // Early-exit if submeshes already registered in this instance
+    const std::string prefix = baseName + "#";
+    for (const auto& [name, mesh] : meshes_) {
+        if (name.compare(0, prefix.size(), prefix) == 0) {
+            return;
+        }
+    }
+
+    // Try loading entirely from disk cache using a manifest of submesh names.
+    // This avoids the expensive Assimp FBX parse on cache hit.
+    const uint64_t sourceHash = AssetCache::hashFileContents(resolvedPath);
+    const std::string hashHex = AssetCache::toHexString(sourceHash);
+    const auto manifestPath = AssetCache::cacheRoot() / "meshes" / (baseName + "_" + hashHex + ".manifest");
+
+    if (sourceHash != 0 && std::filesystem::exists(manifestPath)) {
+        std::ifstream mf(manifestPath);
+        std::vector<std::string> submeshNames;
+        std::string line;
+        while (std::getline(mf, line)) {
+            if (!line.empty()) {
+                submeshNames.push_back(line);
+            }
+        }
+
+        if (!submeshNames.empty()) {
+            bool allCached = true;
+            std::vector<std::optional<CachedMeshData>> cachedSubmeshes;
+            cachedSubmeshes.reserve(submeshNames.size());
+            for (const auto& subName : submeshNames) {
+                const std::string cacheLabel = baseName + "_" + subName;
+                auto cached = AssetCache::findMeshCache(resolvedPath, cacheLabel);
+                if (!cached) {
+                    allCached = false;
+                    break;
+                }
+                cachedSubmeshes.push_back(std::move(cached));
+            }
+
+            if (allCached) {
+                for (size_t i = 0; i < submeshNames.size(); ++i) {
+                    const std::string meshName = baseName + "#" + submeshNames[i];
+                    auto& c = *cachedSubmeshes[i];
+                    registerMesh(meshName, std::make_unique<Mesh>(
+                        c.interleavedVertices, c.indices, c.aabbMin, c.aabbMax));
+                }
+                spdlog::info("MeshLibrary: loaded {} submeshes from cache for '{}'",
+                             submeshNames.size(), filepath);
+                return;
+            }
+        }
+    }
+
+    // Cache miss or no manifest: full Assimp parse
+    std::vector<NamedRawMeshData> groups = ModelLoader::loadRawMulti(resolvedPath);
+    if (groups.empty()) {
+        spdlog::error("MeshLibrary: loadFromFileMulti failed for '{}' (no material groups)", filepath);
+        return;
+    }
+
+    // Write manifest for future cache-only loads
+    if (sourceHash != 0) {
+        std::filesystem::create_directories(manifestPath.parent_path());
+        std::ofstream mf(manifestPath);
+        for (const auto& entry : groups) {
+            mf << entry.name << "\n";
+        }
+    }
+
+    for (auto& entry : groups) {
+        const std::string meshName = baseName + "#" + entry.name;
+        const std::string cacheLabel = baseName + "_" + entry.name;
+
+        auto cached = AssetCache::findMeshCache(resolvedPath, cacheLabel);
+        if (cached) {
+            registerMesh(meshName, std::make_unique<Mesh>(
+                cached->interleavedVertices, cached->indices,
+                cached->aabbMin, cached->aabbMax));
+            continue;
+        }
+
+        RawMeshData& raw = entry.mesh;
+        if (raw.positions.empty() || raw.indices.empty()) {
+            spdlog::warn("MeshLibrary: skipping empty material group '{}' in '{}'", entry.name, filepath);
+            continue;
+        }
+
+        auto mesh = std::make_unique<Mesh>(
+            raw.positions, raw.normals, raw.uvs, raw.tangents, raw.indices);
+
+        std::vector<float> interleaved;
+        interleaved.reserve(raw.positions.size() * 11);
+        for (size_t i = 0; i < raw.positions.size(); ++i) {
+            interleaved.push_back(raw.positions[i].x);
+            interleaved.push_back(raw.positions[i].y);
+            interleaved.push_back(raw.positions[i].z);
+            const auto& n = i < raw.normals.size() ? raw.normals[i] : glm::vec3(0.0f, 1.0f, 0.0f);
+            interleaved.push_back(n.x);
+            interleaved.push_back(n.y);
+            interleaved.push_back(n.z);
+            const auto& uv = i < raw.uvs.size() ? raw.uvs[i] : glm::vec2(0.0f, 0.0f);
+            interleaved.push_back(uv.x);
+            interleaved.push_back(uv.y);
+            const auto& t = i < raw.tangents.size() ? raw.tangents[i] : glm::vec3(1.0f, 0.0f, 0.0f);
+            interleaved.push_back(t.x);
+            interleaved.push_back(t.y);
+            interleaved.push_back(t.z);
+        }
+        AssetCache::writeMeshCache(resolvedPath, cacheLabel, interleaved, raw.indices,
+                                   mesh->aabbMin(), mesh->aabbMax());
+
+        registerMesh(meshName, std::move(mesh));
+    }
+
+    spdlog::info("MeshLibrary: registered {} submeshes from '{}' as '{}#...'",
+                 groups.size(), filepath, baseName);
 }
 
 void MeshLibrary::clear() {

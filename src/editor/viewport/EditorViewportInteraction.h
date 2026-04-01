@@ -63,11 +63,11 @@ std::optional<glm::vec3> computePlacementPoint(const std::vector<EditorSelection
                                                const EditorCamera& camera,
                                                bool snappingEnabled,
                                                float moveSnap);
-void commitPlacement(EditorSceneDocument& document,
-                     const EditorPlacementState& state,
-                     const glm::vec3& position,
-                     const ContentRegistry& content,
-                     const EditorCamera& camera);
+std::optional<std::uint64_t> commitPlacement(EditorSceneDocument& document,
+                                              const EditorPlacementState& state,
+                                              const glm::vec3& position,
+                                              const ContentRegistry& content,
+                                              const EditorCamera& camera);
 void appendPlacementGhost(std::vector<RenderObject>& objects,
                           const EditorPlacementState& state,
                           const glm::vec3& position,

@@ -1,5 +1,7 @@
 #include "game/rendering/MaterialDefinition.h"
 
+#include "game/content/ParseUtils.h"
+
 #include <fstream>
 #include <iomanip>
 #include <sstream>
@@ -7,22 +9,6 @@
 #include <unordered_set>
 
 namespace {
-
-[[noreturn]] void throwParseError(const std::string& path, int lineNumber, const std::string& message) {
-    throw std::runtime_error(path + ":" + std::to_string(lineNumber) + ": " + message);
-}
-
-bool isCommentOrEmpty(const std::string& line) {
-    for (char c : line) {
-        if (c == '#') {
-            return true;
-        }
-        if (!std::isspace(static_cast<unsigned char>(c))) {
-            return false;
-        }
-    }
-    return true;
-}
 
 bool tryParseFloatToken(const std::string& token, float& value) {
     std::size_t parsed = 0;
@@ -62,16 +48,6 @@ float parseFloatRecord(const std::vector<std::string>& tokens,
         throwParseError(path, lineNumber, "invalid " + label + " record");
     }
     return std::stof(tokens[1]);
-}
-
-std::vector<std::string> tokenizeRecord(const std::string& line) {
-    std::istringstream stream(line);
-    std::vector<std::string> tokens;
-    std::string token;
-    while (stream >> token) {
-        tokens.push_back(token);
-    }
-    return tokens;
 }
 
 ResolvedMaterialDefinition resolveMaterialDefinitionRecursive(
@@ -169,6 +145,15 @@ ResolvedMaterialDefinition resolveMaterialDefinitionRecursive(
     }
     if (definition.detailFloor.has_value()) {
         resolved.detailFloor = *definition.detailFloor;
+    }
+    if (definition.normalMapFlipY.has_value()) {
+        resolved.normalMapFlipY = *definition.normalMapFlipY;
+    }
+    if (definition.alphaTest.has_value()) {
+        resolved.alphaTest = *definition.alphaTest;
+    }
+    if (definition.alphaCutoff.has_value()) {
+        resolved.alphaCutoff = *definition.alphaCutoff;
     }
 
     visiting.erase(id);
@@ -348,6 +333,18 @@ MaterialDefinition loadMaterialDefinitionAsset(const std::string& path) {
             definition.detailFloor = (tokens[1] == "true");
             continue;
         }
+        if (key == "normal_map_flip_y" && tokens.size() == 2) {
+            definition.normalMapFlipY = (tokens[1] == "true");
+            continue;
+        }
+        if (key == "alpha_test" && tokens.size() == 2) {
+            definition.alphaTest = (tokens[1] == "true");
+            continue;
+        }
+        if (key == "alpha_cutoff" && tokens.size() == 2) {
+            definition.alphaCutoff = std::stof(tokens[1]);
+            continue;
+        }
 
         throwParseError(path, lineNumber, "invalid material definition record");
     }
@@ -472,6 +469,15 @@ std::string serializeMaterialDefinitionAsset(const MaterialDefinition& definitio
     }
     if (definition.detailFloor.has_value()) {
         out << "detail_floor " << (*definition.detailFloor ? "true" : "false") << '\n';
+    }
+    if (definition.normalMapFlipY.has_value()) {
+        out << "normal_map_flip_y " << (*definition.normalMapFlipY ? "true" : "false") << '\n';
+    }
+    if (definition.alphaTest.has_value()) {
+        out << "alpha_test " << (*definition.alphaTest ? "true" : "false") << '\n';
+    }
+    if (definition.alphaCutoff.has_value()) {
+        out << "alpha_cutoff " << *definition.alphaCutoff << '\n';
     }
     return out.str();
 }

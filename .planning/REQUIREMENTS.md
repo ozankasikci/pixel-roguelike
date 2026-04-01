@@ -48,6 +48,26 @@ Requirements for initial playable tech demo. Each maps to roadmap phases.
 - [ ] **GSYS-03**: Options menu with mouse sensitivity adjustment
 - [ ] **GSYS-04**: Options menu with fullscreen/windowed toggle
 
+## v1.1 Requirements
+
+Requirements for Editor UX milestone. Each maps to roadmap phases.
+
+### Selection
+
+- [x] **SEL-01**: Selection overlay renders depth-correctly (no wireframe bleeding through geometry in front)
+- [x] **SEL-02**: Objects highlight on mouse hover before clicking
+- [x] **SEL-03**: Escape key clears all selection
+
+### Object Manipulation
+
+- [x] **OBJ-01**: Delete key removes selected object globally (viewport + outliner)
+- [x] **OBJ-02**: Ctrl+D duplicates selected object with position offset
+- [x] **OBJ-03**: F key frames camera on selected object
+
+### Discoverability
+
+- [x] **DISC-01**: Add Mesh picker button to add meshes to the scene
+
 ## v2 Requirements
 
 Deferred to future release. Tracked but not in current roadmap.
@@ -117,12 +137,18 @@ Which phases cover which requirements. Updated during roadmap creation.
 | GSYS-02 | Phase 4 | Pending |
 | GSYS-03 | Phase 4 | Pending |
 | GSYS-04 | Phase 4 | Pending |
+| SEL-01 | Phase 9 | Complete |
+| SEL-02 | Phase 10 | Complete |
+| SEL-03 | Phase 10 | Complete |
+| OBJ-01 | Phase 10 | Complete |
+| OBJ-02 | Phase 10 | Complete |
+| OBJ-03 | Phase 10 | Complete |
+| DISC-01 | Phase 11 | Complete |
 
 **Coverage:**
-- v1 requirements: 23 total
-- Mapped to phases: 23
-- Unmapped: 0
+- v1 requirements: 23 total — mapped to phases: 23 — unmapped: 0
+- v1.1 requirements: 7 total — mapped to phases: 7 — unmapped: 0
 
 ---
 *Requirements defined: 2026-03-23*
-*Last updated: 2026-03-23 after roadmap creation*
+*Last updated: 2026-04-01 after v1.1 roadmap creation*
