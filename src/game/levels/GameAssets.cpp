@@ -1,5 +1,6 @@
 #include "game/levels/GameAssets.h"
 
+#include "engine/core/MathUtils.h"
 #include "engine/rendering/geometry/MeshGeometry.h"
 
 #include <glm/gtc/matrix_transform.hpp>
@@ -7,23 +8,6 @@
 #include <memory>
 #include <utility>
 #include <vector>
-
-// ---------------------------------------------------------------------------
-// Shared helpers (file-local)
-// ---------------------------------------------------------------------------
-
-namespace {
-
-glm::mat4 makeModel(const glm::vec3& position,
-                    const glm::vec3& scale,
-                    const glm::vec3& rotation = glm::vec3(0.0f)) {
-    glm::mat4 model = glm::translate(glm::mat4(1.0f), position);
-    model = glm::rotate(model, glm::radians(rotation.x), glm::vec3(1.0f, 0.0f, 0.0f));
-    model = glm::rotate(model, glm::radians(rotation.y), glm::vec3(0.0f, 1.0f, 0.0f));
-    model = glm::rotate(model, glm::radians(rotation.z), glm::vec3(0.0f, 0.0f, 1.0f));
-    model = glm::scale(model, scale);
-    return model;
-}
 
 // ---------------------------------------------------------------------------
 // Cathedral helpers
@@ -51,7 +35,7 @@ void addReliefChain(std::vector<std::pair<RawMeshData, glm::mat4>>& parts,
         const float angleDeg = glm::degrees(std::atan2(delta.y, delta.x));
         parts.push_back({
             cylinder,
-            makeModel(glm::vec3(mid.x, mid.y, depth),
+            makeModelMatrix(glm::vec3(mid.x, mid.y, depth),
                       glm::vec3(radius, length, radius),
                       glm::vec3(0.0f, 0.0f, -angleDeg))
         });
@@ -66,13 +50,13 @@ std::unique_ptr<Mesh> createRomanesqueDoorFrameMesh() {
     auto addBox = [&](const glm::vec3& position,
                       const glm::vec3& scale,
                       const glm::vec3& rotation = glm::vec3(0.0f)) {
-        parts.push_back({cube, makeModel(position, scale, rotation)});
+        parts.push_back({cube, makeModelMatrix(position, scale, rotation)});
     };
 
     auto addCylinder = [&](const glm::vec3& position,
                            const glm::vec3& scale,
                            const glm::vec3& rotation = glm::vec3(0.0f)) {
-        parts.push_back({cylinder, makeModel(position, scale, rotation)});
+        parts.push_back({cylinder, makeModelMatrix(position, scale, rotation)});
     };
 
     // Broad plinth and threshold blocks.
@@ -150,13 +134,13 @@ std::unique_ptr<Mesh> createWoodDoorLeafMesh(bool leftLeaf) {
     auto addBox = [&](const glm::vec3& position,
                       const glm::vec3& scale,
                       const glm::vec3& rotation = glm::vec3(0.0f)) {
-        parts.push_back({cube, makeModel(position, scale, rotation)});
+        parts.push_back({cube, makeModelMatrix(position, scale, rotation)});
     };
 
     auto addCylinder = [&](const glm::vec3& position,
                            const glm::vec3& scale,
                            const glm::vec3& rotation = glm::vec3(0.0f)) {
-        parts.push_back({cylinder, makeModel(position, scale, rotation)});
+        parts.push_back({cylinder, makeModelMatrix(position, scale, rotation)});
     };
 
     // Core timber volume and heavy perimeter frame.
@@ -233,7 +217,7 @@ std::unique_ptr<Mesh> createPrisonWall() {
     auto addBox = [&](const glm::vec3& position,
                       const glm::vec3& scale,
                       const glm::vec3& rotation = glm::vec3(0.0f)) {
-        parts.push_back({cube, makeModel(position, scale, rotation)});
+        parts.push_back({cube, makeModelMatrix(position, scale, rotation)});
     };
 
     // Main slab: 2m wide, 4.0m tall, 0.2m thick
@@ -253,13 +237,13 @@ std::unique_ptr<Mesh> createPrisonWallWindow() {
     auto addBox = [&](const glm::vec3& position,
                       const glm::vec3& scale,
                       const glm::vec3& rotation = glm::vec3(0.0f)) {
-        parts.push_back({cube, makeModel(position, scale, rotation)});
+        parts.push_back({cube, makeModelMatrix(position, scale, rotation)});
     };
 
     auto addCylinder = [&](const glm::vec3& position,
                            const glm::vec3& scale,
                            const glm::vec3& rotation = glm::vec3(0.0f)) {
-        parts.push_back({cylinder, makeModel(position, scale, rotation)});
+        parts.push_back({cylinder, makeModelMatrix(position, scale, rotation)});
     };
 
     // Window opening: 0.6m wide, 0.4m tall, centered at Y=1.8m
@@ -292,7 +276,7 @@ std::unique_ptr<Mesh> createPrisonWallDoor() {
     auto addBox = [&](const glm::vec3& position,
                       const glm::vec3& scale,
                       const glm::vec3& rotation = glm::vec3(0.0f)) {
-        parts.push_back({cube, makeModel(position, scale, rotation)});
+        parts.push_back({cube, makeModelMatrix(position, scale, rotation)});
     };
 
     // Door opening: 0.9m wide, 2.1m tall, bottom at Y=0
@@ -327,7 +311,7 @@ std::unique_ptr<Mesh> createPrisonFloor() {
     auto addBox = [&](const glm::vec3& position,
                       const glm::vec3& scale,
                       const glm::vec3& rotation = glm::vec3(0.0f)) {
-        parts.push_back({cube, makeModel(position, scale, rotation)});
+        parts.push_back({cube, makeModelMatrix(position, scale, rotation)});
     };
 
     // Main slab: 2m x 2m, 0.1m thick, top surface at Y=0
@@ -345,7 +329,7 @@ std::unique_ptr<Mesh> createPrisonCeiling() {
     auto addBox = [&](const glm::vec3& position,
                       const glm::vec3& scale,
                       const glm::vec3& rotation = glm::vec3(0.0f)) {
-        parts.push_back({cube, makeModel(position, scale, rotation)});
+        parts.push_back({cube, makeModelMatrix(position, scale, rotation)});
     };
 
     // Main slab: 2m x 2m, 0.1m thick, bottom surface at Y=0
@@ -363,7 +347,7 @@ std::unique_ptr<Mesh> createPrisonBaseboard() {
     auto addBox = [&](const glm::vec3& position,
                       const glm::vec3& scale,
                       const glm::vec3& rotation = glm::vec3(0.0f)) {
-        parts.push_back({cube, makeModel(position, scale, rotation)});
+        parts.push_back({cube, makeModelMatrix(position, scale, rotation)});
     };
 
     // Main strip: 2m wide, 0.15m tall, 0.05m deep
@@ -390,13 +374,13 @@ std::unique_ptr<Mesh> createOfficeDoor() {
     auto addBox = [&](const glm::vec3& position,
                       const glm::vec3& scale,
                       const glm::vec3& rotation = glm::vec3(0.0f)) {
-        parts.push_back({cube, makeModel(position, scale, rotation)});
+        parts.push_back({cube, makeModelMatrix(position, scale, rotation)});
     };
 
     auto addCylinder = [&](const glm::vec3& position,
                            const glm::vec3& scale,
                            const glm::vec3& rotation = glm::vec3(0.0f)) {
-        parts.push_back({cylinder, makeModel(position, scale, rotation)});
+        parts.push_back({cylinder, makeModelMatrix(position, scale, rotation)});
     };
 
     // Main door slab: 0.9m wide, 2.1m tall, 0.045m thick
@@ -468,7 +452,7 @@ std::unique_ptr<Mesh> createPrisonDesk() {
     auto addBox = [&](const glm::vec3& position,
                       const glm::vec3& scale,
                       const glm::vec3& rotation = glm::vec3(0.0f)) {
-        parts.push_back({cube, makeModel(position, scale, rotation)});
+        parts.push_back({cube, makeModelMatrix(position, scale, rotation)});
     };
 
     // Desk top: 1.2m x 0.6m, 0.03m thick, at Y=0.75m
@@ -501,7 +485,7 @@ std::unique_ptr<Mesh> createPrisonChair() {
     auto addBox = [&](const glm::vec3& position,
                       const glm::vec3& scale,
                       const glm::vec3& rotation = glm::vec3(0.0f)) {
-        parts.push_back({cube, makeModel(position, scale, rotation)});
+        parts.push_back({cube, makeModelMatrix(position, scale, rotation)});
     };
 
     // Seat: 0.45m x 0.45m, 0.025m thick, at Y=0.45m
@@ -532,7 +516,7 @@ std::unique_ptr<Mesh> createWardenChair() {
     auto addBox = [&](const glm::vec3& position,
                       const glm::vec3& scale,
                       const glm::vec3& rotation = glm::vec3(0.0f)) {
-        parts.push_back({cube, makeModel(position, scale, rotation)});
+        parts.push_back({cube, makeModelMatrix(position, scale, rotation)});
     };
 
     // Structural: legs
@@ -575,7 +559,7 @@ std::unique_ptr<Mesh> createPrisonCabinet() {
     auto addBox = [&](const glm::vec3& position,
                       const glm::vec3& scale,
                       const glm::vec3& rotation = glm::vec3(0.0f)) {
-        parts.push_back({cube, makeModel(position, scale, rotation)});
+        parts.push_back({cube, makeModelMatrix(position, scale, rotation)});
     };
 
     // Main body: 0.45m wide, 1.3m tall, 0.6m deep
@@ -606,7 +590,7 @@ std::unique_ptr<Mesh> createPrisonShelf() {
     auto addBox = [&](const glm::vec3& position,
                       const glm::vec3& scale,
                       const glm::vec3& rotation = glm::vec3(0.0f)) {
-        parts.push_back({cube, makeModel(position, scale, rotation)});
+        parts.push_back({cube, makeModelMatrix(position, scale, rotation)});
     };
 
     // Shelf surface: 0.8m wide, 0.03m thick, 0.25m deep
@@ -636,7 +620,7 @@ std::unique_ptr<Mesh> createCeilingLightPanel() {
     auto addBox = [&](const glm::vec3& position,
                       const glm::vec3& scale,
                       const glm::vec3& rotation = glm::vec3(0.0f)) {
-        parts.push_back({cube, makeModel(position, scale, rotation)});
+        parts.push_back({cube, makeModelMatrix(position, scale, rotation)});
     };
 
     // Recessed rectangular fluorescent ceiling panel: 0.9m long x 0.3m wide
@@ -662,7 +646,7 @@ std::unique_ptr<Mesh> createPrisonWallLargeWindow() {
     auto addBox = [&](const glm::vec3& position,
                       const glm::vec3& scale,
                       const glm::vec3& rotation = glm::vec3(0.0f)) {
-        parts.push_back({cube, makeModel(position, scale, rotation)});
+        parts.push_back({cube, makeModelMatrix(position, scale, rotation)});
     };
 
     // Large office window wall: 2m wide, 4.0m tall, 0.2m thick
@@ -690,13 +674,42 @@ std::unique_ptr<Mesh> createPrisonWallLargeWindow() {
 // Institutional room assets
 // ---------------------------------------------------------------------------
 
+std::unique_ptr<Mesh> createInstDoorKnob() {
+    auto cylinder = generateCylinder(1.0f, 1.0f, 16);
+    auto cube = generateCube(2.0f);
+    std::vector<std::pair<RawMeshData, glm::mat4>> parts;
+
+    auto addCylinder = [&](const glm::vec3& p, const glm::vec3& s,
+                           const glm::vec3& r = glm::vec3(0.0f)) {
+        parts.push_back({cylinder, makeModelMatrix(p, s, r)});
+    };
+    auto addBox = [&](const glm::vec3& p, const glm::vec3& s,
+                      const glm::vec3& r = glm::vec3(0.0f)) {
+        parts.push_back({cube, makeModelMatrix(p, s, r)});
+    };
+
+    // Escutcheon plate (rectangular backing plate)
+    addBox(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.025f, 0.055f, 0.003f));
+    // Lever handle (horizontal cylinder extending from plate)
+    addCylinder(glm::vec3(0.0f, 0.012f, 0.015f), glm::vec3(0.006f, 0.04f, 0.006f),
+                glm::vec3(90.0f, 0.0f, 0.0f));
+    // Lever knob (small sphere-like cap at end of handle)
+    addCylinder(glm::vec3(0.0f, 0.012f, 0.055f), glm::vec3(0.008f, 0.004f, 0.008f));
+    // Keyhole cylinder below handle
+    addCylinder(glm::vec3(0.0f, -0.025f, 0.004f), glm::vec3(0.005f, 0.003f, 0.005f));
+
+    RawMeshData merged = mergeMeshes(parts);
+    return std::make_unique<Mesh>(merged.positions, merged.normals,
+                                  merged.uvs, merged.tangents, merged.indices);
+}
+
 std::unique_ptr<Mesh> createInstHvacVent() {
     auto cube = generateCube(2.0f);
     std::vector<std::pair<RawMeshData, glm::mat4>> parts;
 
     auto addBox = [&](const glm::vec3& position, const glm::vec3& scale,
                       const glm::vec3& rotation = glm::vec3(0.0f)) {
-        parts.push_back({cube, makeModel(position, scale, rotation)});
+        parts.push_back({cube, makeModelMatrix(position, scale, rotation)});
     };
 
     // Outer frame
@@ -728,7 +741,7 @@ std::unique_ptr<Mesh> createInstSmokeDetector() {
 
     auto addCylinder = [&](const glm::vec3& p, const glm::vec3& s,
                            const glm::vec3& r = glm::vec3(0.0f)) {
-        parts.push_back({cylinder, makeModel(p, s, r)});
+        parts.push_back({cylinder, makeModelMatrix(p, s, r)});
     };
 
     // Main disc body (flat cylinder, hanging from ceiling)
@@ -750,11 +763,11 @@ std::unique_ptr<Mesh> createInstChainPadlock() {
 
     auto addBox = [&](const glm::vec3& position, const glm::vec3& scale,
                       const glm::vec3& rotation = glm::vec3(0.0f)) {
-        parts.push_back({cube, makeModel(position, scale, rotation)});
+        parts.push_back({cube, makeModelMatrix(position, scale, rotation)});
     };
     auto addCylinder = [&](const glm::vec3& p, const glm::vec3& s,
                            const glm::vec3& r = glm::vec3(0.0f)) {
-        parts.push_back({cylinder, makeModel(p, s, r)});
+        parts.push_back({cylinder, makeModelMatrix(p, s, r)});
     };
 
     // --- Chain links (3 links, alternating orientation) ---
@@ -800,8 +813,6 @@ std::unique_ptr<Mesh> createInstChainPadlock() {
                                   merged.uvs, merged.tangents, merged.indices);
 }
 
-} // namespace
-
 void registerAllGameAssets(MeshLibrary& meshLibrary) {
     meshLibrary.registerDefaults();
 
@@ -820,6 +831,7 @@ void registerAllGameAssets(MeshLibrary& meshLibrary) {
     meshLibrary.loadFromFileMulti("country_house", "assets/meshes/country_house.fbx");
     meshLibrary.registerFileAlias("country_house_door", "assets/meshes/country_house_door.fbx");
     meshLibrary.registerFileAlias("country_house_doors", "assets/meshes/country_house_doors.fbx");
+    meshLibrary.registerFileAlias("wood_door", "assets/meshes/wood_door.fbx");
 
     // Prison assets
     // Architectural walls
@@ -843,6 +855,7 @@ void registerAllGameAssets(MeshLibrary& meshLibrary) {
     meshLibrary.registerMesh("prison_wall_large_window", createPrisonWallLargeWindow());
 
     // Institutional room assets
+    meshLibrary.registerMesh("inst_door_knob", createInstDoorKnob());
     meshLibrary.registerMesh("inst_hvac_vent", createInstHvacVent());
     meshLibrary.registerMesh("inst_smoke_detector", createInstSmokeDetector());
     meshLibrary.registerMesh("inst_chain_padlock", createInstChainPadlock());

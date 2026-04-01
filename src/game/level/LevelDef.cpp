@@ -93,17 +93,6 @@ void appendNodeMetadata(std::ostringstream& out,
     }
 }
 
-glm::mat3 extractRotationMatrix(const glm::mat4& matrix) {
-    glm::mat3 basis(matrix);
-    for (int column = 0; column < 3; ++column) {
-        const float length = glm::length(basis[column]);
-        if (length > 0.0001f) {
-            basis[column] /= length;
-        }
-    }
-    return basis;
-}
-
 bool decomposeTransformMatrix(const glm::mat4& matrix,
                               glm::vec3& position,
                               glm::vec3& rotationDegrees,

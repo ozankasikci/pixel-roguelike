@@ -21,17 +21,6 @@
 
 namespace {
 
-glm::mat4 makeModelMatrix(const glm::vec3& position,
-                          const glm::vec3& scale,
-                          const glm::vec3& rotation = glm::vec3(0.0f)) {
-    glm::mat4 model = glm::translate(glm::mat4(1.0f), position);
-    model = glm::rotate(model, glm::radians(rotation.x), glm::vec3(1.0f, 0.0f, 0.0f));
-    model = glm::rotate(model, glm::radians(rotation.y), glm::vec3(0.0f, 1.0f, 0.0f));
-    model = glm::rotate(model, glm::radians(rotation.z), glm::vec3(0.0f, 0.0f, 1.0f));
-    model = glm::scale(model, scale);
-    return model;
-}
-
 bool isViewportSelectableKind(const EditorSelectionHandle& handle, const EditorUiState& ui) {
     switch (handle.objectKind) {
     case EditorSceneObjectKind::BoxCollider:

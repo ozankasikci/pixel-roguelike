@@ -121,8 +121,9 @@ RuntimeSceneRenderer::CameraState RuntimeSceneRenderer::captureCamera(entt::regi
     };
 }
 
-std::vector<RenderObject> RuntimeSceneRenderer::collectSceneObjects(entt::registry& registry) const {
-    std::vector<RenderObject> objects;
+void RuntimeSceneRenderer::collectSceneObjects(entt::registry& registry,
+                                               std::vector<RenderObject>& out) const {
+    out.clear();
     MeshAssetProvider* provider = registry.ctx().contains<MeshAssetProvider>()
         ? &registry.ctx().get<MeshAssetProvider>()
         : nullptr;
@@ -137,21 +138,20 @@ std::vector<RenderObject> RuntimeSceneRenderer::collectSceneObjects(entt::regist
         }
 
         const glm::mat4 model = mesh.useModelOverride ? mesh.modelOverride : transform.modelMatrix();
-        objects.push_back({
+        out.push_back({
             mesh.mesh,
             model,
             mesh.tint,
             materialTextureLibrary_.resolve(mesh.materialId)
         });
     }
-
-    return objects;
 }
 
-std::vector<RenderObject> RuntimeSceneRenderer::collectViewmodelObjects(entt::registry& registry,
-                                                                        const CameraState& camera,
-                                                                        float deltaTime) const {
-    std::vector<RenderObject> objects;
+void RuntimeSceneRenderer::collectViewmodelObjects(entt::registry& registry,
+                                                    const CameraState& camera,
+                                                    float deltaTime,
+                                                    std::vector<RenderObject>& out) const {
+    out.clear();
     MeshAssetProvider* provider = registry.ctx().contains<MeshAssetProvider>()
         ? &registry.ctx().get<MeshAssetProvider>()
         : nullptr;
@@ -180,20 +180,20 @@ std::vector<RenderObject> RuntimeSceneRenderer::collectViewmodelObjects(entt::re
         model = model * glm::scale(glm::mat4(1.0f), vm.scale);
         model = model * glm::translate(glm::mat4(1.0f), -vm.meshCenter);
 
-        objects.push_back({
+        out.push_back({
             mesh.mesh,
             model,
             mesh.tint,
             materialTextureLibrary_.resolve(mesh.materialId)
         });
     }
-
-    return objects;
 }
 
-std::vector<RenderLight> RuntimeSceneRenderer::collectLights(entt::registry& registry,
-                                                             const DebugParams& params) const {
-    std::vector<RenderLight> lights;
+void RuntimeSceneRenderer::collectLights(entt::registry& registry,
+                                          const DebugParams& params,
+                                          std::vector<RenderLight>& out) const {
+    std::vector<RenderLight>& lights = out;
+    lights.clear();
 
     auto cameraView = registry.view<TransformComponent, CameraComponent, PrimaryCameraTag>();
     for (auto [entity, transform, camera] : cameraView.each()) {
@@ -283,8 +283,6 @@ std::vector<RenderLight> RuntimeSceneRenderer::collectLights(entt::registry& reg
         }
         lights.push_back(renderLight);
     }
-
-    return lights;
 }
 
 void RuntimeSceneRenderer::updateDebugParams(DebugParams& params,
@@ -315,15 +313,15 @@ void RuntimeSceneRenderer::render(entt::registry& registry,
 
     const float aspect = static_cast<float>(std::max(internalWidth, 1)) / static_cast<float>(std::max(internalHeight, 1));
     const CameraState camera = captureCamera(registry, aspect);
-    std::vector<RenderObject> objects = collectSceneObjects(registry);
-    std::vector<RenderObject> viewmodelObjects = collectViewmodelObjects(registry, camera, deltaTime);
-    std::vector<RenderLight> lights = collectLights(registry, params);
+    collectSceneObjects(registry, scene_objects_);
+    collectViewmodelObjects(registry, camera, deltaTime, viewmodel_objects_);
+    collectLights(registry, params, lights_);
 
     // Build SceneRenderInput from ECS-collected data
     SceneRenderInput input;
-    input.objects = &objects;
-    input.viewmodelObjects = &viewmodelObjects;
-    input.lights = &lights;
+    input.objects = &scene_objects_;
+    input.viewmodelObjects = &viewmodel_objects_;
+    input.lights = &lights_;
     input.viewMatrix = camera.viewMatrix;
     input.projectionMatrix = camera.projectionMatrix;
     input.cameraPosition = camera.position;
@@ -349,10 +347,10 @@ void RuntimeSceneRenderer::render(entt::registry& registry,
     input.lightingEnvironment.shadowNormalBias = params.shadowNormalBias;
 
     pipeline_.render(input, internalWidth, internalHeight, outputWidth, outputHeight, targetFramebuffer);
-    updateDebugParams(params, camera, deltaTime, objects.size());
+    updateDebugParams(params, camera, deltaTime, scene_objects_.size());
 
     if (output != nullptr) {
-        output->lights = std::move(lights);
-        output->drawCalls = objects.size();
+        output->lights = lights_;
+        output->drawCalls = scene_objects_.size();
     }
 }
