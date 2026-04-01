@@ -259,8 +259,8 @@ void RuntimeSceneRenderer::collectLights(entt::registry& registry,
         break;
     }
 
-    appendDirectionalLight(lights, params.sunDirectional, glm::vec3(0.0f, -1.0f, 0.0f));
-    appendDirectionalLight(lights, params.fillDirectional, glm::vec3(0.0f, -1.0f, 0.0f));
+    appendDirectionalLight(lights, params.lighting.sunDirectional, glm::vec3(0.0f, -1.0f, 0.0f));
+    appendDirectionalLight(lights, params.lighting.fillDirectional, glm::vec3(0.0f, -1.0f, 0.0f));
 
     auto lightView = registry.view<TransformComponent, LightComponent>();
     for (auto [entity, transform, light] : lightView.each()) {
@@ -289,10 +289,10 @@ void RuntimeSceneRenderer::updateDebugParams(DebugParams& params,
                                              const CameraState& camera,
                                              float deltaTime,
                                              std::size_t drawCalls) const {
-    params.cameraPos = camera.position;
-    params.cameraDir = camera.direction;
-    params.cameraFov = glm::degrees(2.0f * std::atan(1.0f / camera.projectionMatrix[1][1]));
-    params.cameraSpeed = camera.moveSpeed;
+    params.camera.position = camera.position;
+    params.camera.direction = camera.direction;
+    params.camera.fov = glm::degrees(2.0f * std::atan(1.0f / camera.projectionMatrix[1][1]));
+    params.camera.moveSpeed = camera.moveSpeed;
     params.fps = deltaTime > 0.0f ? (1.0f / deltaTime) : 0.0f;
     params.frameTimeMs = deltaTime * 1000.0f;
     params.drawCalls = static_cast<int>(drawCalls);
@@ -328,23 +328,23 @@ void RuntimeSceneRenderer::render(entt::registry& registry,
     input.nearPlane = camera.nearPlane;
     input.farPlane = camera.farPlane;
     input.postParams = &params.post;
-    input.shadowsEnabled = params.shadowsEnabled;
-    input.shadowResolutionIndex = params.shadowMapResolutionIndex;
+    input.shadowsEnabled = params.lighting.shadowsEnabled;
+    input.shadowResolutionIndex = params.lighting.shadowMapResolutionIndex;
 
     // Build LightingEnvironment from DebugParams
-    input.lightingEnvironment.hemisphereSkyColor = params.hemisphereSkyColor;
-    input.lightingEnvironment.hemisphereGroundColor = params.hemisphereGroundColor;
-    input.lightingEnvironment.hemisphereStrength = params.hemisphereStrength;
-    input.lightingEnvironment.enableDirectionalLights = params.enableDirectionalLights;
-    input.lightingEnvironment.sun = params.sunDirectional;
+    input.lightingEnvironment.hemisphereSkyColor = params.lighting.hemisphereSkyColor;
+    input.lightingEnvironment.hemisphereGroundColor = params.lighting.hemisphereGroundColor;
+    input.lightingEnvironment.hemisphereStrength = params.lighting.hemisphereStrength;
+    input.lightingEnvironment.enableDirectionalLights = params.lighting.enableDirectionalLights;
+    input.lightingEnvironment.sun = params.lighting.sunDirectional;
     input.lightingEnvironment.sun.direction = safeNormalize(input.lightingEnvironment.sun.direction,
                                                              glm::vec3(0.0f, -1.0f, 0.0f));
-    input.lightingEnvironment.fill = params.fillDirectional;
+    input.lightingEnvironment.fill = params.lighting.fillDirectional;
     input.lightingEnvironment.fill.direction = safeNormalize(input.lightingEnvironment.fill.direction,
                                                               glm::vec3(0.0f, -1.0f, 0.0f));
-    input.lightingEnvironment.enableShadows = params.shadowsEnabled;
-    input.lightingEnvironment.shadowBias = params.shadowBias;
-    input.lightingEnvironment.shadowNormalBias = params.shadowNormalBias;
+    input.lightingEnvironment.enableShadows = params.lighting.shadowsEnabled;
+    input.lightingEnvironment.shadowBias = params.lighting.shadowBias;
+    input.lightingEnvironment.shadowNormalBias = params.lighting.shadowNormalBias;
 
     pipeline_.render(input, internalWidth, internalHeight, outputWidth, outputHeight, targetFramebuffer);
     updateDebugParams(params, camera, deltaTime, scene_objects_.size());

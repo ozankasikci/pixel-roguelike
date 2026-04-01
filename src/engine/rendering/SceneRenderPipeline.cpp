@@ -1,6 +1,7 @@
 #include "engine/rendering/SceneRenderPipeline.h"
 
 #include "engine/core/MathUtils.h"
+#include "engine/rendering/TextureUnits.h"
 #include "engine/rendering/core/Shader.h"
 #include "engine/rendering/geometry/Mesh.h"
 #include "engine/rendering/lighting/CascadedShadowMap.h"
@@ -14,9 +15,6 @@
 namespace {
 
 constexpr int kShadowResolutions[] = {512, 1024, 2048};
-constexpr int kCsmTextureUnit = 16;
-constexpr int kLtcMatUnit = 10;
-constexpr int kLtcAmpUnit = 11;
 
 } // namespace
 
@@ -205,7 +203,7 @@ void SceneRenderPipeline::renderScenePass(const SceneRenderInput& input,
     sceneShader_->use();
     sceneShader_->setFloat("uTimeSeconds", timeSeconds);
     sceneShader_->setMat4("uViewMatrix", input.viewMatrix);
-    sceneShader_->setInt("uCsmShadowMap", kCsmTextureUnit);
+    sceneShader_->setInt("uCsmShadowMap", TextureUnits::kCsmShadowMap);
     sceneShader_->setInt("uCsmEnabled", csmEnabled ? 1 : 0);
     sceneShader_->setInt("uCsmCascadeCount", CascadedShadowMap::kCascadeCount);
     if (csmEnabled) {
@@ -216,16 +214,16 @@ void SceneRenderPipeline::renderScenePass(const SceneRenderInput& input,
             sceneShader_->setFloat("uCsmSplitDistances[" + std::to_string(i) + "]", csmSplits[i]);
         }
     }
-    glActiveTexture(GL_TEXTURE0 + kCsmTextureUnit);
+    glActiveTexture(GL_TEXTURE0 + TextureUnits::kCsmShadowMap);
     glBindTexture(GL_TEXTURE_2D_ARRAY, csmEnabled ? csmShadowMap_.depthArrayTexture() : 0);
 
     // Bind LTC lookup textures to units 10 and 11 (always real textures -- per Pitfall 1)
-    glActiveTexture(GL_TEXTURE0 + kLtcMatUnit);
+    glActiveTexture(GL_TEXTURE0 + TextureUnits::kLtcMat);
     glBindTexture(GL_TEXTURE_2D, ltcData_.ltcMatTexture());
-    sceneShader_->setInt("uLtcMat", kLtcMatUnit);
-    glActiveTexture(GL_TEXTURE0 + kLtcAmpUnit);
+    sceneShader_->setInt("uLtcMat", TextureUnits::kLtcMat);
+    glActiveTexture(GL_TEXTURE0 + TextureUnits::kLtcAmp);
     glBindTexture(GL_TEXTURE_2D, ltcData_.ltcAmpTexture());
-    sceneShader_->setInt("uLtcAmp", kLtcAmpUnit);
+    sceneShader_->setInt("uLtcAmp", TextureUnits::kLtcAmp);
     glActiveTexture(GL_TEXTURE0);
 
     renderer_->drawScene(*input.objects,

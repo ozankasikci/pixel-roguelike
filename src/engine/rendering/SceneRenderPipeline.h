@@ -57,8 +57,6 @@ struct SceneRenderInput {
 // RuntimeSceneRenderer (game layer) composes this pipeline as a member.
 class SceneRenderPipeline {
 public:
-    static constexpr int kMaxShadowedSpotLights = 8;
-
     SceneRenderPipeline() = default;
     ~SceneRenderPipeline() = default;
 
