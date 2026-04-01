@@ -1,187 +1,114 @@
 # Stack Research
 
-**Domain:** Custom C++ 3D Game Engine with 1-bit Dithered Rendering
-**Researched:** 2026-03-23
-**Confidence:** MEDIUM-HIGH (core stack HIGH, peripheral libs MEDIUM)
+**Domain:** Custom C++ Level Editor — Professional Object Manipulation UX
+**Researched:** 2026-04-01
+**Confidence:** HIGH (all conclusions verified against existing codebase + official sources)
 
 ---
 
-## Recommended Stack
+## Executive Answer
 
-### Core Technologies
-
-| Technology | Version | Purpose | Why Recommended |
-|------------|---------|---------|-----------------|
-| C++20 | C++20 standard | Implementation language | `std::span`, concepts, designated initializers, and constexpr improvements pay off in engine code; EnTT 3.x requires C++20; broadly supported on all target compilers (MSVC 2019+, GCC 10+, Clang 12+) |
-| CMake | 3.28+ | Build system | De-facto standard for cross-platform C++ projects; best ecosystem support for GLFW, Jolt, EnTT; FetchContent simplifies vendoring; VS Code and CLion integration is first-class |
-| OpenGL 4.6 Core Profile | 4.6 | Graphics API | Right choice for this project — custom 1-bit post-process shader is a simple fullscreen quad blit; the complexity overhead of Vulkan would dominate the schedule without meaningfully improving the dithered aesthetic; OpenGL 4.6 is available on all desktop targets; deprecated on macOS means Metal support would need attention later, but macOS-first is not a stated requirement |
-| GLFW | 3.4 (released Feb 2024) | Window creation, OpenGL context, input | Focused and minimal — exactly what a custom engine needs; callback-based input maps cleanly to an event bus architecture; 12ms window creation vs SDL's 45ms; no audio/networking bloat; 3.4 adds runtime platform selection and Wayland support |
-| GLAD 2 | v2.0.8 (released Sep 2025) | OpenGL function loader | Modern replacement for GLEW; generates only the extension set you request; supports OpenGL Core profile natively without the `glewExperimental` workaround GLEW needs; GLAD 2 adds Vulkan/EGL support if the API is ever extended |
-| GLM | 1.0.3 (released Dec 2025) | Math: vectors, matrices, quaternions | Header-only; syntax mirrors GLSL exactly, which matters when writing shader-side math alongside CPU-side transforms; the only maintained C++ math lib with full GLSL spec coverage; 1.0.x branch supports C++17/20 |
-| EnTT | v3.16.0 (released Nov 2025) | Entity-Component System (ECS) | Used in Minecraft; header-only; archetype-sparse-set hybrid delivers cache-friendly iteration; component queries are composable at compile time; forces clean separation between game state and rendering that makes the dithering post-pass trivial to layer on top |
-
-### Post-Processing / Rendering Support
-
-| Technology | Version | Purpose | Why Recommended |
-|------------|---------|---------|-----------------|
-| GLSL (via OpenGL) | 4.60 | Shader language | The 1-bit Bayer dithering shader is a fragment shader operating on a fullscreen texture; GLSL is the only choice when targeting OpenGL; see shader note below |
-| stb_image | 2.30 (latest as of master, 2024-07) | PNG/JPG texture loading | Single-header, zero-dependency, public domain; the standard choice for loading textures in custom engines; stb_image.h + STB_IMAGE_IMPLEMENTATION is all that is needed |
-| stb_truetype | latest master | Font rasterization for HUD/debug text | Same family as stb_image; renders TTF glyphs to a bitmap atlas at startup; sufficient for in-game UI text in a roguelike |
-
-### Physics / Collision
-
-| Technology | Version | Purpose | Why Recommended |
-|------------|---------|---------|-----------------|
-| Jolt Physics | v5.4.0 (released Sep 2025) | Rigid body physics, collision detection, raycasting | Modern C++17/20 design; multi-threaded; used in Horizon Forbidden West and Death Stranding 2; significantly better API design and performance than Bullet3; excellent documentation; MIT license; character controller included — important for first-person movement |
-
-### Audio
-
-| Technology | Version | Purpose | Why Recommended |
-|------------|---------|---------|-----------------|
-| OpenAL Soft | v1.25.1 (released Jan 2025) | 3D positional audio | Cross-platform implementation of the OpenAL API; spatial audio out of the box (torches crackling as the player approaches is a natural fit for the gothic setting); LGPL license; the community standard for spatial audio in custom C++ game engines |
-
-### Development / Debugging
-
-| Technology | Version | Purpose | Why Recommended |
-|------------|---------|---------|-----------------|
-| Dear ImGui | v1.92.6 (released Feb 2025) | In-engine debug UI | Industry standard debug overlay; integrates with any OpenGL+GLFW setup via provided backends; invaluable for tweaking dither threshold values, inspecting ECS component state, and visualizing AI patrol paths at runtime |
-| spdlog | v1.x latest | Structured logging | Header-only fast logger; fmt-backed formatting; used everywhere in the C++ gamedev community; category sinks let you filter rendering vs AI vs audio logs separately |
+**No new library dependencies are required.** Every capability needed for delete, duplicate, add-mesh, and improved selection is already available in the current vendored stack. The work is entirely integration and engine-side rendering changes.
 
 ---
 
-## The 1-Bit Dithering Shader (Key Technical Decision)
+## Existing Stack Components That Do The Work
 
-The post-process pipeline follows the Obra Dinn model:
+These are already present. This section maps each milestone feature to the existing tool that implements it.
 
-1. Render the full 3D scene to an HDR/floating-point FBO (framebuffer object)
-2. Compute luminance from the color attachment
-3. In a fullscreen quad fragment shader, compare each pixel's luminance against the corresponding entry in a tiling Bayer matrix (8x8 or 16x16)
-4. Output 1.0 (white) or 0.0 (black) — no grayscale
+### Feature: Delete selected objects (Delete key)
 
-```glsl
-// Minimal GLSL 4.60 Bayer 4x4 dithering post-pass (fragment shader)
-// Full 8x8 matrix recommended for smoother gradients
-const float bayer4x4[16] = float[16](
-     0.0/16.0,  8.0/16.0,  2.0/16.0, 10.0/16.0,
-    12.0/16.0,  4.0/16.0, 14.0/16.0,  6.0/16.0,
-     3.0/16.0, 11.0/16.0,  1.0/16.0,  9.0/16.0,
-    15.0/16.0,  7.0/16.0, 13.0/16.0,  5.0/16.0
-);
+**Tool: Dear ImGui v1.92.6-docking** (`imgui` FetchContent, `GIT_TAG v1.92.6-docking`)
 
-float luma = dot(texture(hdrBuffer, uv).rgb, vec3(0.299, 0.587, 0.114));
-int idx = (int(gl_FragCoord.x) % 4) + (int(gl_FragCoord.y) % 4) * 4;
-fragColor = vec4(vec3(step(bayer4x4[idx], luma)), 1.0);
-```
+Use `ImGui::Shortcut(ImGuiKey_Delete, ImGuiInputFlags_RouteFocused)` inside the viewport window. The `RouteFocused` flag ensures Delete is not consumed when an `InputText` widget is active — the key ownership system introduced in 1.87 and backfilled to `InputText` in 1.92.x (issue #8048) handles this correctly. No raw GLFW key polling needed.
 
-**Temporal stability note:** Screen-space dithering produces a "swimming" pattern when the camera moves. Return of the Obra Dinn solved this by pinning the dither coordinates to world-space geometry. For v1, screen-space dithering is acceptable and much simpler; world-space pinning can be added later if the swimming is objectionable.
+The actual deletion calls `EditorSceneDocument::eraseObjects()` which already exists and handles subtree cleanup. Wrap with `EditorDocumentStateCommand` for undo.
 
----
+### Feature: Duplicate selected objects (Ctrl+D)
 
-## Installation
+**Tool: Dear ImGui v1.92.6-docking** — same `ImGui::Shortcut()` API, same routing.
 
-```bash
-# System dependencies (macOS with Homebrew)
-brew install cmake glfw openal-soft
+`EditorSceneDocument::duplicateObject()` already exists. The only new work is wiring the shortcut → document call → command stack push.
 
-# System dependencies (Ubuntu/Debian)
-sudo apt install cmake libglfw3-dev libopenal-dev
+### Feature: Add meshes via asset browser drag or picker
 
-# GLAD: generate via the web tool or Python
-# https://glad.dav1d.de/ — select OpenGL 4.6, Core profile, generate C/C++
-# Copy glad.h and glad.c into your project
+**Tool: EditorPlacementState + existing drag-drop** — already implemented in `EditorViewportInteraction.cpp` (`commitPlacement`, `appendPlacementGhost`). The asset browser already emits drag payloads (`emitPlacementDragSource`). The gap is a direct "add at cursor" action without requiring drag; this is pure ImGui button/combo UI work, no new library.
 
-# CMake FetchContent (CMakeLists.txt) — pulls at configure time:
-# GLM       https://github.com/g-truc/glm           (tag: 1.0.3)
-# EnTT      https://github.com/skypjack/entt         (tag: v3.16.0)
-# JoltPhysics https://github.com/jrouwe/JoltPhysics  (tag: v5.4.0)
-# Dear ImGui  https://github.com/ocornut/imgui        (tag: v1.92.6)
-# spdlog      https://github.com/gabime/spdlog        (tag: v1.15.x)
+**Tool: MeshLibrary** — `sortedMeshNames()` is already available in `LevelEditorCore`. A mesh picker combo reads from this directly.
 
-# stb headers — copy directly into the repo:
-# https://raw.githubusercontent.com/nothings/stb/master/stb_image.h
-# https://raw.githubusercontent.com/nothings/stb/master/stb_truetype.h
-```
+### Feature: Improved selection overlay (remove distracting overlay behind other meshes)
+
+**Tool: OpenGL 4.1 stencil buffer** — already available; the engine uses `glad/gl.h` with OpenGL 4.1 Core Profile.
+
+The current selection overlay in `appendSelectionOverlays()` renders a scaled wireframe cube with `ignoreDepth = true`, which draws on top of occluding geometry. The fix is a two-pass stencil technique:
+
+1. Pass 1 — render selected mesh normally, write 1 to stencil where fragments land
+2. Pass 2 — render slightly-scaled mesh with `GL_NOTEQUAL` stencil test, flat color/emissive shader, no depth write
+
+This produces a pixel-accurate outline that is occluded by intervening geometry. No library. Pure GLSL + GL state calls. The outline shader is a new `assets/shaders/engine/selection_outline.frag` file.
+
+The `SceneRenderPipeline` needs a post-scene outline pass that reads the stencil buffer. This is an engine rendering change, not a dependency change.
+
+### Feature: Multi-object selection (Shift+click, Ctrl+click, box-select)
+
+**Tool: Dear ImGui v1.92.6-docking** — `BeginMultiSelect` / `EndMultiSelect` API shipped in 1.91.0 (Jul 2024). Already present in the vendored version.
+
+`ImGuiSelectionBasicStorage` is available but is designed for list widgets. For the 3D viewport the project already manages `std::vector<std::uint64_t> selectedIds` directly. Use `ImGuiMultiSelectIO` requests from `BeginMultiSelect` only for the **outliner panel**. Viewport selection (ray-cast based) is custom and does not use BeginMultiSelect — the existing `toggleSelection()` / `applySelectionHit()` functions in `EditorViewportInteraction.h` already handle additive selection correctly.
+
+### Feature: Transform gizmo for move/translate
+
+**Tool: ImGuizmo v1.92.5 WIP** — vendored in `external/ImGuizmo/`, last upstream commit Dec 27, 2025. `ImGuizmo::Manipulate` is already wired in `EditorViewportController.cpp`. The gizmo is operational; the gap is ensuring move operations push to `EditorCommandStack` on drag-end (use `ImGuizmo::IsUsing()` / transition to not-using as the commit signal — already tracked via `gizmoCommand` in the editor state).
 
 ---
 
-## Alternatives Considered
-
-| Recommended | Alternative | When to Use Alternative Instead |
-|-------------|-------------|----------------------------------|
-| OpenGL 4.6 | Vulkan | If targeting platforms where OpenGL is fully deprecated (macOS) and Metal bridging is unacceptable, or if you need GPU-driven rendering for thousands of draw calls — neither applies here |
-| OpenGL 4.6 | WebGPU (via wgpu/Dawn) | If a web/browser deployment target is added later |
-| GLFW | SDL3 | SDL3's new GPU API is compelling if you need its audio, networking, and 2D renderer too; for a custom engine where each subsystem is deliberately chosen, GLFW's focus is a better fit |
-| Jolt Physics | Bullet3 | Bullet3 is fine if you already have code using it; Jolt has a cleaner API and better documentation for greenfield; no reason to choose Bullet3 for a new project |
-| OpenAL Soft | miniaudio | miniaudio is a simpler single-header solution; choose it if you need audio at all but want zero dependencies; OpenAL Soft wins when 3D positional audio matters, which it does for dungeon atmosphere |
-| EnTT | Flecs | Flecs has a richer query language and built-in pipeline scheduling; switch to it if the ECS becomes the architectural bottleneck; EnTT is simpler to start with |
-| CMake | xmake | xmake is cleaner syntax and includes package management; switch if CMake's verbosity becomes intolerable; xmake has a smaller ecosystem and some libraries don't yet provide native xmake support |
-| Dear ImGui (debug only) | No in-game UI | For the final shipped game, ImGui is stripped out; the 1-bit aesthetic means any HUD is custom-rendered using stb_truetype glyphs — keep it minimal |
-
----
-
-## What NOT to Use
+## What NOT to Add
 
 | Avoid | Why | Use Instead |
 |-------|-----|-------------|
-| GLEW | Stagnant since 2.2.0 (2017); requires `glewExperimental = GL_TRUE` for Core profile contexts; no GLAD 2-era features | GLAD v2 |
-| SDL2 audio subsystem | Mixed audio quality; audio is not SDL2's strength | OpenAL Soft |
-| Assimp | Massive dependency for loading 3D models; 1M+ lines of code; build is fragile; for a gothic dungeon game with handcrafted levels, you control the asset pipeline — use glTF + tinygltf instead | tinygltf (header-only glTF 2.0 loader) |
-| Unity / Unreal / Godot | Explicitly out of scope per project requirements; the dithering post-pass needs direct FBO control that is difficult or impossible to achieve in managed pipelines | Custom C++ + OpenGL (as specified) |
-| Bullet3 | Last meaningful update was 2022; development is effectively frozen; Jolt Physics is its modern successor | Jolt Physics v5 |
-| OpenGL compatibility profile | Allows deprecated immediate-mode calls to leak in; makes porting to Vulkan harder; produces driver-specific behavior differences | OpenGL 4.6 Core Profile only |
-| Boost | Enormous dependency for utility functions that C++20 STL now provides; adds significant compile time | C++20 STL (`std::span`, `std::ranges`, `std::format`) |
+| A new outline/selection library | Zero libraries exist for this that integrate with a custom pipeline | OpenGL stencil buffer (native, zero cost) |
+| Raw `glfwGetKey()` polling for Delete/Ctrl+D | Bypasses ImGui's key ownership system; causes Delete to fire while typing in InputText | `ImGui::Shortcut()` with `ImGuiInputFlags_RouteFocused` |
+| `ImGuiSelectionBasicStorage` in the 3D viewport | Designed for list widgets, not ray-cast 3D selection; adds indirection layer over `selectedIds` which is already well-managed | Existing `std::vector<std::uint64_t> selectedIds` + `toggleSelection()` |
+| Upgrading ImGui to v2.x or later | No v2.x exists; 1.92.6-docking is current; upgrading mid-milestone creates risk with ImGuizmo compatibility (ImGuizmo version-matches to imgui internals) | Stay on v1.92.6-docking |
+| A separate picking library (e.g., color-ID FBO) | The project already uses AABB/oriented-box hit testing in `pickEditorObject()`; color-ID picking would require an extra render pass and readback, more overhead for no benefit at this object count | Keep existing ray-cast picking |
+| Replacing ImGuizmo with a newer alternative (e.g., imGuIZMO.quat, gizmo3d) | ImGuizmo is already integrated and working; alternatives would require re-integration and testing | Keep ImGuizmo at current vendored v1.92.5 WIP |
 
 ---
 
-## Stack Patterns by Variant
+## Version Compatibility Notes
 
-**If targeting macOS as primary platform:**
-- Replace OpenGL 4.6 with Metal (via the `metal-cpp` header-only wrapper from Apple)
-- Or use MoltenVK to run Vulkan on Metal
-- OpenGL on macOS is deprecated at 4.1 — Apple has not updated it since 2018
-
-**If adding a web build later:**
-- Replace OpenGL + GLFW with WebGPU (Emscripten's built-in WebGPU support)
-- Replace OpenAL Soft with the Web Audio API via Emscripten
-- EnTT, GLM, and Jolt all have WASM-compatible builds
-
-**If the dithering pattern needs world-space pinning (temporal stability):**
-- Pass the view-projection matrix to the dither shader
-- Reconstruct world-space position from depth buffer in the post-pass fragment shader
-- Use world-space XY (or XZ) coordinates modulo the Bayer matrix size as the threshold index
+| Component | Current Version | Status | Notes |
+|-----------|-----------------|--------|-------|
+| Dear ImGui | v1.92.6-docking | Current | `Shortcut()` API + key ownership + `BeginMultiSelect` all present. `InputText` Delete ownership bug (#8048) fixed. |
+| ImGuizmo | v1.92.5 WIP (vendored master ~Dec 2025) | Current | Tracks ImGui version closely; compatible with 1.92.6. Rotation gizmo rendering fix landed Nov–Dec 2025. |
+| OpenGL | 4.1 Core Profile | Pinned (macOS ceiling) | Stencil buffer fully supported in 4.1. `glStencilFunc`, `glStencilOp`, `glStencilMask` available as needed. |
+| EnTT | v3.16.0 | Current | ECS queries in editor preview world are unchanged; no impact from this milestone. |
 
 ---
 
-## Version Compatibility
+## Integration Points
 
-| Package | Requires | Notes |
-|---------|----------|-------|
-| EnTT v3.16.0 | C++20 | The `entt::handle` API requires C++20 concepts |
-| Jolt Physics v5.4.0 | C++17 minimum, C++20 recommended | Uses `std::span`, `std::bit_cast`; enable `JPH_USE_STD_VECTOR` for STL integration |
-| GLM 1.0.3 | C++17 minimum | Branch 1.1 will require C++17; stick with 1.0.x if your CI enforces C++14 |
-| Dear ImGui v1.92.6 | C++11 | No C++20 requirement; works with any GLFW+OpenGL backend |
-| GLFW 3.4 | CMake 3.16+ | On macOS, requires `-framework Cocoa -framework OpenGL -framework IOKit` link flags |
-| OpenAL Soft v1.25.1 | None (dynamic link) | Link as `openal` on Unix; `OpenAL32.lib` on Windows |
+The following are the exact files where new code attaches to existing systems:
+
+| New capability | File to modify | Existing hook |
+|----------------|---------------|---------------|
+| Delete shortcut | `src/editor/viewport/EditorViewportInteraction.cpp` | Add `ImGui::Shortcut(ImGuiKey_Delete, ImGuiInputFlags_RouteFocused)` check, call `eraseObjects()`, push `EditorDocumentStateCommand` |
+| Ctrl+D duplicate | `src/editor/viewport/EditorViewportInteraction.cpp` | Same pattern, call `duplicateObject()` per selected ID |
+| Stencil outline pass | `src/engine/rendering/SceneRenderPipeline.cpp` + new `assets/shaders/engine/selection_outline.vert/.frag` | New post-scene pass after main scene draw, before post-process |
+| Stencil overlay suppress | `src/editor/render/EditorScenePreviewRenderer.cpp` | Remove `appendSelectionOverlays()` call; replace with stencil IDs passed to pipeline |
+| Mesh picker UI | `src/editor/ui/EditorAssetBrowserPanel.cpp` or new inline panel | `sortedMeshNames()` + `beginPlacement()` |
 
 ---
 
 ## Sources
 
-- GLM GitHub releases — https://github.com/g-truc/glm/releases — version 1.0.3 confirmed (Dec 2025) — HIGH confidence
-- GLFW release notes — https://www.glfw.org/docs/3.4/news.html — 3.4 features confirmed — HIGH confidence
-- GLAD GitHub releases — https://github.com/Dav1dde/glad/releases — v2.0.8 confirmed (Sep 2025) — HIGH confidence
-- Jolt Physics GitHub releases — https://github.com/jrouwe/JoltPhysics/releases — v5.4.0 confirmed (Sep 2025) — HIGH confidence
-- Dear ImGui GitHub releases — https://github.com/ocornut/imgui/releases — v1.92.6 confirmed (Feb 2025) — HIGH confidence
-- OpenAL Soft GitHub releases — https://github.com/kcat/openal-soft/releases — v1.25.1 confirmed (Jan 2025) — HIGH confidence
-- EnTT GitHub releases — https://github.com/skypjack/entt/releases — v3.16.0 confirmed (Nov 2025) — HIGH confidence
-- Obra Dinn dithering devlog — https://dukope.com/devlogs/obra-dinn/tig-32/ — post-process technique confirmed — HIGH confidence
-- Daniel Ilett dither tutorial — https://danielilett.com/2020-02-26-tut3-9-obra-dithering/ — Bayer matrix GLSL approach confirmed — MEDIUM confidence
-- OpenGL vs Vulkan comparison — https://thatonegamedev.com/cpp/opengl-vs-vulkan/ — recommendation reasoning — MEDIUM confidence
-- GLAD vs GLEW — https://community.khronos.org/t/glad-vs-glew-for-extension-loading/111911 — GLAD recommendation confirmed — MEDIUM confidence
-- Jolt vs Bullet comparison — https://forum.revolutionarygamesstudio.com/t/picking-a-physics-engine-for-thrive/1031 — MEDIUM confidence
-- CMake/vcpkg/Conan comparison — https://matgomes.com/vcpkg-vs-conan-for-cpp/ — MEDIUM confidence
+- Dear ImGui GitHub: `v1.92.6-docking` tag confirmed current — https://github.com/ocornut/imgui — HIGH confidence
+- ImGui Multi-Select API wiki: shipped in 1.91.0 (Jul 2024), `BeginMultiSelect` + `ImGuiSelectionBasicStorage` documented — https://github.com/ocornut/imgui/wiki/Multi-Select — HIGH confidence
+- ImGui issue #8048: `InputText` Delete key ownership fixed, `SetKeyOwner(ImGuiKey_Delete, id)` — https://github.com/ocornut/imgui/issues/8048 — HIGH confidence
+- ImGuizmo GitHub master: last commit Dec 27, 2025 (LightRig Editor), version string v1.92.5 WIP, compatible with Dear ImGui 1.92.x — https://github.com/CedricGuillemet/ImGuizmo/commits/master — HIGH confidence
+- LearnOpenGL Stencil Testing: two-pass outline technique for object selection overlays — https://learnopengl.com/Advanced-OpenGL/Stencil-testing — HIGH confidence
+- Project codebase: `external/ImGuizmo/ImGuizmo.h` version string confirmed v1.92.5 WIP; `CMakeLists.txt` FetchContent confirmed `imgui v1.92.6-docking`, `entt v3.16.0`, `JoltPhysics v5.4.0`, `glad v2.0.8` — VERIFIED directly
 
 ---
 
-*Stack research for: Custom C++ 3D Roguelike with 1-bit Dithered Rendering*
-*Researched: 2026-03-23*
+*Stack research for: v1.1 Editor UX — object manipulation (delete, duplicate, add mesh, improved selection)*
+*Researched: 2026-04-01*

@@ -1,197 +1,253 @@
 # Pitfalls Research
 
-**Domain:** Custom C++ 3D first-person roguelike with 1-bit dithered rendering
-**Researched:** 2026-03-23
-**Confidence:** HIGH (verified across multiple sources; dithering specifics from Obra Dinn developer notes and technical papers)
+**Domain:** ImGui-based level editor — adding object manipulation (delete, duplicate, add mesh, selection)
+**Researched:** 2026-04-01
+**Confidence:** HIGH (based on direct code inspection of the existing editor + verified ImGui/ImGuizmo source issues + community post-mortems)
 
 ---
 
 ## Critical Pitfalls
 
-### Pitfall 1: The Engine Trap — Building Infrastructure Before Gameplay
+### Pitfall 1: Delete Key Fires While Editing Text in the Inspector
 
 **What goes wrong:**
-The developer spends months building a renderer, level editor, resource pipeline, entity system, and tools without writing a single line of gameplay code. The thinking is "gameplay comes when the engine is mature enough." The engine never becomes mature enough. The project never ships.
+The user renames a node in the inspector's InputText field. They press Delete to remove a character. The keystroke simultaneously triggers the scene-object deletion shortcut, deleting the selected scene object. The user loses their mesh without intending to.
 
-This is the most common failure mode for custom engine projects, not a rare edge case.
+This is a confirmed Dear ImGui bug (issue #8048, fixed in commit 661bba0). Before the fix, `InputTextEx` did not call `SetKeyOwner(ImGuiKey_Delete, id)` when the widget was active, so the key escaped to parent window shortcuts.
 
 **Why it happens:**
-Engine architecture work feels productive and intellectually engaging. It's also safer — there's no risk of discovering the game isn't fun if you never test the game. Each system spawns three more systems that are "needed first." The lack of a playable build means there's no external pressure forcing a stop.
+The existing outliner checks `!ImGui::GetIO().WantTextInput` before handling `ImGuiKey_Delete`, which is correct. However, `WantTextInput` is only true when ImGui wants *text* input — it does not prevent all key routing. The viewport Delete key handler (in `main.cpp`, the `deletePressed` logic) also needs to check `ImGui::IsWindowFocused` on the viewport window, not just `WantTextInput`. If the viewport and inspector are docked and the inspector InputText is active, the focus check may pass incorrectly.
+
+Additionally, any shortcut added to the viewport interaction code that uses raw `ImGui::IsKeyPressed(ImGuiKey_Delete)` without a `!ImGui::GetIO().WantCaptureKeyboard` guard is vulnerable in ImGui versions before the fix.
 
 **How to avoid:**
-Establish a rule on day one: every week must produce something playable. Start with the hardest game-feel problem (first-person movement + collision) before any abstraction layers. Build engine features only when the game explicitly demands them — not in anticipation of future needs. Keep a "game-first" checklist: if you haven't tested a mechanic this week, you haven't been working on the game.
+- Gate all viewport keyboard shortcuts behind `!ImGui::GetIO().WantTextInput && !ImGui::IsAnyItemActive()`. The existing outliner Delete path already uses this pattern correctly; the viewport Delete path (`deletePressed` in main.cpp) must follow the same guard.
+- For Ctrl+D duplicate: use `ImGui::Shortcut(ImGuiMod_Ctrl | ImGuiKey_D, ImGuiInputFlags_RouteFocused)` rather than raw `IsKeyPressed`, which respects ImGui's key ownership routing.
+- Pin to Dear ImGui v1.90+ where InputText key ownership is correct.
 
 **Warning signs:**
-- Three or more engine systems exist but no player can move through a level
-- Work session notes reference "abstraction layer" or "interface design" more than "combat" or "level"
-- The word "generic" appears in any variable or class name (generic renderer, generic asset manager)
-- No playable build exists after the first month
+- Typing in the inspector's node-name field and pressing Delete accidentally removes the object
+- Any shortcut path that calls `ImGui::IsKeyPressed(key)` without checking focus or `WantTextInput`
 
 **Phase to address:**
-Phase 1 (Engine Foundation) — The phase must be scoped to *only* what lets a player walk through a lit room. Defer everything else.
+Phase implementing Delete key shortcut (delete scene objects). Must also audit Ctrl+D duplicate when added.
 
 ---
 
-### Pitfall 2: The Swimming Dither — Temporal Instability in Screen-Space Patterns
+### Pitfall 2: Delete Does Not Push an Undo Command
 
 **What goes wrong:**
-The dithering shader uses screen-space UV coordinates for the Bayer/blue-noise pattern lookup. This works perfectly for still frames. The moment the camera moves, the dither pattern stays pinned to the screen while the geometry moves behind it. Every surface appears to have "swimming" or "crawling" pixel noise instead of stable, geometry-relative shading. This is actively nauseating in first-person over extended play.
+The viewport-key Delete path and the outliner Delete path both correctly call `document.eraseObjects()` and then `commandStack.pushDocumentStateCommand()`. But when a **new** delete entry point is added (e.g., a viewport right-click context menu, or a Del key shortcut in the asset browser), the developer adds only the `eraseObjects()` call and forgets the `captureState()` before + `pushDocumentStateCommand()` after pattern. Deletions become non-undoable.
 
-This was Lucas Pope's primary technical challenge with Return of the Obra Dinn. He documented it extensively in developer logs.
+The existing code uses a capture-before / push-after pattern consistently. Every new code path that mutates `EditorSceneDocument` must independently re-implement this pattern because there is no automatic mutation hook.
 
 **Why it happens:**
-Screen-space UVs are the obvious, simple implementation. The post-process shader reads `gl_FragCoord / resolution` as the pattern index, which is constant per screen pixel regardless of what geometry is behind it. Works fine for UI, breaks for moving 3D geometry.
+The pattern is not enforced by the type system. `eraseObjects()` returns void and does not capture state. The developer's mental model is "erasing removes from the document" without the separate undo step being obvious. Copy-paste errors where only the erase call is copied from an example.
 
 **How to avoid:**
-The pattern must be anchored to world or object space, not screen space. The practical approach is to use the world-space position of the surface (passed from the vertex shader or reconstructed from the depth buffer) as the dither pattern index. For a first-person game this means: reconstruct world position per fragment in the post-process pass using `inverse(projection * view) * NDC_position`, then use `world_pos.xy` (or a projected variant) as the pattern coordinate. This keeps the pattern "pinned" to the geometry during camera rotation.
-
-Note: complete stability during camera *translation* (walking) is harder — patterns will still swim somewhat. Obra Dinn accepted this tradeoff. Blue noise patterns are less perceptually distracting than Bayer during translation.
+- Create a helper in `LevelEditorUi.h` (the `EditorPendingCommand` / `trackLastItemCommand` pattern already exists for continuous edits; add a `commitImmediateCommand(label, before, after, stack, doc)` analogue that is the required path for all discrete mutations).
+- Code review checklist: every call to `document.eraseObjects()`, `document.duplicateObject()`, or any `addX()` method must be accompanied by a surrounding capture-push pair.
+- Write a test: delete a mesh, undo, verify the mesh is back with the same ID.
 
 **Warning signs:**
-- Dither pattern moves noticeably when rotating the mouse
-- Any pixel on a static wall appears to flicker during camera pan
-- Pattern implementation uses `gl_FragCoord` or screen UV directly as the sole pattern coordinate
+- A new code path calls `eraseObjects()` but there is no `captureState()` call within 5 lines above it
+- Deletion from a right-click context menu cannot be undone (Ctrl+Z does nothing)
 
 **Phase to address:**
-Phase 1 (Rendering Foundation) — The dithering pass architecture must be designed correctly from the start. Retrofitting world-space pattern anchoring after other systems are built is significantly harder.
+Phase implementing Delete. Also applies to any subsequent Duplicate or Add Mesh phases.
 
 ---
 
-### Pitfall 3: Gamma / Linear Color Space Mismatch Corrupting the Dithering Threshold
+### Pitfall 3: Selection Vector Contains Stale IDs After Delete + Undo
 
 **What goes wrong:**
-The game renders in linear color space (correct for physically-based lighting) but the dithering threshold comparison happens on gamma-corrected (non-linear) values, or vice versa. The result: dithering looks visually wrong — dark regions get too many black pixels, bright regions get too many white pixels, and the tonal range looks crushed rather than smooth.
+User selects three objects. Deletes them. The selection vector `selectedIds` is cleared (correctly). User presses Ctrl+Z. The undo restores the document state, but `selectedIds` (which lives outside the document) still holds `{}`  — the user sees no selection restored. If the user had instead pressed Ctrl+Z after a subsequent action, `selectedIds` may still reference IDs that no longer exist in the document. The inspector then tries to render controls for `document.findObject(id)`, which returns `nullptr`, and either crashes or silently renders nothing.
 
-This matters especially for the torch/point light falloff. The visual gradient from a torch that should dither gracefully into black will instead produce a harsh edge.
+A subtler case: user selects object A, duplicates it (getting A'), presses undo, selects something else. Now `selectedIds` may still contain A'. If the user then tries to operate on A', `findObject(A')` returns nullptr because A' no longer exists post-undo.
 
 **Why it happens:**
-OpenGL framebuffers default to outputting sRGB, but intermediate render targets may be linear. Developers often add gamma correction as an afterthought and don't consider that the dithering post-process sits at the end of the chain where color space is in a mixed state.
+`selectedIds` is a `std::vector<std::uint64_t>` that lives in `main.cpp` alongside the document. Undo/redo restores `EditorSceneDocumentState`, which does not include selected IDs. The disconnect between document state and selection state is architectural — by design, selection is transient UI state. But this means the caller is responsible for pruning after every undo/redo.
+
+The existing `pruneSelection()` helper exists precisely for this reason and is called after outliner deletes. It must also be called after every undo/redo operation.
 
 **How to avoid:**
-Decide on one color space strategy before writing the first shader: linear throughout, apply gamma correction *last* (after dithering), or work in gamma-corrected space consistently. The recommended approach: render in linear space, apply dithering in linear space against a linear-space threshold, then apply gamma correction/sRGB conversion as the very final step. Use `GL_FRAMEBUFFER_SRGB` carefully — enable it only for the final blit to the window framebuffer, not for intermediate passes.
+- Call `pruneSelection(document, selectedIds)` immediately after every call to `commandStack.undo()` and `commandStack.redo()`.
+- Verify: after undo, `selectedIds` only contains IDs that exist in the document.
+- Any code path that reads `selectedIds` before calling `document.findObject()` must null-check the result even if the id supposedly came from selection.
 
 **Warning signs:**
-- Torch falloff looks harsh or "steppy" rather than smooth gradient-to-black
-- Dithered dark areas look noisier than expected
-- `GL_FRAMEBUFFER_SRGB` is enabled globally rather than only on the output pass
-- Dithering threshold is compared against a value that went through `pow(x, 2.2)` at some point before comparison
+- Inspector panel crashes or goes blank after Ctrl+Z
+- `document.findObject(id)` returns nullptr in the inspector render path
+- `pruneSelection` is not called in the undo/redo handler
 
 **Phase to address:**
-Phase 1 (Rendering Foundation) — Establish the framebuffer pipeline, color space strategy, and render target format before the dithering pass is implemented.
+Phase implementing Undo/Redo wiring for Delete. Must be verified for all future phases that add operations.
 
 ---
 
-### Pitfall 4: Picking Vulkan as the Graphics API
+### Pitfall 4: Duplicate Produces Objects With Colliding Node IDs
 
 **What goes wrong:**
-Vulkan is chosen because it's "modern" and "lower overhead." Drawing a triangle takes 1,000+ lines vs. ~100 in OpenGL. The first three months of the project are spent fighting resource barriers, descriptor sets, pipeline state objects, memory allocation, and validation layer errors. No dithering shader is written. No player moves. The engine trap (Pitfall 1) is made significantly worse.
+The existing `duplicateObject()` calls `addObject(object->kind, object->payload)`, which copies the entire `payload` verbatim. For `LevelMeshPlacement` and other placement types that contain a `nodeId` string field, the duplicate gets the same `nodeId` as the original. When the scene is saved and reloaded, `EditorSceneSerializer` processes two objects with the same `nodeId`. The serializer overwrites one with the other, silently losing a mesh. The user only notices on the next load.
 
 **Why it happens:**
-Vulkan has strong mindshare in 2025-2026. It genuinely is more performant and explicit. Developers underestimate how much the boilerplate costs in a solo/small team context.
+The `payload` copy is intentional for the transform/material data. The `nodeId` field looks like data and gets copied along with everything else. The issue is invisible at runtime — it only manifests on the serialization round-trip.
 
 **How to avoid:**
-Use OpenGL 4.5 (core profile) or OpenGL 4.6 for this project. The performance headroom is irrelevant for a 1-bit roguelike — the 1-bit output is the bottleneck on visual fidelity, not GPU throughput. OpenGL 4.5 provides direct state access (DSA), compute shaders, shader storage buffers, and everything needed for a post-process dithering pipeline. It takes 100 lines to draw a triangle and 2 days to have a dithering prototype vs. 2 months.
-
-If cross-platform support (Windows/macOS/Linux) is required: GLFW handles windowing and OpenGL context creation on all three platforms. On macOS, OpenGL 4.1 is the maximum supported version — this is a known constraint.
+- In `duplicateObject()`, after copying the payload, clear/regenerate any `nodeId` fields. Check `LevelMeshPlacement`, `LevelLightPlacement`, `LevelArchetypePlacement`, and any other payload type that has a `nodeId` member.
+- The existing `ensureObjectNodeId()` method can be used to assign fresh node IDs after duplication.
+- Write a round-trip test: duplicate an object, save, reload, verify two distinct objects exist with distinct node IDs.
 
 **Warning signs:**
-- Any Vulkan tutorial is open during Phase 1 work
-- "I'll abstract it behind an interface so we can swap APIs later" — this is premature abstraction (see Pitfall 6)
-- More than 2 weeks pass without a triangle on screen
+- Scene has N duplicated meshes at edit time but only N/2 on reload
+- `ensureObjectNodeId()` is never called in the duplication path
+- Two `EditorSceneObject` instances have the same value in their `nodeId` payload field
 
 **Phase to address:**
-Phase 1 (Engine Foundation) — The API decision is made once, early, and not revisited until the game ships (if ever).
+Phase implementing Duplicate.
 
 ---
 
-### Pitfall 5: Collision Response Getting Players Permanently Stuck
+### Pitfall 5: Duplicate Places Object Exactly on Top of the Original
 
 **What goes wrong:**
-Player movement works in open space but breaks at wall edges, corners, and steps. Players get caught on small geometry protrusions and cannot move. Corner collisions cause the player to teleport or vibrate. Moving along a wall while simultaneously pressing into it causes the "deadlock" problem where two collision normals cancel each other and the player cannot move at all.
-
-This is a consistently reported pain point for custom 3D engine collision and requires specific architecture to solve correctly.
+Ctrl+D duplicates the selected object with position (0,0,0) offset — meaning the new object occupies the exact same world position as the original. The user cannot tell anything happened. They click somewhere else, come back, and discover N stacked meshes instead of N separate objects.
 
 **Why it happens:**
-Simple AABB-vs-AABB collision detection detects overlap but the response (depenetration) is implemented naively: push the player out along the deepest axis. This fails at corners (multiple simultaneous contacts). Discrete collision detection (check position, see if overlap) misses tunneling at high velocity. Developers build basic collision first, then discover it needs a full rewrite when level design starts.
+`duplicateObject()` copies the payload including the `position` field. No offset is applied. The developer test is "does a second object appear in the outliner" — which passes — but doesn't test whether the objects are visually distinguishable.
 
 **How to avoid:**
-Use capsule sweep testing for player collision from the start. A capsule (cylinder with hemispherical caps) naturally slides around corners without getting stuck. Implement swept collision (check for overlap along the movement vector, not just at the endpoint) to prevent tunneling. For the collision response, apply Quake-style "clip and slide": subtract the component of velocity perpendicular to the hit normal, leaving the parallel component to continue. This is the standard algorithm used by Quake, Doom, and most first-person games.
-
-For this game: the engine likely needs only player-vs-level collision (not enemy-vs-enemy physics). Keep collision simple and specialized — a capsule vs. static triangle mesh or AABB-based level geometry.
+- Apply a small world-space offset on duplication. The standard Unity/Unreal convention is `(0.5, 0, 0)` in world units, or — preferably — place the duplicate slightly in front of the current editor camera.
+- Alternatively, use the existing `computePlacementPoint()` machinery to place the duplicate at the camera-forward ray intersection, which is the most ergonomic behavior.
+- Select the duplicate immediately after creation so the user sees it highlighted and can move it directly.
 
 **Warning signs:**
-- Player can be pushed into a corner and gets stuck
-- Moving diagonally into a wall causes a complete stop instead of sliding
-- Player clips through thin walls at sprint speed
-- The word "AABB" appears in the player movement code without a sweep test
+- Outliner shows two entries with identical labels at the same position
+- User discovers stacked meshes only when moving one
+- After Ctrl+D, the selection does not transfer to the new duplicate
 
 **Phase to address:**
-Phase 1 (Player Movement) — Must be solved before any level design begins. A bad collision system invalidates all level testing.
+Phase implementing Duplicate.
 
 ---
 
-### Pitfall 6: Premature Abstraction of the Rendering Layer
+### Pitfall 6: State Snapshot Comparison Marks Scene Dirty on Every Frame
 
 **What goes wrong:**
-An abstract `IRenderer` interface is created to "support multiple backends" (OpenGL, Vulkan, DirectX). The interface becomes the wrong abstraction — each backend exposes different primitives and the interface forces the lowest common denominator. Time is spent maintaining the abstraction rather than building the game. When a rendering feature is needed that doesn't fit the interface, the interface must be redesigned.
+The `EditorCommandStack::syncDirtyFlags()` method serializes the entire scene to a string on every call to compare against the saved signature. If this method is called during the ImGui render loop (not just after mutations), the serialization overhead is constant and grows with scene size. For scenes with hundreds of meshes, this produces a multi-millisecond stall every frame, making the editor feel unresponsive.
+
+A secondary issue: if `syncDirtyFlags()` is called at the wrong time (e.g., after a transient environment preview state is applied but before it is reverted), the serialized string temporarily differs from the saved signature and the scene appears dirty — the title bar shows an asterisk even though no real changes were made.
 
 **Why it happens:**
-Software engineering instincts. Developers know that coupling is bad, so they add indirection. The abstraction feels like architecture discipline. It is premature — the game doesn't need multiple rendering backends, and the "correct" abstraction only becomes apparent after having two concrete implementations.
+The `syncDirtyFlags()` call appears at the end of every `undo()`, `redo()`, and `pushDocumentStateCommand()` call. This is correct. But the developer adds an additional call in the main render loop to "keep things in sync," not realizing the cost.
 
 **How to avoid:**
-Write directly against OpenGL for the entire project. Only extract an abstraction when there are three concrete cases that share obvious structure. A single thin wrapper around common OpenGL calls (shader compilation, texture upload) is acceptable and useful. A full `IRenderer` interface is not. If the decision is later made to port to another API, the rewrite is well-scoped and the game's architecture is already proven.
+- Never call `syncDirtyFlags()` outside of the explicit mutation points (undo, redo, push). The existing pattern is correct.
+- Profile with a large scene (200+ objects) to verify dirty-check overhead stays below 1ms.
+- Environment-only changes should not pollute the scene dirty flag. The existing separation of `sceneDirty_` and `environmentDirty_` must be preserved when adding new mutation paths.
 
 **Warning signs:**
-- An interface is defined before a single implementation of it exists
-- Class names include "Base", "Abstract", "Interface", or "I" prefix with no corresponding concrete sibling
-- Passing around `std::shared_ptr<ITexture>` when a `GLuint` would work
+- Editor framerate drops noticeably when many objects are in the scene
+- Scene appears dirty (asterisk in title) immediately after loading without any edits
+- `syncDirtyFlags()` or `captureState()` appears in the per-frame render path
 
 **Phase to address:**
-Phase 1 (Architecture Setup) — Establish a "no abstraction without two concrete cases" rule at project start.
+Phase implementing any new mutation path (Delete, Duplicate, Add Mesh). Each one introduces a potential extra `captureState()` per-frame if wired incorrectly.
 
 ---
 
-### Pitfall 7: Lighting That Doesn't Survive the Dithering Pass
+### Pitfall 7: Add Mesh Places Object at World Origin, Invisible to the User
 
 **What goes wrong:**
-The 3D lighting looks good in the intermediate (pre-dither) grayscale render but terrible after dithering. Common symptoms: torch falloff produces a hard concentric ring pattern instead of a smooth gradient dither; very dark areas collapse to solid black with no gradation; bright surfaces clip to solid white. The lighting that was tuned in grayscale stops communicating useful spatial information once reduced to 1-bit.
+"Add Mesh" spawns the object at `(0, 0, 0)`. If the editor camera is looking at a scene 50 units away from the origin, the new mesh is behind the camera or clipped by the near plane and invisible. The user presses Add Mesh repeatedly wondering if it worked.
 
 **Why it happens:**
-Lighting is tuned visually in linear/grayscale. The dither quantizes the result and amplifies any sudden transitions. High-contrast lighting (common in dungeons) creates transitions too steep for the dither pattern to convey smoothly. Torch falloff (1/r² attenuation) drops off sharply enough to produce a visible edge in the dither pattern.
+The placement origin (0,0,0) is the obvious default. The developer test passes — "object appears in outliner." The test does not verify the object is visible in the viewport.
 
 **How to avoid:**
-Tune lighting *through* the dithering pass, not before it. Build the dithering post-process in Phase 1 and keep it active during all subsequent lighting work. Adjust light attenuation curves specifically for 1-bit output — the physically correct 1/r² often needs to be replaced with a softer falloff (e.g., linear or 1/r) to produce smooth dithered gradients. Limit the number of visible point lights per scene to avoid dither pattern conflicts between light sources. Obra Dinn used relatively few, carefully placed light sources for exactly this reason.
-
-For torch flickering: temporal variation in light intensity must be subtle (5-10% amplitude) or it will cause the dither pattern to strobe visibly.
+- Use `computePlacementPoint()` (which already exists in `EditorViewportInteraction`) to raycast from the camera center and place the object at the hit surface, or at a fixed distance in front of the camera if no surface is hit (3–5 units ahead, matching the scene scale).
+- This is the same code path as drag-and-drop mesh placement; reuse it.
+- If raycasting is not available at this point, place the object at `camera.position + camera.forward * 3.0f`.
+- After adding, select the new object and issue `ui.frameSelectionRequested = true` so the viewport frames to show it.
 
 **Warning signs:**
-- Hard concentric rings visible around torches in the final dithered view
-- Large areas of the level read as pure black or pure white with no intermediate dithering
-- Light is tuned in a non-dithered debug view
+- Added objects do not appear visible in the viewport without manually navigating to origin
+- No raycast or camera-forward calculation in the "add" code path
+- `frameSelectionRequested` is not set after adding
 
 **Phase to address:**
-Phase 2 (Lighting System) — The dithering pass must be in place before any lighting is tuned.
+Phase implementing Add Mesh.
 
 ---
 
-### Pitfall 8: Shader Compilation Stutter on First Load
+### Pitfall 8: Selection Overlay Renders Through Occluding Geometry
 
 **What goes wrong:**
-The game loads and immediately hitches for 200-500ms as the GPU compiles each shader the first time it's encountered. In a first-person game this produces visible frame drops during normal play, especially when entering a new area that uses a different shader combination.
+The selected-object highlight (wireframe overlay or tint) renders on top of all other geometry, even when the selected object is fully behind a wall. The user selects the wrong object, looks at a wall, and sees the selection highlight bleeding through. This is the issue specifically named as a target fix in the v1.1 milestone ("remove distracting selection overlay when another mesh is underneath").
 
 **Why it happens:**
-OpenGL (unlike Vulkan/DX12) compiles shaders lazily — the driver sees the full pipeline state only at draw time and may defer compilation. Even when shaders are compiled upfront, some GPU drivers re-compile at draw time based on render state.
+Overlays that draw in a separate post-pass without reading the depth buffer will always render on top. Standard stencil-based selection highlights work this way by design — the stencil mask is set during the scene pass, then the outline is drawn ignoring depth.
 
 **How to avoid:**
-Compile all shaders at startup during a loading phase. Store compiled shader binaries where supported (`GL_ARB_get_program_binary` / OpenGL 4.1+) to avoid recompilation on subsequent launches. For this project, the total shader count will be small (dithering post-process, geometry, lighting — maybe 5-8 shaders), so up-front compilation is trivial. Do a "warm-up draw" of each shader combination during loading to force any driver-side compilation.
+- The selection highlight must respect the depth buffer. Two options:
+  1. Draw the highlight mesh normally with depth testing enabled, using a slight scale-up or fragment-shader outline. Hidden objects get their highlights occluded correctly.
+  2. Render the highlight to a separate FBO, then composite it with depth awareness by sampling the scene depth and discarding highlight fragments where `highlightDepth > sceneDepth`.
+- The simpler approach for this codebase: render a second "outline pass" for selected objects after the scene pass, with depth test mode set to `GL_EQUAL` (draw only where the object is actually visible) or `GL_LEQUAL` with a small polygon offset.
+- Keep the selection rendering as a configurable option that can be toggled — different workflows benefit from see-through vs. depth-correct selection.
 
 **Warning signs:**
-- Frame time spikes visible in the GPU profiler when entering areas
-- RenderDoc shows shader compilation time in the first draw using a given program
-- Shaders are linked on-demand at scene load rather than at startup
+- Selected object's highlight is visible through walls when walking away
+- Selection highlight does not change visual intensity as the object becomes more occluded
+- The overlay draw call uses `glDisable(GL_DEPTH_TEST)` unconditionally
 
 **Phase to address:**
-Phase 1 (Rendering Foundation) — Establish a startup shader compilation step from the beginning.
+Phase implementing selection overlay improvements (directly named in the milestone goals).
+
+---
+
+### Pitfall 9: Undo Stack Grows Unbounded During Continuous Gizmo Drags
+
+**What goes wrong:**
+Every mouse-move event during a gizmo drag calls `applyGizmoToSelectedObject()`, which calls `finalizePendingCommand()`, which pushes a new state to the undo stack. A 2-second drag produces 120 undo steps at 60fps, each storing a full document snapshot. Pressing Ctrl+Z requires 120 presses to undo one logical drag operation. Memory usage spikes for large scenes.
+
+**Why it happens:**
+The gizmo uses an `EditorPendingCommand` (capturing state before the drag begins) and only finalizes when `ImGuizmo::IsUsing()` transitions from true to false. This is the correct pattern — but it is fragile. If a new continuous-input path is added (e.g., scrollwheel to adjust a value) without using `EditorPendingCommand`, it falls back to per-frame push.
+
+**How to avoid:**
+- All continuous interactions (gizmo drag, slider drag, scroll-to-resize) must use the `beginPendingCommand()` / `finalizePendingCommand()` pair, never `pushDocumentStateCommand()` per frame.
+- The existing `trackLastItemCommand()` helper handles this for ImGui slider/drag widgets. Every new continuous widget must use it.
+- Verify: drag a mesh with the gizmo 10 times, press Ctrl+Z 10 times — exactly 10 undo steps should be consumed, not 600+.
+
+**Warning signs:**
+- Ctrl+Z requires multiple presses to undo a single drag
+- Memory usage grows linearly during a scene-editing session
+- Any call to `pushDocumentStateCommand()` inside a loop or per-frame code path
+
+**Phase to address:**
+Phase implementing Move/Translate with gizmo support. Also applies to any future resize/scale operations.
+
+---
+
+### Pitfall 10: Keyboard Shortcut Fires in Both Viewport and Outliner Simultaneously
+
+**What goes wrong:**
+The user has the outliner focused and presses Ctrl+D intending to duplicate a selected object. The viewport's Ctrl+D handler also fires because the shortcut is checked against `ImGui::IsWindowFocused(ImGuiFocusedFlags_RootAndChildWindows)` on the viewport, which returns true even when the outliner is focused (both are children of the root dockspace). The object is duplicated twice.
+
+**Why it happens:**
+ImGui docking makes window focus ambiguous. `ImGuiFocusedFlags_RootAndChildWindows` is designed to catch the entire docked window hierarchy, not a specific panel. When two panels both use this flag for the same shortcut, both fire.
+
+**How to avoid:**
+- Implement shortcuts as **global** handlers in `main.cpp` (the top-level per-frame logic), not inside individual panel render functions. A single authoritative check fires once per frame.
+- Use `ImGui::Shortcut(key, ImGuiInputFlags_RouteGlobal)` for editor-wide shortcuts (Delete, Ctrl+Z, Ctrl+Y, Ctrl+D). The per-panel keyboard handlers (like the existing outliner Delete check) should be removed and consolidated into the global handler.
+- The existing `deletePressed` boolean in `main.cpp` follows this pattern for the viewport. Duplicate and Add should follow the same pattern.
+
+**Warning signs:**
+- Same shortcut checked in both a panel render function AND in main.cpp
+- `ImGui::IsKeyPressed()` appears inside `renderOutliner()` or `renderInspector()` for shortcuts that should be global
+- Duplicate fires twice when tested with outliner + viewport both visible
+
+**Phase to address:**
+Phase implementing Ctrl+D duplicate shortcut. Audit all keyboard shortcut handling at that time.
 
 ---
 
@@ -201,56 +257,53 @@ Shortcuts that seem reasonable but create long-term problems.
 
 | Shortcut | Immediate Benefit | Long-term Cost | When Acceptable |
 |----------|-------------------|----------------|-----------------|
-| Global state for rendering context (OpenGL state machine used directly everywhere) | Fast to write, no boilerplate | Impossible to reason about render state; bugs appear only when draw call order changes | Never — use even a thin state tracker |
-| Hardcoded level geometry in C++ structs | No asset pipeline needed for MVP | Adding/changing levels requires recompile; level designers (even solo) can't iterate | Only for the very first prototype level |
-| Screen-space UV for dither pattern | Simple one-liner | Swimming dither destroys the visual (see Pitfall 2) | Never |
-| Variable timestep (multiply everything by `deltaTime`) | Simple, works at low complexity | Physics becomes framerate-dependent; game plays differently at 30fps vs 144fps | Only if there is no physics or collision |
-| AABB overlap (discrete) for player collision | 20 lines of code | Player gets stuck on every corner edge (see Pitfall 5) | Never for a first-person game |
-| Single monolithic `Game` class | Everything accessible everywhere, no architecture planning | 2,000-line .cpp file that can't be tested or modified | First prototype only — refactor before adding combat |
-| Heap allocation every frame for game objects | Flexible, easy to implement | Fragmentation, GC pressure, jitter in frame times | Never in the game loop hot path |
+| Per-frame `captureState()` to keep undo fresh | Always have the "before" state | Serializes entire scene every frame; O(n) on scene size | Never — use `beginPendingCommand` / `finalizePendingCommand` |
+| Skip undo push for "minor" operations (e.g., position nudge) | Simpler code | Users lose work; destroys trust in undo reliability | Never — all mutations go through the stack |
+| Place duplicates at origin (0,0,0) | Zero code for placement | Objects pile up invisibly; users think the command failed | Never in shipped editor — always offset from camera |
+| Global `ImGui::IsKeyPressed()` without focus check | Simple shortcut implementation | Fires in text fields, causes data loss | Never for destructive actions (Delete, Duplicate) |
+| Use `ImGuiTreeNodeFlags_Selected` on all ancestors when a child is selected | Makes tree look sensibly highlighted | State bloat, inconsistent with parent/child selection semantics | Fine as visual hint if selection vector is authoritative |
 
 ---
 
 ## Integration Gotchas
 
-Common mistakes when integrating external libraries and systems.
+Common mistakes when connecting to ImGui/ImGuizmo in this editor.
 
 | Integration | Common Mistake | Correct Approach |
 |-------------|----------------|------------------|
-| GLFW + OpenGL context | Forgetting `glfwMakeContextCurrent` on the right thread; calling OpenGL from a thread that doesn't own the context | Create context on main thread, make current immediately, never share across threads without explicit sync |
-| stb_image texture loading | Loading textures with default gamma-uncorrected format; not specifying `STBI_rgb` vs `STBI_rgb_alpha` explicitly | Load textures, then upload with `GL_SRGB8_ALPHA8` for color textures, `GL_R8` for grayscale/metallic maps |
-| Dither pattern texture | Enabling texture compression (driver default on some platforms) corrupts the precise per-texel values | Always upload dither textures with `GL_NEAREST` filtering and no mipmaps; explicitly set `GL_TEXTURE_MAX_LEVEL 0` and use uncompressed format |
-| GLM math library | Mixing row-major vs column-major matrix conventions; forgetting to use `glm::value_ptr()` when passing to OpenGL | OpenGL expects column-major; GLM defaults to column-major; always pass via `glm::value_ptr(&matrix)` |
-| Dear ImGui debug overlay | Leaving ImGui draw calls in release builds; ImGui state corruption if `NewFrame()` and `Render()` are not paired every frame | Guard ImGui behind a compile-time flag; assert that every `NewFrame` has a matching `Render` |
+| ImGuizmo | Calling `ImGuizmo::SetRect` with the wrong origin when docked | `ImGuizmo::SetRect` must use the viewport panel's screen-space origin (`viewport.origin.x`, `viewport.origin.y`) not `(0, 0)`. Use `EditorViewportState::origin`. |
+| ImGuizmo | Gizmo appears but does not react to mouse | `ImGuizmo::SetDrawlist(ImGui::GetWindowDrawList())` must be called inside the viewport's `ImGui::Begin` scope, not in the global scope. |
+| ImGui `InputText` + Delete key | Delete removes character AND scene object | Guard scene-delete shortcuts with `!ImGui::GetIO().WantTextInput && !ImGui::IsAnyItemActive()` |
+| ImGui drag-drop from asset browser | Payload data is a raw `char[]` but consumer casts to wrong type | The `EditorDragPayload` struct is 132 bytes. Verify `payload->DataSize == sizeof(EditorDragPayload)` before casting. |
+| Scene dirty flag | `markSceneDirty()` called during undo/redo restore | `restoreState()` internally increments the revision counter; the caller must not additionally call `markSceneDirty()` after restore or the dirty comparison diverges from the saved signature. |
+| Selection after undo | Selection vector references deleted IDs | Always call `pruneSelection(document, selectedIds)` immediately after `commandStack.undo()` and `commandStack.redo()`. |
 
 ---
 
 ## Performance Traps
 
-Patterns that produce frame timing problems in a real-time context.
+Patterns that work at small scale but fail as usage grows.
 
 | Trap | Symptoms | Prevention | When It Breaks |
 |------|----------|------------|----------------|
-| Full-screen post-process dithering reading depth + world position reconstruction every fragment | GPU time for dithering pass exceeds geometry pass on dense geometry | Profile the dithering pass early; world-position reconstruction from depth is expensive — consider storing world pos in a G-buffer texel instead | At 1440p+ with a complex scene |
-| Multiple `glUniform` calls per object per frame instead of UBO | CPU-side GPU command overhead dominates frame time | Use Uniform Buffer Objects for per-frame and per-camera data; only per-object transforms need per-draw uniforms | At >100 draw calls per frame |
-| Dynamic geometry generation for every animated enemy pose per frame | CPU bottleneck on skeleton transforms | Pre-compute bone matrices, upload only the final 4x4 matrices to GPU as a texture or SSBO | At >10 simultaneously animated enemies |
-| Heap allocation inside the game loop for temporary strings (e.g., debug text) | Subtle frame time variance; fragmentation over time | Use stack allocators or pre-allocated string buffers for anything inside the game loop | After ~30 minutes of play |
-| Rendering the full scene depth buffer every frame even when the level is static | Wasted GPU work on the Z-pass | For a handcrafted static level, pre-bake occlusion; re-render only when dynamic objects (enemies) are present | At larger level sizes with many draw calls |
+| Full document serialize on every `syncDirtyFlags()` call | Frame stutter when selecting objects with large scenes | Only serialize inside undo/redo/push calls, never in the frame loop | ~100+ objects depending on payload size |
+| `childObjectIds()` called O(n²) in outliner render | Outliner redraws get slower as hierarchy deepens | Cache child lists if hierarchy doesn't change between frames, or use depth-first iteration | ~50+ objects with deep parenting |
+| `buildEditorSelectionHandles()` rebuilds AABB for all objects every mouse move | Raycasting in the viewport stalls at frame start | Only rebuild when `document.sceneRevision()` changes | ~200+ objects |
+| Storing `EditorSceneDocumentState` (full objects vector) in every undo step | Memory grows with each edit session | The 256-command cap (`kMaxCommands`) prevents unbounded growth; do not increase this limit without measuring | Beyond 256 commands with large scenes |
 
 ---
 
 ## UX Pitfalls
 
-Visual and gameplay experience mistakes specific to 1-bit first-person roguelikes.
+Common user experience mistakes specific to this editor domain.
 
 | Pitfall | User Impact | Better Approach |
 |---------|-------------|-----------------|
-| Enemies and environment are the same shade — player can't parse the scene | Players can't identify threats, navigation is confusing | Use lighting deliberately to differentiate enemies from background: enemies are closer to the player (brighter), walls are darker |
-| Melee swing animation obscures entire screen during attack | Player can't see enemies while attacking — feels blind and punishing | Keep weapon viewmodel in lower 1/3 of screen; swing animation moves weapon into center but returns quickly |
-| No audio feedback for dithered hit detection | Players don't know if they hit or missed due to 1-bit visuals making impact hard to read | Sound design and screen shake carry hit feedback weight — these are essential, not polish |
-| 1-bit rendering makes depth extremely hard to judge | Players repeatedly misjudge distances to enemies and ledges | Use motion parallax and head-bob aggressively — the only reliable depth cue in 1-bit is motion |
-| Dither pattern variation with distance makes distant enemies invisible | Enemies at range dither down to near-solid black and blend with walls | Ensure a minimum brightness level for enemies (an ambient term that prevents full-black dithering) |
-| Swimming dither causes motion sickness during camera rotation | Players stop playing after 20 minutes | See Pitfall 2 — non-negotiable fix |
+| Delete with no confirmation for complex objects (archetypes with children) | User accidentally deletes a subtree, notices 10 edits later | For multi-object or parent-with-children deletes, flash a brief status message ("Deleted 5 objects — Ctrl+Z to undo") rather than a blocking dialog |
+| Duplicate does not transfer selection to the new object | User immediately presses G to move but moves the original | Always select the new duplicate immediately after creation |
+| Add Mesh picker requires knowing the mesh string ID | Steep learning curve; prone to typos | The asset browser drag-and-drop already provides discoverability; "Add" should open the same picker, not require free-text entry |
+| Ctrl+Z works but Ctrl+Y (redo) has no shortcut | Users trained on Ctrl+Y from other tools are confused | Wire both Undo and Redo in the same global shortcut handling block |
+| Selection highlight visible through walls | Distracting; user cannot tell what is selected vs. what is behind | Depth-correct highlight (see Pitfall 8) |
 
 ---
 
@@ -258,14 +311,13 @@ Visual and gameplay experience mistakes specific to 1-bit first-person roguelike
 
 Things that appear complete but are missing critical pieces.
 
-- [ ] **First-person movement:** Often missing wall sliding — verify the player can move diagonally along a wall without stopping
-- [ ] **Dithering post-process:** Often missing temporal stability — verify the dither pattern does not swim when slowly panning the camera
-- [ ] **Torch lighting:** Often missing graceful falloff through the dither — verify the transition from lit to dark around a torch shows smooth dithered gradient, not a hard ring
-- [ ] **Enemy hit detection:** Often uses ray from camera center only — verify hits register when the weapon model is to the left/right, not just dead-center
-- [ ] **Game loop timestep:** Often uncapped or tied to rendering — verify the game plays identically at 30fps and 144fps (enemy speed, projectile speed, collision)
-- [ ] **Shader compilation:** Often lazy — verify no frame spike occurs when the dithering shader is used for the first time after load
-- [ ] **Texture format for dither pattern:** Often accidentally compressed — verify the Bayer/blue-noise texture has GL_NEAREST filtering and no compression
-- [ ] **Color space pipeline:** Often mixed — verify the dithering threshold comparison occurs before gamma correction, not after
+- [ ] **Delete:** Object removed from outliner AND from document AND undo command pushed AND selection pruned AND `previewDirty` set to rebuild preview world.
+- [ ] **Duplicate:** New object in outliner AND new object has distinct node ID AND new object is selected AND offset applied AND undo command pushed AND `previewDirty` set.
+- [ ] **Add Mesh:** Object in outliner AND placed near camera (not at origin) AND selected after add AND undo command pushed AND `previewDirty` set.
+- [ ] **Selection overlay:** Only visible for objects visible to the camera (not bleeding through walls) — verify by placing a mesh behind a wall and selecting it.
+- [ ] **Keyboard shortcuts:** All shortcuts guarded by `!WantTextInput` — verify by renaming a node in the inspector and pressing the shortcut keys.
+- [ ] **Undo of delete:** After deleting then undoing, the object is restored with the same ID, same position, same material, and is re-selectable.
+- [ ] **Undo of duplicate:** After duplicating then undoing, exactly one copy exists (not zero, not two).
 
 ---
 
@@ -275,12 +327,11 @@ When pitfalls occur despite prevention, how to recover.
 
 | Pitfall | Recovery Cost | Recovery Steps |
 |---------|---------------|----------------|
-| Engine trap (months of engine, no gameplay) | HIGH | Stop all engine work; spend one week implementing the single most important gameplay mechanic even if it's ugly; evaluate whether to continue or restart with different scope |
-| Swimming dither already shipped | MEDIUM | Add world-position reconstruction to the dithering shader; world-pos is in the vertex shader already — pass it through and use in frag shader; test with slow pan |
-| Gamma/color space mismatch | MEDIUM | Audit the render pass chain; add a debug visualization mode that shows pre-dither grayscale; fix the framebuffer format where the mismatch occurs |
-| Player stuck in corners | MEDIUM | Replace AABB collision response with a capsule sweep + clip-and-slide; this is usually a full rewrite of the movement code but not the rest of the engine |
-| Premature abstraction making new rendering features impossible to add | MEDIUM | Remove the abstraction and write to OpenGL directly; the code will get shorter, not longer |
-| Lighting that kills the dithering aesthetic | LOW | Re-tune light attenuation curves with the dither pass enabled; soften falloff; reduce maximum light radius; add ambient floor to prevent full-black dithering |
+| Duplicate produces colliding node IDs (found after shipping) | MEDIUM | Add a scene migration pass in `EditorSceneSerializer::load()` that detects duplicate node IDs and regenerates them with a deterministic suffix. No data loss — just a one-time fix on load. |
+| Delete fires in InputText (found in QA) | LOW | Add `!ImGui::GetIO().WantTextInput && !ImGui::IsAnyItemActive()` guard to all shortcut checks. 10-line fix. |
+| Undo stack bloated (N×60 steps per drag) | LOW | Verify that all gizmo and slider paths use `EditorPendingCommand`; replace any `pushDocumentStateCommand` in per-frame paths with `beginPendingCommand` / `finalizePendingCommand`. |
+| Selection overlay bleeds through walls | MEDIUM | Requires shader change to the selection highlight pass. Add depth testing to the overlay draw call (`GL_LEQUAL` depth test). 1–2 day fix for a developer familiar with the render pipeline. |
+| Scene appears dirty on load without edits | LOW | Verify `markSceneDirty()` is not called in the `restoreState()` path or in any initialization code path that runs after `commandStack.reset()`. |
 
 ---
 
@@ -290,33 +341,29 @@ How roadmap phases should address these pitfalls.
 
 | Pitfall | Prevention Phase | Verification |
 |---------|------------------|--------------|
-| Engine trap | Phase 1 (Player Movement first, not systems) | Playable first-person movement exists before any abstraction work |
-| Swimming dither | Phase 1 (Dithering Pass Architecture) | Camera rotation test shows stable, non-swimming dither pattern |
-| Gamma/color space mismatch | Phase 1 (Framebuffer + Render Pass Setup) | Pre-dither grayscale and post-dither 1-bit both look correct; torch falloff is smooth |
-| Vulkan API choice | Phase 1 (Project Setup, Day 1) | Decision logged in PROJECT.md before any code is written |
-| Player stuck on corners | Phase 1 (Player Movement) | Player can strafe into a corner and slide along both walls freely |
-| Premature abstraction | Phase 1 (Architecture Setup) | No interface has only one implementation |
-| Lighting fails through dithering | Phase 2 (Lighting) | All lighting is tuned with dithering pass enabled |
-| Shader compilation stutter | Phase 1 (Rendering Foundation) | No frame spike on first draw of any shader in a profiler |
+| Delete key fires in InputText | Delete phase | Type in inspector, press Delete — inspector text changes, no object deleted |
+| Delete missing undo push | Delete phase | Delete object, Ctrl+Z, object restored with same ID |
+| Stale selection IDs after undo | Delete phase | Delete, undo, verify `selectedIds` is empty or valid |
+| Duplicate node ID collision | Duplicate phase | Duplicate, save, reload, verify two distinct objects |
+| Duplicate lands on top of original | Duplicate phase | Duplicate, verify visually distinct placement in viewport |
+| Add Mesh at origin | Add Mesh phase | Add mesh with camera at (50,50,50) — mesh appears near camera |
+| Selection overlay through walls | Selection overlay phase | Select object behind wall — no highlight bleeds through |
+| Undo stack bloat from continuous drags | Move/Translate phase | Drag gizmo 10 times, verify exactly 10 undo steps consumed |
+| Duplicate shortcut fires twice | Ctrl+D shortcut phase | Duplicate with outliner focused — exactly one new object in scene |
+| Scene dirty on load | Any mutation phase | Load scene, verify no dirty indicator without edits |
 
 ---
 
 ## Sources
 
-- Lucas Pope developer logs on Obra Dinn dithering (TIGSource): https://dukope.com/devlogs/obra-dinn/tig-32/
-- "Stabilizing the Obra Dinn 1-bit dithering process" Hacker News discussion: https://news.ycombinator.com/item?id=42084080
-- "Surface-Stable Fractal Dither" by Aras Pranckevičius (2025): https://www.aras-p.info/blog/2025/02/09/Surface-Stable-Fractal-Dither-on-Playdate/
-- "Solodevs and the trap of the game engine" by Karl Zylinski: https://zylinski.se/posts/solodevs-and-the-trap-of-the-game-engine/
-- "Real reasons (not) to build custom game engines in 2024" — Game Developer: https://www.gamedeveloper.com/programming/real-reasons-not-to-build-custom-game-engines-in-2024
-- "How I learned Vulkan and wrote a small game engine with it" (recommends OpenGL first): https://edw.is/learning-vulkan/
-- LearnOpenGL — Deferred Shading, Gamma Correction: https://learnopengl.com
-- "What I Learned Building My Own Game Engine from Scratch in C++ & DirectX 12": https://dev.to/shahfarhadreza/what-i-learned-building-my-own-game-engine-from-scratch-in-c-directx-12-2538
-- "Fix Your Timestep!" — Gaffer on Games (canonical game loop reference): https://gafferongames.com/post/fix_your_timestep/
-- "Game Engines and Shader Stuttering" — Unreal Engine tech blog: https://www.unrealengine.com/en-US/tech-blog/game-engines-and-shader-stuttering-unreal-engines-solution-to-the-problem
-- Capsule collision for player characters — Wicked Engine: https://wickedengine.net/2020/04/capsule-collision-detection/
-- "Dithering on the GPU" — Alex Charlton: https://alex-charlton.com/posts/Dithering_on_the_GPU/
-- "Obra Dinn 1-bit shader effect" Unity tutorial (dithering technique breakdown): https://discussions.unity.com/t/tutorial-obra-dinn-1-bit-shader-effect/831511
+- Direct code inspection: `/apps/level_editor/main.cpp`, `/src/editor/ui/EditorOutlinerPanel.cpp`, `/src/editor/scene/EditorSceneDocument.cpp`, `/src/editor/core/EditorCommand.cpp`, `/src/editor/viewport/EditorViewportInteraction.cpp`
+- Dear ImGui issue #8048 — InputText does not take Delete key ownership: https://github.com/ocornut/imgui/issues/8048
+- Dear ImGui issue #6621 — Global keyboard shortcut not triggered by InputText: https://github.com/ocornut/imgui/issues/6621
+- ImGuizmo issue #292 — Drawing ImGuizmo elements behind/in front of geometry: https://github.com/CedricGuillemet/ImGuizmo/issues/292
+- GameDev.net — Custom editor undo/redo system: https://www.gamedev.net/forums/topic/678496-custom-editor-undoredo-system/5290700/
+- Wolfire Games blog — How We Implement Undo: http://blog.wolfire.com/2009/02/how-we-implement-undo/
+- Wayline — Level Design Undo/Redo Mastery: https://www.wayline.io/blog/level-design-undo-redo-mastery
 
 ---
-*Pitfalls research for: Custom C++ 3D first-person roguelike, 1-bit dithered rendering*
-*Researched: 2026-03-23*
+*Pitfalls research for: ImGui-based level editor — v1.1 Editor UX milestone*
+*Researched: 2026-04-01*
