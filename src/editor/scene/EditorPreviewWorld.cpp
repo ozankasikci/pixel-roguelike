@@ -210,6 +210,8 @@ void EditorPreviewWorld::rebuild(const EditorSceneDocument& document, const Cont
         }
         case EditorSceneObjectKind::PlayerSpawn:
             break;
+        case EditorSceneObjectKind::Group:
+            break;
         case EditorSceneObjectKind::Archetype: {
             auto placement = std::get<LevelArchetypePlacement>(object.payload);
             glm::vec3 position(0.0f), rotation(0.0f), scale(1.0f);
@@ -340,6 +342,8 @@ void EditorPreviewWorld::syncTransforms(const EditorSceneDocument& document) {
             transform.rotation.y = rotation.y;
             break;
         case EditorSceneObjectKind::PlayerSpawn:
+            break;
+        case EditorSceneObjectKind::Group:
             break;
         }
     }

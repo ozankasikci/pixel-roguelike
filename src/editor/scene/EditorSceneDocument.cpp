@@ -58,6 +58,9 @@ void EditorSceneDocument::loadFromSceneFile(const std::string& scenePath, const 
     legacyEnvironmentProfile_ = level.environmentProfile;
     loadEnvironment(content, level);
 
+    for (const auto& group : level.groups) {
+        addGroup(group);
+    }
     for (const auto& mesh : level.meshes) {
         addMesh(mesh);
     }
@@ -207,6 +210,10 @@ std::uint64_t EditorSceneDocument::addArchetype(const LevelArchetypePlacement& p
     return addObject(EditorSceneObjectKind::Archetype, placement);
 }
 
+std::uint64_t EditorSceneDocument::addGroup(const LevelGroupNode& placement) {
+    return addObject(EditorSceneObjectKind::Group, placement);
+}
+
 std::uint64_t EditorSceneDocument::parentObjectId(std::uint64_t id) const {
     const EditorSceneObject* object = findObject(id);
     if (object == nullptr) {
@@ -256,7 +263,8 @@ bool EditorSceneDocument::supportsParenting(std::uint64_t id) const {
     return object->kind == EditorSceneObjectKind::Mesh
         || object->kind == EditorSceneObjectKind::BoxCollider
         || object->kind == EditorSceneObjectKind::CylinderCollider
-        || object->kind == EditorSceneObjectKind::Archetype;
+        || object->kind == EditorSceneObjectKind::Archetype
+        || object->kind == EditorSceneObjectKind::Group;
 }
 
 bool EditorSceneDocument::canSetParent(std::uint64_t childId, std::uint64_t parentId) const {
@@ -585,6 +593,16 @@ bool EditorSceneDocument::applyWorldTransform(std::uint64_t id, const glm::mat4&
         archetype.yawDegrees = rotation.y;
         break;
     }
+    case EditorSceneObjectKind::Group: {
+        auto& group = std::get<LevelGroupNode>(object->payload);
+        if (!decomposeTransformMatrix(localMatrix, position, rotation, scale)) {
+            return false;
+        }
+        group.position = position;
+        group.rotation = rotation;
+        group.scale = glm::max(scale, glm::vec3(0.01f));
+        break;
+    }
     }
 
     markSceneDirty();
@@ -647,6 +665,9 @@ LevelDef EditorSceneDocument::toLevelDef() const {
             break;
         case EditorSceneObjectKind::Archetype:
             level.archetypes.push_back(std::get<LevelArchetypePlacement>(object.payload));
+            break;
+        case EditorSceneObjectKind::Group:
+            level.groups.push_back(std::get<LevelGroupNode>(object.payload));
             break;
         }
     }
@@ -789,6 +810,10 @@ glm::mat4 EditorSceneDocument::localTransformMatrix(const EditorSceneObject& obj
         const auto& archetype = std::get<LevelArchetypePlacement>(object.payload);
         return makeTransformMatrix(archetype.position, glm::vec3(0.0f, archetype.yawDegrees, 0.0f), glm::vec3(1.0f));
     }
+    case EditorSceneObjectKind::Group: {
+        const auto& group = std::get<LevelGroupNode>(object.payload);
+        return makeTransformMatrix(group.position, group.rotation, group.scale);
+    }
     }
     return glm::mat4(1.0f);
 }
@@ -823,6 +848,8 @@ const char* editorSceneObjectKindName(EditorSceneObjectKind kind) {
         return "Player Spawn";
     case EditorSceneObjectKind::Archetype:
         return "Archetype";
+    case EditorSceneObjectKind::Group:
+        return "Group";
     }
     return "Object";
 }
@@ -848,6 +875,9 @@ std::string editorSceneObjectLabel(const EditorSceneObject& object) {
     case EditorSceneObjectKind::Archetype:
         label << " [" << std::get<LevelArchetypePlacement>(object.payload).archetypeId << "]";
         break;
+    case EditorSceneObjectKind::Group:
+        label << " [" << std::get<LevelGroupNode>(object.payload).name << "]";
+        break;
     default:
         break;
     }
@@ -868,6 +898,8 @@ glm::vec3 editorSceneObjectAnchor(const EditorSceneObject& object) {
         return std::get<LevelPlayerSpawn>(object.payload).position;
     case EditorSceneObjectKind::Archetype:
         return std::get<LevelArchetypePlacement>(object.payload).position;
+    case EditorSceneObjectKind::Group:
+        return std::get<LevelGroupNode>(object.payload).position;
     }
     return glm::vec3(0.0f);
 }

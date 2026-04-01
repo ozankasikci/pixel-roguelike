@@ -38,6 +38,9 @@ LevelDef makeLevelDefFromState(const EditorSceneDocumentState& state) {
         case EditorSceneObjectKind::Archetype:
             level.archetypes.push_back(std::get<LevelArchetypePlacement>(object.payload));
             break;
+        case EditorSceneObjectKind::Group:
+            level.groups.push_back(std::get<LevelGroupNode>(object.payload));
+            break;
         }
     }
 

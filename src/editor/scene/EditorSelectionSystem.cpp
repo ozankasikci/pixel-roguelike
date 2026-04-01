@@ -169,6 +169,7 @@ int selectionPriority(const EditorSelectionHandle& handle) {
     switch (handle.objectKind) {
     case EditorSceneObjectKind::Mesh:
     case EditorSceneObjectKind::Archetype:
+    case EditorSceneObjectKind::Group:
         return 0;
     case EditorSceneObjectKind::Light:
         return 1;

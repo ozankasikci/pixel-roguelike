@@ -941,6 +941,28 @@ void renderSceneSelectionInspector(EditorSceneDocument& document,
         trackSceneItem(beforeState, "Rotate Archetype", ImGui::DragFloat("Yaw", &archetype.yawDegrees, 0.5f, -360.0f, 360.0f, "%.1f"));
         break;
     }
+    case EditorSceneObjectKind::Group: {
+        auto& group = std::get<LevelGroupNode>(object->payload);
+        char nameBuf[256];
+        std::snprintf(nameBuf, sizeof(nameBuf), "%s", group.name.c_str());
+        auto beforeState = document.captureState();
+        if (ImGui::InputText("Name", nameBuf, sizeof(nameBuf))) {
+            group.name = nameBuf;
+            document.markSceneDirty();
+            commandStack.pushDocumentStateCommand("Rename Group", beforeState, document.captureState(), document);
+        }
+        beforeState = document.captureState();
+        trackSceneItem(beforeState, "Move Group", editVec3("Position", group.position));
+        beforeState = document.captureState();
+        const bool scaleChanged = editVec3("Scale", group.scale, 0.02f);
+        if (scaleChanged) {
+            group.scale = glm::max(group.scale, glm::vec3(0.01f));
+        }
+        trackSceneItem(beforeState, "Scale Group", scaleChanged);
+        beforeState = document.captureState();
+        trackSceneItem(beforeState, "Rotate Group", editVec3("Rotation", group.rotation, 0.5f));
+        break;
+    }
     }
 }
 

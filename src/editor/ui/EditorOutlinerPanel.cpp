@@ -73,6 +73,16 @@ std::vector<std::uint64_t> renderOutliner(EditorSceneDocument& document,
         ui.inspectorContext = EditorInspectorContext::SceneSelection;
     }
     ImGui::EndDisabled();
+    ImGui::SameLine();
+    if (ImGui::Button("Add Group")) {
+        const EditorSceneDocumentState beforeState = document.captureState();
+        LevelGroupNode group;
+        group.name = "Group";
+        const std::uint64_t groupId = document.addGroup(group);
+        commandStack.pushDocumentStateCommand("Add Group", beforeState, document.captureState(), document);
+        selectedIds = {groupId};
+        ui.inspectorContext = EditorInspectorContext::SceneSelection;
+    }
     ImGui::Separator();
 
     if (ImGui::IsWindowFocused(ImGuiFocusedFlags_RootAndChildWindows)
