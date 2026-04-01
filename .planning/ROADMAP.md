@@ -189,8 +189,10 @@ Plans:
   1. Selecting an object behind a wall shows the selection outline only where the object is actually visible — the outline does not bleed through the wall
   2. Selecting a fully occluded object shows a faint ghost outline at reduced opacity, confirming the selection without obscuring foreground geometry
   3. Selecting objects at varying distances and overlap configurations all produce correct depth-respecting outlines
-**Plans**: TBD
-**UI hint**: yes
+**Plans**: 1 plan
+
+Plans:
+- [ ] 09-01-PLAN.md — Two-pass selection overlay: depth-tested primary wireframe + dim ghost for occluded objects
 
 ### Phase 10: Global Keyboard Shortcuts and Hover Highlight
 
@@ -236,6 +238,6 @@ Phases execute in numeric order: 1 → 1.1 → 2 → 2.1 → 3 → 4 → 5 → 6
 | 6. Data-driven Scene Management | v1.0 | 3/3 | Complete | 2026-03-29 |
 | 7. Data-driven Material System | v1.0 | 4/4 | Complete | 2026-03-30 |
 | 8. Institutional Room Scene | v1.0 | 2/2 | Complete | 2026-04-01 |
-| 9. Selection Overlay Depth Fix | v1.1 | 0/TBD | Not started | - |
+| 9. Selection Overlay Depth Fix | v1.1 | 0/1 | Not started | - |
 | 10. Global Keyboard Shortcuts and Hover Highlight | v1.1 | 0/TBD | Not started | - |
 | 11. Add Mesh Discoverability | v1.1 | 0/TBD | Not started | - |
