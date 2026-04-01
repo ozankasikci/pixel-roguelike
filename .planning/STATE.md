@@ -2,15 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: Editor UX
-status: Ready to plan
-stopped_at: null
-last_updated: "2026-04-01"
+status: verifying
+stopped_at: Completed 09-01-PLAN.md
+last_updated: "2026-04-01T11:35:24.125Z"
 last_activity: 2026-04-01
 progress:
-  total_phases: 3
-  completed_phases: 0
-  total_plans: 0
-  completed_plans: 0
+  total_phases: 13
+  completed_phases: 10
+  total_plans: 28
+  completed_plans: 28
+  percent: 0
 ---
 
 # Project State
@@ -20,20 +21,21 @@ progress:
 See: .planning/PROJECT.md (updated 2026-04-01)
 
 **Core value:** The Stanley Parable-inspired art style — clean, minimalist environments with warm soft lighting, muted color palette, and stylized realism
-**Current focus:** Milestone v1.1 — Editor UX (Phase 9: Selection Overlay Depth Fix)
+**Current focus:** Phase 09 — selection-overlay-depth-fix
 
 ## Current Position
 
-Phase: 9 of 11 (Selection Overlay Depth Fix)
-Plan: 0 of TBD in current phase
-Status: Ready to plan
-Last activity: 2026-04-01 — v1.1 roadmap created, Phases 9-11 defined
+Phase: 09 (selection-overlay-depth-fix) — EXECUTING
+Plan: 1 of 1
+Status: Phase complete — ready for verification
+Last activity: 2026-04-01
 
 Progress: [░░░░░░░░░░] 0% (v1.1 milestone)
 
 ## Performance Metrics
 
 **Velocity (v1.1):**
+
 - Total plans completed: 0
 - Average duration: —
 - Total execution time: 0 hours
@@ -47,6 +49,7 @@ Progress: [░░░░░░░░░░] 0% (v1.1 milestone)
 | 11 - Add Mesh Discoverability | TBD | - | - |
 
 *Updated after each plan completion*
+| Phase 09 P01 | 5min | 2 tasks | 1 files |
 
 ## Accumulated Context
 
@@ -62,6 +65,7 @@ Recent decisions affecting current work:
 - [v1.1 research]: Every new mutation entry point requires explicit capture-before/push-after to `EditorCommandStack` — not enforced by the type system
 - [v1.1 research]: `pruneSelection` must be called after every undo/redo call to avoid inspector null-dereference on stale selected IDs
 - [v1.1 research]: `duplicateObject()` copies nodeId verbatim — `ensureObjectNodeId()` must be called on duplicate to avoid serialization collision
+- [Phase 09]: Two-pass selection overlay: ghost wireframe (ignoreDepth=true, 20% tint) + depth-tested primary wireframe (ignoreDepth=false, full tint)
 
 ### Pending Todos
 
@@ -74,6 +78,6 @@ None for v1.1. All APIs exist; work is wiring and one renderer fix.
 ## Session Continuity
 
 Last activity: 2026-04-01
-Last session: 2026-04-01
-Stopped at: v1.1 roadmap created — Phase 9 ready to plan
+Last session: 2026-04-01T11:35:24.121Z
+Stopped at: Completed 09-01-PLAN.md
 Resume file: None
