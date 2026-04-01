@@ -118,6 +118,14 @@ void GenericFileScene::onEnter(Application& app) {
                 library.registerFileAlias(asset.meshId, asset.relativePath);
             }
         }
+
+        // Auto-discover file-based meshes from assets/packs/ subdirectories
+        const std::filesystem::path packsDir(resolveProjectPath("assets/packs"));
+        for (const auto& asset : ModelLoader::discoverProjectAssets(packsDir, std::filesystem::current_path())) {
+            if (!library.has(asset.meshId)) {
+                library.registerFileAlias(asset.meshId, asset.relativePath);
+            }
+        }
     };
 
     // Look up scripted geometry from the registry (no hard-coded if-chain)

@@ -60,6 +60,13 @@ void bootstrapRuntimeMeshLibrary(MeshLibrary& meshLibrary) {
             meshLibrary.registerFileAlias(asset.meshId, asset.relativePath);
         }
     }
+
+    const std::filesystem::path packsDirectory(resolveProjectPath("assets/packs"));
+    for (const auto& asset : ModelLoader::discoverProjectAssets(packsDirectory, std::filesystem::current_path())) {
+        if (!meshLibrary.has(asset.meshId)) {
+            meshLibrary.registerFileAlias(asset.meshId, asset.relativePath);
+        }
+    }
 }
 
 void registerGameActions(InputSystem& input) {
