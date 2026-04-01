@@ -431,7 +431,7 @@ int main(int argc, char* argv[]) {
 
         if (!gameplayPreviewCaptured) {
             if (!io.WantTextInput && ImGui::IsKeyPressed(ImGuiKey_F)) focusPressed = true;
-            if (!io.WantTextInput && ImGui::IsKeyPressed(ImGuiKey_Delete)) deletePressed = true;
+            if (!io.WantTextInput && (ImGui::IsKeyPressed(ImGuiKey_Delete) || ImGui::IsKeyPressed(ImGuiKey_Backspace))) deletePressed = true;
             if ((io.KeyCtrl || io.KeySuper) && ImGui::IsKeyPressed(ImGuiKey_D)) duplicatePressed = true;
             if ((io.KeyCtrl || io.KeySuper) && ImGui::IsKeyPressed(ImGuiKey_Z)) {
                 if (io.KeyShift) {
@@ -554,7 +554,7 @@ int main(int argc, char* argv[]) {
                 if (ImGui::MenuItem("Duplicate", "Ctrl/Cmd+D", false, !selectedIds.empty())) {
                     duplicatePressed = true;
                 }
-                if (ImGui::MenuItem("Delete", "Delete", false, !selectedIds.empty())) {
+                if (ImGui::MenuItem("Delete", "Delete/Backspace", false, !selectedIds.empty())) {
                     deletePressed = true;
                 }
                 if (ImGui::MenuItem("Focus Selected", "F", false, selectedIds.size() == 1)) {

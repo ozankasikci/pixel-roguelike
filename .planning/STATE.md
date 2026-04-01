@@ -86,9 +86,27 @@ None yet.
 
 None for v1.1. All APIs exist; work is wiring and one renderer fix.
 
+### Quick Tasks Completed
+
+| # | Description | Date | Commit | Directory |
+|---|-------------|------|--------|-----------|
+| 260329-t50 | Fix lighting attenuation and intensity | 2026-03-29 | 459e34f | [260329-t50-fix-lighting-attenuation-and-intensity](./quick/260329-t50-fix-lighting-attenuation-and-intensity/) |
+| 260329-uom | Raise warden office ceiling from 2.5m to 3.5m | 2026-03-29 | 97c3880 | [260329-uom-fix-warden-office-room-being-too-small-i](./quick/260329-uom-fix-warden-office-room-being-too-small-i/) |
+| 260329-uy6 | Match Stanley Parable lighting and color palette | 2026-03-29 | 0a1f494 | [260329-uy6-match-stanley-parable-lighting-and-color](./quick/260329-uy6-match-stanley-parable-lighting-and-color/) |
+| 260329-x0q | Fix pixelated rendering and clean up old dither artifacts | 2026-03-29 | a5fa67a | [260329-x0q-fix-pixelated-low-resolution-rendering-i](./quick/260329-x0q-fix-pixelated-low-resolution-rendering-i/) |
+| 260330-0fz | Implement disk-based asset cache for meshes and procedural textures | 2026-03-30 | a2b1c1e | [260330-0fz-implement-disk-based-asset-cache-for-mes](./quick/260330-0fz-implement-disk-based-asset-cache-for-mes/) |
+| 260330-171 | Comprehensive AssetCache test suite for invalidation, binary format, and edge cases | 2026-03-30 | 0ed7241 | [260330-171-comprehensive-assetcache-test-suite-for-](./quick/260330-171-comprehensive-assetcache-test-suite-for-/) |
+| 260330-222 | Port AudioSystem, ActionMap/InputSystem, GameOverlays, EditorConsoleSink from codex/scripting-v1 | 2026-03-30 | ecc270a | [260330-222-port-audiosystem-actionmap-inputsystem-g](./quick/260330-222-port-audiosystem-actionmap-inputsystem-g/) |
+| 260330-321 | Add concrete wall texture material to warden office | 2026-03-30 | 3187a34 | [260330-321-add-concrete-wall-texture-material-to-wa](./quick/260330-321-add-concrete-wall-texture-material-to-wa/) |
+| 260330-mzu | Restore post-processing flags disabled by SSAO commit | 2026-03-30 | 19068c7 | [260330-mzu-fix-editor-scene-objects-not-visible-aft](./quick/260330-mzu-fix-editor-scene-objects-not-visible-aft/) |
+| 260330-rwe | Create a Claude Code skill for procedural texture generation | 2026-03-30 | e976302 | [260330-rwe-create-a-claude-code-skill-for-procedura](./quick/260330-rwe-create-a-claude-code-skill-for-procedura/) |
+| 260330-wc2 | Fix too-fast scrollbar scrolling in the editor asset browser panel | 2026-03-30 | 156472e | [260330-wc2-fix-too-fast-scrollbar-scrolling-in-the-](./quick/260330-wc2-fix-too-fast-scrollbar-scrolling-in-the-/) |
+| 260330-wt0 | Reorganize Environment inspector panel into logical sub-groups | 2026-03-30 | 1824913 | [260330-wt0-improve-environment-inspector-panel-ux-b](./quick/260330-wt0-improve-environment-inspector-panel-ux-b/) |
+| 260401-qau | Fix delete key on macOS: add ImGuiKey_Backspace as alternative trigger | 2026-04-01 | 698ccf3 | [260401-qau-fix-delete-key-on-macos-add-imguikey-bac](./quick/260401-qau-fix-delete-key-on-macos-add-imguikey-bac/) |
+
 ## Session Continuity
 
-Last activity: 2026-04-01
-Last session: 2026-04-01T15:40:21.272Z
-Stopped at: Completed 11-01-PLAN.md
+Last activity: 2026-04-01 - Completed quick task 260401-qau: Fix delete key on macOS
+Last session: 2026-04-01T15:56:12.696Z
+Stopped at: Completed quick task 260401-qau: Fix delete key on macOS
 Resume file: None
