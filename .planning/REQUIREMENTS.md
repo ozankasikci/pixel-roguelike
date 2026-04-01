@@ -48,6 +48,26 @@ Requirements for initial playable tech demo. Each maps to roadmap phases.
 - [ ] **GSYS-03**: Options menu with mouse sensitivity adjustment
 - [ ] **GSYS-04**: Options menu with fullscreen/windowed toggle
 
+## v1.1 Requirements
+
+Requirements for Editor UX milestone. Each maps to roadmap phases.
+
+### Selection
+
+- [ ] **SEL-01**: Selection overlay renders depth-correctly (no wireframe bleeding through geometry in front)
+- [ ] **SEL-02**: Objects highlight on mouse hover before clicking
+- [ ] **SEL-03**: Escape key clears all selection
+
+### Object Manipulation
+
+- [ ] **OBJ-01**: Delete key removes selected object globally (viewport + outliner)
+- [ ] **OBJ-02**: Ctrl+D duplicates selected object with position offset
+- [ ] **OBJ-03**: F key frames camera on selected object
+
+### Discoverability
+
+- [ ] **DISC-01**: Add Mesh picker button to add meshes to the scene
+
 ## v2 Requirements
 
 Deferred to future release. Tracked but not in current roadmap.
@@ -125,4 +145,4 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 ---
 *Requirements defined: 2026-03-23*
-*Last updated: 2026-03-23 after roadmap creation*
+*Last updated: 2026-04-01 after v1.1 milestone requirements*
