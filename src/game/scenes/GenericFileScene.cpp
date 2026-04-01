@@ -10,6 +10,8 @@
 #include "game/rendering/MeshAssetProvider.h"
 #include "game/rendering/EnvironmentProfile.h"
 #include "game/session/RunSession.h"
+#include "engine/core/PathUtils.h"
+#include "engine/rendering/assets/ModelLoader.h"
 
 #include <filesystem>
 #include <unordered_map>
@@ -108,6 +110,14 @@ void GenericFileScene::onEnter(Application& app) {
     };
     request_.registerAssets = [](MeshLibrary& library) {
         registerProceduralAssets(library);
+
+        // Auto-discover file-based meshes from assets/meshes/ (per D-05)
+        const std::filesystem::path meshDir(resolveProjectPath("assets/meshes"));
+        for (const auto& asset : ModelLoader::discoverProjectAssets(meshDir, std::filesystem::current_path())) {
+            if (!library.has(asset.meshId)) {
+                library.registerFileAlias(asset.meshId, asset.relativePath);
+            }
+        }
     };
 
     // Look up scripted geometry from the registry (no hard-coded if-chain)
