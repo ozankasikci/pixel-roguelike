@@ -226,10 +226,31 @@ Plans:
 Plans:
 - [x] 11-01-PLAN.md — Add Mesh toolbar button with filtered popup picker, commitPlacement return type extension, auto-select after placement
 
+### Phase 12: Engine quality: frustum culling, texture unit enum, generic asset system, EventBus RAII tokens
+
+**Goal:** Seven internal engine-quality improvements: AABB frustum culling in the shared render pipeline, named texture unit enum replacing magic numbers, file-based mesh auto-discovery matching the material pattern, EventBus RAII subscription tokens, DebugParams decomposition, LevelLoader unification, and GenericFileScene scripted-geometry extraction
+**Requirements**: None (engine quality phase; not mapped to REQUIREMENTS.md IDs)
+**Depends on:** Phase 11
+**Success Criteria** (what must be TRUE):
+  1. Objects outside the camera frustum are culled before draw submission — draw call count drops when looking away from geometry
+  2. All texture unit magic numbers (8-16) are replaced with named constants from TextureUnits.h
+  3. New mesh files placed in assets/meshes/ are automatically available without code changes
+  4. EventBus::subscribe() returns an RAII token that unsubscribes on destruction
+  5. DebugParams is decomposed into focused sub-structs (CameraDebugInfo, RuntimeLightingOverride)
+  6. LevelLoader has a single unified load() overload
+  7. GenericFileScene has no hard-coded level-specific if-chains
+**Plans:** 4 plans
+
+Plans:
+- [ ] 12-01-PLAN.md — TextureUnits.h named constants and EventBus RAII SubscriptionToken
+- [ ] 12-02-PLAN.md — DebugParams decomposition into CameraDebugInfo and RuntimeLightingOverride
+- [ ] 12-03-PLAN.md — ProceduralGameAssets rename, LevelLoader unification, GenericFileScene scripted geometry extraction
+- [ ] 12-04-PLAN.md — File-based mesh auto-discovery and AABB frustum culling in SceneRenderPipeline
+
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order: 1 → 1.1 → 2 → 2.1 → 3 → 4 → 5 → 6 → 7 → 8 → 9 → 10 → 11
+Phases execute in numeric order: 1 → 1.1 → 2 → 2.1 → 3 → 4 → 5 → 6 → 7 → 8 → 9 → 10 → 11 → 12
 
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
@@ -246,3 +267,4 @@ Phases execute in numeric order: 1 → 1.1 → 2 → 2.1 → 3 → 4 → 5 → 6
 | 9. Selection Overlay Depth Fix | v1.1 | 1/1 | Complete   | 2026-04-01 |
 | 10. Global Keyboard Shortcuts and Hover Highlight | v1.1 | 2/2 | Complete    | 2026-04-01 |
 | 11. Add Mesh Discoverability | v1.1 | 1/1 | Complete    | 2026-04-01 |
+| 12. Engine Quality | — | 0/4 | Planned | - |
