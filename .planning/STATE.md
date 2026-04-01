@@ -1,16 +1,16 @@
 ---
 gsd_state_version: 1.0
-milestone: v1.0
-milestone_name: milestone
+milestone: v1.1
+milestone_name: Editor UX
 status: Milestone complete
-stopped_at: Completed 07-03-PLAN.md
-last_updated: "2026-03-30T20:13:47.740Z"
-last_activity: 2026-03-30
+stopped_at: Phase 13 context gathered
+last_updated: "2026-04-01T23:58:14.045Z"
+last_activity: "2026-04-02 - Completed quick task 260402-3qe: Unity-style double-F focus toggle"
 progress:
-  total_phases: 9
-  completed_phases: 8
-  total_plans: 25
-  completed_plans: 25
+  total_phases: 15
+  completed_phases: 13
+  total_plans: 35
+  completed_plans: 35
 ---
 
 # Project State
@@ -80,6 +80,7 @@ Decisions are logged in PROJECT.md Key Decisions table.
 Recent decisions affecting current work:
 
 <<<<<<< Updated upstream
+
 - Graphics API: OpenGL 4.1 Core Profile (macOS caps at 4.1; research recommended 4.6 but 4.1 is the ceiling on this platform)
 - Dithering approach: Post-process fullscreen quad with Bayer matrix; world-space pattern anchoring is non-negotiable from Phase 1
 - [Phase 01-engine-and-dithering-pipeline]: GLAD 2 requires LANGUAGES C CXX in CMakeLists.txt project() and jinja2 Python package in venv for code generation
@@ -142,7 +143,9 @@ Recent decisions affecting current work:
 - [Phase 07]: test_content_registry links game_rendering (not just game_content) because ContentRegistry.cpp now calls MaterialTextureLibrary methods
 - [Phase 07]: Material CRUD popups inline in asset browser panel; file I/O in panel, ContentRegistry mutations delegated to main.cpp via AssetBrowserActionResult
 - [Phase 07]: content.addMaterial() replaces content.loadDefaults() for targeted in-memory update on material inspector save
+
 =======
+
 - [Phase 08]: Metal and chained doors from buildScriptedGeometry (not .scene file) so InteractableComponent can be attached
 - [Phase 08]: Chain padlock links constructed from cylinder segments; 4 cylinders per link in rectangular loop
 - [v1.1 research]: All document mutation APIs complete — `eraseObjects`, `duplicateObject`, `addMesh`, `applyWorldTransform` need no changes
@@ -176,6 +179,7 @@ Recent decisions affecting current work:
 
 - Phase 12 added: Engine quality — frustum culling, texture unit enum, generic asset system, EventBus RAII tokens
 - Phase 13 added: Data-driven behavior system — native Action Component system with BehaviorSystem dispatcher, TriggerComponent, node ID targeting, scene file behavior declarations
+
 >>>>>>> Stashed changes
 
 ### Pending Todos
@@ -229,6 +233,6 @@ None yet.
 ## Session Continuity
 
 Last activity: 2026-04-02 - Completed quick task 260402-3qe: Unity-style double-F focus toggle
-Last session: 2026-04-02T23:49:31Z
-Stopped at: Completed quick task 260402-3qe: Unity-style double-F focus toggle
-Resume file: None
+Last session: 2026-04-01T23:58:14.039Z
+Stopped at: Phase 13 context gathered
+Resume file: .planning/phases/13-data-driven-behavior-system-native-action-component-system-with-behaviorsystem-dispatcher-triggercomponent-node-id-targeting-scene-file-behavior-declarations/13-CONTEXT.md
