@@ -293,11 +293,19 @@ void EditorPreviewWorld::syncTransforms(const EditorSceneDocument& document) {
             continue;
         }
 
+        const glm::mat4 worldMatrix = document.worldTransformMatrix(object->id);
+
         switch (object->kind) {
         case EditorSceneObjectKind::Mesh:
             transform.position = position;
             transform.rotation = rotation;
             transform.scale = scale;
+            if (registry_.all_of<MeshComponent>(entity)) {
+                auto& mesh = registry_.get<MeshComponent>(entity);
+                if (mesh.useModelOverride) {
+                    mesh.modelOverride = worldMatrix;
+                }
+            }
             break;
         case EditorSceneObjectKind::BoxCollider: {
             transform.position = position;
