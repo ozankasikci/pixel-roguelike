@@ -92,7 +92,7 @@ This document evolves at phase transitions and milestone boundaries.
 
 ## Current State
 
-Phase 8 complete — institutional room scene built from concept art with warm beige walls, glossy floor, fluorescent ceiling panels, three doors (open wooden, locked metal, locked chained), and locked door interaction stubs. v1.0 milestone complete (9 phases: engine pipeline, ECS restructure, player/environment, inventory, build menu, lighting, render parity, scene management, material system, institutional room scene).
+Phase 10 complete — global keyboard shortcuts (Delete/F/Escape) with text-field safety guards, Ctrl+D duplicate with position offset, smooth animated multi-selection camera framing, and hover highlight (blue-white wireframe on unselected objects). Selection picker overlay removed in favor of hover highlight.
 
 ---
-*Last updated: 2026-04-01 after milestone v1.1 start*
+*Last updated: 2026-04-01 after Phase 10 completion*
