@@ -75,6 +75,8 @@ constexpr const char* kPreviewModes[] = {"Final", "Lighting", "Sky"};
 constexpr const char* kWindowGeometryFile = "editor_window.ini";
 constexpr const char* kBuildOutputWindowName = "Build Output";
 constexpr const char* kBuildConfigFile = "editor_build.ini";
+constexpr double kIdleTimeoutSeconds = 1.0 / 15.0;      // ~15 FPS when idle
+constexpr double kUnfocusedTimeoutSeconds = 1.0 / 5.0;  // ~5 FPS when unfocused
 
 // Live resize support: on macOS, glfwPollEvents blocks during a resize
 // drag.  We store a pointer to the editor's full-frame render lambda and
@@ -2073,7 +2075,18 @@ int main(int argc, char* argv[]) {
     g_editorRenderFrame = &renderFrameFn;
 
     while (!window.shouldClose()) {
-        window.pollEvents();
+        const bool needsContinuousRendering = (ui.playPreview && runtimePreviewSession.captured())
+            || ImGui::GetIO().WantCaptureMouse
+            || ImGui::GetIO().WantCaptureKeyboard;
+
+        if (needsContinuousRendering) {
+            glfwPollEvents();
+        } else if (glfwGetWindowAttrib(window.handle(), GLFW_FOCUSED) == 0) {
+            glfwWaitEventsTimeout(kUnfocusedTimeoutSeconds);
+        } else {
+            glfwWaitEventsTimeout(kIdleTimeoutSeconds);
+        }
+
         renderFrame();
     }
 
