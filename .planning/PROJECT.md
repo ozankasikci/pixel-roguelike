@@ -92,7 +92,9 @@ This document evolves at phase transitions and milestone boundaries.
 
 ## Current State
 
-Phase 10 complete — global keyboard shortcuts (Delete/F/Escape) with text-field safety guards, Ctrl+D duplicate with position offset, smooth animated multi-selection camera framing, and hover highlight (blue-white wireframe on unselected objects). Selection picker overlay removed in favor of hover highlight.
+Phase 11 complete — "Add Mesh" toolbar button with filtered popup picker and auto-select. Users can now add meshes to the scene without knowing keyboard shortcuts or right-click menus. The button opens a searchable popup showing all available meshes, entering click-to-place mode on selection, with automatic selection of the placed object.
+
+v1.1 Editor UX milestone complete — all planned editor UX improvements shipped (selection overlay depth fix, global keyboard shortcuts, hover highlight, mesh discoverability).
 
 ---
-*Last updated: 2026-04-01 after Phase 10 completion*
+*Last updated: 2026-04-01 after Phase 11 completion*
