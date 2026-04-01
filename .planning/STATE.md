@@ -125,10 +125,11 @@ None for v1.1. All APIs exist; work is wiring and one renderer fix.
 | 260401-uie | Selection undo/redo: Ctrl+Z restores selection changes in level editor | 2026-04-01 | b871d75 | [260401-uie-make-ctrl-z-also-work-for-selection-dese](./quick/260401-uie-make-ctrl-z-also-work-for-selection-dese/) |
 | 260401-uvc | Fix FBX mesh import scaling: AI_CONFIG_FBX_CONVERT_TO_M eliminates 0.01 workarounds | 2026-04-01 | 5d0b37e | [260401-uvc-investigate-mesh-import-scaling-research](./quick/260401-uvc-investigate-mesh-import-scaling-research/) |
 | 260401-x6s | Fix editor high CPU usage with industry-standard idle throttling | 2026-04-01 | 7e0c66f | [260401-x6s-fix-editor-high-cpu-usage-with-industry-](./quick/260401-x6s-fix-editor-high-cpu-usage-with-industry-/) |
+| 260402-0nx | Extend mesh asset discovery to scan assets/packs/ in addition to assets/meshes/ | 2026-04-02 | 24dcba0 | [260402-0nx-extend-mesh-asset-discovery-to-scan-asse](./quick/260402-0nx-extend-mesh-asset-discovery-to-scan-asse/) |
 
 ## Session Continuity
 
-Last activity: 2026-04-01 - Completed quick task 260401-x6s: Editor idle throttling
-Last session: 2026-04-01T20:53:44.628Z
-Stopped at: Completed quick task 260401-x6s: Editor idle CPU throttling
+Last activity: 2026-04-02 - Completed quick task 260402-0nx: Extend mesh asset discovery to scan assets/packs/
+Last session: 2026-04-02T00:00:00.000Z
+Stopped at: Completed quick task 260402-0nx: Extend mesh asset discovery to scan assets/packs/
 Resume file: None
