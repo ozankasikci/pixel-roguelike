@@ -205,8 +205,11 @@ Plans:
   3. Pressing Escape with any selection active clears the selection from all panels
   4. Pressing F with an object selected smoothly frames the viewport camera on that object
   5. Moving the cursor over an unselected object in the viewport shows a visible highlight before clicking
-**Plans**: TBD
-**UI hint**: yes
+**Plans**: 2 plans
+
+Plans:
+- [ ] 10-01-PLAN.md — Keyboard shortcut guards (Delete/F/Escape with WantTextInput), Escape clears selection, duplicate offset, smooth animated multi-select camera framing
+- [ ] 10-02-PLAN.md — Hover highlight overlay (blue-white wireframe on unselected objects), per-frame raycast, visual verification
 
 ### Phase 11: Add Mesh Discoverability
 
@@ -239,5 +242,5 @@ Phases execute in numeric order: 1 → 1.1 → 2 → 2.1 → 3 → 4 → 5 → 6
 | 7. Data-driven Material System | v1.0 | 4/4 | Complete | 2026-03-30 |
 | 8. Institutional Room Scene | v1.0 | 2/2 | Complete | 2026-04-01 |
 | 9. Selection Overlay Depth Fix | v1.1 | 1/1 | Complete   | 2026-04-01 |
-| 10. Global Keyboard Shortcuts and Hover Highlight | v1.1 | 0/TBD | Not started | - |
+| 10. Global Keyboard Shortcuts and Hover Highlight | v1.1 | 0/2 | Not started | - |
 | 11. Add Mesh Discoverability | v1.1 | 0/TBD | Not started | - |
