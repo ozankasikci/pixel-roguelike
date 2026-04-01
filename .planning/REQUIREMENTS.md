@@ -66,7 +66,7 @@ Requirements for Editor UX milestone. Each maps to roadmap phases.
 
 ### Discoverability
 
-- [ ] **DISC-01**: Add Mesh picker button to add meshes to the scene
+- [x] **DISC-01**: Add Mesh picker button to add meshes to the scene
 
 ## v2 Requirements
 
@@ -143,7 +143,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | OBJ-01 | Phase 10 | Complete |
 | OBJ-02 | Phase 10 | Complete |
 | OBJ-03 | Phase 10 | Complete |
-| DISC-01 | Phase 11 | Pending |
+| DISC-01 | Phase 11 | Complete |
 
 **Coverage:**
 - v1 requirements: 23 total — mapped to phases: 23 — unmapped: 0
