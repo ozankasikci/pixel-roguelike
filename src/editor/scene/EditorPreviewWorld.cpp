@@ -8,7 +8,7 @@
 #include "game/components/TransformComponent.h"
 #include "game/content/ContentRegistry.h"
 #include "game/level/LevelBuilder.h"
-#include "game/levels/GameAssets.h"
+#include "game/levels/ProceduralGameAssets.h"
 #include "game/prefabs/GameplayPrefabs.h"
 #include "game/rendering/EnvironmentProfile.h"
 #include "game/rendering/MaterialDefinition.h"
@@ -118,7 +118,7 @@ void EditorObjectBounds::expand(const EditorObjectBounds& other) {
 }
 
 EditorPreviewWorld::EditorPreviewWorld() {
-    registerAllGameAssets(meshLibrary_);
+    registerProceduralAssets(meshLibrary_);
     reloadMeshAssets();
 }
 

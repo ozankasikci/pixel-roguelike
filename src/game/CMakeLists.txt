@@ -1,7 +1,7 @@
 add_library(game_content STATIC
     content/ContentRegistry.cpp
     level/LevelDef.cpp
-    levels/GameAssets.cpp
+    levels/ProceduralGameAssets.cpp
     rendering/EnvironmentDefinition.cpp
     rendering/EnvironmentProfile.cpp
     rendering/MaterialDefinition.cpp

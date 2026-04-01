@@ -2,4 +2,4 @@
 
 #include "engine/rendering/geometry/MeshLibrary.h"
 
-void registerAllGameAssets(MeshLibrary& meshLibrary);
+void registerProceduralAssets(MeshLibrary& meshLibrary);

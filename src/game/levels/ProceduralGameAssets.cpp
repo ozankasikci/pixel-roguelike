@@ -1,4 +1,4 @@
-#include "game/levels/GameAssets.h"
+#include "game/levels/ProceduralGameAssets.h"
 
 #include "engine/core/MathUtils.h"
 #include "engine/rendering/geometry/MeshGeometry.h"
@@ -813,25 +813,22 @@ std::unique_ptr<Mesh> createInstChainPadlock() {
                                   merged.uvs, merged.tangents, merged.indices);
 }
 
-void registerAllGameAssets(MeshLibrary& meshLibrary) {
+void registerProceduralAssets(MeshLibrary& meshLibrary) {
     meshLibrary.registerDefaults();
 
     // Cathedral assets
     meshLibrary.registerMesh("door_frame_romanesque", createRomanesqueDoorFrameMesh());
     meshLibrary.registerMesh("door_leaf_left", createWoodDoorLeafMesh(true));
     meshLibrary.registerMesh("door_leaf_right", createWoodDoorLeafMesh(false));
-    meshLibrary.registerFileAlias("pillar", "assets/meshes/pillar.glb");
-    meshLibrary.registerFileAlias("arch", "assets/meshes/arch.glb");
-    meshLibrary.registerFileAlias("hand", "assets/meshes/hand_with_old_dagger.glb");
+    // pillar, arch, hand are file-aliased — will be auto-discovered in Plan 04
 
     // Country house assets (external FBX)
     // Multi-submesh load: registers country_house#OldHouseMapWood02,
     // country_house#OldHouseMapIndoorWall01, country_house#OldHouseMapWood01,
     // country_house#WindowsMat01, country_house#q11:Glass
+    // KEEP: multi-submesh cannot be auto-discovered
     meshLibrary.loadFromFileMulti("country_house", "assets/meshes/country_house.fbx");
-    meshLibrary.registerFileAlias("country_house_door", "assets/meshes/country_house_door.fbx");
-    meshLibrary.registerFileAlias("country_house_doors", "assets/meshes/country_house_doors.fbx");
-    meshLibrary.registerFileAlias("wood_door", "assets/meshes/wood_door.fbx");
+    // country_house_door, country_house_doors, wood_door are file-aliased — will be auto-discovered in Plan 04
 
     // Prison assets
     // Architectural walls

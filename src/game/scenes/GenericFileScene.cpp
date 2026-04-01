@@ -5,7 +5,7 @@
 #include "game/level/LevelBuildContext.h"
 #include "game/level/LevelBuilder.h"
 #include "game/level/LevelLoader.h"
-#include "game/levels/GameAssets.h"
+#include "game/levels/ProceduralGameAssets.h"
 #include "game/rendering/MeshAssetProvider.h"
 #include "game/rendering/EnvironmentProfile.h"
 
@@ -24,37 +24,51 @@ void GenericFileScene::onEnter(Application& app) {
         .entities    = entities_,
     };
     request_.registerAssets = [](MeshLibrary& library) {
-        registerAllGameAssets(library);
+        registerProceduralAssets(library);
     };
     if (request_.levelId == "institutional_room") {
         request_.buildScriptedGeometry = [](LevelBuilder& builder) {
             // Metal door (center) - locked stub per D-04
-            auto metalDoor = builder.addMesh("office_door",
+            auto metalDoor = builder.addMesh("wood_door",
                 glm::vec3(0.0f, 0.0f, 5.95f),
-                glm::vec3(1.0f, 1.0f, 1.0f),
-                glm::vec3(0.0f, 180.0f, 0.0f),
+                glm::vec3(0.01f, 0.01f, 0.01f),
+                glm::vec3(0.0f, 0.0f, 0.0f),
                 glm::vec3(0.60f, 0.58f, 0.55f),
-                std::string("metal_default"));
+                std::string("wood_door_1"));
             builder.registry().emplace<InteractableComponent>(metalDoor,
                 InteractableComponent{
                     .promptText = "E  This door is locked",
                     .interactDistance = 2.0f,
                     .enabled = true
                 });
+            // Knob on metal door (handle height ~1.0m, on front face)
+            builder.addMesh("inst_door_knob",
+                glm::vec3(0.15f, 1.0f, 5.90f),
+                glm::vec3(1.0f, 1.0f, 1.0f),
+                glm::vec3(0.0f, 0.0f, 0.0f),
+                glm::vec3(0.50f, 0.48f, 0.45f),
+                std::string("metal_default"));
 
             // Chained door (right) - locked stub per D-04
-            auto chainedDoor = builder.addMesh("office_door",
+            auto chainedDoor = builder.addMesh("wood_door",
                 glm::vec3(2.5f, 0.0f, 5.95f),
-                glm::vec3(1.0f, 1.0f, 1.0f),
-                glm::vec3(0.0f, 180.0f, 0.0f),
+                glm::vec3(0.01f, 0.01f, 0.01f),
+                glm::vec3(0.0f, 0.0f, 0.0f),
                 glm::vec3(0.88f, 0.86f, 0.82f),
-                std::string("stone_default"));
+                std::string("wood_door_1"));
             builder.registry().emplace<InteractableComponent>(chainedDoor,
                 InteractableComponent{
                     .promptText = "E  This door is locked",
                     .interactDistance = 2.0f,
                     .enabled = true
                 });
+            // Knob on chained door
+            builder.addMesh("inst_door_knob",
+                glm::vec3(2.65f, 1.0f, 5.90f),
+                glm::vec3(1.0f, 1.0f, 1.0f),
+                glm::vec3(0.0f, 0.0f, 0.0f),
+                glm::vec3(0.50f, 0.48f, 0.45f),
+                std::string("metal_default"));
         };
     } else {
         request_.buildScriptedGeometry = {};
