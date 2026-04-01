@@ -444,6 +444,7 @@ int main(int argc, char* argv[]) {
             if (!io.WantTextInput && ImGui::IsKeyPressed(ImGuiKey_F)) focusPressed = true;
             if (!io.WantTextInput && (ImGui::IsKeyPressed(ImGuiKey_Delete) || ImGui::IsKeyPressed(ImGuiKey_Backspace))) deletePressed = true;
             if ((io.KeyCtrl || io.KeySuper) && ImGui::IsKeyPressed(ImGuiKey_D)) duplicatePressed = true;
+            if ((io.KeyCtrl || io.KeySuper) && ImGui::IsKeyPressed(ImGuiKey_S)) savePressed = true;
             if ((io.KeyCtrl || io.KeySuper) && ImGui::IsKeyPressed(ImGuiKey_Z)) {
                 if (io.KeyShift) {
                     redoPressed = true;
