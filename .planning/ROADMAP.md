@@ -221,8 +221,10 @@ Plans:
   2. Clicking the button opens a picker showing all available meshes in the project
   3. Selecting a mesh from the picker places it in the scene at a sensible default position and selects it immediately
   4. The newly placed mesh appears in both the viewport and the outliner and is saved when the scene is saved
-**Plans**: TBD
-**UI hint**: yes
+**Plans**: 1 plan
+
+Plans:
+- [ ] 11-01-PLAN.md — Add Mesh toolbar button with filtered popup picker, commitPlacement return type extension, auto-select after placement
 
 ## Progress
 
@@ -243,4 +245,4 @@ Phases execute in numeric order: 1 → 1.1 → 2 → 2.1 → 3 → 4 → 5 → 6
 | 8. Institutional Room Scene | v1.0 | 2/2 | Complete | 2026-04-01 |
 | 9. Selection Overlay Depth Fix | v1.1 | 1/1 | Complete   | 2026-04-01 |
 | 10. Global Keyboard Shortcuts and Hover Highlight | v1.1 | 2/2 | Complete    | 2026-04-01 |
-| 11. Add Mesh Discoverability | v1.1 | 0/TBD | Not started | - |
+| 11. Add Mesh Discoverability | v1.1 | 0/1 | Not started | - |
