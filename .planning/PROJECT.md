@@ -78,9 +78,21 @@ This document evolves at phase transitions and milestone boundaries.
 3. Audit Out of Scope — reasons still valid?
 4. Update Context with current state
 
+## Current Milestone: v1.1 Editor UX
+
+**Goal:** Bring the level editor to professional quality — matching Unity/Unreal workflows for scene object manipulation.
+
+**Target features:**
+- Delete key removes selected scene objects
+- Remove distracting selection overlay when another mesh is underneath
+- Add meshes to scenes via asset browser/picker
+- Move/translate scene objects with gizmos
+- Duplicate scene objects
+- Match Unity/Unreal-quality editor workflows
+
 ## Current State
 
-Phase 7 complete — data-driven material system replaces the hardcoded MaterialKind enum. Materials are now property-driven with feature flags (animated, subsurface, detail_brick/wood/stone/floor) and float properties (specular_level, roughness_bias, metalness). ContentRegistry auto-scans assets/materials/ recursively. Editor has material browser with CRUD and hot-reload. This is the last phase of the current milestone.
+Phase 8 complete — institutional room scene built from concept art with warm beige walls, glossy floor, fluorescent ceiling panels, three doors (open wooden, locked metal, locked chained), and locked door interaction stubs. v1.0 milestone complete (9 phases: engine pipeline, ECS restructure, player/environment, inventory, build menu, lighting, render parity, scene management, material system, institutional room scene).
 
 ---
-*Last updated: 2026-03-30 after Phase 7 completion*
+*Last updated: 2026-04-01 after milestone v1.1 start*
