@@ -35,7 +35,7 @@ static void buildInstitutionalRoomGeometry(LevelBuilder& builder) {
     // Metal door (center) - locked stub per D-04
     auto metalDoor = builder.addMesh("wood_door",
         glm::vec3(0.0f, 0.0f, 5.95f),
-        glm::vec3(0.01f, 0.01f, 0.01f),
+        glm::vec3(1.0f, 1.0f, 1.0f),
         glm::vec3(0.0f, 0.0f, 0.0f),
         glm::vec3(0.60f, 0.58f, 0.55f),
         std::string("wood_door_1"));
@@ -56,7 +56,7 @@ static void buildInstitutionalRoomGeometry(LevelBuilder& builder) {
     // Chained door (right) - locked stub per D-04
     auto chainedDoor = builder.addMesh("wood_door",
         glm::vec3(2.5f, 0.0f, 5.95f),
-        glm::vec3(0.01f, 0.01f, 0.01f),
+        glm::vec3(1.0f, 1.0f, 1.0f),
         glm::vec3(0.0f, 0.0f, 0.0f),
         glm::vec3(0.88f, 0.86f, 0.82f),
         std::string("wood_door_1"));
