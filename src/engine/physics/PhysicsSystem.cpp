@@ -237,6 +237,11 @@ void PhysicsSystem::update(entt::registry& registry, float deltaTime) {
                 Layers::NON_MOVING
             );
             JPH::BodyID bodyId = bodyInterface.CreateAndAddBody(bodySettings, JPH::EActivation::DontActivate);
+            if (bodyId.IsInvalid()) {
+                spdlog::warn("PhysicsSystem: CreateAndAddBody returned invalid BodyID for entity {}; body not registered",
+                             static_cast<uint32_t>(entity));
+                continue;
+            }
             impl_->staticBodies.emplace(entity, Impl::StaticBodyBinding{bodyId});
             found = impl_->staticBodies.find(entity);
         }
