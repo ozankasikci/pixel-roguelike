@@ -16,6 +16,7 @@
 
 #define GLM_ENABLE_EXPERIMENTAL
 #include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtx/euler_angles.hpp>
 #include <glm/gtx/matrix_decompose.hpp>
 #include <glm/gtx/quaternion.hpp>
 
@@ -80,7 +81,9 @@ bool decomposeTransformMatrix(const glm::mat4& matrix,
     if (!glm::decompose(matrix, scale, orientation, position, skew, perspective)) {
         return false;
     }
-    rotationDegrees = glm::degrees(glm::eulerAngles(orientation));
+    float rx, ry, rz;
+    glm::extractEulerAngleXYZ(glm::mat4_cast(orientation), rx, ry, rz);
+    rotationDegrees = glm::degrees(glm::vec3(rx, ry, rz));
     return true;
 }
 

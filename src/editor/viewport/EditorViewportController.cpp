@@ -256,10 +256,16 @@ bool manipulateEditorGizmo(const EditorViewportState& viewport,
         break;
     }
 
+    // Rotation gizmo uses WORLD mode so its rings stay axis-aligned in world
+    // space regardless of the object's current orientation (Unity default behaviour).
+    // Translate and Scale use LOCAL mode which is the natural default for those ops.
+    ImGuizmo::MODE gizmoMode =
+        (tool == EditorTransformTool::Rotate) ? ImGuizmo::WORLD : ImGuizmo::LOCAL;
+
     ImGuizmo::Manipulate(&view[0][0],
                          &projection[0][0],
                          operation,
-                         ImGuizmo::LOCAL,
+                         gizmoMode,
                          &modelMatrix[0][0],
                          nullptr,
                          snappingEnabled ? snap : nullptr);

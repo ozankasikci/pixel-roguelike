@@ -88,7 +88,9 @@ bool decomposeModelMatrix(const glm::mat4& matrix,
     if (!glm::decompose(matrix, scale, orientation, position, skew, perspective)) {
         return false;
     }
-    rotationDegrees = glm::degrees(glm::eulerAngles(orientation));
+    float rx, ry, rz;
+    glm::extractEulerAngleXYZ(glm::mat4_cast(orientation), rx, ry, rz);
+    rotationDegrees = glm::degrees(glm::vec3(rx, ry, rz));
     return true;
 }
 

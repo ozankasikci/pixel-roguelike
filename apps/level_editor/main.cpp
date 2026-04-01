@@ -350,9 +350,16 @@ int main(int argc, char* argv[]) {
     if (!archetypeIds.empty()) {
         ui.selectedArchetypeId = archetypeIds.front();
     }
+    // On startup, restore only panel visibility from the active layout preset.
+    // ImGui auto-loads dock node sizes (panel sizes) from imgui.ini at the first
+    // NewFrame() call; calling LoadIniSettingsFromMemory here would overwrite those
+    // user-customized sizes with the preset's stored sizes, discarding any
+    // resizing the user did in previous sessions.
     if (std::find(layoutPresetNames.begin(), layoutPresetNames.end(), ui.activeLayoutPreset) != layoutPresetNames.end()) {
         try {
-            loadLayoutPresetIntoUi(ui, ui.activeLayoutPreset);
+            const EditorLayoutPreset preset = loadEditorLayoutPreset(editorLayoutPresetPath(ui.activeLayoutPreset));
+            applyLayoutVisibility(ui, preset.visibility);
+            std::snprintf(ui.layoutNameBuffer, sizeof(ui.layoutNameBuffer), "%s", preset.name.c_str());
         } catch (const std::exception& ex) {
             spdlog::warn("Failed to load editor layout '{}': {}", ui.activeLayoutPreset, ex.what());
             dockLayoutResetRequested = true;
@@ -2069,6 +2076,9 @@ int main(int argc, char* argv[]) {
     g_editorRenderFrame = nullptr;
     saveWindowGeometry(window.handle());
     saveBuildConfig(buildConfig, kBuildConfigFile);
+    // Explicitly save ImGui state before shutdown so panel sizes are always
+    // persisted, even if the user closes within the periodic auto-save window.
+    ImGui::SaveIniSettingsToDisk(ImGui::GetIO().IniFilename);
     runtimePreviewSession.endCapture(window.handle());
     imgui.shutdown();
     return 0;
