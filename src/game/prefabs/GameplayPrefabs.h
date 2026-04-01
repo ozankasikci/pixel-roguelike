@@ -13,4 +13,5 @@ entt::entity spawnDoubleDoor(LevelBuilder& builder,
                              Mesh* rightDoorMesh,
                              const DoubleDoorSpawnSpec& spec);
 entt::entity spawnDoubleDoor(LevelBuilder& builder, const DoubleDoorSpawnSpec& spec);
+entt::entity spawnSingleDoor(LevelBuilder& builder, const SingleDoorSpawnSpec& spec);
 entt::entity spawnGameplayPrefab(LevelBuilder& builder, const GameplayPrefabInstance& instance);

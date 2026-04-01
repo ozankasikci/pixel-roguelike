@@ -9,6 +9,23 @@ enum class GameplayPrefabType {
     DoubleDoor,
 };
 
+struct SingleDoorSpawnSpec {
+    std::string doorMeshName = "SM_DoorA";
+    std::string frameMeshName = "SM_FrameA";
+    std::string doorMaterialId = "qdp_door_a";
+    std::string frameMaterialId = "stone_default";
+    glm::vec3 rootPosition{0.0f};      // world position of door frame center (floor level)
+    float doorYawDegrees = 0.0f;       // rotation of entire assembly around Y
+    float openAngle = 90.0f;           // how far the door swings open (degrees)
+    float openDuration = 1.2f;         // seconds for open animation
+    float interactDistance = 2.5f;
+    float interactDotThreshold = 0.55f;
+    bool locked = false;               // if true, show locked prompt, don't open
+    std::string lockedPrompt = "E  This door is locked";
+    glm::vec3 doorTint{1.0f};
+    glm::vec3 frameTint{1.0f};
+};
+
 struct CheckpointSpawnSpec {
     glm::vec3 position{0.0f};
     glm::vec3 respawnPosition{0.0f};
