@@ -56,13 +56,13 @@ Requirements for Editor UX milestone. Each maps to roadmap phases.
 
 - [x] **SEL-01**: Selection overlay renders depth-correctly (no wireframe bleeding through geometry in front)
 - [ ] **SEL-02**: Objects highlight on mouse hover before clicking
-- [ ] **SEL-03**: Escape key clears all selection
+- [x] **SEL-03**: Escape key clears all selection
 
 ### Object Manipulation
 
-- [ ] **OBJ-01**: Delete key removes selected object globally (viewport + outliner)
-- [ ] **OBJ-02**: Ctrl+D duplicates selected object with position offset
-- [ ] **OBJ-03**: F key frames camera on selected object
+- [x] **OBJ-01**: Delete key removes selected object globally (viewport + outliner)
+- [x] **OBJ-02**: Ctrl+D duplicates selected object with position offset
+- [x] **OBJ-03**: F key frames camera on selected object
 
 ### Discoverability
 
@@ -139,10 +139,10 @@ Which phases cover which requirements. Updated during roadmap creation.
 | GSYS-04 | Phase 4 | Pending |
 | SEL-01 | Phase 9 | Complete |
 | SEL-02 | Phase 10 | Pending |
-| SEL-03 | Phase 10 | Pending |
-| OBJ-01 | Phase 10 | Pending |
-| OBJ-02 | Phase 10 | Pending |
-| OBJ-03 | Phase 10 | Pending |
+| SEL-03 | Phase 10 | Complete |
+| OBJ-01 | Phase 10 | Complete |
+| OBJ-02 | Phase 10 | Complete |
+| OBJ-03 | Phase 10 | Complete |
 | DISC-01 | Phase 11 | Pending |
 
 **Coverage:**
