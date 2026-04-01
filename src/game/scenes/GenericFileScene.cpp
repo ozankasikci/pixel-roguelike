@@ -80,12 +80,13 @@ static void buildInstitutionalRoomGeometry(LevelBuilder& builder) {
 
 static void buildInitialSceneGeometry(LevelBuilder& builder) {
     // Door A: Staff Break Room (West wall at X=-5, Z=1) — openable
+    // Wall inner surface at X=-4.9 (0.1 half-thickness). Place door inside room.
     spawnSingleDoor(builder, SingleDoorSpawnSpec{
         .doorMeshName = "SM_DoorA",
         .frameMeshName = "SM_FrameA",
         .doorMaterialId = "qdp_door_a",
         .frameMaterialId = "qdp_door_a",
-        .rootPosition = glm::vec3(-5.0f, 0.0f, 1.0f),
+        .rootPosition = glm::vec3(-4.85f, 0.0f, 1.0f),
         .doorYawDegrees = 90.0f,
         .openAngle = 80.0f,
         .openDuration = 1.2f,
@@ -95,12 +96,13 @@ static void buildInitialSceneGeometry(LevelBuilder& builder) {
     });
 
     // Door B: Maintenance Corridor (North wall at Z=6, center X=0) — openable
+    // Wall inner surface at Z=5.9
     spawnSingleDoor(builder, SingleDoorSpawnSpec{
         .doorMeshName = "SM_DoorD",
         .frameMeshName = "SM_FrameD",
         .doorMaterialId = "qdp_door_d",
         .frameMaterialId = "qdp_door_d",
-        .rootPosition = glm::vec3(0.0f, 0.0f, 6.0f),
+        .rootPosition = glm::vec3(0.0f, 0.0f, 5.85f),
         .doorYawDegrees = 180.0f,
         .openAngle = 85.0f,
         .openDuration = 1.5f,
@@ -110,12 +112,13 @@ static void buildInitialSceneGeometry(LevelBuilder& builder) {
     });
 
     // Door C: Observation Room (East wall at X=5, Z=3) — locked with chain/padlock
+    // Wall inner surface at X=4.9
     spawnSingleDoor(builder, SingleDoorSpawnSpec{
         .doorMeshName = "SM_DoorC",
         .frameMeshName = "SM_FrameC",
         .doorMaterialId = "qdp_door_c",
         .frameMaterialId = "qdp_door_c",
-        .rootPosition = glm::vec3(5.0f, 0.0f, 3.0f),
+        .rootPosition = glm::vec3(4.85f, 0.0f, 3.0f),
         .doorYawDegrees = -90.0f,
         .locked = true,
         .lockedPrompt = "E  This door is chained shut",
@@ -125,7 +128,7 @@ static void buildInitialSceneGeometry(LevelBuilder& builder) {
 
     // Chain and padlock on Door C (east wall, near door opening)
     builder.addMesh("inst_chain_padlock",
-        glm::vec3(4.90f, 1.1f, 3.0f),
+        glm::vec3(4.80f, 1.1f, 3.0f),
         glm::vec3(1.0f),
         glm::vec3(0.0f, -90.0f, 0.0f),
         glm::vec3(0.20f, 0.16f, 0.12f),
