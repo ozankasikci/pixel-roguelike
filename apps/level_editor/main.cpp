@@ -1333,6 +1333,27 @@ int main(int argc, char* argv[]) {
                                 ui.showColliders, ui.showLightHelpers, ui.showSpawnMarker);
             appendSelectionOverlays(objects, previewWorld, materialTextures, selectedIds);
 
+            // Per-frame hover highlight: blue-white wireframe on unselected objects under cursor
+            std::uint64_t hoveredObjectId = 0;
+            const bool suppressHover = gameplayPreviewCaptured
+                || placementState.active()
+                || editorGizmoIsHot()
+                || glfwGetMouseButton(window.handle(), GLFW_MOUSE_BUTTON_RIGHT) == GLFW_PRESS
+                || glfwGetMouseButton(window.handle(), GLFW_MOUSE_BUTTON_MIDDLE) == GLFW_PRESS
+                || (io.KeyAlt && glfwGetMouseButton(window.handle(), GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS);
+
+            if (!suppressHover && renderViewportState.hovered) {
+                const EditorRay hoverRay = buildEditorRay(
+                    inverseViewProjection,
+                    glm::vec2(renderViewportState.origin.x, renderViewportState.origin.y),
+                    glm::vec2(renderViewportState.size.x, renderViewportState.size.y),
+                    glm::vec2(io.MousePos.x, io.MousePos.y));
+                if (const auto hit = pickEditorObject(viewportSelectionHandles, hoverRay)) {
+                    hoveredObjectId = hit->objectId;
+                }
+            }
+            appendHoverOverlay(objects, previewWorld, materialTextures, hoveredObjectId, selectedIds);
+
             EditorPlacementState dragPlacement;
             if (viewportState.hovered) {
                 if (const ImGuiPayload* payload = ImGui::GetDragDropPayload();

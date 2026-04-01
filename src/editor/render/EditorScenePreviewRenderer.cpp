@@ -264,6 +264,44 @@ void appendSelectionOverlays(std::vector<RenderObject>& objects,
     }
 }
 
+void appendHoverOverlay(std::vector<RenderObject>& objects,
+                        const EditorPreviewWorld& world,
+                        const MaterialTextureLibrary& materials,
+                        std::uint64_t hoveredId,
+                        const std::vector<std::uint64_t>& selectedIds) {
+    // No hover on sentinel zero or already-selected objects
+    if (hoveredId == 0) {
+        return;
+    }
+    for (const auto id : selectedIds) {
+        if (id == hoveredId) {
+            return;
+        }
+    }
+
+    Mesh* cube = world.meshLibrary().get("cube");
+    const EditorObjectBounds* bounds = world.findObjectBounds(hoveredId);
+    if (cube == nullptr || bounds == nullptr || !bounds->valid) {
+        return;
+    }
+
+    const glm::vec3 center = bounds->center();
+    glm::vec3 size = glm::max(bounds->max - bounds->min, glm::vec3(0.12f));
+    size *= 1.035f;
+
+    // Cool blue-white tint, depth-tested only (no ghost pass), line width 2.0
+    objects.push_back(RenderObject{
+        cube,
+        makeModelMatrix(center, size),
+        glm::vec3(0.55f, 0.85f, 1.00f),
+        materials.resolve("metal_default"),
+        true,   // wireframe
+        false,  // ignoreDepth = false (depth-tested)
+        true,   // unlit
+        2.0f    // lineWidth
+    });
+}
+
 void renderShadowPass(const std::vector<RenderObject>& objects,
                       const std::vector<RenderLight>& lights,
                       const Shader& shadowShader,
