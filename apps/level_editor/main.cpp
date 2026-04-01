@@ -1656,9 +1656,7 @@ int main(int argc, char* argv[]) {
                 }
             }
 
-            if (!ui.playPreview && !startupViewportHandoffActive) {
-                renderSelectionPicker(selectionPicker, document, selectedIds, glfwGetTime());
-            }
+            // Selection picker overlay removed — hover highlight replaces it
         }
 
         if (viewportWindowBegun) {
