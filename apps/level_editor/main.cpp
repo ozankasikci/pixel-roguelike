@@ -368,6 +368,7 @@ int main(int argc, char* argv[]) {
     bool savePressed = false;
     bool newScenePopupRequested = false;
     char newSceneNameBuffer[128] = "new_scene";
+    char addMeshFilter[128] = {};
     std::string pendingDeleteScenePath;
     std::optional<std::string> pendingSceneSwitch;
     bool focusPressed = false;
@@ -1172,6 +1173,41 @@ int main(int argc, char* argv[]) {
                         renderCreateCommands();
                         ImGui::EndPopup();
                     }
+                    ImGui::SameLine();
+                    if (ImGui::Button("Add Mesh")) {
+                        addMeshFilter[0] = '\0';
+                        ImGui::OpenPopup("AddMeshPicker");
+                    }
+                    ImGui::SetNextWindowSize(ImVec2(300.0f, 400.0f), ImGuiCond_Appearing);
+                    if (ImGui::BeginPopup("AddMeshPicker")) {
+                        if (ImGui::IsWindowAppearing()) {
+                            ImGui::SetKeyboardFocusHere();
+                        }
+                        ImGui::SetNextItemWidth(-1.0f);
+                        ImGui::InputText("##addmesh_filter", addMeshFilter, sizeof(addMeshFilter));
+                        ImGui::Separator();
+                        const std::string filterStr(addMeshFilter);
+                        if (ImGui::BeginChild("##addmesh_list", ImVec2(0.0f, 0.0f), false)) {
+                            for (const auto& id : meshIds) {
+                                if (!filterStr.empty()) {
+                                    std::string lowerId = id;
+                                    std::string lowerFilter = filterStr;
+                                    std::transform(lowerId.begin(), lowerId.end(), lowerId.begin(), ::tolower);
+                                    std::transform(lowerFilter.begin(), lowerFilter.end(), lowerFilter.begin(), ::tolower);
+                                    if (lowerId.find(lowerFilter) == std::string::npos) {
+                                        continue;
+                                    }
+                                }
+                                if (ImGui::Selectable(id.c_str())) {
+                                    ui.selectedMeshId = id;
+                                    beginPlacement(placementState, EditorPlacementKind::Mesh, id, ui.selectedMaterialId);
+                                    ImGui::CloseCurrentPopup();
+                                }
+                            }
+                        }
+                        ImGui::EndChild();
+                        ImGui::EndPopup();
+                    }
                     if (placementState.active()) {
                         ImGui::SameLine();
                         if (ImGui::Button("Cancel Placement")) {
@@ -1596,13 +1632,17 @@ int main(int argc, char* argv[]) {
                         if (payload->Delivery && placementPoint.has_value() && payload->DataSize == sizeof(EditorDragPayload)) {
                             const EditorPlacementState droppedState = makePlacementState(*static_cast<const EditorDragPayload*>(payload->Data));
                             const EditorSceneDocumentState beforeState = document.captureState();
-                            commitPlacement(document, droppedState, *placementPoint, content, editCamera);
+                            const auto placedId = commitPlacement(document, droppedState, *placementPoint, content, editCamera);
                             commandStack.pushDocumentStateCommand(
                                 "Place Object",
                                 beforeState,
                                 document.captureState(),
                                 document);
                             selectionPicker.clear();
+                            if (placedId.has_value()) {
+                                selectedIds = { *placedId };
+                                ui.inspectorContext = EditorInspectorContext::SceneSelection;
+                            }
                             previewDirty = true;
                         }
                     }
@@ -1617,7 +1657,7 @@ int main(int argc, char* argv[]) {
                     && !orbitModifierActive
                     && !editorGizmoIsHot()) {
                     const EditorSceneDocumentState beforeState = document.captureState();
-                    commitPlacement(document, placementState, *placementPoint, content, editCamera);
+                    const auto placedId = commitPlacement(document, placementState, *placementPoint, content, editCamera);
                     commandStack.pushDocumentStateCommand(
                         "Place Object",
                         beforeState,
@@ -1625,6 +1665,10 @@ int main(int argc, char* argv[]) {
                         document);
                     placementState.clear();
                     selectionPicker.clear();
+                    if (placedId.has_value()) {
+                        selectedIds = { *placedId };
+                        ui.inspectorContext = EditorInspectorContext::SceneSelection;
+                    }
                     previewDirty = true;
                 } else if (renderViewportState.hovered
                            && ImGui::IsMouseClicked(ImGuiMouseButton_Left)
