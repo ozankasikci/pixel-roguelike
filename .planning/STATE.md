@@ -127,10 +127,11 @@ None for v1.1. All APIs exist; work is wiring and one renderer fix.
 | 260401-x6s | Fix editor high CPU usage with industry-standard idle throttling | 2026-04-01 | 7e0c66f | [260401-x6s-fix-editor-high-cpu-usage-with-industry-](./quick/260401-x6s-fix-editor-high-cpu-usage-with-industry-/) |
 | 260402-0nx | Extend mesh asset discovery to scan assets/packs/ in addition to assets/meshes/ | 2026-04-02 | 24dcba0 | [260402-0nx-extend-mesh-asset-discovery-to-scan-asse](./quick/260402-0nx-extend-mesh-asset-discovery-to-scan-asse/) |
 | 260402-0wi | Fix inspector transform not updating mesh: add EditorPreviewWorld::syncTransforms() | 2026-04-02 | 818a2c4 | [260402-0wi-fix-inspector-transform-not-updating-mes](./quick/260402-0wi-fix-inspector-transform-not-updating-mes/) |
+| 260402-1l5 | Fix QuestDoorsPack door scale: measured FBX AABB (~9.2m height), corrected scene scale from 0.25 to 0.21 | 2026-04-02 | 5d97e82 | [260402-1l5-investigate-and-fix-questdoorspack-fbx-d](./quick/260402-1l5-investigate-and-fix-questdoorspack-fbx-d/) |
 
 ## Session Continuity
 
-Last activity: 2026-04-02 - Completed quick task 260402-0wi: Fix inspector transform not updating mesh
-Last session: 2026-04-02T00:08:00.000Z
-Stopped at: Completed quick task 260402-0wi: Fix inspector transform not updating mesh
+Last activity: 2026-04-02 - Completed quick task 260402-1l5: Fix QuestDoorsPack door scale
+Last session: 2026-04-02T01:14:00.000Z
+Stopped at: Completed quick task 260402-1l5: Fix QuestDoorsPack door scale
 Resume file: None
