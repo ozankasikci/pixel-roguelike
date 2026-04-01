@@ -121,10 +121,11 @@ None for v1.1. All APIs exist; work is wiring and one renderer fix.
 | 260330-wt0 | Reorganize Environment inspector panel into logical sub-groups | 2026-03-30 | 1824913 | [260330-wt0-improve-environment-inspector-panel-ux-b](./quick/260330-wt0-improve-environment-inspector-panel-ux-b/) |
 | 260401-qau | Fix delete key on macOS: add ImGuiKey_Backspace as alternative trigger | 2026-04-01 | 698ccf3 | [260401-qau-fix-delete-key-on-macos-add-imguikey-bac](./quick/260401-qau-fix-delete-key-on-macos-add-imguikey-bac/) |
 | 260401-rt2 | Cache shader uniform locations, guard Jolt body ID, deduplicate MathUtils, reuse renderer vectors | 2026-04-01 | 639ae43 | [260401-rt2-codebase-cleanup-cache-uniform-locations](./quick/260401-rt2-codebase-cleanup-cache-uniform-locations/) |
+| 260401-uie | Selection undo/redo: Ctrl+Z restores selection changes in level editor | 2026-04-01 | b871d75 | [260401-uie-make-ctrl-z-also-work-for-selection-dese](./quick/260401-uie-make-ctrl-z-also-work-for-selection-dese/) |
 
 ## Session Continuity
 
-Last activity: 2026-04-01 - Completed quick task 260401-rt2: Codebase cleanup — cache uniform locations
-Last session: 2026-04-01T18:23:39.214Z
-Stopped at: Completed 12-04-PLAN.md
+Last activity: 2026-04-01 - Completed quick task 260401-uie: Selection undo/redo
+Last session: 2026-04-01T19:07:12Z
+Stopped at: Completed quick task 260401-uie
 Resume file: None
