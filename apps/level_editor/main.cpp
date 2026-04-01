@@ -382,6 +382,7 @@ int main(int argc, char* argv[]) {
     std::string pendingDeleteScenePath;
     std::optional<std::string> pendingSceneSwitch;
     bool focusPressed = false;
+    FocusToggleState focusToggle;
     bool resetStartPressed = false;
     bool duplicatePressed = false;
     bool deletePressed = false;
@@ -1803,6 +1804,12 @@ int main(int argc, char* argv[]) {
         }
 
         if (focusPressed && !selectedIds.empty()) {
+            // Reset toggle if selection changed since last focus
+            if (focusToggle.lastFocusedSelection != selectedIds) {
+                focusToggle.wasFocused = false;
+                focusToggle.lastFocusedSelection = selectedIds;
+            }
+
             EditorObjectBounds unionBounds;
             for (const auto id : selectedIds) {
                 if (const EditorObjectBounds* b = previewWorld.findObjectBounds(id)) {
@@ -1812,7 +1819,18 @@ int main(int argc, char* argv[]) {
                 }
             }
             if (unionBounds.valid) {
-                beginFocusAnimation(editCamera, cameraAnim, unionBounds.min, unionBounds.max);
+                if (focusToggle.wasFocused) {
+                    // Second F: tight zoom — 1-unit cube around center
+                    const glm::vec3 center = unionBounds.center();
+                    const glm::vec3 halfUnit(0.5f);
+                    beginFocusAnimation(editCamera, cameraAnim,
+                                        center - halfUnit, center + halfUnit);
+                } else {
+                    // First F: full bounds
+                    beginFocusAnimation(editCamera, cameraAnim,
+                                        unionBounds.min, unionBounds.max);
+                }
+                focusToggle.wasFocused = !focusToggle.wasFocused;
             }
             focusPressed = false;
         } else {

@@ -1,5 +1,8 @@
 #pragma once
 
+#include <cstdint>
+#include <vector>
+
 #include <glm/glm.hpp>
 #include <imgui.h>
 
@@ -29,6 +32,11 @@ struct EditorViewportState {
     bool focused = false;
     ImVec2 origin{0.0f, 0.0f};
     ImVec2 size{0.0f, 0.0f};
+};
+
+struct FocusToggleState {
+    bool wasFocused = false;
+    std::vector<std::uint64_t> lastFocusedSelection;
 };
 
 glm::vec3 editorCameraForward(const EditorCamera& camera);
