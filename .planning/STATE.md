@@ -3,11 +3,11 @@ gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: Editor UX
 status: verifying
-stopped_at: Completed 11-01-PLAN.md
-last_updated: "2026-04-01T15:44:31.017Z"
+stopped_at: Phase 12 context gathered
+last_updated: "2026-04-01T17:42:16.691Z"
 last_activity: 2026-04-01
 progress:
-  total_phases: 13
+  total_phases: 14
   completed_phases: 12
   total_plans: 31
   completed_plans: 31
@@ -78,6 +78,10 @@ Recent decisions affecting current work:
 - [Phase 11]: commitPlacement returns std::optional<uint64_t>: result variable pattern with Mesh case setting it, all others returning nullopt
 - [Phase 11]: Add Mesh button placed immediately after Add button with SameLine; filter cleared on each popup open
 
+### Roadmap Evolution
+
+- Phase 12 added: Engine quality — frustum culling, texture unit enum, generic asset system, EventBus RAII tokens
+
 ### Pending Todos
 
 None yet.
@@ -108,6 +112,6 @@ None for v1.1. All APIs exist; work is wiring and one renderer fix.
 ## Session Continuity
 
 Last activity: 2026-04-01 - Completed quick task 260401-rt2: Codebase cleanup — cache uniform locations
-Last session: 2026-04-01T00:00:00.000Z
-Stopped at: Completed quick task 260401-rt2: Codebase cleanup — cache uniform locations
-Resume file: None
+Last session: 2026-04-01T17:42:16.687Z
+Stopped at: Phase 12 context gathered
+Resume file: .planning/phases/12-engine-quality-frustum-culling-texture-unit-enum-generic-asset-system-eventbus-raii-tokens/12-CONTEXT.md
