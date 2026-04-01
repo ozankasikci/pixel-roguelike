@@ -367,6 +367,7 @@ int main(int argc, char* argv[]) {
     int startupViewportHandoffFramesRemaining = 3;
     bool savePressed = false;
     bool newScenePopupRequested = false;
+    bool saveLayoutPopupRequested = false;
     char newSceneNameBuffer[128] = "new_scene";
     char addMeshFilter[128] = {};
     std::string pendingDeleteScenePath;
@@ -673,7 +674,7 @@ int main(int argc, char* argv[]) {
                     renderLayoutMenuItems();
                     ImGui::Separator();
                     if (ImGui::MenuItem("Save Current Layout As...")) {
-                        ImGui::OpenPopup("Save Layout As");
+                        saveLayoutPopupRequested = true;
                     }
                     if (ImGui::MenuItem("Reload Current Layout")) {
                         requestedLayoutPresetName = ui.activeLayoutPreset;
@@ -759,7 +760,7 @@ int main(int argc, char* argv[]) {
                     renderLayoutMenuItems();
                     ImGui::Separator();
                     if (ImGui::MenuItem("Save Current Layout As...")) {
-                        ImGui::OpenPopup("Save Layout As");
+                        saveLayoutPopupRequested = true;
                     }
                     if (ImGui::MenuItem("Reload Current Layout")) {
                         requestedLayoutPresetName = ui.activeLayoutPreset;
@@ -800,6 +801,10 @@ int main(int argc, char* argv[]) {
             }
         }
 
+        if (saveLayoutPopupRequested) {
+            ImGui::OpenPopup("Save Layout As");
+            saveLayoutPopupRequested = false;
+        }
         ImGui::SetNextWindowSize(ImVec2(420.0f, 0.0f), ImGuiCond_Appearing);
         if (ImGui::BeginPopupModal("Save Layout As", nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
             if (ImGui::IsWindowAppearing()) {
