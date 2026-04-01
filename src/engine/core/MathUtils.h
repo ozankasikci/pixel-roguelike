@@ -38,12 +38,16 @@ inline glm::mat3 extractRotationMatrix(const glm::mat4& matrix) {
 }
 
 // Build a model matrix from position, scale, and optional XYZ Euler rotation (degrees).
+// Uses quaternion rotation (same as makeTransformMatrix) for stable round-trips.
 inline glm::mat4 makeModelMatrix(const glm::vec3& position,
                                   const glm::vec3& scale,
                                   const glm::vec3& rotation = glm::vec3(0.0f)) {
     glm::mat4 m = glm::translate(glm::mat4(1.0f), position);
-    if (rotation.x != 0.0f) m = glm::rotate(m, glm::radians(rotation.x), glm::vec3(1, 0, 0));
-    if (rotation.y != 0.0f) m = glm::rotate(m, glm::radians(rotation.y), glm::vec3(0, 1, 0));
-    if (rotation.z != 0.0f) m = glm::rotate(m, glm::radians(rotation.z), glm::vec3(0, 0, 1));
+    if (rotation.x != 0.0f || rotation.y != 0.0f || rotation.z != 0.0f) {
+        const glm::quat q = glm::angleAxis(glm::radians(rotation.x), glm::vec3(1, 0, 0))
+                          * glm::angleAxis(glm::radians(rotation.y), glm::vec3(0, 1, 0))
+                          * glm::angleAxis(glm::radians(rotation.z), glm::vec3(0, 0, 1));
+        m = m * glm::mat4_cast(q);
+    }
     return glm::scale(m, scale);
 }

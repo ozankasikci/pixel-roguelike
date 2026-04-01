@@ -6,23 +6,14 @@
 #include "game/components/StaticColliderComponent.h"
 #include "game/components/TransformComponent.h"
 
+#include "engine/core/MathUtils.h"
+
 #include <glm/gtc/matrix_transform.hpp>
 #include <spdlog/spdlog.h>
 
 #include <string_view>
 
 namespace {
-
-glm::mat4 makeModel(const glm::vec3& position,
-                    const glm::vec3& scale,
-                    const glm::vec3& rotation = glm::vec3(0.0f)) {
-    glm::mat4 model = glm::translate(glm::mat4(1.0f), position);
-    model = glm::rotate(model, glm::radians(rotation.x), glm::vec3(1.0f, 0.0f, 0.0f));
-    model = glm::rotate(model, glm::radians(rotation.y), glm::vec3(0.0f, 1.0f, 0.0f));
-    model = glm::rotate(model, glm::radians(rotation.z), glm::vec3(0.0f, 0.0f, 1.0f));
-    model = glm::scale(model, scale);
-    return model;
-}
 
 glm::vec3 defaultTintForMesh(std::string_view meshName,
                              const glm::vec3& position,
@@ -127,7 +118,7 @@ entt::entity LevelBuilder::addMesh(Mesh* mesh,
         MeshComponent{
             "",
             mesh,
-            makeModel(position, scale, rotation),
+            makeModelMatrix(position, scale, rotation),
             true,
             tint.value_or(glm::vec3(1.0f)),
             materialId.value_or("stone_default")

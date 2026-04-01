@@ -74,7 +74,9 @@ void SceneRenderPipeline::render(const SceneRenderInput& input,
 
     ShadowRenderData shadowData;
     const double tShadowStart = glfwGetTime();
-    renderShadowPass(culledObjects, lights, culledInput, shadowData);
+    // Shadow pass uses UNCULLED objects — shadow casters behind the camera
+    // may still cast shadows into the visible scene.
+    renderShadowPass(*input.objects, lights, input, shadowData);
     const double tShadowEnd = glfwGetTime();
 
     const double tSceneStart = glfwGetTime();

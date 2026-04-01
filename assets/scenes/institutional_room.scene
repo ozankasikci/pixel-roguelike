@@ -55,8 +55,8 @@ mesh prison_wall_door  2.5 0.0 6.0 1.0 1.0 1.0 0.0 180.0 0.0 material inst_beige
 mesh prison_wall -3.5 0.0 6.0 0.5 1.0 1.0 0.0 180.0 0.0 material inst_beige_wall tint 1.0 1.0 1.0 node node_38
 mesh prison_wall  3.5 0.0 6.0 0.5 1.0 1.0 0.0 180.0 0.0 material inst_beige_wall tint 1.0 1.0 1.0 node node_39
 
-# Open wooden door (left, X=-2.5) - swung open into north room, rotated 90 degrees
-mesh office_door -2.5 0.0 5.95 1.0 1.0 1.0 0.0 -90.0 0.0 material wood_default tint 0.65 0.50 0.30 node node_door_wood
+# Open doorway (left, X=-2.5) - no door mesh, just the open prison_wall_door frame
+# Warm light at Z=6.5 spills through the opening
 
 # Baseboards - floor level along all walls using inst_dark_trim material
 # South wall baseboards
