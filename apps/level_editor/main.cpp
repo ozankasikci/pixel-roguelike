@@ -1332,6 +1332,7 @@ int main(int argc, char* argv[]) {
                 runtimePreviewDirtyState = RuntimePreviewDirtyState::FullWorldRebuild;
                 lastRuntimePreviewStructuralChangeTime = glfwGetTime();
             } else if (previewSceneRevision != document.sceneRevision()) {
+                previewWorld.syncTransforms(document);
                 previewWorld.syncMaterials(document, content);
                 previewWorld.syncLights(document);
                 runtimePreviewSession.syncMaterials(document, content);

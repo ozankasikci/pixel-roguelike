@@ -276,6 +276,69 @@ void EditorPreviewWorld::syncLights(const EditorSceneDocument& document) {
     }
 }
 
+void EditorPreviewWorld::syncTransforms(const EditorSceneDocument& document) {
+    auto transformView = registry_.view<TransformComponent>();
+    for (auto [entity, transform] : transformView.each()) {
+        auto ownerIt = ownerMap_.find(entity);
+        if (ownerIt == ownerMap_.end()) {
+            continue;
+        }
+        const auto* object = document.findObject(ownerIt->second);
+        if (object == nullptr) {
+            continue;
+        }
+
+        glm::vec3 position(0.0f), rotation(0.0f), scale(1.0f);
+        if (!decomposeTransformMatrix(document.worldTransformMatrix(object->id), position, rotation, scale)) {
+            continue;
+        }
+
+        switch (object->kind) {
+        case EditorSceneObjectKind::Mesh:
+            transform.position = position;
+            transform.rotation = rotation;
+            transform.scale = scale;
+            break;
+        case EditorSceneObjectKind::BoxCollider: {
+            transform.position = position;
+            transform.rotation = rotation;
+            transform.scale = scale;
+            if (registry_.all_of<StaticColliderComponent>(entity)) {
+                auto& collider = registry_.get<StaticColliderComponent>(entity);
+                collider.position = position;
+                collider.rotation = rotation;
+                collider.halfExtents = glm::max(scale * 0.5f, glm::vec3(0.001f));
+            }
+            break;
+        }
+        case EditorSceneObjectKind::CylinderCollider: {
+            transform.position = position;
+            transform.rotation = rotation;
+            transform.scale = scale;
+            if (registry_.all_of<StaticColliderComponent>(entity)) {
+                auto& collider = registry_.get<StaticColliderComponent>(entity);
+                collider.position = position;
+                collider.rotation = rotation;
+                collider.radius = std::max(0.001f, (std::abs(scale.x) + std::abs(scale.z)) * 0.25f);
+                collider.halfHeight = std::max(0.001f, std::abs(scale.y) * 0.5f);
+            }
+            break;
+        }
+        case EditorSceneObjectKind::Light:
+            transform.position = position;
+            break;
+        case EditorSceneObjectKind::Archetype:
+            transform.position = position;
+            transform.rotation.y = rotation.y;
+            break;
+        case EditorSceneObjectKind::PlayerSpawn:
+            break;
+        }
+    }
+
+    rebuildBounds();
+}
+
 void EditorPreviewWorld::clearEntities() {
     for (auto entity : entities_) {
         if (registry_.valid(entity)) {
