@@ -1662,6 +1662,7 @@ int main(int argc, char* argv[]) {
                             if (placedId.has_value()) {
                                 selectedIds = { *placedId };
                                 ui.inspectorContext = EditorInspectorContext::SceneSelection;
+                                ui.scrollToSelection = true;
                             }
                             previewDirty = true;
                         }
@@ -1688,6 +1689,7 @@ int main(int argc, char* argv[]) {
                     if (placedId.has_value()) {
                         selectedIds = { *placedId };
                         ui.inspectorContext = EditorInspectorContext::SceneSelection;
+                        ui.scrollToSelection = true;
                     }
                     previewDirty = true;
                 } else if (renderViewportState.hovered
@@ -1708,6 +1710,7 @@ int main(int argc, char* argv[]) {
                                                hits.size() > 1);
                         applySelectionHit(selectedIds, selectionPicker, io.KeyShift);
                         ui.inspectorContext = EditorInspectorContext::SceneSelection;
+                        ui.scrollToSelection = true;
                         if (ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left)) {
                             ui.frameSelectionRequested = true;
                         }
