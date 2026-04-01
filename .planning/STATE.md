@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: Editor UX
 status: executing
-stopped_at: Completed 12-01-PLAN.md
-last_updated: "2026-04-01T18:16:30.157Z"
+stopped_at: Completed 12-04-PLAN.md
+last_updated: "2026-04-01T18:23:39.218Z"
 last_activity: 2026-04-01
 progress:
   total_phases: 14
-  completed_phases: 12
+  completed_phases: 13
   total_plans: 35
-  completed_plans: 34
+  completed_plans: 35
   percent: 0
 ---
 
@@ -26,7 +26,7 @@ See: .planning/PROJECT.md (updated 2026-04-01)
 ## Current Position
 
 Phase: 12 (engine-quality-frustum-culling-texture-unit-enum-generic-asset-system-eventbus-raii-tokens) — EXECUTING
-Plan: 3 of 4
+Plan: 4 of 4
 Status: Ready to execute
 Last activity: 2026-04-01
 
@@ -55,6 +55,7 @@ Progress: [░░░░░░░░░░] 0% (v1.1 milestone)
 | Phase 11-add-mesh-discoverability P01 | 2 | 2 tasks | 3 files |
 | Phase 12 P02 | 15 | 2 tasks | 6 files |
 | Phase 12 P03 | 12 | 2 tasks | 8 files |
+| Phase 12 P04 | 15 | 2 tasks | 6 files |
 
 ## Accumulated Context
 
@@ -87,6 +88,8 @@ Recent decisions affecting current work:
 - [Phase 12]: GenericFileScene scripted geometry uses static registry pattern — register via registerScriptedGeometry(), not if-chain in onEnter()
 - [Phase 12]: File-alias registrations removed from ProceduralGameAssets (pillar, arch, hand, wood_door, etc.) — will be auto-discovered in Plan 04; loadFromFileMulti kept as multi-submesh exception
 - [Phase 12]: EventBus [[nodiscard]] subscribe() returns RAII SubscriptionToken; store token in member to keep subscription alive
+- [Phase 12]: culledInput pattern: copy SceneRenderInput, swap objects pointer to culledObjects vector — cleanest way to thread culled list through sub-passes without signature changes
+- [Phase 12]: FrustumCulling uses Gribb-Hartmann VP matrix extraction; isAabbInsideFrustum transforms 8 local AABB corners to world space before plane test
 
 ### Roadmap Evolution
 
@@ -122,6 +125,6 @@ None for v1.1. All APIs exist; work is wiring and one renderer fix.
 ## Session Continuity
 
 Last activity: 2026-04-01 - Completed quick task 260401-rt2: Codebase cleanup — cache uniform locations
-Last session: 2026-04-01T18:16:30.154Z
-Stopped at: Completed 12-01-PLAN.md
+Last session: 2026-04-01T18:23:39.214Z
+Stopped at: Completed 12-04-PLAN.md
 Resume file: None
