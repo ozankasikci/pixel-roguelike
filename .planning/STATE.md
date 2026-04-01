@@ -2,12 +2,12 @@
 gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: Editor UX
-status: Defining requirements
+status: Ready to plan
 stopped_at: null
 last_updated: "2026-04-01"
 last_activity: 2026-04-01
 progress:
-  total_phases: 0
+  total_phases: 3
   completed_phases: 0
   total_plans: 0
   completed_plans: 0
@@ -20,174 +20,60 @@ progress:
 See: .planning/PROJECT.md (updated 2026-04-01)
 
 **Core value:** The Stanley Parable-inspired art style — clean, minimalist environments with warm soft lighting, muted color palette, and stylized realism
-**Current focus:** Milestone v1.1 — Editor UX
+**Current focus:** Milestone v1.1 — Editor UX (Phase 9: Selection Overlay Depth Fix)
 
 ## Current Position
 
-Phase: Not started (defining requirements)
-Plan: —
-Status: Defining requirements
-Last activity: 2026-04-01 — Milestone v1.1 started
+Phase: 9 of 11 (Selection Overlay Depth Fix)
+Plan: 0 of TBD in current phase
+Status: Ready to plan
+Last activity: 2026-04-01 — v1.1 roadmap created, Phases 9-11 defined
+
+Progress: [░░░░░░░░░░] 0% (v1.1 milestone)
 
 ## Performance Metrics
 
-**Velocity:**
-
+**Velocity (v1.1):**
 - Total plans completed: 0
 - Average duration: —
 - Total execution time: 0 hours
 
-**By Phase:**
+**By Phase (v1.1):**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
-| - | - | - | - |
-
-**Recent Trend:**
-
-- Last 5 plans: —
-- Trend: —
+| 9 - Selection Depth Fix | TBD | - | - |
+| 10 - Global Shortcuts + Hover | TBD | - | - |
+| 11 - Add Mesh Discoverability | TBD | - | - |
 
 *Updated after each plan completion*
-| Phase 01-engine-and-dithering-pipeline P01 | 5 | 2 tasks | 17 files |
-| Phase 01-engine-and-dithering-pipeline P02 | 15 | 3 tasks | 11 files |
-| Phase 01.1-project-restructure-ecs-application-class-modular-engine-game-split P01 | 7 | 2 tasks | 20 files |
-| Phase 01.1-project-restructure-ecs-application-class-modular-engine-game-split P02 | 2 | 2 tasks | 12 files |
-| Phase 01.1-project-restructure-ecs-application-class-modular-engine-game-split P03 | 3 | 2 tasks | 10 files |
-| Phase 01.1-project-restructure-ecs-application-class-modular-engine-game-split P04 | 10 | 2 tasks | 3 files |
-| Phase 01.1-project-restructure-ecs-application-class-modular-engine-game-split P04 | 15 | 3 tasks | 3 files |
-| Phase 03-build-menu-in-editor-macos-build-from-editor-with-progress-and-output P01 | 90 | 2 tasks | 7 files |
-| Phase 03-build-menu-in-editor-macos-build-from-editor-with-progress-and-output P02 | 25 | 1 tasks | 5 files |
-| Phase 04-improve-lighting-quality P01 | 18 | 2 tasks | 7 files |
-| Phase 04-improve-lighting-quality P02 | 13 | 2 tasks | 12 files |
-| Phase 04-improve-lighting-quality P03 | 30 | 2 tasks | 15 files |
-| Phase 04-improve-lighting-quality P04 | 5 | 2 tasks | 11 files |
-| Phase 04-improve-lighting-quality P05 | 9 | 2 tasks | 12 files |
-| Phase 05-unify-editor-runtime-build-rendering-parity P01 | 6 | 2 tasks | 6 files |
-| Phase 05-unify-editor-runtime-build-rendering-parity P02 | 6 | 2 tasks | 10 files |
-| Phase 05-unify-editor-runtime-build-rendering-parity P03 | 30 | 2 tasks | 7 files |
-| Phase 06-data-driven-scene-management P01 | 5 | 2 tasks | 11 files |
-| Phase 06-data-driven-scene-management P02 | 10 | 2 tasks | 3 files |
-| Phase 06-data-driven-scene-management P03 | 15 | 1 tasks | 3 files |
-| Phase 07-data-driven-material-system-replace-hardcoded-materials-with-a-proper-material-pipeline P01 | 35 | 2 tasks | 19 files |
-| Phase 07 P02 | 5 | 3 tasks | 26 files |
-| Phase 07 P04 | 525609 | 2 tasks | 6 files |
-| Phase 07 P03 | 10 | 2 tasks | 4 files |
-| Phase 08-create-institutional-room-scene-from-concept-art P01 | 3 | 2 tasks | 5 files |
-| Phase 08 P02 | 2 | 1 tasks | 3 files |
 
 ## Accumulated Context
 
 ### Decisions
 
-Decisions are logged in PROJECT.md Key Decisions table.
 Recent decisions affecting current work:
 
-- Graphics API: OpenGL 4.1 Core Profile (macOS caps at 4.1; research recommended 4.6 but 4.1 is the ceiling on this platform)
-- Dithering approach: Post-process fullscreen quad with Bayer matrix; world-space pattern anchoring is non-negotiable from Phase 1
-- [Phase 01-engine-and-dithering-pipeline]: GLAD 2 requires LANGUAGES C CXX in CMakeLists.txt project() and jinja2 Python package in venv for code generation
-- [Phase 01-engine-and-dithering-pipeline]: uInverseView (pure rotation inverse-view) passed per frame to dither.frag for sphere-map world-space anchoring
-- [Phase 01-engine-and-dithering-pipeline]: GL_LINEAR filter on FBO color texture for smooth rendering (changed from GL_NEAREST when dither pass was removed)
-- [Phase 01-engine-and-dithering-pipeline]: DitherPass::apply() updated to accept patternScale float parameter so ImGui slider can tune it at runtime
-- [Phase 01-engine-and-dithering-pipeline]: Dear ImGui v1.92.6 integrated via CMake FetchContent (GLFW + OpenGL3 backends); ImGui::GetIO().WantCaptureMouse gates camera mouse-look vs UI interaction
-- [Phase 01-engine-and-dithering-pipeline]: Quartic attenuation (Pitfall 6 from RESEARCH.md): clamp(1 - pow(dist/radius,4))^2 eliminates hard ring artifacts in Bayer dither output
-- [Phase 01.1-project-restructure-ecs-application-class-modular-engine-game-split]: Per-module static library CMake pattern: each lib uses PUBLIC target_include_directories(${CMAKE_SOURCE_DIR}/src) so downstream consumers automatically get include paths
-- [Phase 01.1-project-restructure-ecs-application-class-modular-engine-game-split]: EnTT v3.16.0 added via FetchContent as EnTT::EnTT; linked to game lib and executable for plan 02 ECS work
-- [Phase 01.1-project-restructure-ecs-application-class-modular-engine-game-split]: Application::run() game loop: init all systems, loop poll/time/update/swap while not closed, shutdown in reverse order
-- [Phase 01.1-project-restructure-ecs-application-class-modular-engine-game-split]: MeshComponent includes modelOverride field for CathedralScene arch segments using non-euler rotation
-- [Phase 01.1-project-restructure-ecs-application-class-modular-engine-game-split]: CameraComponent initial values match main.cpp hardcoded values (yaw=-90, pitch=0, fov=70, moveSpeed=3.0, near=0.1, far=100)
-- [Phase 01.1-project-restructure-ecs-application-class-modular-engine-game-split]: CameraSystem uses identical yaw/pitch/forward math as main.cpp: cos(radians(yaw))*cos(radians(pitch)) for x, sin(radians(pitch)) for y, sin(radians(yaw))*cos(radians(pitch)) for z
-- [Phase 01.1-project-restructure-ecs-application-class-modular-engine-game-split]: RenderSystem builds render and light lists from ECS each frame; orchestrates full FBO scene pass + dither post-process + ImGui overlay identical to main.cpp
-- [Phase 01.1-project-restructure-ecs-application-class-modular-engine-game-split]: CameraSystem receives InputSystem& by constructor injection -- avoids application-level coupling, makes dependency explicit
-- [Phase 01.1-project-restructure-ecs-application-class-modular-engine-game-split]: CathedralScene uses useModelOverride=true for all mesh entities -- geometry is pre-computed with arbitrary transforms that cannot be decomposed to euler angles
-- [Phase 01.1-project-restructure-ecs-application-class-modular-engine-game-split]: GLM vec3 scalar constructor is explicit -- must use glm::vec3(0.0f) not brace-init {} in aggregate TransformComponent initialization
-- [Phase 01.1-project-restructure-ecs-application-class-modular-engine-game-split]: SceneManager instantiated in main() rather than owned by Application -- keeps Application minimal for this restructure phase
-- [Phase 01.1-project-restructure-ecs-application-class-modular-engine-game-split]: CathedralScene uses useModelOverride=true for all mesh entities -- geometry is pre-computed with arbitrary transforms that cannot be decomposed to euler angles
-- [Phase 01.1-project-restructure-ecs-application-class-modular-engine-game-split]: GLM vec3 scalar constructor is explicit -- must use glm::vec3(0.0f) not brace-init {} in aggregate TransformComponent initialization
-- [Phase 01.1-project-restructure-ecs-application-class-modular-engine-game-split]: SceneManager instantiated in main() rather than owned by Application -- keeps Application minimal for this restructure phase
-- [Phase 03-build-menu-in-editor-macos-build-from-editor-with-progress-and-output]: src/editor/build/ directory ignored by gitignore (build/ pattern) -- files added via git add -f to bypass
-- [Phase 03-build-menu-in-editor-macos-build-from-editor-with-progress-and-output]: GenericFileScene uses registerCathedralAssets for all scenes -- all current scenes use cathedral asset set
-- [Phase 03-build-menu-in-editor-macos-build-from-editor-with-progress-and-output]: Build Output panel starts hidden and auto-shows on build start; docked to bottomId alongside Asset Browser
-- [Phase 03-build-menu-in-editor-macos-build-from-editor-with-progress-and-output]: Cmd+R Build and Run shortcut includes right-mouse-not-pressed guard to avoid conflict with fly camera R (scale tool)
-- [Phase 04-improve-lighting-quality]: Explicit if/else chains (not dynamic array indexing) for all shadow sampler accesses — macOS OpenGL driver requirement
-- [Phase 04-improve-lighting-quality]: 16-tap Poisson disk PCF with per-fragment hash rotation replaces 9-tap box PCF for banding-free soft shadows
-- [Phase 04-improve-lighting-quality]: kMaxShadowedSpotLights expanded from 2 to 8; ShadowRenderData arrays use fill()/loop instead of hardcoded 2-element initializers
-- [Phase 04-improve-lighting-quality]: Mip-chain bloom: BloomPass uses 5 GL_RGBA16F half-resolution FBOs, 13-tap downsample + tent upsample, no threshold extraction — HDR values naturally emphasize bright pixels
-- [Phase 04-improve-lighting-quality]: Bloom texture bound to unit 8 in CompositePass (units 0-7 pre-occupied by scene/sky/cloud textures); bloomGlow() 8-tap function removed from composite.frag
-- [Phase 04-improve-lighting-quality]: Geometry normals written at layout location 2 in scene.frag for SSAO — unperturbed vNormal used, not normal-mapped N, to avoid per-material AO artifacts
-- [Phase 04-improve-lighting-quality]: SsaoPass uses fixed RNG seeds (42 kernel, 123 noise) for deterministic results — eliminates temporal SSAO shimmer
-- [Phase 04-improve-lighting-quality]: SSAO AO factor applied as color multiply BEFORE bloom and tonemapping in composite.frag — preserves contact shadow darkening
-- [Phase 04-improve-lighting-quality]: CascadedShadowMap: GL_TEXTURE_2D_ARRAY with geometry shader invocations=3 for single-pass multi-layer CSM rendering; glFramebufferTexture for all-layer attachment
-- [Phase 04-improve-lighting-quality]: LTC tables generated analytically at init() instead of embedding 130KB static arrays — same per-frame cost (texture lookup), avoids binary bloat
-- [Phase 04-improve-lighting-quality]: LTC texture units 10/11 sit between shadow map units (8-9) and material map units (12-15) without collision
-- [Phase 04-improve-lighting-quality]: emissive_strength=0 default for all materials; non-zero values combine with bloom for perceived light emission
-- [Phase 05-unify-editor-runtime-build-rendering-parity]: SceneRenderPipeline in engine_rendering with no game-layer headers — enforces D-06 layering; viewmodelObjects in SceneRenderInput for glDepthRange trick; safeNormalize duplicated as file-local in both pipeline and RSR
-- [Phase 05-unify-editor-runtime-build-rendering-parity]: EditorViewportRenderer does NOT own MaterialTextureLibrary -- objects arrive pre-resolved from main.cpp's library, keeping material resolution in one place
-- [Phase 05-unify-editor-runtime-build-rendering-parity]: PSSM lambda default 0.5 (balanced linear+log) replaces hardcoded fixed CSM splits (0-5m, 5-20m, 20-far) in CascadedShadowMap
-- [Phase 05-unify-editor-runtime-build-rendering-parity]: Model viewer uses SceneRenderPipeline (shadows disabled, no directional lights in viewer setup) per D-10
-- [Phase 05-unify-editor-runtime-build-rendering-parity]: SceneRenderPipelineStats uses CPU glfwGetTime() timing (not GPU queries) to avoid sync stalls per D-16
-- [Phase 05-unify-editor-runtime-build-rendering-parity]: EditorAssetPreviewRenderer owns its own LtcData instance -- preview renderer is standalone, not routed through SceneRenderPipeline per D-12
-- [Phase 06-data-driven-scene-management]: registerAllGameAssets() calls registerDefaults() exactly once — deduplication required since both CathedralAssets and PrisonAssets each called it
-- [Phase 06-data-driven-scene-management]: project.cfg stores bare scene filename only (e.g. warden_office.scene), callers prepend assets/scenes/ path — avoids working-directory pitfalls
-- [Phase 06-data-driven-scene-management]: runtime main.cpp WardenOfficeScene fallback replaced with GenericFileScene path bridge until Plan 02 adds project.cfg reading
-- [Phase 06-data-driven-scene-management]: Pre-loop ImGuiLayer for runtime scene picker is safe — RenderSystem owns its own ImGuiLayer in app.run(), no double-init conflict
-- [Phase 06-data-driven-scene-management]: ui.pendingScenePath.empty() is the single empty-state sentinel — all scene-dependent rendering guards on this flag
-- [Phase 06-data-driven-scene-management]: doLoadScene lambda defined inline in renderFrame to DRY up loadSceneIntoEditor across Save/Don't Save/direct load paths
-- [Phase 06-data-driven-scene-management]: NewScenePopup/DeleteSceneConfirm modals placed outside root window (after assetBrowserActions) matching Save Before Building? pattern
-- [Phase 07]: roughness_bias in .material files bakes the per-kind shader default (stone 0.82, wood 0.74, metal 0.34, wax 0.58, moss 0.94, viewmodel 0.48, floor 0.86, brick 0.88)
-- [Phase 07]: ContentRegistry::loadMaterialsFromDirectory uses recursive_directory_iterator — any .material file in assets/materials/ or subdirectory is auto-loaded with duplicate detection
-- [Phase 07]: MaterialKind enum deleted; feature flags (detailBrick, detailStone, etc.) on ResolvedMaterialDefinition are the authoritative material type source
-- [Phase 07]: shading_model key in .material files silently ignored for backward compat — root materials no longer require shading_model
-- [Phase 07]: MaterialTextureLibrary.resolve() returns magenta (1,0,1) fallback for unknown materialId — visible in renderer to aid debugging
-- [Phase 07]: Roughness formula simplified to clamp(uMaterialRoughnessScale * uMaterialRoughnessBias) — roughness_bias bakes the base roughness value in .material files
-- [Phase 07]: pollMaterialHotReload takes MaterialTextureLibrary& by reference — editor owns both and passes them; runtime game never calls this
-- [Phase 07]: reloadMaterial takes the materials map so it can immediately re-resolve the updated definition — avoids one-frame magenta flash
-- [Phase 07]: test_content_registry links game_rendering (not just game_content) because ContentRegistry.cpp now calls MaterialTextureLibrary methods
-- [Phase 07]: Material CRUD popups inline in asset browser panel; file I/O in panel, ContentRegistry mutations delegated to main.cpp via AssetBrowserActionResult
-- [Phase 07]: content.addMaterial() replaces content.loadDefaults() for targeted in-memory update on material inspector save
-- [Phase 08]: inst_glossy_floor has no parent to avoid detail_floor feature flag contamination; low roughness_bias 0.30 achieves gloss directly
-- [Phase 08]: institutional.environment uses only parser-verified keys; enable_sky+sky_enabled+lighting_enable_directional all false for interior-only
-- [Phase 08]: Chain padlock links constructed from cylinder segments (no torus primitive); 4 cylinders per link in rectangular loop
-- [Phase 08]: Metal and chained doors from buildScriptedGeometry (not .scene file) so InteractableComponent can be attached — .scene format has no component syntax
+- [Phase 08]: Metal and chained doors from buildScriptedGeometry (not .scene file) so InteractableComponent can be attached
+- [Phase 08]: Chain padlock links constructed from cylinder segments; 4 cylinders per link in rectangular loop
+- [v1.1 research]: All document mutation APIs complete — `eraseObjects`, `duplicateObject`, `addMesh`, `applyWorldTransform` need no changes
+- [v1.1 research]: Selection depth fix is a single-file change in `EditorScenePreviewRenderer.cpp` — remove `ignoreDepth=true` from primary selection overlay pass
+- [v1.1 research]: Global shortcuts (Delete, Ctrl+D, Escape, F) must live in `main.cpp` as single handlers with `ImGuiInputFlags_RouteGlobal`; panel-side duplicates removed
+- [v1.1 research]: Every new mutation entry point requires explicit capture-before/push-after to `EditorCommandStack` — not enforced by the type system
+- [v1.1 research]: `pruneSelection` must be called after every undo/redo call to avoid inspector null-dereference on stale selected IDs
+- [v1.1 research]: `duplicateObject()` copies nodeId verbatim — `ensureObjectNodeId()` must be called on duplicate to avoid serialization collision
 
 ### Pending Todos
 
 None yet.
 
-### Roadmap Evolution
-
-- Phase 01.1 inserted after Phase 1: Project Restructure — ECS, Application class, modular engine/game split (URGENT)
-- Phase 02.1 inserted after Phase 2: Equipment Inventory and Carry Weight — weapons are inventory items, no slot-grid inventory, Dark Souls-style carry weight (URGENT)
-- Phase 3 added: Build menu in editor — macOS build from editor with progress and output (Windows support later)
-- Phase 4 added: Improve lighting quality — research best practices and implement industry-standard real-time lighting
-- Phase 5 added: Unify editor/runtime/build rendering parity — shared render path so all three modes produce identical visual output
-- Phase 6 added: Data-driven scene management — New/Delete Scene in editor, configurable runtime default, remove legacy hardcoded scene classes
-- Phase 7 added: Data-driven material system — replace hardcoded materials with a proper material pipeline
-
 ### Blockers/Concerns
 
-- macOS OpenGL cap at 4.1: Research recommended OpenGL 4.6 but macOS only supports 4.1 Core Profile. Phase 1 planning must confirm all required features are available in 4.1 (FBOs, GLSL 4.10, fullscreen quads — all confirmed available).
-
-### Quick Tasks Completed
-
-| # | Description | Date | Commit | Directory |
-|---|-------------|------|--------|-----------|
-| 260329-t50 | Fix lighting attenuation and intensity | 2026-03-29 | 459e34f | [260329-t50-fix-lighting-attenuation-and-intensity](./quick/260329-t50-fix-lighting-attenuation-and-intensity/) |
-| 260329-uom | Raise warden office ceiling from 2.5m to 3.5m | 2026-03-29 | 97c3880 | [260329-uom-fix-warden-office-room-being-too-small-i](./quick/260329-uom-fix-warden-office-room-being-too-small-i/) |
-| 260329-uy6 | Match Stanley Parable lighting and color palette | 2026-03-29 | 0a1f494 | [260329-uy6-match-stanley-parable-lighting-and-color](./quick/260329-uy6-match-stanley-parable-lighting-and-color/) |
-| 260329-x0q | Fix pixelated rendering and clean up old dither artifacts | 2026-03-29 | a5fa67a | [260329-x0q-fix-pixelated-low-resolution-rendering-i](./quick/260329-x0q-fix-pixelated-low-resolution-rendering-i/) |
-| 260330-0fz | Implement disk-based asset cache for meshes and procedural textures | 2026-03-30 | a2b1c1e | [260330-0fz-implement-disk-based-asset-cache-for-mes](./quick/260330-0fz-implement-disk-based-asset-cache-for-mes/) |
-| 260330-171 | Comprehensive AssetCache test suite for invalidation, binary format, and edge cases | 2026-03-30 | 0ed7241 | [260330-171-comprehensive-assetcache-test-suite-for-](./quick/260330-171-comprehensive-assetcache-test-suite-for-/) |
-| 260330-222 | Port AudioSystem, ActionMap/InputSystem, GameOverlays, EditorConsoleSink from codex/scripting-v1 | 2026-03-30 | ecc270a | [260330-222-port-audiosystem-actionmap-inputsystem-g](./quick/260330-222-port-audiosystem-actionmap-inputsystem-g/) |
-| 260330-321 | Add concrete wall texture material to warden office | 2026-03-30 | 3187a34 | [260330-321-add-concrete-wall-texture-material-to-wa](./quick/260330-321-add-concrete-wall-texture-material-to-wa/) |
-| 260330-mzu | Restore post-processing flags disabled by SSAO commit | 2026-03-30 | 19068c7 | [260330-mzu-fix-editor-scene-objects-not-visible-aft](./quick/260330-mzu-fix-editor-scene-objects-not-visible-aft/) |
-| 260330-rwe | Create a Claude Code skill for procedural texture generation | 2026-03-30 | e976302 | [260330-rwe-create-a-claude-code-skill-for-procedura](./quick/260330-rwe-create-a-claude-code-skill-for-procedura/) |
-| 260330-wc2 | Fix too-fast scrollbar scrolling in the editor asset browser panel | 2026-03-30 | 156472e | [260330-wc2-fix-too-fast-scrollbar-scrolling-in-the-](./quick/260330-wc2-fix-too-fast-scrollbar-scrolling-in-the-/) |
-| 260330-wt0 | Reorganize Environment inspector panel into logical sub-groups | 2026-03-30 | 1824913 | [260330-wt0-improve-environment-inspector-panel-ux-b](./quick/260330-wt0-improve-environment-inspector-panel-ux-b/) |
+None for v1.1. All APIs exist; work is wiring and one renderer fix.
 
 ## Session Continuity
 
-Last activity: 2026-03-31
-Last session: 2026-03-31T21:42:40.125Z
-Stopped at: Completed 08-02-PLAN.md Task 1 — awaiting visual checkpoint (Task 2)
+Last activity: 2026-04-01
+Last session: 2026-04-01
+Stopped at: v1.1 roadmap created — Phase 9 ready to plan
 Resume file: None

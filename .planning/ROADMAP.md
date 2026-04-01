@@ -4,6 +4,11 @@
 
 Build a first-person 3D psychological horror game with a custom C++ engine, starting with the rendering pipeline and working bottom-up through player movement, combat, enemies, and finally the game systems that make it shippable. Every phase delivers something runnable. The Stanley Parable-inspired visual style (clean surfaces, warm lighting, muted palette) is the foundation that all gameplay builds on.
 
+## Milestones
+
+- v1.0 — Phases 1-8 (shipped 2026-04-01)
+- v1.1 Editor UX — Phases 9-11 (in progress)
+
 ## Phases
 
 **Phase Numbering:**
@@ -12,9 +17,29 @@ Build a first-person 3D psychological horror game with a custom C++ engine, star
 
 Decimal phases appear between their surrounding integers in numeric order.
 
-- [ ] **Phase 1: Engine and Rendering Pipeline** - Custom C++ engine with OpenGL 4.1, stylize post-process with edge detection and tone mapping
-- [ ] **Phase 1.1: Project Restructure** - ECS, Application class, modular engine/game split (INSERTED)
-- [ ] **Phase 2: Player, Environment, and Lighting** - Player moves through a lit prison environment with collision; warm lighting and material system
+<details>
+<summary>v1.0 — Phases 1-8 (shipped 2026-04-01)</summary>
+
+- [x] **Phase 1: Engine and Rendering Pipeline** - Custom C++ engine with OpenGL 4.1, stylize post-process with edge detection and tone mapping
+- [x] **Phase 1.1: Project Restructure** - ECS, Application class, modular engine/game split (INSERTED)
+- [x] **Phase 2: Player, Environment, and Lighting** - Player moves through a lit prison environment with collision; warm lighting and material system
+- [x] **Phase 2.1: Equipment Inventory** - Dark Souls-style weapon inventory with equip slots and carry weight (INSERTED)
+- [x] **Phase 3: Build Menu in Editor** - macOS build from editor with progress and output
+- [x] **Phase 4: Improve Lighting Quality** - Industry-standard real-time lighting: PCF shadows, bloom, SSAO, CSM, LTC area lights
+- [x] **Phase 5: Unify Editor/Runtime/Build Rendering Parity** - Shared render path so all three modes produce identical visual output
+- [x] **Phase 6: Data-driven Scene Management** - New/Delete Scene in editor, configurable runtime default, remove legacy scene classes
+- [x] **Phase 7: Data-driven Material System** - Replace hardcoded materials with a proper material pipeline
+- [x] **Phase 8: Create Institutional Room Scene** - Institutional room from concept art with warm beige walls, fluorescent panels, three doors, and interaction stubs
+
+</details>
+
+### v1.1 Editor UX
+
+**Milestone Goal:** Bring the level editor to professional quality — matching Unity/Unreal workflows for scene object manipulation.
+
+- [ ] **Phase 9: Selection Overlay Depth Fix** - Depth-correct selection highlight that does not bleed through occluding geometry
+- [ ] **Phase 10: Global Keyboard Shortcuts and Hover Highlight** - Delete, Ctrl+D, Escape, F, and hover feedback all work from any editor panel
+- [ ] **Phase 11: Add Mesh Discoverability** - Mesh picker button lets the user add meshes to the scene without knowing keyboard shortcuts
 
 ## Phase Details
 
@@ -154,3 +179,63 @@ Plans:
 Plans:
 - [x] 08-01-PLAN.md — Create materials (inst_beige_wall, inst_glossy_floor, inst_dark_trim), environment profile (institutional), and three procedural meshes (HVAC vent, smoke detector, chain/padlock)
 - [x] 08-02-PLAN.md — Assemble the institutional_room.scene file with all geometry/lighting/colliders/props, wire locked door interaction stubs, visual verification
+
+### Phase 9: Selection Overlay Depth Fix
+
+**Goal:** The selection highlight renders correctly in 3D space — occluding geometry blocks the overlay rather than the wireframe bleeding through walls and objects in front of the selection
+**Depends on:** Phase 8
+**Requirements**: SEL-01
+**Success Criteria** (what must be TRUE):
+  1. Selecting an object behind a wall shows the selection outline only where the object is actually visible — the outline does not bleed through the wall
+  2. Selecting a fully occluded object shows a faint ghost outline at reduced opacity, confirming the selection without obscuring foreground geometry
+  3. Selecting objects at varying distances and overlap configurations all produce correct depth-respecting outlines
+**Plans**: TBD
+**UI hint**: yes
+
+### Phase 10: Global Keyboard Shortcuts and Hover Highlight
+
+**Goal:** The editor responds to Delete, Ctrl+D, Escape, and F from any focused panel — viewport, outliner, or inspector — and shows a hover highlight on objects under the cursor before they are clicked
+**Depends on:** Phase 9
+**Requirements**: SEL-02, SEL-03, OBJ-01, OBJ-02, OBJ-03
+**Success Criteria** (what must be TRUE):
+  1. Pressing Delete with an object selected removes it from both the viewport and the outliner regardless of which panel is focused — pressing Delete inside a text field does not remove scene objects
+  2. Pressing Ctrl+D duplicates the selected object with a visible position offset and transfers selection to the new copy
+  3. Pressing Escape with any selection active clears the selection from all panels
+  4. Pressing F with an object selected smoothly frames the viewport camera on that object
+  5. Moving the cursor over an unselected object in the viewport shows a visible highlight before clicking
+**Plans**: TBD
+**UI hint**: yes
+
+### Phase 11: Add Mesh Discoverability
+
+**Goal:** A clearly labeled button in the editor lets the user pick a mesh from the project's asset library and place it into the current scene — no keyboard shortcut knowledge required
+**Depends on:** Phase 10
+**Requirements**: DISC-01
+**Success Criteria** (what must be TRUE):
+  1. An "Add Mesh" button is visible in the editor without needing to right-click or know any shortcut
+  2. Clicking the button opens a picker showing all available meshes in the project
+  3. Selecting a mesh from the picker places it in the scene at a sensible default position and selects it immediately
+  4. The newly placed mesh appears in both the viewport and the outliner and is saved when the scene is saved
+**Plans**: TBD
+**UI hint**: yes
+
+## Progress
+
+**Execution Order:**
+Phases execute in numeric order: 1 → 1.1 → 2 → 2.1 → 3 → 4 → 5 → 6 → 7 → 8 → 9 → 10 → 11
+
+| Phase | Milestone | Plans Complete | Status | Completed |
+|-------|-----------|----------------|--------|-----------|
+| 1. Engine and Rendering Pipeline | v1.0 | 2/2 | Complete | 2026-03-23 |
+| 1.1. Project Restructure | v1.0 | 4/4 | Complete | 2026-03-24 |
+| 2. Player, Environment, and Lighting | v1.0 | TBD | Not started | - |
+| 2.1. Equipment Inventory | v1.0 | 2/2 | Complete | 2026-03-25 |
+| 3. Build Menu in Editor | v1.0 | 2/2 | Complete | 2026-03-26 |
+| 4. Improve Lighting Quality | v1.0 | 4/5 | In progress | - |
+| 5. Unify Rendering Parity | v1.0 | 3/3 | Complete | 2026-03-28 |
+| 6. Data-driven Scene Management | v1.0 | 3/3 | Complete | 2026-03-29 |
+| 7. Data-driven Material System | v1.0 | 4/4 | Complete | 2026-03-30 |
+| 8. Institutional Room Scene | v1.0 | 2/2 | Complete | 2026-04-01 |
+| 9. Selection Overlay Depth Fix | v1.1 | 0/TBD | Not started | - |
+| 10. Global Keyboard Shortcuts and Hover Highlight | v1.1 | 0/TBD | Not started | - |
+| 11. Add Mesh Discoverability | v1.1 | 0/TBD | Not started | - |

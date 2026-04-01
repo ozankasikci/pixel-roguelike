@@ -137,12 +137,18 @@ Which phases cover which requirements. Updated during roadmap creation.
 | GSYS-02 | Phase 4 | Pending |
 | GSYS-03 | Phase 4 | Pending |
 | GSYS-04 | Phase 4 | Pending |
+| SEL-01 | Phase 9 | Pending |
+| SEL-02 | Phase 10 | Pending |
+| SEL-03 | Phase 10 | Pending |
+| OBJ-01 | Phase 10 | Pending |
+| OBJ-02 | Phase 10 | Pending |
+| OBJ-03 | Phase 10 | Pending |
+| DISC-01 | Phase 11 | Pending |
 
 **Coverage:**
-- v1 requirements: 23 total
-- Mapped to phases: 23
-- Unmapped: 0
+- v1 requirements: 23 total — mapped to phases: 23 — unmapped: 0
+- v1.1 requirements: 7 total — mapped to phases: 7 — unmapped: 0
 
 ---
 *Requirements defined: 2026-03-23*
-*Last updated: 2026-04-01 after v1.1 milestone requirements*
+*Last updated: 2026-04-01 after v1.1 roadmap creation*
