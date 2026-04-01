@@ -215,6 +215,25 @@ std::vector<std::uint64_t> renderOutliner(EditorSceneDocument& document,
                     commandStack.pushDocumentStateCommand("Clear Parent", beforeState, document.captureState(), document);
                 }
             }
+            ImGui::Separator();
+            if (!selectedIds.empty() && ImGui::MenuItem("Create Group")) {
+                const EditorSceneDocumentState beforeState = document.captureState();
+                glm::vec3 centroid(0.0f);
+                for (const auto selId : selectedIds) {
+                    centroid += glm::vec3(document.worldTransformMatrix(selId)[3]);
+                }
+                centroid /= static_cast<float>(selectedIds.size());
+                LevelGroupNode group;
+                group.name = "Group";
+                group.position = centroid;
+                const std::uint64_t groupId = document.addGroup(group);
+                for (const auto selId : selectedIds) {
+                    document.setParent(selId, groupId);
+                }
+                commandStack.pushDocumentStateCommand("Create Group", beforeState, document.captureState(), document);
+                selectedIds = {groupId};
+                ui.inspectorContext = EditorInspectorContext::SceneSelection;
+            }
             ImGui::EndPopup();
         }
 
