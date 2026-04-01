@@ -467,8 +467,10 @@ int main(int argc, char* argv[]) {
                 placementState.clear();
                 widgetCommand.clear();
                 gizmoCommand.clear();
+                const auto selectionBefore = selectedIds;
                 selectedIds.clear();
                 selectionPicker.clear();
+                commandStack.pushSelectionCommand("Deselect All", &selectedIds, selectionBefore, selectedIds);
                 ui.inspectorContext = EditorInspectorContext::SceneSelection;
             }
         }
@@ -1686,6 +1688,7 @@ int main(int argc, char* argv[]) {
                            && ImGui::IsMouseClicked(ImGuiMouseButton_Left)
                            && !orbitModifierActive
                            && !editorGizmoIsHot()) {
+                    const auto selectionBefore = selectedIds;
                     const EditorRay ray = buildEditorRay(inverseViewProjection,
                                                          glm::vec2(renderViewportState.origin.x, renderViewportState.origin.y),
                                                          glm::vec2(renderViewportState.size.x, renderViewportState.size.y),
@@ -1709,6 +1712,7 @@ int main(int argc, char* argv[]) {
                         }
                         ui.inspectorContext = EditorInspectorContext::SceneSelection;
                     }
+                    commandStack.pushSelectionCommand("Select", &selectedIds, selectionBefore, selectedIds);
                 }
             }
 

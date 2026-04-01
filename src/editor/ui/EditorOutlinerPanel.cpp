@@ -103,6 +103,7 @@ std::vector<std::uint64_t> renderOutliner(EditorSceneDocument& document,
                                                 flags,
                                                 "%s",
                                                 editorSceneObjectLabel(*object).c_str());
+        const auto selectionBefore = selectedIds;
         if (ImGui::IsItemClicked(ImGuiMouseButton_Left) && !ImGui::IsItemToggledOpen()) {
             if (shiftHeld && ui.outlinerAnchorId != 0) {
                 // Range selection: select all items between anchor and clicked item.
@@ -133,6 +134,7 @@ std::vector<std::uint64_t> renderOutliner(EditorSceneDocument& document,
             selectedIds = {objectId};
             ui.inspectorContext = EditorInspectorContext::SceneSelection;
         }
+        commandStack.pushSelectionCommand("Select", &selectedIds, selectionBefore, selectedIds);
 
         if (ImGui::BeginDragDropSource()) {
             ImGui::SetDragDropPayload("EDITOR_OUTLINER_OBJECT", &objectId, sizeof(objectId));

@@ -90,5 +90,98 @@ int main() {
         assert(std::string(stack.undoLabel()) == "Move Mesh Again");
     }
 
+    // Selection undo/redo roundtrip
+    {
+        EditorSceneDocument selDoc;
+        selDoc.clear();
+        const std::uint64_t objId = selDoc.addMesh(makeMeshPlacement());
+        EditorCommandStack selStack;
+        selStack.reset(selDoc);
+        std::vector<std::uint64_t> selectedIds;
+
+        // Simulate: select the object
+        const auto before1 = selectedIds;
+        selectedIds = {objId};
+        const bool pushed1 = selStack.pushSelectionCommand("Select", &selectedIds, before1, selectedIds);
+        assert(pushed1);
+        assert(selStack.canUndo());
+        assert(selectedIds.size() == 1 && selectedIds[0] == objId);
+
+        // Undo: should restore empty selection
+        const bool undone1 = selStack.undo(selDoc);
+        assert(undone1);
+        assert(selectedIds.empty());
+        assert(selStack.canRedo());
+
+        // Redo: should restore selection
+        const bool redone1 = selStack.redo(selDoc);
+        assert(redone1);
+        assert(selectedIds.size() == 1 && selectedIds[0] == objId);
+    }
+
+    // No-op selection not pushed
+    {
+        EditorSceneDocument selDoc;
+        selDoc.clear();
+        selDoc.addMesh(makeMeshPlacement());
+        EditorCommandStack selStack;
+        selStack.reset(selDoc);
+        std::vector<std::uint64_t> selectedIds;
+
+        const bool pushed = selStack.pushSelectionCommand("Noop", &selectedIds, {}, {});
+        assert(!pushed);
+        assert(!selStack.canUndo());
+    }
+
+    // Selection and document commands interleave
+    {
+        EditorSceneDocument selDoc;
+        selDoc.clear();
+        const std::uint64_t objId = selDoc.addMesh(makeMeshPlacement());
+        EditorCommandStack selStack;
+        selStack.reset(selDoc);
+        std::vector<std::uint64_t> selectedIds;
+
+        // Step 1: Select object
+        selectedIds = {objId};
+        selStack.pushSelectionCommand("Select", &selectedIds, {}, {objId});
+
+        // Step 2: Move object (document state change)
+        const EditorSceneDocumentState beforeMove = selDoc.captureState();
+        auto* obj = selDoc.findObject(objId);
+        assert(obj != nullptr);
+        std::get<LevelMeshPlacement>(obj->payload).position.x = 5.0f;
+        selDoc.markSceneDirty();
+        selStack.pushDocumentStateCommand("Move", beforeMove, selDoc.captureState(), selDoc);
+
+        // Step 3: Deselect
+        selectedIds.clear();
+        selStack.pushSelectionCommand("Deselect", &selectedIds, {objId}, {});
+
+        // Undo all three in reverse:
+        // Undo deselect -> selection restored
+        selStack.undo(selDoc);
+        assert(selectedIds.size() == 1 && selectedIds[0] == objId);
+
+        // Undo move -> position back to 0
+        selStack.undo(selDoc);
+        obj = selDoc.findObject(objId);
+        assert(obj != nullptr);
+        assert(test_support::nearlyEqual(std::get<LevelMeshPlacement>(obj->payload).position.x, 0.0f));
+
+        // Undo select -> empty selection
+        selStack.undo(selDoc);
+        assert(selectedIds.empty());
+
+        // Redo all three
+        selStack.redo(selDoc); // select
+        assert(selectedIds.size() == 1 && selectedIds[0] == objId);
+        selStack.redo(selDoc); // move
+        obj = selDoc.findObject(objId);
+        assert(test_support::nearlyEqual(std::get<LevelMeshPlacement>(obj->payload).position.x, 5.0f));
+        selStack.redo(selDoc); // deselect
+        assert(selectedIds.empty());
+    }
+
     return 0;
 }

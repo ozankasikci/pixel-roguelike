@@ -2,6 +2,7 @@
 
 #include "editor/scene/EditorSceneDocument.h"
 
+#include <cstdint>
 #include <memory>
 #include <string>
 #include <vector>
@@ -31,6 +32,24 @@ private:
     EditorSceneDocumentState afterState_;
 };
 
+class EditorSelectionCommand final : public IEditorCommand {
+public:
+    EditorSelectionCommand(std::string label,
+                           std::vector<std::uint64_t>* selectedIds,
+                           std::vector<std::uint64_t> beforeSelection,
+                           std::vector<std::uint64_t> afterSelection);
+
+    const std::string& label() const override { return label_; }
+    void undo(EditorSceneDocument& document) const override;
+    void redo(EditorSceneDocument& document) const override;
+
+private:
+    std::string label_;
+    std::vector<std::uint64_t>* selectedIds_;
+    std::vector<std::uint64_t> beforeSelection_;
+    std::vector<std::uint64_t> afterSelection_;
+};
+
 class EditorCommandStack {
 public:
     void reset(EditorSceneDocument& document);
@@ -49,6 +68,11 @@ public:
                                   const EditorSceneDocumentState& beforeState,
                                   const EditorSceneDocumentState& afterState,
                                   EditorSceneDocument& document);
+
+    bool pushSelectionCommand(std::string label,
+                              std::vector<std::uint64_t>* selectedIds,
+                              const std::vector<std::uint64_t>& beforeSelection,
+                              const std::vector<std::uint64_t>& afterSelection);
 
 private:
     struct SavedSignature {

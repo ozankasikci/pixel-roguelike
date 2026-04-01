@@ -53,6 +53,25 @@ EditorDocumentStateCommand::EditorDocumentStateCommand(std::string label,
     , beforeState_(std::move(beforeState))
     , afterState_(std::move(afterState)) {}
 
+EditorSelectionCommand::EditorSelectionCommand(std::string label,
+                                               std::vector<std::uint64_t>* selectedIds,
+                                               std::vector<std::uint64_t> beforeSelection,
+                                               std::vector<std::uint64_t> afterSelection)
+    : label_(std::move(label))
+    , selectedIds_(selectedIds)
+    , beforeSelection_(std::move(beforeSelection))
+    , afterSelection_(std::move(afterSelection)) {}
+
+void EditorSelectionCommand::undo(EditorSceneDocument& document) const {
+    (void)document;
+    *selectedIds_ = beforeSelection_;
+}
+
+void EditorSelectionCommand::redo(EditorSceneDocument& document) const {
+    (void)document;
+    *selectedIds_ = afterSelection_;
+}
+
 void EditorDocumentStateCommand::undo(EditorSceneDocument& document) const {
     document.restoreState(beforeState_);
 }
@@ -132,6 +151,25 @@ bool EditorCommandStack::pushDocumentStateCommand(std::string label,
     cursor_ = commands_.size();
     trimToLimit();
     syncDirtyFlags(document);
+    return true;
+}
+
+bool EditorCommandStack::pushSelectionCommand(std::string label,
+                                              std::vector<std::uint64_t>* selectedIds,
+                                              const std::vector<std::uint64_t>& beforeSelection,
+                                              const std::vector<std::uint64_t>& afterSelection) {
+    if (beforeSelection == afterSelection) {
+        return false;
+    }
+
+    if (cursor_ < commands_.size()) {
+        commands_.erase(commands_.begin() + static_cast<std::ptrdiff_t>(cursor_), commands_.end());
+    }
+
+    commands_.push_back(std::make_unique<EditorSelectionCommand>(
+        std::move(label), selectedIds, beforeSelection, afterSelection));
+    cursor_ = commands_.size();
+    trimToLimit();
     return true;
 }
 
