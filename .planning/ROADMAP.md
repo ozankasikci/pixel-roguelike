@@ -239,12 +239,12 @@ Plans:
   5. DebugParams is decomposed into focused sub-structs (CameraDebugInfo, RuntimeLightingOverride)
   6. LevelLoader has a single unified load() overload
   7. GenericFileScene has no hard-coded level-specific if-chains
-**Plans:** 1/4 plans executed
+**Plans:** 3/4 plans executed
 
 Plans:
-- [ ] 12-01-PLAN.md — TextureUnits.h named constants and EventBus RAII SubscriptionToken
+- [x] 12-01-PLAN.md — TextureUnits.h named constants and EventBus RAII SubscriptionToken
 - [x] 12-02-PLAN.md — DebugParams decomposition into CameraDebugInfo and RuntimeLightingOverride
-- [ ] 12-03-PLAN.md — ProceduralGameAssets rename, LevelLoader unification, GenericFileScene scripted geometry extraction
+- [x] 12-03-PLAN.md — ProceduralGameAssets rename, LevelLoader unification, GenericFileScene scripted geometry extraction
 - [ ] 12-04-PLAN.md — File-based mesh auto-discovery and AABB frustum culling in SceneRenderPipeline
 
 ## Progress
@@ -267,4 +267,4 @@ Phases execute in numeric order: 1 → 1.1 → 2 → 2.1 → 3 → 4 → 5 → 6
 | 9. Selection Overlay Depth Fix | v1.1 | 1/1 | Complete   | 2026-04-01 |
 | 10. Global Keyboard Shortcuts and Hover Highlight | v1.1 | 2/2 | Complete    | 2026-04-01 |
 | 11. Add Mesh Discoverability | v1.1 | 1/1 | Complete    | 2026-04-01 |
-| 12. Engine Quality | — | 1/4 | In Progress|  |
+| 12. Engine Quality | — | 3/4 | In Progress|  |
