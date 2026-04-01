@@ -189,6 +189,37 @@ void focusEditorCameraOnBounds(EditorCamera& camera,
     focusEditorCameraOnPoint(camera, center);
 }
 
+void tickCameraAnimation(EditorCamera& camera,
+                         EditorCameraAnimation& anim,
+                         float deltaTime) {
+    if (!anim.active) return;
+    anim.progress = std::min(anim.progress + deltaTime / anim.duration, 1.0f);
+    const float t = 1.0f - std::pow(1.0f - anim.progress, 3.0f);  // ease-out cubic
+
+    camera.yawDegrees   = glm::mix(camera.yawDegrees,   anim.target.yawDegrees,   t);
+    camera.pitchDegrees = glm::mix(camera.pitchDegrees, anim.target.pitchDegrees, t);
+    camera.position     = glm::mix(camera.position,     anim.target.position,     t);
+    camera.orbitPivot   = glm::mix(camera.orbitPivot,   anim.target.orbitPivot,   t);
+    camera.orbitDistance = glm::mix(camera.orbitDistance, anim.target.orbitDistance, t);
+    camera.orbitPivotValid = anim.target.orbitPivotValid;
+
+    if (anim.progress >= 1.0f) {
+        camera = anim.target;
+        anim.active = false;
+    }
+}
+
+void beginFocusAnimation(EditorCamera& camera,
+                         EditorCameraAnimation& anim,
+                         const glm::vec3& boundsMin,
+                         const glm::vec3& boundsMax) {
+    EditorCamera target = camera;
+    focusEditorCameraOnBounds(target, boundsMin, boundsMax);
+    anim.target = target;
+    anim.progress = 0.0f;
+    anim.active = true;
+}
+
 bool manipulateEditorGizmo(const EditorViewportState& viewport,
                            const glm::mat4& view,
                            const glm::mat4& projection,

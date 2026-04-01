@@ -42,10 +42,26 @@ void updateEditorFlyCamera(EditorCamera& camera,
                            const EditorViewportState& viewport,
                            float deltaTime);
 
+struct EditorCameraAnimation {
+    bool active = false;
+    EditorCamera target;
+    float progress = 0.0f;
+    float duration = 0.3f;
+};
+
 void focusEditorCameraOnPoint(EditorCamera& camera, const glm::vec3& point);
 void focusEditorCameraOnBounds(EditorCamera& camera,
                                const glm::vec3& boundsMin,
                                const glm::vec3& boundsMax);
+
+void tickCameraAnimation(EditorCamera& camera,
+                         EditorCameraAnimation& anim,
+                         float deltaTime);
+
+void beginFocusAnimation(EditorCamera& camera,
+                         EditorCameraAnimation& anim,
+                         const glm::vec3& boundsMin,
+                         const glm::vec3& boundsMax);
 
 bool manipulateEditorGizmo(const EditorViewportState& viewport,
                            const glm::mat4& view,
