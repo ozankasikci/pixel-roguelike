@@ -265,42 +265,130 @@ bool applyGizmoToSelectedObject(EditorSceneDocument& document,
                                 const glm::mat4& projection,
                                 const EditorUiState& ui,
                                 const EditorPreviewWorld& previewWorld) {
-    if (selectedIds.size() != 1 || ui.playPreview) {
+    if (selectedIds.empty() || ui.playPreview) {
         return false;
     }
 
-    EditorSceneObject* object = document.findObject(selectedIds.front());
-    if (object == nullptr) {
-        return false;
-    }
-
-    glm::mat4 model(1.0f);
-    switch (object->kind) {
-    case EditorSceneObjectKind::Mesh:
-    case EditorSceneObjectKind::BoxCollider:
-    case EditorSceneObjectKind::CylinderCollider:
-    case EditorSceneObjectKind::Archetype:
-        model = document.worldTransformMatrix(object->id);
-        break;
-    case EditorSceneObjectKind::Light: {
-        const auto& light = std::get<LevelLightPlacement>(object->payload);
-        if (light.type == LightType::Directional) {
-            const glm::vec3 anchor = previewWorld.sceneBounds().valid
-                ? previewWorld.sceneBounds().center() - safeNormalize(light.direction, glm::vec3(-0.3f, -0.9f, -0.1f)) * 4.0f
-                : -safeNormalize(light.direction, glm::vec3(-0.3f, -0.9f, -0.1f)) * 4.0f;
-            model = makeModelMatrix(anchor, glm::vec3(0.6f));
-        } else {
-            model = makeModelMatrix(light.position, glm::vec3(0.6f));
+    // Single-object path: existing behaviour unchanged.
+    if (selectedIds.size() == 1) {
+        EditorSceneObject* object = document.findObject(selectedIds.front());
+        if (object == nullptr) {
+            return false;
         }
-        break;
+
+        glm::mat4 model(1.0f);
+        switch (object->kind) {
+        case EditorSceneObjectKind::Mesh:
+        case EditorSceneObjectKind::BoxCollider:
+        case EditorSceneObjectKind::CylinderCollider:
+        case EditorSceneObjectKind::Archetype:
+            model = document.worldTransformMatrix(object->id);
+            break;
+        case EditorSceneObjectKind::Light: {
+            const auto& light = std::get<LevelLightPlacement>(object->payload);
+            if (light.type == LightType::Directional) {
+                const glm::vec3 anchor = previewWorld.sceneBounds().valid
+                    ? previewWorld.sceneBounds().center() - safeNormalize(light.direction, glm::vec3(-0.3f, -0.9f, -0.1f)) * 4.0f
+                    : -safeNormalize(light.direction, glm::vec3(-0.3f, -0.9f, -0.1f)) * 4.0f;
+                model = makeModelMatrix(anchor, glm::vec3(0.6f));
+            } else {
+                model = makeModelMatrix(light.position, glm::vec3(0.6f));
+            }
+            break;
+        }
+        case EditorSceneObjectKind::PlayerSpawn: {
+            glm::mat4 world = document.worldTransformMatrix(object->id);
+            world = glm::scale(world, glm::vec3(0.5f, 1.4f, 0.5f));
+            model = world;
+            break;
+        }
+        }
+
+        if (!manipulateEditorGizmo(viewport,
+                                   view,
+                                   projection,
+                                   ui.tool,
+                                   ui.snappingEnabled,
+                                   ui.moveSnap,
+                                   ui.rotateSnap,
+                                   ui.scaleSnap,
+                                   model)) {
+            return false;
+        }
+
+        glm::vec3 position(0.0f);
+        glm::vec3 rotationDegrees(0.0f);
+        glm::vec3 scale(1.0f);
+        if (!decomposeModelMatrix(model, position, rotationDegrees, scale)) {
+            return false;
+        }
+
+        if (ui.snappingEnabled) {
+            position = snappedVec3(position, ui.moveSnap);
+            rotationDegrees = snappedVec3(rotationDegrees, ui.rotateSnap);
+        }
+
+        switch (object->kind) {
+        case EditorSceneObjectKind::Mesh:
+        case EditorSceneObjectKind::BoxCollider:
+        case EditorSceneObjectKind::CylinderCollider:
+        case EditorSceneObjectKind::Archetype:
+            if (!document.applyWorldTransform(object->id, model)) {
+                return false;
+            }
+            break;
+        case EditorSceneObjectKind::Light: {
+            auto& light = std::get<LevelLightPlacement>(object->payload);
+            if (light.type == LightType::Directional) {
+                const glm::mat4 rotationMatrix = glm::yawPitchRoll(glm::radians(rotationDegrees.y),
+                                                                   glm::radians(rotationDegrees.x),
+                                                                   glm::radians(rotationDegrees.z));
+                light.direction = safeNormalize(glm::vec3(rotationMatrix * glm::vec4(0.0f, -1.0f, 0.0f, 0.0f)),
+                                                glm::vec3(0.0f, -1.0f, 0.0f));
+            } else {
+                light.position = position;
+                if (light.type == LightType::Spot) {
+                    const glm::mat4 rotationMatrix = glm::yawPitchRoll(glm::radians(rotationDegrees.y),
+                                                                       glm::radians(rotationDegrees.x),
+                                                                       glm::radians(rotationDegrees.z));
+                    light.direction = safeNormalize(glm::vec3(rotationMatrix * glm::vec4(0.0f, 0.0f, -1.0f, 0.0f)),
+                                                    glm::vec3(0.0f, -1.0f, 0.0f));
+                }
+            }
+            break;
+        }
+        case EditorSceneObjectKind::PlayerSpawn: {
+            glm::mat4 spawnWorld = model;
+            spawnWorld[0] = glm::vec4(1.0f, 0.0f, 0.0f, 0.0f);
+            spawnWorld[1] = glm::vec4(0.0f, 1.0f, 0.0f, 0.0f);
+            spawnWorld[2] = glm::vec4(0.0f, 0.0f, 1.0f, 0.0f);
+            if (!document.applyWorldTransform(object->id, spawnWorld)) {
+                return false;
+            }
+            break;
+        }
+        }
+        return true;
     }
-    case EditorSceneObjectKind::PlayerSpawn: {
-        glm::mat4 world = document.worldTransformMatrix(object->id);
-        world = glm::scale(world, glm::vec3(0.5f, 1.4f, 0.5f));
-        model = world;
-        break;
+
+    // Multi-object path: gizmo at centroid, apply pivot transform to all selected objects.
+    glm::vec3 centroid(0.0f);
+    int count = 0;
+    for (auto id : selectedIds) {
+        const EditorSceneObject* obj = document.findObject(id);
+        if (!obj) {
+            continue;
+        }
+        centroid += editorSceneObjectAnchor(*obj);
+        ++count;
     }
+    if (count == 0) {
+        return false;
     }
+    centroid /= static_cast<float>(count);
+
+    // Build gizmo matrix at centroid with identity rotation and unit scale.
+    glm::mat4 gizmoMatrix = glm::translate(glm::mat4(1.0f), centroid);
 
     if (!manipulateEditorGizmo(viewport,
                                view,
@@ -310,61 +398,58 @@ bool applyGizmoToSelectedObject(EditorSceneDocument& document,
                                ui.moveSnap,
                                ui.rotateSnap,
                                ui.scaleSnap,
-                               model)) {
+                               gizmoMatrix)) {
         return false;
     }
 
-    glm::vec3 position(0.0f);
-    glm::vec3 rotationDegrees(0.0f);
-    glm::vec3 scale(1.0f);
-    if (!decomposeModelMatrix(model, position, rotationDegrees, scale)) {
-        return false;
-    }
+    // Compute the pivot-relative local delta.
+    // before = T(centroid), localDelta = T(-centroid) * gizmoMatrix
+    // For each object: newWorld = T(centroid) * localDelta * T(-centroid) * objectWorld
+    const glm::mat4 before = glm::translate(glm::mat4(1.0f), centroid);
+    const glm::mat4 invBefore = glm::inverse(before);
+    const glm::mat4 localDelta = invBefore * gizmoMatrix;
+    const glm::mat3 localDeltaRot(localDelta);
 
-    if (ui.snappingEnabled) {
-        position = snappedVec3(position, ui.moveSnap);
-        rotationDegrees = snappedVec3(rotationDegrees, ui.rotateSnap);
-    }
-
-    switch (object->kind) {
-    case EditorSceneObjectKind::Mesh:
-    case EditorSceneObjectKind::BoxCollider:
-    case EditorSceneObjectKind::CylinderCollider:
-    case EditorSceneObjectKind::Archetype:
-        if (!document.applyWorldTransform(object->id, model)) {
-            return false;
+    for (auto id : selectedIds) {
+        EditorSceneObject* obj = document.findObject(id);
+        if (!obj) {
+            continue;
         }
-        break;
-    case EditorSceneObjectKind::Light: {
-        auto& light = std::get<LevelLightPlacement>(object->payload);
-        if (light.type == LightType::Directional) {
-            const glm::mat4 rotationMatrix = glm::yawPitchRoll(glm::radians(rotationDegrees.y),
-                                                               glm::radians(rotationDegrees.x),
-                                                               glm::radians(rotationDegrees.z));
-            light.direction = safeNormalize(glm::vec3(rotationMatrix * glm::vec4(0.0f, -1.0f, 0.0f, 0.0f)),
-                                            glm::vec3(0.0f, -1.0f, 0.0f));
-        } else {
-            light.position = position;
-            if (light.type == LightType::Spot) {
-                const glm::mat4 rotationMatrix = glm::yawPitchRoll(glm::radians(rotationDegrees.y),
-                                                                   glm::radians(rotationDegrees.x),
-                                                                   glm::radians(rotationDegrees.z));
-                light.direction = safeNormalize(glm::vec3(rotationMatrix * glm::vec4(0.0f, 0.0f, -1.0f, 0.0f)),
-                                                glm::vec3(0.0f, -1.0f, 0.0f));
+
+        switch (obj->kind) {
+        case EditorSceneObjectKind::Mesh:
+        case EditorSceneObjectKind::BoxCollider:
+        case EditorSceneObjectKind::CylinderCollider:
+        case EditorSceneObjectKind::Archetype: {
+            const glm::mat4 objectWorld = document.worldTransformMatrix(obj->id);
+            const glm::mat4 newWorld = before * localDelta * invBefore * objectWorld;
+            document.applyWorldTransform(obj->id, newWorld);
+            break;
+        }
+        case EditorSceneObjectKind::Light: {
+            auto& light = std::get<LevelLightPlacement>(obj->payload);
+            const glm::vec3 anchor = editorSceneObjectAnchor(*obj);
+            const glm::vec3 newAnchor = glm::vec3(before * localDelta * invBefore * glm::vec4(anchor, 1.0f));
+            if (light.type != LightType::Directional) {
+                light.position = newAnchor;
             }
+            if (light.type == LightType::Spot || light.type == LightType::Directional) {
+                light.direction = safeNormalize(localDeltaRot * light.direction, light.direction);
+            }
+            document.markSceneDirty();
+            break;
         }
-        break;
-    }
-    case EditorSceneObjectKind::PlayerSpawn: {
-        glm::mat4 spawnWorld = model;
-        spawnWorld[0] = glm::vec4(1.0f, 0.0f, 0.0f, 0.0f);
-        spawnWorld[1] = glm::vec4(0.0f, 1.0f, 0.0f, 0.0f);
-        spawnWorld[2] = glm::vec4(0.0f, 0.0f, 1.0f, 0.0f);
-        if (!document.applyWorldTransform(object->id, spawnWorld)) {
-            return false;
+        case EditorSceneObjectKind::PlayerSpawn: {
+            const glm::mat4 objectWorld = document.worldTransformMatrix(obj->id);
+            glm::mat4 newWorld = before * localDelta * invBefore * objectWorld;
+            // Strip rotation/scale columns — player spawn only stores position.
+            newWorld[0] = glm::vec4(1.0f, 0.0f, 0.0f, 0.0f);
+            newWorld[1] = glm::vec4(0.0f, 1.0f, 0.0f, 0.0f);
+            newWorld[2] = glm::vec4(0.0f, 0.0f, 1.0f, 0.0f);
+            document.applyWorldTransform(obj->id, newWorld);
+            break;
         }
-        break;
-    }
+        }
     }
     return true;
 }
