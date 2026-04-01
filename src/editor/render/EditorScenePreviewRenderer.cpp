@@ -238,13 +238,26 @@ void appendSelectionOverlays(std::vector<RenderObject>& objects,
             ? glm::vec3(1.30f, 0.92f, 0.24f)
             : glm::vec3(0.50f, 1.00f, 0.62f);
 
+        // Ghost pass: draws through all geometry at 20% brightness
+        objects.push_back(RenderObject{
+            cube,
+            makeModelMatrix(center, size),
+            tint * 0.20f,
+            materials.resolve("metal_default"),
+            true,
+            true,
+            true,
+            primary ? 2.0f : 1.5f
+        });
+
+        // Primary pass: depth-tested, only visible where object is not occluded
         objects.push_back(RenderObject{
             cube,
             makeModelMatrix(center, size),
             tint,
             materials.resolve("metal_default"),
             true,
-            true,
+            false,
             true,
             primary ? 4.0f : 2.5f
         });
