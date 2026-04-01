@@ -134,6 +134,7 @@ struct LevelNodeRef {
         CylinderCollider,
         PlayerSpawn,
         Archetype,
+        Group,
     };
 
     Kind kind = Kind::Mesh;
@@ -477,6 +478,38 @@ LevelDef loadLevelDef(const std::string& path) {
             continue;
         }
 
+        if (kind == "group") {
+            LevelGroupNode placement;
+            if (!(stream >> placement.name
+                         >> placement.position.x >> placement.position.y >> placement.position.z
+                         >> placement.scale.x >> placement.scale.y >> placement.scale.z
+                         >> placement.rotation.x >> placement.rotation.y >> placement.rotation.z)) {
+                throwParseError(path, lineNumber, "invalid group record");
+            }
+            const auto tokens = collectRemainingTokens(stream);
+            for (std::size_t index = 0; index < tokens.size();) {
+                if (tokens[index] == "node") {
+                    if (index + 1 >= tokens.size()) {
+                        throwParseError(path, lineNumber, "missing group node id");
+                    }
+                    placement.nodeId = tokens[index + 1];
+                    index += 2;
+                    continue;
+                }
+                if (tokens[index] == "parent") {
+                    if (index + 1 >= tokens.size()) {
+                        throwParseError(path, lineNumber, "missing group parent node id");
+                    }
+                    placement.parentNodeId = tokens[index + 1];
+                    index += 2;
+                    continue;
+                }
+                throwParseError(path, lineNumber, "invalid group metadata");
+            }
+            data.groups.push_back(std::move(placement));
+            continue;
+        }
+
         throwParseError(path, lineNumber, "unknown record type '" + kind + "'");
     }
 
@@ -492,6 +525,7 @@ LevelDef resolveLevelHierarchy(const LevelDef& data) {
                  + data.boxColliders.size()
                  + data.cylinderColliders.size()
                  + data.archetypes.size()
+                 + data.groups.size()
                  + (data.hasPlayerSpawn ? 1u : 0u));
 
     for (std::size_t i = 0; i < data.meshes.size(); ++i) {
@@ -511,6 +545,9 @@ LevelDef resolveLevelHierarchy(const LevelDef& data) {
     }
     for (std::size_t i = 0; i < data.archetypes.size(); ++i) {
         refs.push_back(LevelNodeRef{LevelNodeRef::Kind::Archetype, i, data.archetypes[i].nodeId, data.archetypes[i].parentNodeId});
+    }
+    for (std::size_t i = 0; i < data.groups.size(); ++i) {
+        refs.push_back(LevelNodeRef{LevelNodeRef::Kind::Group, i, data.groups[i].nodeId, data.groups[i].parentNodeId});
     }
 
     std::unordered_map<std::string, std::size_t> nodeLookup;
@@ -552,6 +589,10 @@ LevelDef resolveLevelHierarchy(const LevelDef& data) {
         case LevelNodeRef::Kind::Archetype: {
             const auto& placement = data.archetypes[ref.index];
             return makeTransformMatrix(placement.position, glm::vec3(0.0f, placement.yawDegrees, 0.0f), glm::vec3(1.0f));
+        }
+        case LevelNodeRef::Kind::Group: {
+            const auto& placement = data.groups[ref.index];
+            return makeTransformMatrix(placement.position, placement.rotation, placement.scale);
         }
         }
         return glm::mat4(1.0f);
@@ -638,6 +679,16 @@ LevelDef resolveLevelHierarchy(const LevelDef& data) {
             if (decomposeTransformMatrix(worldMatrices[idx], position, rotation, scale)) {
                 placement.position = position;
                 placement.yawDegrees = rotation.y;
+            }
+            break;
+        }
+        case LevelNodeRef::Kind::Group: {
+            auto& placement = resolved.groups[refs[idx].index];
+            glm::vec3 position(0.0f), rotation(0.0f), scale(1.0f);
+            if (decomposeTransformMatrix(worldMatrices[idx], position, rotation, scale)) {
+                placement.position = position;
+                placement.rotation = rotation;
+                placement.scale = glm::max(scale, glm::vec3(0.01f));
             }
             break;
         }
@@ -780,6 +831,21 @@ std::string serializeLevelDef(const LevelDef& data) {
             << formatFloat(placement.position.y) << ' '
             << formatFloat(placement.position.z) << ' '
             << formatFloat(placement.yawDegrees);
+        appendNodeMetadata(out, placement.nodeId, placement.parentNodeId);
+        out << '\n';
+    }
+
+    for (const auto& placement : data.groups) {
+        out << "group " << placement.name << ' '
+            << formatFloat(placement.position.x) << ' '
+            << formatFloat(placement.position.y) << ' '
+            << formatFloat(placement.position.z) << ' '
+            << formatFloat(placement.scale.x) << ' '
+            << formatFloat(placement.scale.y) << ' '
+            << formatFloat(placement.scale.z) << ' '
+            << formatFloat(placement.rotation.x) << ' '
+            << formatFloat(placement.rotation.y) << ' '
+            << formatFloat(placement.rotation.z);
         appendNodeMetadata(out, placement.nodeId, placement.parentNodeId);
         out << '\n';
     }

@@ -66,6 +66,15 @@ struct LevelArchetypePlacement {
     float yawDegrees = 0.0f;
 };
 
+struct LevelGroupNode {
+    std::string name;
+    glm::vec3 position{0.0f};
+    glm::vec3 scale{1.0f};
+    glm::vec3 rotation{0.0f};
+    std::string nodeId;
+    std::string parentNodeId;
+};
+
 struct LevelDef {
     std::string environmentId = "neutral";
     EnvironmentProfile environmentProfile = EnvironmentProfile::Default;
@@ -76,6 +85,7 @@ struct LevelDef {
     LevelPlayerSpawn playerSpawn;
     bool hasPlayerSpawn = false;
     std::vector<LevelArchetypePlacement> archetypes;
+    std::vector<LevelGroupNode> groups;
 };
 
 LevelDef loadLevelDef(const std::string& path);
