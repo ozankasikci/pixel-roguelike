@@ -16,24 +16,26 @@
 #include "game/components/PlayerSpawnComponent.h"
 #include "game/components/PlayerTag.h"
 #include "game/components/PrimaryCameraTag.h"
-#include "engine/core/Application.h"
 #include "engine/core/PathUtils.h"
+
+#include <cassert>
 
 LevelLoader::LevelLoader(LevelBuildContext& context)
     : context_(context) {}
 
-void LevelLoader::load(Application& app, const LevelLoadRequest& request) {
-    load(app.getService<ContentRegistry>(),
-         app.getService<RunSession>(),
-         request,
-         loadLevelDef(resolveProjectPath(request.levelPath)));
-}
+void LevelLoader::load(const LevelLoadRequest& request, const LevelLoadArgs& args) {
+    assert(args.content != nullptr && "LevelLoadArgs::content must not be null");
+    assert(args.session != nullptr && "LevelLoadArgs::session must not be null");
 
-void LevelLoader::load(ContentRegistry& content,
-                       RunSession& session,
-                       const LevelLoadRequest& request,
-                       const LevelDef& rawLevel) {
-    auto& registry = context_.registry;
+    // If no pre-loaded LevelDef, load from file
+    LevelDef loadedDef;
+    const LevelDef& rawLevel = args.levelDef
+        ? *args.levelDef
+        : (loadedDef = loadLevelDef(resolveProjectPath(request.levelPath)), loadedDef);
+
+    ContentRegistry& content = *args.content;
+    RunSession& session      = *args.session;
+    auto& registry           = context_.registry;
 
     if (request.registerAssets) {
         request.registerAssets(context_.meshLibrary);
@@ -111,5 +113,4 @@ void LevelLoader::load(ContentRegistry& content,
     registry.emplace<PlayerMovementComponent>(player);
     registry.emplace<PlayerInteractionLockComponent>(player);
     registry.emplace<PlayerSpawnComponent>(player, PlayerSpawnComponent{session.respawnPosition, fallRespawnY});
-
 }
