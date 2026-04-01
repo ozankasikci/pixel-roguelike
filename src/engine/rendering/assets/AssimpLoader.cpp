@@ -3,6 +3,7 @@
 #include "engine/core/MathUtils.h"
 
 #include <assimp/Importer.hpp>
+#include <assimp/config.h>
 #include <assimp/postprocess.h>
 #include <assimp/scene.h>
 #include <glm/glm.hpp>
@@ -294,6 +295,7 @@ std::unique_ptr<Mesh> AssimpLoader::load(const std::string& filepath) {
 
 RawMeshData AssimpLoader::loadRaw(const std::string& filepath) {
     Assimp::Importer importer;
+    importer.SetPropertyBool(AI_CONFIG_FBX_CONVERT_TO_M, true);
     const aiScene* scene = importer.ReadFile(filepath, kAssimpImportFlags);
     if (scene == nullptr) {
         spdlog::error("AssimpLoader::loadRaw: failed to load '{}': {}", filepath, importer.GetErrorString());
@@ -320,6 +322,7 @@ RawMeshData AssimpLoader::loadRaw(const std::string& filepath) {
 
 std::vector<NamedRawMeshData> AssimpLoader::loadRawMulti(const std::string& filepath) {
     Assimp::Importer importer;
+    importer.SetPropertyBool(AI_CONFIG_FBX_CONVERT_TO_M, true);
     const aiScene* scene = importer.ReadFile(filepath, kAssimpImportFlags);
     if (scene == nullptr) {
         spdlog::error("AssimpLoader::loadRawMulti: failed to load '{}': {}", filepath, importer.GetErrorString());
