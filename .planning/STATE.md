@@ -224,10 +224,11 @@ None yet.
 | 260402-3at | Add EditorSceneObjectKind::Group with LevelGroupNode for hierarchy grouping | 2026-04-02 | ed27e6e | [260402-3at-add-editorsceneobjectkind-group-with-lev](./quick/260402-3at-add-editorsceneobjectkind-group-with-lev/) |
 | 260402-3o3 | Add "Create Group" to outliner right-click context menu with centroid placement and undo/redo | 2026-04-02 | 5c5f71c | [260402-3o3-add-create-group-to-outliner-right-click](./quick/260402-3o3-add-create-group-to-outliner-right-click/) |
 | 260402-3tl | Add Ctrl/Cmd+S keyboard shortcut to save scene in level editor | 2026-04-02 | 5cd4b53 | [260402-3tl-pressing-ctrl-or-cmd-plus-s-should-save-](./quick/260402-3tl-pressing-ctrl-or-cmd-plus-s-should-save-/) |
+| 260402-3qe | Implement Unity-style double-F focus: two zoom levels on repeated F key press | 2026-04-02 | 284f77f | [260402-3qe-implement-unity-style-double-f-focus-two](./quick/260402-3qe-implement-unity-style-double-f-focus-two/) |
 
 ## Session Continuity
 
-Last activity: 2026-04-02 - Completed quick task 260402-3tl: Add Ctrl/Cmd+S save shortcut
+Last activity: 2026-04-02 - Completed quick task 260402-3qe: Unity-style double-F focus toggle
 Last session: 2026-04-02T23:49:31Z
-Stopped at: Completed quick task 260402-3tl: Add Ctrl/Cmd+S keyboard shortcut to save scene
+Stopped at: Completed quick task 260402-3qe: Unity-style double-F focus toggle
 Resume file: None
