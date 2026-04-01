@@ -130,10 +130,11 @@ None for v1.1. All APIs exist; work is wiring and one renderer fix.
 | 260402-1l5 | Fix QuestDoorsPack door scale: measured FBX AABB (~9.2m height), corrected scene scale from 0.25 to 0.21 | 2026-04-02 | 5d97e82 | [260402-1l5-investigate-and-fix-questdoorspack-fbx-d](./quick/260402-1l5-investigate-and-fix-questdoorspack-fbx-d/) |
 | 260402-2lb | Fix multi-object gizmo scale compounding: MultiGizmoState caches original transforms per drag | 2026-04-02 | b9a2d31 | [260402-2lb-fix-multi-object-scaling-gizmo-losing-pr](./quick/260402-2lb-fix-multi-object-scaling-gizmo-losing-pr/) |
 | 260402-3at | Add EditorSceneObjectKind::Group with LevelGroupNode for hierarchy grouping | 2026-04-02 | ed27e6e | [260402-3at-add-editorsceneobjectkind-group-with-lev](./quick/260402-3at-add-editorsceneobjectkind-group-with-lev/) |
+| 260402-3o3 | Add "Create Group" to outliner right-click context menu with centroid placement and undo/redo | 2026-04-02 | 5c5f71c | [260402-3o3-add-create-group-to-outliner-right-click](./quick/260402-3o3-add-create-group-to-outliner-right-click/) |
 
 ## Session Continuity
 
-Last activity: 2026-04-02 - Completed quick task 260402-3at: Add EditorSceneObjectKind::Group with hierarchy grouping
-Last session: 2026-04-02T23:33:09Z
-Stopped at: Completed quick task 260402-3at: Add group node support
+Last activity: 2026-04-02 - Completed quick task 260402-3o3: Add Create Group to outliner right-click context menu
+Last session: 2026-04-02T23:40:00Z
+Stopped at: Completed quick task 260402-3o3: Add Create Group context menu item
 Resume file: None
