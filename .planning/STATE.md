@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: Editor UX
 status: executing
-stopped_at: Completed 12-04-PLAN.md
-last_updated: "2026-04-01T18:30:05.059Z"
+stopped_at: "Completed quick task 260401-uvc: FBX cm-to-m auto-conversion"
+last_updated: "2026-04-01T19:28:05.641Z"
 last_activity: 2026-04-01
 progress:
   total_phases: 14
@@ -90,6 +90,7 @@ Recent decisions affecting current work:
 - [Phase 12]: EventBus [[nodiscard]] subscribe() returns RAII SubscriptionToken; store token in member to keep subscription alive
 - [Phase 12]: culledInput pattern: copy SceneRenderInput, swap objects pointer to culledObjects vector — cleanest way to thread culled list through sub-passes without signature changes
 - [Phase 12]: FrustumCulling uses Gribb-Hartmann VP matrix extraction; isAabbInsideFrustum transforms 8 local AABB corners to world space before plane test
+- [Phase quick]: AI_CONFIG_FBX_CONVERT_TO_M set via SetPropertyBool on both AssimpLoader import paths — converts FBX cm vertices to meters at import, eliminates 0.01 scale workarounds in scene files and scripted geometry
 
 ### Roadmap Evolution
 
@@ -122,10 +123,11 @@ None for v1.1. All APIs exist; work is wiring and one renderer fix.
 | 260401-qau | Fix delete key on macOS: add ImGuiKey_Backspace as alternative trigger | 2026-04-01 | 698ccf3 | [260401-qau-fix-delete-key-on-macos-add-imguikey-bac](./quick/260401-qau-fix-delete-key-on-macos-add-imguikey-bac/) |
 | 260401-rt2 | Cache shader uniform locations, guard Jolt body ID, deduplicate MathUtils, reuse renderer vectors | 2026-04-01 | 639ae43 | [260401-rt2-codebase-cleanup-cache-uniform-locations](./quick/260401-rt2-codebase-cleanup-cache-uniform-locations/) |
 | 260401-uie | Selection undo/redo: Ctrl+Z restores selection changes in level editor | 2026-04-01 | b871d75 | [260401-uie-make-ctrl-z-also-work-for-selection-dese](./quick/260401-uie-make-ctrl-z-also-work-for-selection-dese/) |
+| 260401-uvc | Fix FBX mesh import scaling: AI_CONFIG_FBX_CONVERT_TO_M eliminates 0.01 workarounds | 2026-04-01 | 5d0b37e | [260401-uvc-investigate-mesh-import-scaling-research](./quick/260401-uvc-investigate-mesh-import-scaling-research/) |
 
 ## Session Continuity
 
 Last activity: 2026-04-01 - Completed quick task 260401-uie: Selection undo/redo
-Last session: 2026-04-01T19:07:12Z
-Stopped at: Completed quick task 260401-uie
+Last session: 2026-04-01T19:28:01.377Z
+Stopped at: Completed quick task 260401-uvc: FBX cm-to-m auto-conversion
 Resume file: None
