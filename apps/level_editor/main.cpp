@@ -319,6 +319,7 @@ int main(int argc, char* argv[]) {
     finalFbo.create(1280, 720);
 
     EditorCamera editCamera;
+    EditorCameraAnimation cameraAnim;
     if (!initialScene.empty()) {
         if (!syncEditorCameraToRuntimeStart(document, editCamera) && previewWorld.sceneBounds().valid) {
             focusEditorCameraOnBounds(editCamera, previewWorld.sceneBounds().min, previewWorld.sceneBounds().max);
@@ -428,8 +429,8 @@ int main(int argc, char* argv[]) {
         }
 
         if (!gameplayPreviewCaptured) {
-            if (ImGui::IsKeyPressed(ImGuiKey_F)) focusPressed = true;
-            if (ImGui::IsKeyPressed(ImGuiKey_Delete)) deletePressed = true;
+            if (!io.WantTextInput && ImGui::IsKeyPressed(ImGuiKey_F)) focusPressed = true;
+            if (!io.WantTextInput && ImGui::IsKeyPressed(ImGuiKey_Delete)) deletePressed = true;
             if ((io.KeyCtrl || io.KeySuper) && ImGui::IsKeyPressed(ImGuiKey_D)) duplicatePressed = true;
             if ((io.KeyCtrl || io.KeySuper) && ImGui::IsKeyPressed(ImGuiKey_Z)) {
                 if (io.KeyShift) {
@@ -453,10 +454,13 @@ int main(int argc, char* argv[]) {
                 glfwGetMouseButton(window.handle(), GLFW_MOUSE_BUTTON_RIGHT) != GLFW_PRESS) {
                 buildAndRunPressed = true;
             }
-            if (ImGui::IsKeyPressed(ImGuiKey_Escape)) {
+            if (!io.WantTextInput && ImGui::IsKeyPressed(ImGuiKey_Escape)) {
                 placementState.clear();
                 widgetCommand.clear();
                 gizmoCommand.clear();
+                selectedIds.clear();
+                selectionPicker.clear();
+                ui.inspectorContext = EditorInspectorContext::SceneSelection;
             }
         }
 
@@ -1309,7 +1313,16 @@ int main(int argc, char* argv[]) {
         glm::mat4 inverseViewProjection(1.0f);
 
         if (!ui.pendingScenePath.empty() && !ui.playPreview && !startupViewportHandoffActive) {
-            updateEditorFlyCamera(editCamera, window.handle(), renderViewportState, deltaTime);
+            tickCameraAnimation(editCamera, cameraAnim, deltaTime);
+            if (!cameraAnim.active) {
+                updateEditorFlyCamera(editCamera, window.handle(), renderViewportState, deltaTime);
+            } else if (glfwGetMouseButton(window.handle(), GLFW_MOUSE_BUTTON_RIGHT) == GLFW_PRESS
+                       || glfwGetMouseButton(window.handle(), GLFW_MOUSE_BUTTON_MIDDLE) == GLFW_PRESS
+                       || (io.KeyAlt && glfwGetMouseButton(window.handle(), GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS)
+                       || io.MouseWheel != 0.0f) {
+                cameraAnim.active = false;
+                updateEditorFlyCamera(editCamera, window.handle(), renderViewportState, deltaTime);
+            }
 
             view = editorCameraView(editCamera);
             projection = editorCameraProjection(editCamera, static_cast<float>(targetW) / static_cast<float>(targetH));
@@ -1705,11 +1718,17 @@ int main(int argc, char* argv[]) {
             ui.frameSelectionRequested = false;
         }
 
-        if (focusPressed && selectedIds.size() == 1) {
-            if (const EditorObjectBounds* bounds = previewWorld.findObjectBounds(selectedIds.front())) {
-                focusEditorCameraOnBounds(editCamera, bounds->min, bounds->max);
-            } else if (const EditorSceneObject* object = document.findObject(selectedIds.front())) {
-                focusEditorCameraOnPoint(editCamera, editorSceneObjectAnchor(*object));
+        if (focusPressed && !selectedIds.empty()) {
+            EditorObjectBounds unionBounds;
+            for (const auto id : selectedIds) {
+                if (const EditorObjectBounds* b = previewWorld.findObjectBounds(id)) {
+                    unionBounds.expand(*b);
+                } else if (const EditorSceneObject* obj = document.findObject(id)) {
+                    unionBounds.expand(editorSceneObjectAnchor(*obj));
+                }
+            }
+            if (unionBounds.valid) {
+                beginFocusAnimation(editCamera, cameraAnim, unionBounds.min, unionBounds.max);
             }
             focusPressed = false;
         } else {
@@ -1746,6 +1765,9 @@ int main(int argc, char* argv[]) {
             for (auto id : selectedIds) {
                 const std::uint64_t newId = document.duplicateObject(id);
                 if (newId != 0) {
+                    const glm::mat4 currentWorld = document.worldTransformMatrix(newId);
+                    const glm::mat4 offsetWorld = glm::translate(glm::mat4(1.0f), glm::vec3(0.5f, 0.0f, 0.0f)) * currentWorld;
+                    document.applyWorldTransform(newId, offsetWorld);
                     duplicated.push_back(newId);
                 }
             }
