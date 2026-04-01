@@ -24,6 +24,7 @@ ssao_enabled true
 ssao_radius 0.5
 ssao_bias 0.025
 ssao_strength 0.5
+csm_lambda 0.5
 vignette_strength 0.08
 vignette_softness 0.78
 grain_amount 0.035

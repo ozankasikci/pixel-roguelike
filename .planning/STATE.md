@@ -79,6 +79,7 @@ Plan: Not started
 Decisions are logged in PROJECT.md Key Decisions table.
 Recent decisions affecting current work:
 
+<<<<<<< Updated upstream
 - Graphics API: OpenGL 4.1 Core Profile (macOS caps at 4.1; research recommended 4.6 but 4.1 is the ceiling on this platform)
 - Dithering approach: Post-process fullscreen quad with Bayer matrix; world-space pattern anchoring is non-negotiable from Phase 1
 - [Phase 01-engine-and-dithering-pipeline]: GLAD 2 requires LANGUAGES C CXX in CMakeLists.txt project() and jinja2 Python package in venv for code generation
@@ -141,6 +142,41 @@ Recent decisions affecting current work:
 - [Phase 07]: test_content_registry links game_rendering (not just game_content) because ContentRegistry.cpp now calls MaterialTextureLibrary methods
 - [Phase 07]: Material CRUD popups inline in asset browser panel; file I/O in panel, ContentRegistry mutations delegated to main.cpp via AssetBrowserActionResult
 - [Phase 07]: content.addMaterial() replaces content.loadDefaults() for targeted in-memory update on material inspector save
+=======
+- [Phase 08]: Metal and chained doors from buildScriptedGeometry (not .scene file) so InteractableComponent can be attached
+- [Phase 08]: Chain padlock links constructed from cylinder segments; 4 cylinders per link in rectangular loop
+- [v1.1 research]: All document mutation APIs complete — `eraseObjects`, `duplicateObject`, `addMesh`, `applyWorldTransform` need no changes
+- [v1.1 research]: Selection depth fix is a single-file change in `EditorScenePreviewRenderer.cpp` — remove `ignoreDepth=true` from primary selection overlay pass
+- [v1.1 research]: Global shortcuts (Delete, Ctrl+D, Escape, F) must live in `main.cpp` as single handlers with `ImGuiInputFlags_RouteGlobal`; panel-side duplicates removed
+- [v1.1 research]: Every new mutation entry point requires explicit capture-before/push-after to `EditorCommandStack` — not enforced by the type system
+- [v1.1 research]: `pruneSelection` must be called after every undo/redo call to avoid inspector null-dereference on stale selected IDs
+- [v1.1 research]: `duplicateObject()` copies nodeId verbatim — `ensureObjectNodeId()` must be called on duplicate to avoid serialization collision
+- [Phase 09]: Two-pass selection overlay: ghost wireframe (ignoreDepth=true, 20% tint) + depth-tested primary wireframe (ignoreDepth=false, full tint)
+- [Phase 10]: Camera animation uses ease-out cubic (1-(1-t)^3) for natural deceleration; user input (RMB/MMB/alt+LMB/scroll) cancels in-progress framing animation
+- [Phase 10]: Duplicate offset is world-space translation (0.5,0,0) via applyWorldTransform, preserving rotation and scale of duplicated object
+- [Phase 10]: Escape guard uses !io.WantTextInput so text field Escape deactivates field first; second Escape clears selectedIds+selectionPicker+inspector context
+- [Phase 10]: Hover color (0.55, 0.85, 1.00) produces cool blue-white visually distinct from selection gold without a separate alpha channel
+- [Phase 10]: appendHoverOverlay self-guards against selected objects; ignoreDepth=false for depth-tested single pass only (no ghost through geometry)
+- [Phase 10]: Selection picker popup overlay removed during verification — hover highlight provides equivalent pre-click affordance without intrusive UI
+- [Phase 11]: commitPlacement returns std::optional<uint64_t>: result variable pattern with Mesh case setting it, all others returning nullopt
+- [Phase 11]: Add Mesh button placed immediately after Add button with SameLine; filter cleared on each popup open
+- [Phase 12]: CameraDebugInfo lives in engine/rendering (camera display data is engine-layer concern, not game-layer)
+- [Phase 12]: RuntimeLightingOverride lives in game/rendering (lighting overrides are game-layer concern)
+- [Phase 12]: DebugParams retains only UI overlay state plus two embedded sub-structs (CameraDebugInfo camera, RuntimeLightingOverride lighting)
+- [Phase 12]: TextureUnits namespace (not enum class) allows direct int use in GL calls without casting
+- [Phase 12]: LevelLoadArgs uses pointers for optional levelDef and designated initializer compatibility
+- [Phase 12]: GenericFileScene scripted geometry uses static registry pattern — register via registerScriptedGeometry(), not if-chain in onEnter()
+- [Phase 12]: File-alias registrations removed from ProceduralGameAssets (pillar, arch, hand, wood_door, etc.) — will be auto-discovered in Plan 04; loadFromFileMulti kept as multi-submesh exception
+- [Phase 12]: EventBus [[nodiscard]] subscribe() returns RAII SubscriptionToken; store token in member to keep subscription alive
+- [Phase 12]: culledInput pattern: copy SceneRenderInput, swap objects pointer to culledObjects vector — cleanest way to thread culled list through sub-passes without signature changes
+- [Phase 12]: FrustumCulling uses Gribb-Hartmann VP matrix extraction; isAabbInsideFrustum transforms 8 local AABB corners to world space before plane test
+- [Phase quick]: AI_CONFIG_FBX_CONVERT_TO_M set via SetPropertyBool on both AssimpLoader import paths — converts FBX cm vertices to meters at import, eliminates 0.01 scale workarounds in scene files and scripted geometry
+
+### Roadmap Evolution
+
+- Phase 12 added: Engine quality — frustum culling, texture unit enum, generic asset system, EventBus RAII tokens
+- Phase 13 added: Data-driven behavior system — native Action Component system with BehaviorSystem dispatcher, TriggerComponent, node ID targeting, scene file behavior declarations
+>>>>>>> Stashed changes
 
 ### Pending Todos
 
@@ -176,6 +212,17 @@ None yet.
 | 260330-rwe | Create a Claude Code skill for procedural texture generation | 2026-03-30 | e976302 | [260330-rwe-create-a-claude-code-skill-for-procedura](./quick/260330-rwe-create-a-claude-code-skill-for-procedura/) |
 | 260330-wc2 | Fix too-fast scrollbar scrolling in the editor asset browser panel | 2026-03-30 | 156472e | [260330-wc2-fix-too-fast-scrollbar-scrolling-in-the-](./quick/260330-wc2-fix-too-fast-scrollbar-scrolling-in-the-/) |
 | 260330-wt0 | Reorganize Environment inspector panel into logical sub-groups | 2026-03-30 | 1824913 | [260330-wt0-improve-environment-inspector-panel-ux-b](./quick/260330-wt0-improve-environment-inspector-panel-ux-b/) |
+| 260401-qau | Fix delete key on macOS: add ImGuiKey_Backspace as alternative trigger | 2026-04-01 | 698ccf3 | [260401-qau-fix-delete-key-on-macos-add-imguikey-bac](./quick/260401-qau-fix-delete-key-on-macos-add-imguikey-bac/) |
+| 260401-rt2 | Cache shader uniform locations, guard Jolt body ID, deduplicate MathUtils, reuse renderer vectors | 2026-04-01 | 639ae43 | [260401-rt2-codebase-cleanup-cache-uniform-locations](./quick/260401-rt2-codebase-cleanup-cache-uniform-locations/) |
+| 260401-uie | Selection undo/redo: Ctrl+Z restores selection changes in level editor | 2026-04-01 | b871d75 | [260401-uie-make-ctrl-z-also-work-for-selection-dese](./quick/260401-uie-make-ctrl-z-also-work-for-selection-dese/) |
+| 260401-uvc | Fix FBX mesh import scaling: AI_CONFIG_FBX_CONVERT_TO_M eliminates 0.01 workarounds | 2026-04-01 | 5d0b37e | [260401-uvc-investigate-mesh-import-scaling-research](./quick/260401-uvc-investigate-mesh-import-scaling-research/) |
+| 260401-x6s | Fix editor high CPU usage with industry-standard idle throttling | 2026-04-01 | 7e0c66f | [260401-x6s-fix-editor-high-cpu-usage-with-industry-](./quick/260401-x6s-fix-editor-high-cpu-usage-with-industry-/) |
+| 260402-0nx | Extend mesh asset discovery to scan assets/packs/ in addition to assets/meshes/ | 2026-04-02 | 24dcba0 | [260402-0nx-extend-mesh-asset-discovery-to-scan-asse](./quick/260402-0nx-extend-mesh-asset-discovery-to-scan-asse/) |
+| 260402-0wi | Fix inspector transform not updating mesh: add EditorPreviewWorld::syncTransforms() | 2026-04-02 | 818a2c4 | [260402-0wi-fix-inspector-transform-not-updating-mes](./quick/260402-0wi-fix-inspector-transform-not-updating-mes/) |
+| 260402-1l5 | Fix QuestDoorsPack door scale: measured FBX AABB (~9.2m height), corrected scene scale from 0.25 to 0.21 | 2026-04-02 | 5d97e82 | [260402-1l5-investigate-and-fix-questdoorspack-fbx-d](./quick/260402-1l5-investigate-and-fix-questdoorspack-fbx-d/) |
+| 260402-2lb | Fix multi-object gizmo scale compounding: MultiGizmoState caches original transforms per drag | 2026-04-02 | b9a2d31 | [260402-2lb-fix-multi-object-scaling-gizmo-losing-pr](./quick/260402-2lb-fix-multi-object-scaling-gizmo-losing-pr/) |
+| 260402-3at | Add EditorSceneObjectKind::Group with LevelGroupNode for hierarchy grouping | 2026-04-02 | ed27e6e | [260402-3at-add-editorsceneobjectkind-group-with-lev](./quick/260402-3at-add-editorsceneobjectkind-group-with-lev/) |
+| 260402-3o3 | Add "Create Group" to outliner right-click context menu with centroid placement and undo/redo | 2026-04-02 | 5c5f71c | [260402-3o3-add-create-group-to-outliner-right-click](./quick/260402-3o3-add-create-group-to-outliner-right-click/) |
 | 260402-3tl | Add Ctrl/Cmd+S keyboard shortcut to save scene in level editor | 2026-04-02 | 5cd4b53 | [260402-3tl-pressing-ctrl-or-cmd-plus-s-should-save-](./quick/260402-3tl-pressing-ctrl-or-cmd-plus-s-should-save-/) |
 
 ## Session Continuity
