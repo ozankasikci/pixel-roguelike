@@ -1,7 +1,11 @@
 #pragma once
 
 #include "engine/rendering/lighting/RenderLight.h"
+#include "game/behavior/BehaviorComponent.h"
+#include "game/behavior/NodeIdComponent.h"
+#include "game/behavior/TriggerComponent.h"
 #include "game/level/LevelBuildContext.h"
+#include "game/level/LevelDef.h"
 
 #include <glm/glm.hpp>
 
@@ -54,6 +58,12 @@ public:
                                      float radius,
                                      float halfHeight,
                                      const glm::vec3& rotation = glm::vec3(0.0f));
+
+    // Behavior and trigger attachment methods
+    void attachNodeId(entt::entity entity, const std::string& nodeId);
+    void attachBehaviors(entt::entity entity, const std::vector<BehaviorDeclaration>& declarations);
+    void attachInteractable(entt::entity entity, const InteractableDeclaration& decl);
+    entt::entity addTrigger(const TriggerPlacement& placement);
 
 private:
     LevelBuildContext& context_;

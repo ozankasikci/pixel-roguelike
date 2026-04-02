@@ -1,5 +1,7 @@
 #include "game/level/LevelLoader.h"
 
+#include "game/behavior/NodeIdComponent.h"
+#include "game/behavior/NodeIndex.h"
 #include "game/content/ContentRegistry.h"
 #include "game/level/LevelBuilder.h"
 #include "game/prefabs/GameplayPrefabs.h"
@@ -51,26 +53,37 @@ void LevelLoader::load(const LevelLoadRequest& request, const LevelLoadArgs& arg
     }
 
     for (const auto& placement : level.meshes) {
-        builder.addMesh(placement.meshId,
-                        placement.position,
-                        placement.scale,
-                        placement.rotation,
-                        placement.tint,
-                        placement.materialId.empty()
-                            ? std::optional<std::string>{}
-                            : std::optional<std::string>{placement.materialId});
+        auto entity = builder.addMesh(placement.meshId,
+                                      placement.position,
+                                      placement.scale,
+                                      placement.rotation,
+                                      placement.tint,
+                                      placement.materialId.empty()
+                                          ? std::optional<std::string>{}
+                                          : std::optional<std::string>{placement.materialId});
+        builder.attachNodeId(entity, placement.nodeId);
+        if (!placement.behaviors.empty()) {
+            builder.attachBehaviors(entity, placement.behaviors);
+        }
+        if (placement.interactable.has_value()) {
+            builder.attachInteractable(entity, *placement.interactable);
+        }
     }
 
     for (const auto& placement : level.lights) {
-        builder.addLight(placement.position,
-                         placement.color,
-                         placement.radius,
-                         placement.intensity,
-                         placement.type,
-                         placement.direction,
-                         placement.innerConeDegrees,
-                         placement.outerConeDegrees,
-                         placement.castsShadows);
+        auto entity = builder.addLight(placement.position,
+                                       placement.color,
+                                       placement.radius,
+                                       placement.intensity,
+                                       placement.type,
+                                       placement.direction,
+                                       placement.innerConeDegrees,
+                                       placement.outerConeDegrees,
+                                       placement.castsShadows);
+        builder.attachNodeId(entity, placement.nodeId);
+        if (!placement.behaviors.empty()) {
+            builder.attachBehaviors(entity, placement.behaviors);
+        }
     }
 
     for (const auto& placement : level.boxColliders) {
@@ -87,6 +100,22 @@ void LevelLoader::load(const LevelLoadRequest& request, const LevelLoadArgs& arg
             continue;
         }
         (void)spawnGameplayPrefab(builder, instantiateGameplayArchetype(*archetype, placement.position, placement.yawDegrees));
+    }
+
+    for (const auto& placement : level.triggers) {
+        builder.addTrigger(placement);
+    }
+
+    // Build NodeIndex from all entities that received a NodeIdComponent
+    // This must happen AFTER all placement loops (including scripted geometry)
+    {
+        NodeIndex nodeIndex;
+        auto nodeView = registry.view<NodeIdComponent>();
+        for (auto entity : nodeView) {
+            const auto& nodeComp = nodeView.get<NodeIdComponent>(entity);
+            nodeIndex.add(nodeComp.nodeId, entity);
+        }
+        registry.ctx().insert_or_assign<NodeIndex>(std::move(nodeIndex));
     }
 
     if (session.currentLevelId != request.levelId) {

@@ -1,5 +1,9 @@
 #include "game/level/LevelBuilder.h"
 
+#include "game/behavior/BehaviorComponent.h"
+#include "game/behavior/NodeIdComponent.h"
+#include "game/behavior/TriggerComponent.h"
+#include "game/components/InteractableComponent.h"
 #include "game/components/LightComponent.h"
 #include "game/components/MeshComponent.h"
 #include "game/rendering/RetroPalette.h"
@@ -215,5 +219,64 @@ entt::entity LevelBuilder::addCylinderCollider(const glm::vec3& position,
     collider.radius = radius;
     collider.halfHeight = halfHeight;
     context_.registry.emplace<StaticColliderComponent>(entity, collider);
+    return entity;
+}
+
+void LevelBuilder::attachNodeId(entt::entity entity, const std::string& nodeId) {
+    if (entity == entt::null || nodeId.empty()) {
+        return;
+    }
+    context_.registry.emplace_or_replace<NodeIdComponent>(entity, NodeIdComponent{nodeId});
+}
+
+void LevelBuilder::attachBehaviors(entt::entity entity,
+                                   const std::vector<BehaviorDeclaration>& declarations) {
+    if (entity == entt::null || declarations.empty()) {
+        return;
+    }
+    BehaviorComponent& behavior = context_.registry.get_or_emplace<BehaviorComponent>(entity);
+    for (const auto& decl : declarations) {
+        if (decl.eventType == "on_activate") {
+            behavior.onActivate.push_back(decl.action);
+        } else if (decl.eventType == "on_enter") {
+            behavior.onEnter.push_back(decl.action);
+        } else if (decl.eventType == "on_exit") {
+            behavior.onExit.push_back(decl.action);
+        } else if (decl.eventType == "on_timer") {
+            behavior.onTimer.push_back(decl.action);
+        } else {
+            spdlog::warn("LevelBuilder: unknown behavior event type '{}'", decl.eventType);
+        }
+    }
+}
+
+void LevelBuilder::attachInteractable(entt::entity entity, const InteractableDeclaration& decl) {
+    if (entity == entt::null) {
+        return;
+    }
+    InteractableComponent& ic = context_.registry.get_or_emplace<InteractableComponent>(entity);
+    if (!decl.promptText.empty()) {
+        ic.promptText = decl.promptText;
+    }
+    ic.interactDistance = decl.distance;
+    ic.interactDotThreshold = decl.dotThreshold;
+}
+
+entt::entity LevelBuilder::addTrigger(const TriggerPlacement& placement) {
+    auto entity = createTransformEntity(placement.position);
+
+    TriggerComponent trigger;
+    trigger.shape = placement.shape;
+    trigger.halfExtents = placement.halfExtents;
+    trigger.radius = placement.radius;
+    trigger.fireOnce = placement.fireOnce;
+    context_.registry.emplace<TriggerComponent>(entity, trigger);
+
+    attachNodeId(entity, placement.nodeId);
+
+    if (!placement.behaviors.empty()) {
+        attachBehaviors(entity, placement.behaviors);
+    }
+
     return entity;
 }
