@@ -243,10 +243,11 @@ None yet.
 | 260402-q3f | Debug harness input simulation (keyPress/mouseClick/drag) and gizmo diagnostic script | 2026-04-02 | 08b8502 | [260402-q3f-use-debug-harness-to-diagnose-why-gizmo-](./quick/260402-q3f-use-debug-harness-to-diagnose-why-gizmo-/) |
 | 260402-rkd | Expand debug harness with entity listing, focus camera, gizmo-aware drag, wait-for-idle | 2026-04-02 | edbfff1 | [260402-rkd-expand-debug-harness-with-entity-listing](./quick/260402-rkd-expand-debug-harness-with-entity-listing/) |
 | 260402-tpl | Document the EditorCommander debugging harness for future debugging use | 2026-04-02 | — | [260402-tpl-document-the-editorcommander-debugging-h](./quick/260402-tpl-document-the-editorcommander-debugging-h/) |
+| 260402-uc1 | Use QuestDoorsPack walls/floor in initial scene, fix door gap/size, remove trim | 2026-04-02 | 86fa32e | [260402-uc1-use-questdoorspack-walls-and-floor-in-in](./quick/260402-uc1-use-questdoorspack-walls-and-floor-in-in/) |
 
 ## Session Continuity
 
-Last activity: 2026-04-02 - Completed quick task 260402-tpl: Document the EditorCommander debugging harness for future debugging use
+Last activity: 2026-04-02 - Completed quick task 260402-uc1: Use QuestDoorsPack walls/floor in initial scene, fix door gap/size, remove trim
 Last session: 2026-04-02T16:27:21Z
 Stopped at: Completed quick task 260402-q3f: Debug harness input simulation and gizmo diagnostic script
 Resume file: None
