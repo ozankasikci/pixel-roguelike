@@ -260,11 +260,11 @@ Plans:
   5. DoorSystem is replaced by DoorAnimationSystem (animation only, no activation logic)
   6. Institutional room doors are defined in the .scene file with interactable sub-lines (not scripted geometry)
   7. Editor renders trigger volumes as semi-transparent wireframes for level design positioning
-**Plans:** 1/3 plans executed
+**Plans:** 2/3 plans executed
 
 Plans:
 - [x] 13-01-PLAN.md — Behavior type definitions (ActionTypes, BehaviorComponent, TriggerComponent, NodeIndex) and scene parser extension with indented sub-line support
-- [ ] 13-02-PLAN.md — BehaviorSystem dispatcher, TriggerSystem overlap detection, DoorAnimationSystem refactor, runtime wiring
+- [x] 13-02-PLAN.md — BehaviorSystem dispatcher, TriggerSystem overlap detection, DoorAnimationSystem refactor, runtime wiring
 - [ ] 13-03-PLAN.md — Scene file migration, scripted geometry cleanup, editor trigger visualization, end-to-end verification
 
 ## Progress
