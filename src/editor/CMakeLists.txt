@@ -5,6 +5,13 @@ add_library(editor STATIC
     core/EditorLayoutPreset.cpp
     core/EditorRuntimePreviewSession.cpp
     core/LevelEditorCore.cpp
+    debug/CommandRegistry.cpp
+    debug/DebugHarness.cpp
+    debug/DebugServer.cpp
+    debug/EditorCommander.cpp
+    debug/EditorInspector.cpp
+    debug/SessionRecorder.cpp
+    debug/SessionPlayer.cpp
     render/EditorAssetPreviewRenderer.cpp
     render/EditorScenePreviewRenderer.cpp
     render/EditorViewportRenderer.cpp
@@ -26,4 +33,4 @@ target_include_directories(editor PUBLIC
     ${CMAKE_SOURCE_DIR}/external
     ${CMAKE_SOURCE_DIR}/external/ImGuizmo
 )
-target_link_libraries(editor PUBLIC gameplay)
+target_link_libraries(editor PUBLIC gameplay nlohmann_json::nlohmann_json)

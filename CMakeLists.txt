@@ -120,6 +120,15 @@ else()
     unset(BUILD_SHARED_LIBS CACHE)
 endif()
 
+# nlohmann/json v3.11.3 - JSON parsing for editor debug harness
+FetchContent_Declare(nlohmann_json
+    GIT_REPOSITORY https://github.com/nlohmann/json.git
+    GIT_TAG        v3.11.3
+    GIT_PROGRESS   TRUE
+)
+set(JSON_BuildTests OFF CACHE BOOL "" FORCE)
+FetchContent_MakeAvailable(nlohmann_json)
+
 enable_testing()
 
 add_subdirectory(src/engine)
