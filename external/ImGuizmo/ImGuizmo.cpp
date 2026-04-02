@@ -2281,7 +2281,15 @@ namespace IMGUIZMO_NAMESPACE
 
    static bool HandleScale(float* matrix, float* deltaMatrix, OPERATION op, int& type, const float* snap)
    {
-      if((!Intersects(op, SCALE) && !Intersects(op, SCALEU)) || type != MT_NONE || !gContext.mbMouseOver)
+      if((!Intersects(op, SCALE) && !Intersects(op, SCALEU)) || type != MT_NONE)
+      {
+         return false;
+      }
+      // Only block on !mbMouseOver when NOT in an active drag.
+      // During a drag (mbUsing==true), we must always reach the mouse-release
+      // check below, otherwise mbUsing stays true permanently if the cursor
+      // drifts outside the viewport window.
+      if (!gContext.mbUsing && !gContext.mbMouseOver)
       {
          return false;
       }
@@ -2407,7 +2415,14 @@ namespace IMGUIZMO_NAMESPACE
 
    static bool HandleRotation(float* matrix, float* deltaMatrix, OPERATION op, int& type, const float* snap)
    {
-      if(!Intersects(op, ROTATE) || type != MT_NONE || !gContext.mbMouseOver)
+      if(!Intersects(op, ROTATE) || type != MT_NONE)
+      {
+        return false;
+      }
+      // Only block on !mbMouseOver when NOT in an active drag.
+      // Same fix as HandleScale — prevents mbUsing from getting stuck
+      // when the cursor leaves the viewport mid-drag.
+      if (!gContext.mbUsing && !gContext.mbMouseOver)
       {
         return false;
       }

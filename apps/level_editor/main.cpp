@@ -1668,9 +1668,7 @@ int main(int argc, char* argv[]) {
             }
             const EditorSceneDocumentState gizmoBeforeState = document.captureState();
             if (!ui.playPreview && !startupViewportHandoffActive) {
-                if (applyGizmoToSelectedObject(document, selectedIds, renderViewportState, view, projection, ui, previewWorld, multiGizmoState)) {
-                    previewDirty = true;
-                }
+                applyGizmoToSelectedObject(document, selectedIds, renderViewportState, view, projection, ui, previewWorld, multiGizmoState);
                 if (editorGizmoIsHot() && !gizmoCommand.active) {
                     beginPendingCommand(gizmoCommand, gizmoBeforeState, "Transform Object");
                 } else if (gizmoCommand.active && !editorGizmoIsHot()) {
@@ -1875,11 +1873,14 @@ int main(int argc, char* argv[]) {
         if (undoPressed) {
             widgetCommand.clear();
             gizmoCommand.clear();
+            const std::size_t objectCountBefore = document.objects().size();
             if (commandStack.undo(document)) {
                 pruneSelection(document, selectedIds);
                 selectionPicker.clear();
                 ui.inspectorContext = EditorInspectorContext::SceneSelection;
-                previewDirty = true;
+                if (document.objects().size() != objectCountBefore) {
+                    previewDirty = true;
+                }
             }
             undoPressed = false;
         }
@@ -1887,11 +1888,14 @@ int main(int argc, char* argv[]) {
         if (redoPressed) {
             widgetCommand.clear();
             gizmoCommand.clear();
+            const std::size_t objectCountBefore = document.objects().size();
             if (commandStack.redo(document)) {
                 pruneSelection(document, selectedIds);
                 selectionPicker.clear();
                 ui.inspectorContext = EditorInspectorContext::SceneSelection;
-                previewDirty = true;
+                if (document.objects().size() != objectCountBefore) {
+                    previewDirty = true;
+                }
             }
             redoPressed = false;
         }
