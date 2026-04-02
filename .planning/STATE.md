@@ -237,10 +237,11 @@ None yet.
 | 260402-4is | Make player torch light adjustable in debug overlay | 2026-04-02 | c7de887 | [260402-4is-investigate-player-attached-light-and-ma](./quick/260402-4is-investigate-player-attached-light-and-ma/) |
 | 260402-d7q | Wire player torch override into level editor Environment panel with full persistence | 2026-04-02 | e51d45d | [260402-d7q-wire-player-torch-override-into-level-ed](./quick/260402-d7q-wire-player-torch-override-into-level-ed/) |
 | 260402-dec | Shadow frustum culling and render state sorting for performance | 2026-04-02 | 1a15376 | [260402-dec-shadow-frustum-culling-and-render-state-](./quick/260402-dec-shadow-frustum-culling-and-render-state-/) |
+| 260402-n8o | Add search filter bar to outliner scene hierarchy panel | 2026-04-02 | 57ce06c | [260402-n8o-add-search-filter-bar-to-outliner-scene-](./quick/260402-n8o-add-search-filter-bar-to-outliner-scene-/) |
 
 ## Session Continuity
 
-Last activity: 2026-04-02
-Last session: 2026-04-02T06:44:23.130Z
-Stopped at: Completed quick task 260402-d7q: Wire player torch override into level editor
+Last activity: 2026-04-02 - Completed quick task 260402-n8o: Outliner search filter
+Last session: 2026-04-02T13:44:00Z
+Stopped at: Completed quick task 260402-n8o: Add search filter to outliner
 Resume file: None
