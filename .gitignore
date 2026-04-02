@@ -17,3 +17,4 @@ __pycache__/
 .claude/
 editor_build.ini
 .cache/
+assets/debug-sessions/

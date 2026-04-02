@@ -9,6 +9,7 @@
 #include "game/ui/GameOverlays.h"
 #include "editor/build/EditorBuildSystem.h"
 #include "editor/core/EditorCommand.h"
+#include "editor/debug/DebugHarness.h"
 #include "editor/scene/EditorPreviewWorld.h"
 #include "editor/scene/EditorSceneDocument.h"
 #include "editor/scene/EditorSelectionSystem.h"
@@ -410,6 +411,9 @@ int main(int argc, char* argv[]) {
     std::vector<std::filesystem::path> pendingDroppedAssetPaths;
     ImGuiFontPreset editorFontPreset = imgui.fontPreset();
 
+    DebugHarness debugHarness(document, selectedIds, ui, commandStack);
+    debugHarness.init();
+
     // Full-frame render lambda — called from the main loop and from
     // windowRefreshCallback during live resize on macOS.
     auto renderFrame = [&]() {
@@ -425,6 +429,7 @@ int main(int argc, char* argv[]) {
         // Poll for .material file changes and hot-reload modified materials.
         // Runs in editor only (not in the runtime game). Cheap: timestamp check every 500ms.
         content.pollMaterialHotReload(materialTextures);
+        debugHarness.poll();
 
         if (ui.playPreview && runtimePreviewSession.captured() && glfwGetWindowAttrib(window.handle(), GLFW_FOCUSED) == 0) {
             runtimePreviewSession.endCapture(window.handle());
@@ -2142,6 +2147,7 @@ int main(int argc, char* argv[]) {
     // persisted, even if the user closes within the periodic auto-save window.
     ImGui::SaveIniSettingsToDisk(ImGui::GetIO().IniFilename);
     runtimePreviewSession.endCapture(window.handle());
+    debugHarness.shutdown();
     imgui.shutdown();
     return 0;
 }
