@@ -725,6 +725,7 @@ namespace IMGUIZMO_NAMESPACE
       vec_t mScaleValueOrigin;
       vec_t mScaleLast;
       float mSaveMousePosx;
+      float mSaveMousePosy;
 
       // save axis factor when using gizmo
       bool mBelowAxisLimit[3];
@@ -2312,6 +2313,7 @@ namespace IMGUIZMO_NAMESPACE
             gContext.mRelativeOrigin = (gContext.mTranslationPlanOrigin - gContext.mModelLocal.v.position) * (1.f / gContext.mScreenFactor);
             gContext.mScaleValueOrigin = makeVect(gContext.mModelSource.v.right.Length(), gContext.mModelSource.v.up.Length(), gContext.mModelSource.v.dir.Length());
             gContext.mSaveMousePosx = io.MousePos.x;
+            gContext.mSaveMousePosy = io.MousePos.y;
          }
       }
       // scale
@@ -2342,8 +2344,29 @@ namespace IMGUIZMO_NAMESPACE
          }
          else
          {
-            float scaleDelta = (io.MousePos.x - gContext.mSaveMousePosx) * 0.01f;
-            gContext.mScale.Set(max(1.f + scaleDelta, 0.001f));
+            // Unity-style radial uniform scale: project mouse delta onto the
+            // screen-space direction from object center to initial click point.
+            // Dragging outward from the object center increases scale;
+            // dragging inward decreases it.
+            float dx = gContext.mSaveMousePosx - gContext.mScreenSquareCenter.x;
+            float dy = gContext.mSaveMousePosy - gContext.mScreenSquareCenter.y;
+            float radialLen = sqrtf(dx * dx + dy * dy);
+            if (radialLen > 0.001f)
+            {
+               float rdx = dx / radialLen;
+               float rdy = dy / radialLen;
+               float mouseDeltaX = io.MousePos.x - gContext.mSaveMousePosx;
+               float mouseDeltaY = io.MousePos.y - gContext.mSaveMousePosy;
+               float projectedDelta = (mouseDeltaX * rdx + mouseDeltaY * rdy);
+               float scaleDelta = projectedDelta * 0.01f;
+               gContext.mScale.Set(max(1.f + scaleDelta, 0.001f));
+            }
+            else
+            {
+               // Fallback: if click is exactly on center, use horizontal delta
+               float scaleDelta = (io.MousePos.x - gContext.mSaveMousePosx) * 0.01f;
+               gContext.mScale.Set(max(1.f + scaleDelta, 0.001f));
+            }
          }
 
          // snap
