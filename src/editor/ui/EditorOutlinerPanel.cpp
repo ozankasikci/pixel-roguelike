@@ -8,7 +8,9 @@
 #include <imgui.h>
 
 #include <algorithm>
+#include <cstdint>
 #include <functional>
+#include <unordered_set>
 
 namespace {
 
@@ -94,6 +96,20 @@ std::vector<std::uint64_t> renderOutliner(EditorSceneDocument& document,
         ui.inspectorContext = EditorInspectorContext::SceneSelection;
     }
 
+    // Build ancestor expand set: when scrollToSelection is set, force-open all
+    // ancestor nodes that contain the selected item so the selected row is visible.
+    std::unordered_set<std::uint64_t> expandForScroll;
+    if (ui.scrollToSelection) {
+        for (const std::uint64_t selId : selectedIds) {
+            std::uint64_t ancestorId = document.parentObjectId(selId);
+            while (ancestorId != 0) {
+                expandForScroll.insert(ancestorId);
+                ancestorId = document.parentObjectId(ancestorId);
+            }
+        }
+    }
+    bool scrolledThisFrame = false;
+
     std::function<void(std::uint64_t)> renderNode = [&](std::uint64_t objectId) {
         const EditorSceneObject* object = document.findObject(objectId);
         if (object == nullptr) {
@@ -109,10 +125,22 @@ std::vector<std::uint64_t> renderOutliner(EditorSceneDocument& document,
             flags |= ImGuiTreeNodeFlags_Selected;
         }
 
+        // Force-expand ancestors of the selected item so the selected row is visible.
+        if (expandForScroll.count(objectId) > 0) {
+            ImGui::SetNextItemOpen(true, ImGuiCond_Always);
+        }
+
         const bool openNode = ImGui::TreeNodeEx(reinterpret_cast<void*>(static_cast<uintptr_t>(objectId)),
                                                 flags,
                                                 "%s",
                                                 editorSceneObjectLabel(*object).c_str());
+
+        // Scroll to the first selected item after a viewport-originated selection change.
+        if (ui.scrollToSelection && !scrolledThisFrame && isSelected(selectedIds, objectId)) {
+            ImGui::SetScrollHereY(0.5f);
+            scrolledThisFrame = true;
+        }
+
         const auto selectionBefore = selectedIds;
         if (ImGui::IsItemClicked(ImGuiMouseButton_Left) && !ImGui::IsItemToggledOpen()) {
             if (shiftHeld && ui.outlinerAnchorId != 0) {
@@ -277,6 +305,9 @@ std::vector<std::uint64_t> renderOutliner(EditorSceneDocument& document,
         }
         ImGui::EndDragDropTarget();
     }
+
+    // Consume the scroll flag — set by viewport selection, reset here after rendering.
+    ui.scrollToSelection = false;
 
     ImGui::End();
     return deleteRequests;
