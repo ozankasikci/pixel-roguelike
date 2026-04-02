@@ -146,6 +146,10 @@ namespace IMGUIZMO_NAMESPACE
    // return true if any gizmo is in moving state
    IMGUI_API bool IsUsingAny();
 
+   // return the screen-space center of the gizmo (set after Manipulate() is called).
+   // Coordinates are in ImGui screen space (== GLFW cursor space when ViewportsEnable is OFF).
+   IMGUI_API ImVec2 GetScreenCenter();
+
    // enable/disable the gizmo. Stay in the state until next call to Enable.
    // gizmo is rendered with gray half transparent color when disabled
    IMGUI_API void Enable(bool enable);

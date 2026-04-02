@@ -410,8 +410,12 @@ int main(int argc, char* argv[]) {
     MultiGizmoState multiGizmoState;
     std::vector<std::filesystem::path> pendingDroppedAssetPaths;
     ImGuiFontPreset editorFontPreset = imgui.fontPreset();
+    // Declared here (rather than inside renderFrame) so DebugHarness can hold a reference
+    // to it. The struct has default-initialized members and is populated each frame.
+    EditorViewportState viewportState;
 
-    DebugHarness debugHarness(document, selectedIds, ui, commandStack, window.handle());
+    DebugHarness debugHarness(document, selectedIds, ui, commandStack, window.handle(),
+                              editCamera, cameraAnim, viewportState, previewWorld);
     debugHarness.init();
 
     // Full-frame render lambda — called from the main loop and from
@@ -1151,7 +1155,9 @@ int main(int argc, char* argv[]) {
             ImGui::EndPopup();
         }
 
-        EditorViewportState viewportState;
+        // viewportState is declared outside renderFrame (before DebugHarness construction)
+        // so the harness can hold a reference to it. Reset it at the start of each frame.
+        viewportState = {};
         bool viewportWindowBegun = false;
         bool viewportWindowVisible = false;
         if (ui.showViewport) {

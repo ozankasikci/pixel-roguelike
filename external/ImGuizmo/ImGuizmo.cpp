@@ -1025,6 +1025,11 @@ namespace IMGUIZMO_NAMESPACE
       return gContext.mbUsing || gContext.mbUsingBounds;
    }
 
+   ImVec2 GetScreenCenter()
+   {
+      return gContext.mScreenSquareCenter;
+   }
+
    bool IsOver()
    {
       return (Intersects(gContext.mOperation, TRANSLATE) && GetMoveType(gContext.mOperation, NULL) != MT_NONE) ||

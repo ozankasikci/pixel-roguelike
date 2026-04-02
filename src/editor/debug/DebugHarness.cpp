@@ -1,18 +1,31 @@
 #include "editor/debug/DebugHarness.h"
 
+#include <ImGuizmo.h>
 #include <spdlog/spdlog.h>
 
 DebugHarness::DebugHarness(EditorSceneDocument& doc,
                            std::vector<std::uint64_t>& selectedIds,
                            EditorUiState& ui,
                            EditorCommandStack& cmdStack,
-                           GLFWwindow* window)
-    : doc_(doc), selectedIds_(selectedIds), ui_(ui), cmdStack_(cmdStack), window_(window) {
+                           GLFWwindow* window,
+                           EditorCamera& camera,
+                           EditorCameraAnimation& cameraAnim,
+                           const EditorViewportState& viewport,
+                           const EditorPreviewWorld& previewWorld)
+    : doc_(doc)
+    , selectedIds_(selectedIds)
+    , ui_(ui)
+    , cmdStack_(cmdStack)
+    , window_(window)
+    , camera_(camera)
+    , cameraAnim_(cameraAnim)
+    , viewport_(viewport)
+    , previewWorld_(previewWorld) {
 }
 
 void DebugHarness::init() {
-    inspector_ = std::make_unique<EditorInspector>(doc_, selectedIds_, ui_, cmdStack_);
-    commander_ = std::make_unique<EditorCommander>(doc_, selectedIds_, ui_, cmdStack_, window_);
+    inspector_ = std::make_unique<EditorInspector>(doc_, selectedIds_, ui_, cmdStack_, camera_, viewport_, previewWorld_);
+    commander_ = std::make_unique<EditorCommander>(doc_, selectedIds_, ui_, cmdStack_, window_, camera_, cameraAnim_, viewport_, previewWorld_);
 
     // --- inspect.* commands (read-only) ---
     registry_.registerCommand("inspect.selection", [this](const nlohmann::json& args) {
@@ -54,6 +67,31 @@ void DebugHarness::init() {
         return inspector_->gizmoDetailed();
     });
 
+    // Entity listing and camera / projection helpers
+    registry_.registerCommand("inspect.entities", [this](const nlohmann::json& args) {
+        (void)args;
+        return inspector_->entities();
+    });
+    registry_.registerCommand("inspect.world_to_screen", [this](const nlohmann::json& args) {
+        return inspector_->worldToScreen(args);
+    });
+    registry_.registerCommand("inspect.camera", [this](const nlohmann::json& args) {
+        (void)args;
+        return inspector_->camera();
+    });
+    registry_.registerCommand("inspect.gizmo_screen_pos", [this](const nlohmann::json& /*args*/) {
+        ImVec2 center = ImGuizmo::GetScreenCenter();
+        return nlohmann::json{
+            {"ok", true},
+            {"data", {
+                {"x", center.x},
+                {"y", center.y},
+                {"note", "Coordinates are in GLFW cursor space (logical pixels, window-relative). "
+                         "Only valid after ImGuizmo::Manipulate() has been called this frame."}
+            }}
+        };
+    });
+
     // --- command.* commands (mutating) ---
     registry_.registerCommand("command.select_entity", [this](const nlohmann::json& args) {
         return commander_->selectEntity(args);
@@ -84,6 +122,15 @@ void DebugHarness::init() {
     });
     registry_.registerCommand("command.mouse_release", [this](const nlohmann::json& args) {
         return commander_->mouseRelease(args);
+    });
+    registry_.registerCommand("command.focus_entity", [this](const nlohmann::json& args) {
+        return commander_->focusEntity(args);
+    });
+    registry_.registerCommand("command.gizmo_drag", [this](const nlohmann::json& args) {
+        return commander_->gizmoDrag(args);
+    });
+    registry_.registerCommand("command.wait_events", [this](const nlohmann::json& args) {
+        return commander_->waitEvents(args);
     });
 
     // --- record.* commands ---

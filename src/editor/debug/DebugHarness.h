@@ -7,8 +7,10 @@
 #include "editor/debug/SessionPlayer.h"
 #include "editor/debug/SessionRecorder.h"
 #include "editor/core/EditorCommand.h"
+#include "editor/scene/EditorPreviewWorld.h"
 #include "editor/scene/EditorSceneDocument.h"
 #include "editor/ui/LevelEditorUi.h"
+#include "editor/viewport/EditorViewportController.h"
 
 #include <cstdint>
 #include <memory>
@@ -22,7 +24,11 @@ public:
                  std::vector<std::uint64_t>& selectedIds,
                  EditorUiState& ui,
                  EditorCommandStack& cmdStack,
-                 GLFWwindow* window);
+                 GLFWwindow* window,
+                 EditorCamera& camera,
+                 EditorCameraAnimation& cameraAnim,
+                 const EditorViewportState& viewport,
+                 const EditorPreviewWorld& previewWorld);
     ~DebugHarness() = default;
 
     DebugHarness(const DebugHarness&) = delete;
@@ -38,6 +44,10 @@ private:
     EditorUiState& ui_;
     EditorCommandStack& cmdStack_;
     GLFWwindow* window_;
+    EditorCamera& camera_;
+    EditorCameraAnimation& cameraAnim_;
+    const EditorViewportState& viewport_;
+    const EditorPreviewWorld& previewWorld_;
 
     CommandRegistry registry_;
     DebugServer server_;

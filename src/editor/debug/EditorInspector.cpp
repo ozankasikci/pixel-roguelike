@@ -3,14 +3,24 @@
 #include "editor/viewport/EditorViewportController.h"
 
 #include <ImGuizmo.h>
+#include <glm/glm.hpp>
 #include <imgui.h>
 #include <imgui_internal.h>
 
 EditorInspector::EditorInspector(const EditorSceneDocument& doc,
                                  const std::vector<std::uint64_t>& selectedIds,
                                  const EditorUiState& ui,
-                                 const EditorCommandStack& cmdStack)
-    : doc_(doc), selectedIds_(selectedIds), ui_(ui), cmdStack_(cmdStack) {
+                                 const EditorCommandStack& cmdStack,
+                                 const EditorCamera& camera,
+                                 const EditorViewportState& viewport,
+                                 const EditorPreviewWorld& previewWorld)
+    : doc_(doc)
+    , selectedIds_(selectedIds)
+    , ui_(ui)
+    , cmdStack_(cmdStack)
+    , camera_(camera)
+    , viewport_(viewport)
+    , previewWorld_(previewWorld) {
 }
 
 nlohmann::json EditorInspector::selection() const {
@@ -176,4 +186,53 @@ nlohmann::json EditorInspector::gizmoDetailed() const {
             {"redo_label",            redoLbl ? redoLbl : ""}
         }}
     };
+}
+
+nlohmann::json EditorInspector::entities() const {
+    auto arr = nlohmann::json::array();
+    for (const auto& obj : doc_.objects()) {
+        glm::vec3 pos = editorSceneObjectAnchor(obj);
+        arr.push_back({
+            {"id", obj.id},
+            {"label", editorSceneObjectLabel(obj)},
+            {"kind", editorSceneObjectKindName(obj.kind)},
+            {"world_position", {{"x", pos.x}, {"y", pos.y}, {"z", pos.z}}}
+        });
+    }
+    return {{"ok", true}, {"data", arr}};
+}
+
+nlohmann::json EditorInspector::worldToScreen(const nlohmann::json& args) const {
+    float wx = args.value("x", 0.0f);
+    float wy = args.value("y", 0.0f);
+    float wz = args.value("z", 0.0f);
+
+    float aspect = viewport_.size.x > 0 ? viewport_.size.x / viewport_.size.y : 1.0f;
+    glm::mat4 view = editorCameraView(camera_);
+    glm::mat4 proj = editorCameraProjection(camera_, aspect);
+    glm::vec4 clip = proj * view * glm::vec4(wx, wy, wz, 1.0f);
+
+    bool visible = clip.w > 0.001f;
+    if (visible) {
+        glm::vec3 ndc = glm::vec3(clip) / clip.w;
+        // NDC to viewport pixel coordinates (GLFW cursor space)
+        float sx = viewport_.origin.x + (ndc.x * 0.5f + 0.5f) * viewport_.size.x;
+        float sy = viewport_.origin.y + (1.0f - (ndc.y * 0.5f + 0.5f)) * viewport_.size.y;
+        visible = sx >= viewport_.origin.x && sx <= viewport_.origin.x + viewport_.size.x
+               && sy >= viewport_.origin.y && sy <= viewport_.origin.y + viewport_.size.y;
+        return {{"ok", true}, {"data", {{"x", sx}, {"y", sy}, {"visible", visible}}}};
+    }
+    return {{"ok", true}, {"data", {{"x", 0}, {"y", 0}, {"visible", false}}}};
+}
+
+nlohmann::json EditorInspector::camera() const {
+    return {{"ok", true}, {"data", {
+        {"position", {{"x", camera_.position.x}, {"y", camera_.position.y}, {"z", camera_.position.z}}},
+        {"yaw",              camera_.yawDegrees},
+        {"pitch",            camera_.pitchDegrees},
+        {"fov",              camera_.fovDegrees},
+        {"orbit_distance",   camera_.orbitDistance},
+        {"orbit_pivot",      {{"x", camera_.orbitPivot.x}, {"y", camera_.orbitPivot.y}, {"z", camera_.orbitPivot.z}}},
+        {"orbit_pivot_valid", camera_.orbitPivotValid}
+    }}};
 }
