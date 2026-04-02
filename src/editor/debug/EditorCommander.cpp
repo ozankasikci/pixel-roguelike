@@ -3,14 +3,30 @@
 #include "editor/viewport/EditorViewportController.h"
 
 #include <GLFW/glfw3.h>
+#include <ImGuizmo.h>
 #include <imgui.h>
+#include <imgui_internal.h>
+
+#include <cmath>
 
 EditorCommander::EditorCommander(EditorSceneDocument& doc,
                                  std::vector<std::uint64_t>& selectedIds,
                                  EditorUiState& ui,
                                  EditorCommandStack& cmdStack,
-                                 GLFWwindow* window)
-    : doc_(doc), selectedIds_(selectedIds), ui_(ui), cmdStack_(cmdStack), window_(window) {
+                                 GLFWwindow* window,
+                                 EditorCamera& camera,
+                                 EditorCameraAnimation& cameraAnim,
+                                 const EditorViewportState& viewport,
+                                 const EditorPreviewWorld& previewWorld)
+    : doc_(doc)
+    , selectedIds_(selectedIds)
+    , ui_(ui)
+    , cmdStack_(cmdStack)
+    , window_(window)
+    , camera_(camera)
+    , cameraAnim_(cameraAnim)
+    , viewport_(viewport)
+    , previewWorld_(previewWorld) {
 }
 
 nlohmann::json EditorCommander::selectEntity(const nlohmann::json& args) {
@@ -288,4 +304,128 @@ nlohmann::json EditorCommander::mouseRelease(const nlohmann::json& args) {
     }
 
     return {{"ok", true}, {"button", button}};
+}
+
+int EditorCommander::pendingEventCount() const {
+    ImGuiContext* ctx = ImGui::GetCurrentContext();
+    if (!ctx) {
+        return 0;
+    }
+    return ctx->InputEventsQueue.Size;
+}
+
+nlohmann::json EditorCommander::focusEntity(const nlohmann::json& args) {
+    std::string name = args.value("name", "");
+    if (name.empty()) {
+        return {{"ok", false}, {"error", "Missing required arg: name"}};
+    }
+
+    const EditorSceneObject* targetObj = nullptr;
+    for (const auto& obj : doc_.objects()) {
+        if (editorSceneObjectLabel(obj) == name) {
+            targetObj = &obj;
+            break;
+        }
+    }
+    if (!targetObj) {
+        return {{"ok", false}, {"error", "Entity not found: " + name}};
+    }
+
+    // Compute bounds for the focus animation — same logic as main.cpp focusPressed
+    const EditorObjectBounds* bounds = previewWorld_.findObjectBounds(targetObj->id);
+    if (bounds && bounds->valid) {
+        beginFocusAnimation(camera_, cameraAnim_, bounds->min, bounds->max);
+    } else {
+        glm::vec3 anchor = editorSceneObjectAnchor(*targetObj);
+        glm::vec3 halfUnit(0.5f);
+        beginFocusAnimation(camera_, cameraAnim_, anchor - halfUnit, anchor + halfUnit);
+    }
+
+    return {{"ok", true}, {"note", "Camera focus animation started. Wait ~0.3s (18 frames at 60fps) for completion."}};
+}
+
+nlohmann::json EditorCommander::gizmoDrag(const nlohmann::json& args) {
+    ImVec2 gizmoCenter = ImGuizmo::GetScreenCenter();
+
+    // Validate the gizmo center is within reasonable window bounds
+    int ww = 0, wh = 0;
+    if (window_) {
+        glfwGetWindowSize(window_, &ww, &wh);
+    }
+    if (gizmoCenter.x < 0 || gizmoCenter.y < 0 || gizmoCenter.x > ww || gizmoCenter.y > wh) {
+        return {
+            {"ok", false},
+            {"error", "Gizmo screen center is out of window bounds"},
+            {"gizmo_x", gizmoCenter.x},
+            {"gizmo_y", gizmoCenter.y},
+            {"window_w", ww},
+            {"window_h", wh},
+            {"hint", "Focus camera on entity first, then wait for gizmo render"}
+        };
+    }
+
+    float dx = 0.0f, dy = 0.0f;
+    if (args.contains("direction")) {
+        if (args["direction"].is_string()) {
+            std::string dir = args["direction"].get<std::string>();
+            if (dir == "right")     { dx = 1.0f; dy = 0.0f; }
+            else if (dir == "left") { dx = -1.0f; dy = 0.0f; }
+            else if (dir == "up")   { dx = 0.0f; dy = -1.0f; }
+            else if (dir == "down") { dx = 0.0f; dy = 1.0f; }
+            else {
+                return {{"ok", false}, {"error", "Unknown direction: " + dir}};
+            }
+        } else if (args["direction"].is_object()) {
+            dx = args["direction"].value("dx", 0.0f);
+            dy = args["direction"].value("dy", 0.0f);
+        }
+    } else {
+        dx = 1.0f; dy = 0.0f; // default: drag right
+    }
+
+    float distance = args.value("distance", 50.0f);
+    int steps = args.value("steps", 10);
+    if (steps < 1) {
+        steps = 1;
+    }
+
+    // Normalize direction
+    float len = std::sqrt(dx * dx + dy * dy);
+    if (len > 0.001f) {
+        dx /= len;
+        dy /= len;
+    }
+
+    float startX = gizmoCenter.x;
+    float startY = gizmoCenter.y;
+    float endX = startX + dx * distance;
+    float endY = startY + dy * distance;
+
+    // Build drag args and delegate to the existing drag() method
+    nlohmann::json dragArgs = {
+        {"start_x", startX},
+        {"start_y", startY},
+        {"end_x", endX},
+        {"end_y", endY},
+        {"button", 0},
+        {"steps", steps}
+    };
+
+    nlohmann::json result = drag(dragArgs);
+    result["gizmo_center"] = {{"x", startX}, {"y", startY}};
+    result["drag_end"]     = {{"x", endX},   {"y", endY}};
+    return result;
+}
+
+nlohmann::json EditorCommander::waitEvents(const nlohmann::json& /*args*/) {
+    int pending = pendingEventCount();
+    bool cameraAnimating = cameraAnim_.active;
+    return {
+        {"ok", true},
+        {"data", {
+            {"pending_events",    pending},
+            {"camera_animating",  cameraAnimating},
+            {"idle",              pending == 0 && !cameraAnimating}
+        }}
+    };
 }
