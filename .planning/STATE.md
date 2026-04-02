@@ -230,10 +230,11 @@ None yet.
 | 260402-3tl | Add Ctrl/Cmd+S keyboard shortcut to save scene in level editor | 2026-04-02 | 5cd4b53 | [260402-3tl-pressing-ctrl-or-cmd-plus-s-should-save-](./quick/260402-3tl-pressing-ctrl-or-cmd-plus-s-should-save-/) |
 | 260402-3qe | Implement Unity-style double-F focus: two zoom levels on repeated F key press | 2026-04-02 | 284f77f | [260402-3qe-implement-unity-style-double-f-focus-two](./quick/260402-3qe-implement-unity-style-double-f-focus-two/) |
 | 260402-41r | Auto-scroll outliner to selected object on viewport selection, with ancestor group auto-expand | 2026-04-02 | dee2921 | [260402-41r-when-i-select-an-object-in-the-scene-it-](./quick/260402-41r-when-i-select-an-object-in-the-scene-it-/) |
+| 260402-4gx | Fix scale gizmo uniform drag to use Unity-style screen-space radial direction | 2026-04-02 | 8b1e428 | [260402-4gx-fix-scale-gizmo-drag-direction-to-work-c](./quick/260402-4gx-fix-scale-gizmo-drag-direction-to-work-c/) |
 
 ## Session Continuity
 
-Last activity: 2026-04-02 - Completed quick task 260402-41r: Outliner auto-scroll to viewport selection
+Last activity: 2026-04-02 - Completed quick task 260402-4gx: Fix scale gizmo radial uniform scale direction
 Last session: 2026-04-02T00:00:44Z
-Stopped at: Completed quick task 260402-41r: Outliner auto-scroll to viewport selection
+Stopped at: Completed quick task 260402-4gx: Fix scale gizmo radial uniform scale direction
 Resume file: .planning/phases/13-data-driven-behavior-system-native-action-component-system-with-behaviorsystem-dispatcher-triggercomponent-node-id-targeting-scene-file-behavior-declarations/13-CONTEXT.md
