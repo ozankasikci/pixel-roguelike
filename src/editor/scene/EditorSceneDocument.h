@@ -66,6 +66,9 @@ public:
 
     const std::vector<EditorSceneObject>& objects() const { return objects_; }
     std::vector<EditorSceneObject>& objects() { return objects_; }
+
+    // Read-only trigger placements loaded from scene file (not editable in the editor yet)
+    const std::vector<TriggerPlacement>& triggers() const { return readOnlyTriggers_; }
     EditorSceneObject* findObject(std::uint64_t id);
     const EditorSceneObject* findObject(std::uint64_t id) const;
 
@@ -130,6 +133,7 @@ private:
 
     std::string scenePath_;
     std::vector<EditorSceneObject> objects_;
+    std::vector<TriggerPlacement> readOnlyTriggers_;
     EnvironmentDefinition environment_;
     EnvironmentProfile legacyEnvironmentProfile_ = EnvironmentProfile::Default;
     std::uint64_t nextObjectId_ = 1;

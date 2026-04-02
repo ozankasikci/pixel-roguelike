@@ -42,6 +42,7 @@ bool decomposeTransformMatrix(const glm::mat4& matrix,
 void EditorSceneDocument::clear() {
     scenePath_.clear();
     objects_.clear();
+    readOnlyTriggers_.clear();
     environment_ = makeEnvironmentDefinition(EnvironmentProfile::Default);
     legacyEnvironmentProfile_ = EnvironmentProfile::Default;
     nextObjectId_ = 1;
@@ -79,6 +80,9 @@ void EditorSceneDocument::loadFromSceneFile(const std::string& scenePath, const 
     for (const auto& archetype : level.archetypes) {
         addArchetype(archetype);
     }
+
+    // Store trigger placements as read-only (not editable in editor yet, but visualized)
+    readOnlyTriggers_ = level.triggers;
 
     sceneDirty_ = false;
     environmentDirty_ = false;

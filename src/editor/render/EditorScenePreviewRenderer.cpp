@@ -7,6 +7,7 @@
 #include "engine/rendering/core/Shader.h"
 #include "engine/rendering/geometry/MeshLibrary.h"
 #include "engine/rendering/lighting/ShadowMap.h"
+#include "game/behavior/TriggerComponent.h"
 #include "game/components/LightComponent.h"
 #include "game/components/MeshComponent.h"
 #include "game/components/StaticColliderComponent.h"
@@ -194,6 +195,38 @@ void appendHelperObjects(std::vector<RenderObject>& objects,
                 tint,
                 materials.resolve("moss_default")
             });
+        }
+    }
+
+    // Trigger volume visualization (D-14): semi-transparent wireframe in the editor viewport
+    // Box triggers: green wireframe; Sphere triggers: blue wireframe (approximated as scaled cube)
+    if (cube != nullptr) {
+        for (const auto& trigger : document.triggers()) {
+            if (trigger.shape == TriggerShape::Box) {
+                // Green wireframe box scaled to trigger half-extents
+                objects.push_back(RenderObject{
+                    cube,
+                    makeModelMatrix(trigger.position, trigger.halfExtents * 2.0f),
+                    glm::vec3(0.20f, 0.80f, 0.20f),
+                    materials.resolve("metal_default"),
+                    true,   // wireframe
+                    true,   // ignoreDepth — draws as overlay so designers can see trigger bounds through walls
+                    true,   // unlit
+                    1.5f    // lineWidth
+                });
+            } else {
+                // Blue wireframe cube approximating a sphere trigger (radius-based scale)
+                objects.push_back(RenderObject{
+                    cube,
+                    makeModelMatrix(trigger.position, glm::vec3(trigger.radius * 2.0f)),
+                    glm::vec3(0.20f, 0.40f, 0.80f),
+                    materials.resolve("metal_default"),
+                    true,   // wireframe
+                    true,   // ignoreDepth
+                    true,   // unlit
+                    1.5f    // lineWidth
+                });
+            }
         }
     }
 }

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "engine/rendering/geometry/Renderer.h"
+#include "game/level/LevelDef.h"
 
 #include <entt/entt.hpp>
 
