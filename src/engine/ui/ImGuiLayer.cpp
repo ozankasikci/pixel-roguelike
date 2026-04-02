@@ -367,6 +367,40 @@ void ImGuiLayer::renderOverlay(DebugParams& params, std::vector<RenderLight>& li
             ImGui::TreePop();
         }
         ImGui::EndDisabled();
+        if (ImGui::TreeNodeEx("Player Torch", ImGuiTreeNodeFlags_DefaultOpen)) {
+            ImGui::Checkbox("Torch Enabled", &params.lighting.torch.enabled);
+            ImGui::BeginDisabled(!params.lighting.torch.enabled);
+            ImGui::SliderFloat("Master Intensity", &params.lighting.torch.masterIntensity, 0.0f, 3.0f, "%.2f");
+            ImGui::Separator();
+
+            ImGui::Text("Spotlight");
+            ImGui::ColorEdit3("Torch Color", &params.lighting.torch.torchColor.x, ImGuiColorEditFlags_Float | ImGuiColorEditFlags_NoInputs);
+            ImGui::SliderFloat("Torch Intensity", &params.lighting.torch.torchIntensity, 0.0f, 2.0f, "%.3f");
+            ImGui::SliderFloat("Torch Radius", &params.lighting.torch.torchRadius, 0.5f, 15.0f, "%.1f");
+            ImGui::SliderFloat("Inner Cone", &params.lighting.torch.torchInnerConeDegrees, 5.0f, 90.0f, "%.0f deg");
+            ImGui::SliderFloat("Outer Cone", &params.lighting.torch.torchOuterConeDegrees, 10.0f, 120.0f, "%.0f deg");
+            ImGui::Separator();
+
+            ImGui::Text("Spill Light");
+            ImGui::ColorEdit3("Spill Color", &params.lighting.torch.spillColor.x, ImGuiColorEditFlags_Float | ImGuiColorEditFlags_NoInputs);
+            ImGui::SliderFloat("Spill Intensity", &params.lighting.torch.spillIntensity, 0.0f, 8.0f, "%.2f");
+            ImGui::SliderFloat("Spill Radius", &params.lighting.torch.spillRadius, 1.0f, 20.0f, "%.1f");
+            ImGui::Separator();
+
+            ImGui::Text("Halo");
+            ImGui::ColorEdit3("Halo Color", &params.lighting.torch.haloColor.x, ImGuiColorEditFlags_Float | ImGuiColorEditFlags_NoInputs);
+            ImGui::SliderFloat("Halo Intensity", &params.lighting.torch.haloIntensity, 0.0f, 5.0f, "%.2f");
+            ImGui::SliderFloat("Halo Radius", &params.lighting.torch.haloRadius, 1.0f, 15.0f, "%.1f");
+            ImGui::Separator();
+
+            ImGui::Text("Hand Glow");
+            ImGui::ColorEdit3("Glow Color", &params.lighting.torch.handGlowColor.x, ImGuiColorEditFlags_Float | ImGuiColorEditFlags_NoInputs);
+            ImGui::SliderFloat("Glow Intensity", &params.lighting.torch.handGlowIntensity, 0.0f, 0.5f, "%.3f");
+            ImGui::SliderFloat("Glow Radius", &params.lighting.torch.handGlowRadius, 0.2f, 5.0f, "%.2f");
+
+            ImGui::EndDisabled();
+            ImGui::TreePop();
+        }
     }
 
     // ------------------------------------------------------------------
