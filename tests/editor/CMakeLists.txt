@@ -44,3 +44,21 @@ pixel_roguelike_add_profile(profile_play_preview
     LIBRARIES editor
     DEFINITIONS ${SILOS_CLOISTER_SCENE_FILE_DEF}
 )
+
+pixel_roguelike_add_test(test_command_registry
+    SOURCES test_command_registry.cpp
+    LIBRARIES editor
+    LABELS editor
+)
+
+pixel_roguelike_add_test(test_session_record_replay
+    SOURCES test_session_record_replay.cpp
+    LIBRARIES editor
+    LABELS editor
+)
+
+pixel_roguelike_add_test(test_editor_debug_commands
+    SOURCES test_editor_debug_commands.cpp
+    LIBRARIES editor
+    LABELS editor
+)
