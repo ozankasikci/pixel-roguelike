@@ -231,10 +231,11 @@ None yet.
 | 260402-3qe | Implement Unity-style double-F focus: two zoom levels on repeated F key press | 2026-04-02 | 284f77f | [260402-3qe-implement-unity-style-double-f-focus-two](./quick/260402-3qe-implement-unity-style-double-f-focus-two/) |
 | 260402-41r | Auto-scroll outliner to selected object on viewport selection, with ancestor group auto-expand | 2026-04-02 | dee2921 | [260402-41r-when-i-select-an-object-in-the-scene-it-](./quick/260402-41r-when-i-select-an-object-in-the-scene-it-/) |
 | 260402-4gx | Fix scale gizmo uniform drag to use Unity-style screen-space radial direction | 2026-04-02 | 8b1e428 | [260402-4gx-fix-scale-gizmo-drag-direction-to-work-c](./quick/260402-4gx-fix-scale-gizmo-drag-direction-to-work-c/) |
+| 260402-4is | Make player torch light adjustable in debug overlay | 2026-04-02 | c7de887 | [260402-4is-investigate-player-attached-light-and-ma](./quick/260402-4is-investigate-player-attached-light-and-ma/) |
 
 ## Session Continuity
 
-Last activity: 2026-04-02 - Completed quick task 260402-4gx: Fix scale gizmo radial uniform scale direction
+Last activity: 2026-04-02 - Completed quick task 260402-4is: Make player torch light adjustable in debug overlay
 Last session: 2026-04-02T00:00:44Z
 Stopped at: Completed quick task 260402-4gx: Fix scale gizmo radial uniform scale direction
 Resume file: .planning/phases/13-data-driven-behavior-system-native-action-component-system-with-behaviorsystem-dispatcher-triggercomponent-node-id-targeting-scene-file-behavior-declarations/13-CONTEXT.md
