@@ -24,9 +24,6 @@ void updateRuntimeInventory(entt::registry& registry,
                             RunSession& session,
                             const ContentRegistry& content);
 
-void initializeRuntimeDoors(entt::registry& registry);
-void updateRuntimeDoors(entt::registry& registry, float deltaTime);
-
 void initializeRuntimeCheckpoints(entt::registry& registry);
 void updateRuntimeCheckpoints(entt::registry& registry, float deltaTime, RunSession& session);
 

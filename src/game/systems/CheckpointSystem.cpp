@@ -2,12 +2,7 @@
 
 #include "engine/core/Application.h"
 #include "game/runtime/RuntimeGameplay.h"
-#include "engine/input/InputSystem.h"
 #include "game/session/RunSession.h"
-
-CheckpointSystem::CheckpointSystem(InputSystem& input)
-    : input_(input)
-{}
 
 void CheckpointSystem::init(Application& app) {
     initializeRuntimeCheckpoints(app.registry());

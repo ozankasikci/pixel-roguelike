@@ -6,12 +6,14 @@
 #include "engine/input/InputSystem.h"
 #include "engine/physics/PhysicsSystem.h"
 #include "engine/ui/ImGuiLayer.h"
+#include "game/behavior/BehaviorSystem.h"
+#include "game/behavior/DoorAnimationSystem.h"
+#include "game/behavior/TriggerSystem.h"
 #include "game/systems/AudioListenerSystem.h"
 #include "game/systems/InventorySystem.h"
 #include "game/systems/PlayerMovementSystem.h"
 #include "game/systems/CameraSystem.h"
 #include "game/systems/CheckpointSystem.h"
-#include "game/systems/DoorSystem.h"
 #include "game/systems/InteractionSystem.h"
 #include "game/systems/RenderSystem.h"
 #include "game/scenes/GenericFileScene.h"
@@ -70,19 +72,23 @@ int main(int argc, char* argv[]) {
     // Register systems by phase so scheduling policy lives in the engine instead of boot order.
     auto& input = app.addSystem<InputSystem>(Application::UpdatePhase::Input);
     auto& interaction = app.addSystem<InteractionSystem>(Application::UpdatePhase::Interaction, input);
-    auto& doors = app.addSystem<DoorSystem>(Application::UpdatePhase::Interaction, input);
-    auto& checkpoints = app.addSystem<CheckpointSystem>(Application::UpdatePhase::Interaction, input);
+    auto& checkpoints = app.addSystem<CheckpointSystem>(Application::UpdatePhase::Interaction);
     auto& physics = app.addSystem<PhysicsSystem>(Application::UpdatePhase::Physics);
     auto& audio = app.addSystem<AudioSystem>(Application::UpdatePhase::Gameplay);
     app.emplaceService<AudioSystem*>(&audio);
     auto& audioListener = app.addSystem<AudioListenerSystem>(Application::UpdatePhase::Gameplay, audio);
     (void)audioListener;
+    auto& triggers = app.addSystem<TriggerSystem>(Application::UpdatePhase::Gameplay);
+    auto& behaviors = app.addSystem<BehaviorSystem>(Application::UpdatePhase::Gameplay);
+    auto& doorAnim = app.addSystem<DoorAnimationSystem>(Application::UpdatePhase::Gameplay);
     auto& inventory = app.addSystem<InventorySystem>(Application::UpdatePhase::Gameplay, input);
     auto& movement = app.addSystem<PlayerMovementSystem>(Application::UpdatePhase::Gameplay, input, physics);
     auto& camera = app.addSystem<CameraSystem>(Application::UpdatePhase::Camera, input);
     auto& render = app.addSystem<RenderSystem>(Application::UpdatePhase::Render, input);
-    (void)doors;
     (void)checkpoints;
+    (void)triggers;
+    (void)behaviors;
+    (void)doorAnim;
     (void)interaction;
     (void)inventory;
     (void)movement;
