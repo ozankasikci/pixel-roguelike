@@ -21,24 +21,11 @@
 
 namespace {
 
-constexpr glm::vec3 kPlayerTorchColor{1.00f, 0.89f, 0.76f};
-constexpr glm::vec3 kPlayerTorchSpillColor{1.00f, 0.78f, 0.46f};
-constexpr float kPlayerTorchRadius = 3.1f;
-constexpr float kPlayerTorchIntensity = 0.15f;
+// Positional constants kept as constexpr — not exposed to debug tuning.
 constexpr float kPlayerTorchForwardOffset = 0.230f;
 constexpr float kPlayerTorchRightOffset = -0.155f;
 constexpr float kPlayerTorchDownOffset = 0.040f;
 constexpr glm::vec3 kPlayerTorchSpillOffset{-0.030f, -0.180f, -0.060f};
-constexpr float kPlayerTorchSpillRadius = 7.2f;
-constexpr float kPlayerTorchSpillIntensity = 2.5f;
-constexpr float kPlayerTorchHaloRadius = 5.4f;
-constexpr float kPlayerTorchHaloIntensity = 1.2f;
-constexpr glm::vec3 kPlayerTorchHaloColor{1.00f, 0.84f, 0.58f};
-constexpr float kPlayerTorchInnerConeDegrees = 58.0f;
-constexpr float kPlayerTorchOuterConeDegrees = 82.0f;
-constexpr glm::vec3 kPlayerHandGlowColor{0.98f, 0.91f, 0.82f};
-constexpr float kPlayerHandGlowRadius = 1.10f;
-constexpr float kPlayerHandGlowIntensity = 0.08f;
 constexpr float kPlayerHandGlowForwardOffset = 0.08f;
 constexpr float kPlayerHandGlowRightOffset = -0.14f;
 constexpr float kPlayerHandGlowDownOffset = 0.06f;
@@ -197,6 +184,10 @@ void RuntimeSceneRenderer::collectLights(entt::registry& registry,
 
     auto cameraView = registry.view<TransformComponent, CameraComponent, PrimaryCameraTag>();
     for (auto [entity, transform, camera] : cameraView.each()) {
+        if (!params.lighting.torch.enabled) {
+            break;
+        }
+        const PlayerTorchOverride& torch = params.lighting.torch;
         const float timeSeconds = static_cast<float>(glfwGetTime());
         const float visualFlicker = playerTorchVisualFlicker(timeSeconds);
         const float lightFlicker = playerTorchLightFlicker(timeSeconds);
@@ -220,28 +211,28 @@ void RuntimeSceneRenderer::collectLights(entt::registry& registry,
         RenderLight torchSpill;
         torchSpill.type = LightType::Point;
         torchSpill.position = spillPosition;
-        torchSpill.color = kPlayerTorchSpillColor * (0.92f + visualFlicker * 0.14f);
-        torchSpill.radius = kPlayerTorchSpillRadius * (0.95f + visualFlicker * 0.08f);
-        torchSpill.intensity = kPlayerTorchSpillIntensity * (0.88f + visualFlicker * 0.22f);
+        torchSpill.color = torch.spillColor * (0.92f + visualFlicker * 0.14f);
+        torchSpill.radius = torch.spillRadius * (0.95f + visualFlicker * 0.08f);
+        torchSpill.intensity = torch.spillIntensity * torch.masterIntensity * (0.88f + visualFlicker * 0.22f);
         lights.push_back(torchSpill);
 
         RenderLight torchHalo;
         torchHalo.type = LightType::Point;
         torchHalo.position = transform.position + cameraUp * -0.22f;
-        torchHalo.color = kPlayerTorchHaloColor * (0.92f + visualFlicker * 0.10f);
-        torchHalo.radius = kPlayerTorchHaloRadius * (0.97f + visualFlicker * 0.05f);
-        torchHalo.intensity = kPlayerTorchHaloIntensity * (0.92f + visualFlicker * 0.12f);
+        torchHalo.color = torch.haloColor * (0.92f + visualFlicker * 0.10f);
+        torchHalo.radius = torch.haloRadius * (0.97f + visualFlicker * 0.05f);
+        torchHalo.intensity = torch.haloIntensity * torch.masterIntensity * (0.92f + visualFlicker * 0.12f);
         lights.push_back(torchHalo);
 
         RenderLight torchLight;
         torchLight.type = LightType::Spot;
         torchLight.position = flamePosition;
         torchLight.direction = torchDirection;
-        torchLight.color = kPlayerTorchColor * (0.95f + lightFlicker * 0.04f);
-        torchLight.radius = kPlayerTorchRadius * (0.98f + lightFlicker * 0.05f);
-        torchLight.intensity = kPlayerTorchIntensity * lightFlicker;
-        torchLight.innerConeDegrees = clampInnerCone(kPlayerTorchInnerConeDegrees, kPlayerTorchOuterConeDegrees);
-        torchLight.outerConeDegrees = clampOuterCone(torchLight.innerConeDegrees, kPlayerTorchOuterConeDegrees);
+        torchLight.color = torch.torchColor * (0.95f + lightFlicker * 0.04f);
+        torchLight.radius = torch.torchRadius * (0.98f + lightFlicker * 0.05f);
+        torchLight.intensity = torch.torchIntensity * torch.masterIntensity * lightFlicker;
+        torchLight.innerConeDegrees = clampInnerCone(torch.torchInnerConeDegrees, torch.torchOuterConeDegrees);
+        torchLight.outerConeDegrees = clampOuterCone(torchLight.innerConeDegrees, torch.torchOuterConeDegrees);
         torchLight.castsShadows = true;
         lights.push_back(torchLight);
 
@@ -252,9 +243,9 @@ void RuntimeSceneRenderer::collectLights(entt::registry& registry,
         RenderLight handGlow;
         handGlow.type = LightType::Point;
         handGlow.position = handGlowPosition;
-        handGlow.color = kPlayerHandGlowColor * (0.98f + visualFlicker * 0.03f);
-        handGlow.radius = kPlayerHandGlowRadius * (0.99f + lightFlicker * 0.03f);
-        handGlow.intensity = kPlayerHandGlowIntensity * (0.96f + lightFlicker * 0.05f);
+        handGlow.color = torch.handGlowColor * (0.98f + visualFlicker * 0.03f);
+        handGlow.radius = torch.handGlowRadius * (0.99f + lightFlicker * 0.03f);
+        handGlow.intensity = torch.handGlowIntensity * torch.masterIntensity * (0.96f + lightFlicker * 0.05f);
         lights.push_back(handGlow);
         break;
     }
