@@ -229,10 +229,11 @@ None yet.
 | 260402-3o3 | Add "Create Group" to outliner right-click context menu with centroid placement and undo/redo | 2026-04-02 | 5c5f71c | [260402-3o3-add-create-group-to-outliner-right-click](./quick/260402-3o3-add-create-group-to-outliner-right-click/) |
 | 260402-3tl | Add Ctrl/Cmd+S keyboard shortcut to save scene in level editor | 2026-04-02 | 5cd4b53 | [260402-3tl-pressing-ctrl-or-cmd-plus-s-should-save-](./quick/260402-3tl-pressing-ctrl-or-cmd-plus-s-should-save-/) |
 | 260402-3qe | Implement Unity-style double-F focus: two zoom levels on repeated F key press | 2026-04-02 | 284f77f | [260402-3qe-implement-unity-style-double-f-focus-two](./quick/260402-3qe-implement-unity-style-double-f-focus-two/) |
+| 260402-41r | Auto-scroll outliner to selected object on viewport selection, with ancestor group auto-expand | 2026-04-02 | dee2921 | [260402-41r-when-i-select-an-object-in-the-scene-it-](./quick/260402-41r-when-i-select-an-object-in-the-scene-it-/) |
 
 ## Session Continuity
 
-Last activity: 2026-04-02 - Completed quick task 260402-3qe: Unity-style double-F focus toggle
-Last session: 2026-04-01T23:58:14.039Z
-Stopped at: Phase 13 context gathered
+Last activity: 2026-04-02 - Completed quick task 260402-41r: Outliner auto-scroll to viewport selection
+Last session: 2026-04-02T00:00:44Z
+Stopped at: Completed quick task 260402-41r: Outliner auto-scroll to viewport selection
 Resume file: .planning/phases/13-data-driven-behavior-system-native-action-component-system-with-behaviorsystem-dispatcher-triggercomponent-node-id-targeting-scene-file-behavior-declarations/13-CONTEXT.md
