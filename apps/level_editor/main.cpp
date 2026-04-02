@@ -1532,22 +1532,43 @@ int main(int argc, char* argv[]) {
                 ImDrawList* statsDraw = ImGui::GetWindowDrawList();
                 const float frameMs = 1000.0f / std::max(ImGui::GetIO().Framerate, 1.0f);
                 const float fps = ImGui::GetIO().Framerate;
-                const ImVec2 statsPos(renderViewportState.origin.x + 8.0f,
-                                      renderViewportState.origin.y + renderViewportState.size.y - 52.0f);
-                char statsBuf[128];
                 if (ui.playPreview) {
-                    const double renderMs = runtimePreviewSession.performanceStats().lastRenderMs;
-                    std::snprintf(statsBuf, sizeof(statsBuf),
-                                  "%.1f ms  %.0f FPS  render: %.1f ms", frameMs, fps, renderMs);
+                    const auto& perf = runtimePreviewSession.performanceStats();
+                    const auto& ps = runtimePreviewSession.pipelineStats();
+                    char line1[128], line2[128], line3[128];
+                    std::snprintf(line1, sizeof(line1),
+                                  "%.1f ms  %.0f FPS  render: %.1f ms", frameMs, fps, perf.lastRenderMs);
+                    std::snprintf(line2, sizeof(line2),
+                                  "shadow: %.1f  scene: %.1f  ssao: %.1f  bloom: %.1f  comp: %.1f ms",
+                                  ps.shadowPassMs, ps.scenePassMs, ps.ssaoMs, ps.bloomMs, ps.compositeMs);
+                    std::snprintf(line3, sizeof(line3),
+                                  "objects: %d  draws: %d  culled: %d  shadow_culled: %d  lights: %d",
+                                  ps.objectCount, ps.drawCalls, ps.culledCount, ps.shadowCulledCount, ps.lightCount);
+                    const float lineH = ImGui::GetTextLineHeight();
+                    const ImVec2 statsPos(renderViewportState.origin.x + 8.0f,
+                                          renderViewportState.origin.y + renderViewportState.size.y - 16.0f - lineH * 3.0f);
+                    const float maxW = std::max({ImGui::CalcTextSize(line1).x,
+                                                 ImGui::CalcTextSize(line2).x,
+                                                 ImGui::CalcTextSize(line3).x});
+                    statsDraw->AddRectFilled(
+                        ImVec2(statsPos.x - 6.0f, statsPos.y - 4.0f),
+                        ImVec2(statsPos.x + maxW + 6.0f, statsPos.y + lineH * 3.0f + 4.0f),
+                        IM_COL32(0, 0, 0, 160), 3.0f);
+                    statsDraw->AddText(statsPos, IM_COL32(220, 228, 240, 255), line1);
+                    statsDraw->AddText(ImVec2(statsPos.x, statsPos.y + lineH), IM_COL32(180, 190, 200, 255), line2);
+                    statsDraw->AddText(ImVec2(statsPos.x, statsPos.y + lineH * 2.0f), IM_COL32(180, 190, 200, 255), line3);
                 } else {
+                    const ImVec2 statsPos(renderViewportState.origin.x + 8.0f,
+                                          renderViewportState.origin.y + renderViewportState.size.y - 52.0f);
+                    char statsBuf[128];
                     std::snprintf(statsBuf, sizeof(statsBuf), "%.1f ms  %.0f FPS", frameMs, fps);
+                    const ImVec2 textSize = ImGui::CalcTextSize(statsBuf);
+                    statsDraw->AddRectFilled(
+                        ImVec2(statsPos.x - 6.0f, statsPos.y - 4.0f),
+                        ImVec2(statsPos.x + textSize.x + 6.0f, statsPos.y + textSize.y + 4.0f),
+                        IM_COL32(0, 0, 0, 160), 3.0f);
+                    statsDraw->AddText(statsPos, IM_COL32(220, 228, 240, 255), statsBuf);
                 }
-                const ImVec2 textSize = ImGui::CalcTextSize(statsBuf);
-                statsDraw->AddRectFilled(
-                    ImVec2(statsPos.x - 6.0f, statsPos.y - 4.0f),
-                    ImVec2(statsPos.x + textSize.x + 6.0f, statsPos.y + textSize.y + 4.0f),
-                    IM_COL32(0, 0, 0, 160), 3.0f);
-                statsDraw->AddText(statsPos, IM_COL32(220, 228, 240, 255), statsBuf);
             }
 
             {

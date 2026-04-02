@@ -69,6 +69,10 @@ void Renderer::drawScene(const std::vector<RenderObject>& objects,
         shader_->setInt(base + "doubleSided", light.doubleSided ? 1 : 0);
     }
 
+    // Track last-bound material to skip redundant uniform and texture calls.
+    // Objects are sorted by material ID upstream (SceneRenderPipeline::render).
+    std::string lastMaterialId;
+
     for (const auto& obj : objects) {
         if (obj.ignoreDepth) {
             glDisable(GL_DEPTH_TEST);
@@ -83,39 +87,48 @@ void Renderer::drawScene(const std::vector<RenderObject>& objects,
         }
 
         const RenderMaterialData& material = obj.material;
+
+        // Skip redundant material uniforms and texture binds when consecutive
+        // objects share the same material (saves ~30 uniform + 4 texture calls)
+        const bool sameMaterial = (!obj.material.id.empty() && obj.material.id == lastMaterialId);
+        if (!sameMaterial) {
+            lastMaterialId = obj.material.id;
+            shader_->setInt("uUseMaterialMaps", material.useMaterialMaps ? 1 : 0);
+            shader_->setInt("uUseProceduralDetail", material.useProceduralDetail ? 1 : 0);
+            shader_->setInt("uMaterialUvMode", material.uvMode);
+            shader_->setVec2("uMaterialUvScale", material.uvScale);
+            shader_->setFloat("uMaterialNormalStrength", material.normalStrength);
+            shader_->setFloat("uMaterialRoughnessScale", material.roughnessScale);
+            shader_->setFloat("uMaterialRoughnessBias", material.roughnessBias);
+            shader_->setFloat("uMaterialMetalness", material.metalness);
+            shader_->setFloat("uMaterialAoStrength", material.aoStrength);
+            shader_->setFloat("uMaterialLightTintResponse", material.lightTintResponse);
+            shader_->setFloat("uEmissiveStrength", material.emissiveStrength);
+            glActiveTexture(GL_TEXTURE0 + TextureUnits::kAlbedo);
+            glBindTexture(GL_TEXTURE_2D, material.albedoTexture);
+            glActiveTexture(GL_TEXTURE0 + TextureUnits::kNormalMap);
+            glBindTexture(GL_TEXTURE_2D, material.normalTexture);
+            glActiveTexture(GL_TEXTURE0 + TextureUnits::kRoughnessMap);
+            glBindTexture(GL_TEXTURE_2D, material.roughnessTexture);
+            glActiveTexture(GL_TEXTURE0 + TextureUnits::kAoMap);
+            glBindTexture(GL_TEXTURE_2D, material.aoTexture);
+            glActiveTexture(GL_TEXTURE0);
+            shader_->setFloat("uMaterialSpecularLevel", material.specularLevel);
+            shader_->setInt("uMaterialAnimated", material.animated ? 1 : 0);
+            shader_->setInt("uMaterialSubsurface", material.subsurface ? 1 : 0);
+            shader_->setInt("uMaterialBrickDetail", material.detailBrick ? 1 : 0);
+            shader_->setInt("uMaterialWoodDetail", material.detailWood ? 1 : 0);
+            shader_->setInt("uMaterialStoneDetail", material.detailStone ? 1 : 0);
+            shader_->setInt("uMaterialFloorDetail", material.detailFloor ? 1 : 0);
+            shader_->setInt("uNormalMapFlipY", material.normalMapFlipY ? 1 : 0);
+            shader_->setInt("uAlphaTest", material.alphaTest ? 1 : 0);
+            shader_->setFloat("uAlphaCutoff", material.alphaCutoff);
+        }
+
+        // Per-object uniforms: always set (model matrix, base color with tint, unlit flag)
         shader_->setInt("uUnlit", obj.unlit ? 1 : 0);
-        shader_->setInt("uUseMaterialMaps", material.useMaterialMaps ? 1 : 0);
-        shader_->setInt("uUseProceduralDetail", material.useProceduralDetail ? 1 : 0);
-        shader_->setInt("uMaterialUvMode", material.uvMode);
-        shader_->setVec2("uMaterialUvScale", material.uvScale);
-        shader_->setFloat("uMaterialNormalStrength", material.normalStrength);
-        shader_->setFloat("uMaterialRoughnessScale", material.roughnessScale);
-        shader_->setFloat("uMaterialRoughnessBias", material.roughnessBias);
-        shader_->setFloat("uMaterialMetalness", material.metalness);
-        shader_->setFloat("uMaterialAoStrength", material.aoStrength);
-        shader_->setFloat("uMaterialLightTintResponse", material.lightTintResponse);
-        shader_->setFloat("uEmissiveStrength", material.emissiveStrength);
-        glActiveTexture(GL_TEXTURE0 + TextureUnits::kAlbedo);
-        glBindTexture(GL_TEXTURE_2D, material.albedoTexture);
-        glActiveTexture(GL_TEXTURE0 + TextureUnits::kNormalMap);
-        glBindTexture(GL_TEXTURE_2D, material.normalTexture);
-        glActiveTexture(GL_TEXTURE0 + TextureUnits::kRoughnessMap);
-        glBindTexture(GL_TEXTURE_2D, material.roughnessTexture);
-        glActiveTexture(GL_TEXTURE0 + TextureUnits::kAoMap);
-        glBindTexture(GL_TEXTURE_2D, material.aoTexture);
-        glActiveTexture(GL_TEXTURE0);
         shader_->setMat4("uModel", obj.modelMatrix);
         shader_->setVec3("uBaseColor", obj.tint * material.baseColor);
-        shader_->setFloat("uMaterialSpecularLevel", material.specularLevel);
-        shader_->setInt("uMaterialAnimated", material.animated ? 1 : 0);
-        shader_->setInt("uMaterialSubsurface", material.subsurface ? 1 : 0);
-        shader_->setInt("uMaterialBrickDetail", material.detailBrick ? 1 : 0);
-        shader_->setInt("uMaterialWoodDetail", material.detailWood ? 1 : 0);
-        shader_->setInt("uMaterialStoneDetail", material.detailStone ? 1 : 0);
-        shader_->setInt("uMaterialFloorDetail", material.detailFloor ? 1 : 0);
-        shader_->setInt("uNormalMapFlipY", material.normalMapFlipY ? 1 : 0);
-        shader_->setInt("uAlphaTest", material.alphaTest ? 1 : 0);
-        shader_->setFloat("uAlphaCutoff", material.alphaCutoff);
         obj.mesh->draw();
     }
 

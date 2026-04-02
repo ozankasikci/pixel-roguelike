@@ -64,6 +64,19 @@ void SceneRenderPipeline::render(const SceneRenderInput& input,
         }
     }
 
+    // Sort: group by material, then front-to-back within each group
+    const glm::vec3 camPos = input.cameraPosition;
+    const glm::vec3 forward = glm::normalize(glm::vec3(input.viewMatrix[0][2],
+                                                         input.viewMatrix[1][2],
+                                                         input.viewMatrix[2][2]));
+    std::sort(culledObjects.begin(), culledObjects.end(),
+        [&](const RenderObject& a, const RenderObject& b) {
+            if (a.material.id != b.material.id) return a.material.id < b.material.id;
+            float distA = glm::dot(camPos - glm::vec3(a.modelMatrix[3]), forward);
+            float distB = glm::dot(camPos - glm::vec3(b.modelMatrix[3]), forward);
+            return distA < distB;
+        });
+
     // Create a view of the input with culled objects
     SceneRenderInput culledInput = input;
     culledInput.objects = &culledObjects;
@@ -131,6 +144,8 @@ void SceneRenderPipeline::renderShadowPass(const std::vector<RenderObject>& obje
                                             std::vector<RenderLight>& lights,
                                             const SceneRenderInput& input,
                                             ShadowRenderData& shadowData) {
+    int shadowCulled = 0;
+
     shadowData.shadowCount = 0;
     shadowData.matrices.fill(glm::mat4(1.0f));
     for (std::size_t i = 0; i < shadowMaps_.size(); ++i) {
@@ -138,6 +153,7 @@ void SceneRenderPipeline::renderShadowPass(const std::vector<RenderObject>& obje
     }
 
     if (!input.shadowsEnabled || shadowShader_ == nullptr) {
+        lastStats_.shadowCulledCount = 0;
         return;
     }
 
@@ -169,7 +185,14 @@ void SceneRenderPipeline::renderShadowPass(const std::vector<RenderObject>& obje
         glClear(GL_DEPTH_BUFFER_BIT);
         shadowShader_->setMat4("uLightViewProjection", lightMatrix);
 
+        // Frustum cull objects against this spot light's projection
+        const auto lightFrustum = extractFrustumPlanes(lightMatrix);
         for (const auto& object : objects) {
+            if (object.mesh && !isAabbInsideFrustum(object.mesh->aabbMin(), object.mesh->aabbMax(),
+                                                     object.modelMatrix, lightFrustum)) {
+                ++shadowCulled;
+                continue;
+            }
             shadowShader_->setMat4("uModel", object.modelMatrix);
             object.mesh->draw();
         }
@@ -195,13 +218,35 @@ void SceneRenderPipeline::renderShadowPass(const std::vector<RenderObject>& obje
             csmShader_->setMat4("uLightSpaceMatrices[" + std::to_string(i) + "]", csmMatrices[i]);
         }
 
+        // Build frustum planes for each cascade
+        std::array<std::array<glm::vec4, 6>, CascadedShadowMap::kCascadeCount> cascadeFrustums;
+        for (int i = 0; i < CascadedShadowMap::kCascadeCount; ++i) {
+            cascadeFrustums[i] = extractFrustumPlanes(csmMatrices[i]);
+        }
+
         for (const auto& object : objects) {
+            if (object.mesh) {
+                bool inAnyCascade = false;
+                for (int i = 0; i < CascadedShadowMap::kCascadeCount; ++i) {
+                    if (isAabbInsideFrustum(object.mesh->aabbMin(), object.mesh->aabbMax(),
+                                             object.modelMatrix, cascadeFrustums[i])) {
+                        inAnyCascade = true;
+                        break;
+                    }
+                }
+                if (!inAnyCascade) {
+                    ++shadowCulled;
+                    continue;
+                }
+            }
             csmShader_->setMat4("uModel", object.modelMatrix);
             object.mesh->draw();
         }
 
         csmShadowMap_.unbind();
     }
+
+    lastStats_.shadowCulledCount = shadowCulled;
 }
 
 void SceneRenderPipeline::renderScenePass(const SceneRenderInput& input,
@@ -295,7 +340,9 @@ void SceneRenderPipeline::renderPostProcess(const SceneRenderInput& input,
     post.sky.sunColor = glm::max(input.lightingEnvironment.sun.color, glm::vec3(0.0f));
 
     const double tBloomStart = glfwGetTime();
-    bloomPass_.render(sceneFBO_.colorTexture(), post.bloomRadius * 0.003f, post.bloomThreshold);
+    if (post.enableBloom) {
+        bloomPass_.render(sceneFBO_.colorTexture(), post.bloomRadius * 0.003f, post.bloomThreshold);
+    }
     lastStats_.bloomMs = (glfwGetTime() - tBloomStart) * 1000.0;
 
     const double tSsaoStart = glfwGetTime();
@@ -315,7 +362,7 @@ void SceneRenderPipeline::renderPostProcess(const SceneRenderInput& input,
     compositePass_.apply(sceneFBO_.colorTexture(),
                           sceneFBO_.depthTexture(),
                           sceneFBO_.normalTexture(),
-                          bloomPass_.bloomTexture(),
+                          post.enableBloom ? bloomPass_.bloomTexture() : 0,
                           post.enableSsao ? ssaoPass_.aoTexture() : 0,
                           compositeFBO_.framebuffer(),
                           post,
@@ -349,5 +396,7 @@ void SceneRenderPipeline::ensureFramebuffers(int internalWidth, int internalHeig
     }
 
     bloomPass_.resize(safeW, safeH);
-    ssaoPass_.resize(safeW, safeH);
+    // SSAO runs at half resolution for performance — the bilateral blur
+    // hides the resolution reduction while cutting sample cost by 4x.
+    ssaoPass_.resize(std::max(safeW / 2, 1), std::max(safeH / 2, 1));
 }
