@@ -35,6 +35,7 @@ public:
 
     Framebuffer& sceneFBO() { return pipeline_.sceneFBO(); }
     const Framebuffer& sceneFBO() const { return pipeline_.sceneFBO(); }
+    const SceneRenderPipelineStats& pipelineStats() const { return pipeline_.lastStats(); }
 
 private:
     struct CameraState {

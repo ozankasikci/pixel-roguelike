@@ -63,6 +63,7 @@ public:
     DebugParams& debugParams() { return debugParams_; }
     const DebugParams& debugParams() const { return debugParams_; }
     const RuntimeSessionPerformanceStats& performanceStats() const { return performanceStats_; }
+    const SceneRenderPipelineStats& pipelineStats() const { return renderer_.pipelineStats(); }
 
 private:
     void ensureInitialized();

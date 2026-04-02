@@ -47,6 +47,7 @@ public:
     RunSession& runSession() { return session_.runSession(); }
     const RunSession& runSession() const { return session_.runSession(); }
     const RuntimeSessionPerformanceStats& performanceStats() const { return session_.performanceStats(); }
+    const SceneRenderPipelineStats& pipelineStats() const { return session_.pipelineStats(); }
 
 private:
     RuntimeGameSession session_;
