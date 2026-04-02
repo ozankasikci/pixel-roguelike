@@ -8,8 +8,11 @@
 #include <imgui.h>
 
 #include <algorithm>
+#include <cctype>
 #include <cstdint>
+#include <cstring>
 #include <functional>
+#include <string>
 #include <unordered_set>
 
 namespace {
@@ -87,6 +90,43 @@ std::vector<std::uint64_t> renderOutliner(EditorSceneDocument& document,
     }
     ImGui::Separator();
 
+    // Search/filter bar
+    ImGui::SetNextItemWidth(-1.0f);
+    ImGui::InputTextWithHint("##outliner_filter", "Search...", ui.outlinerFilter, sizeof(ui.outlinerFilter));
+
+    // Build set of objects matching the filter (and their ancestors, to preserve hierarchy).
+    const bool hasFilter = ui.outlinerFilter[0] != '\0';
+    std::unordered_set<std::uint64_t> filterVisible;
+    if (hasFilter) {
+        std::string lowerFilter(ui.outlinerFilter);
+        for (auto& c : lowerFilter) c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
+
+        std::function<void(std::uint64_t)> markVisible = [&](std::uint64_t id) {
+            while (id != 0 && filterVisible.find(id) == filterVisible.end()) {
+                filterVisible.insert(id);
+                id = document.parentObjectId(id);
+            }
+        };
+
+        std::function<void(std::uint64_t)> scanObject = [&](std::uint64_t objectId) {
+            const EditorSceneObject* obj = document.findObject(objectId);
+            if (!obj) return;
+            std::string label = editorSceneObjectLabel(*obj);
+            for (auto& c : label) c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
+            if (label.find(lowerFilter) != std::string::npos) {
+                markVisible(objectId);
+            }
+            for (const auto childId : document.childObjectIds(objectId)) {
+                scanObject(childId);
+            }
+        };
+        for (const auto rootId : document.rootObjectIds()) {
+            scanObject(rootId);
+        }
+    }
+
+    ImGui::Separator();
+
     if (ImGui::IsWindowFocused(ImGuiFocusedFlags_RootAndChildWindows)
         && !ImGui::GetIO().WantTextInput
         && !ImGui::IsAnyItemActive()
@@ -116,6 +156,11 @@ std::vector<std::uint64_t> renderOutliner(EditorSceneDocument& document,
             return;
         }
 
+        // Skip objects that don't match the filter
+        if (hasFilter && filterVisible.find(objectId) == filterVisible.end()) {
+            return;
+        }
+
         const auto children = document.childObjectIds(objectId);
         ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_SpanAvailWidth | ImGuiTreeNodeFlags_OpenOnArrow;
         if (children.empty()) {
@@ -126,7 +171,8 @@ std::vector<std::uint64_t> renderOutliner(EditorSceneDocument& document,
         }
 
         // Force-expand ancestors of the selected item so the selected row is visible.
-        if (expandForScroll.count(objectId) > 0) {
+        // Also force-expand when filtering to reveal matches.
+        if (expandForScroll.count(objectId) > 0 || hasFilter) {
             ImGui::SetNextItemOpen(true, ImGuiCond_Always);
         }
 

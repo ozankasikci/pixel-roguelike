@@ -86,6 +86,7 @@ struct EditorUiState {
     bool scrollToSelection = false;
     std::uint64_t outlinerAnchorId = 0;
     char layoutNameBuffer[64] = "default";
+    char outlinerFilter[128] = {};
 };
 
 struct EditorPlacementState {
