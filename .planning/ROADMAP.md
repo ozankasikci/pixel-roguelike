@@ -247,10 +247,30 @@ Plans:
 - [x] 12-03-PLAN.md — ProceduralGameAssets rename, LevelLoader unification, GenericFileScene scripted geometry extraction
 - [x] 12-04-PLAN.md — File-based mesh auto-discovery and AABB frustum culling in SceneRenderPipeline
 
+### Phase 13: Data-driven behavior system — native Action Component system with BehaviorSystem dispatcher, TriggerComponent, node ID targeting, scene file behavior declarations
+
+**Goal:** Replace per-behavior System classes (DoorSystem, CheckpointSystem) with a single BehaviorSystem that dispatches actions from data-driven BehaviorComponent action lists, add TriggerComponent for spatial trigger volumes with on_enter/on_exit events, extend the .scene file format with indented sub-lines for behavior declarations, build a NodeIndex for entity name resolution, and migrate existing scenes to use the new behavior system
+**Requirements**: None (gameplay architecture phase; not mapped to REQUIREMENTS.md IDs)
+**Depends on:** Phase 12
+**Success Criteria** (what must be TRUE):
+  1. A single BehaviorSystem dispatches all entity behaviors from BehaviorComponent action lists -- no per-behavior System classes for activation
+  2. The .scene file format supports indented sub-lines for interactable and behavior declarations on mesh/light/trigger entities
+  3. TriggerComponent with Box and Sphere shapes fires onEnter/onExit action lists when the player enters/exits the volume
+  4. NodeIndex resolves "self" and named node IDs to entities at load time for cross-entity action targeting
+  5. DoorSystem is replaced by DoorAnimationSystem (animation only, no activation logic)
+  6. Institutional room doors are defined in the .scene file with interactable sub-lines (not scripted geometry)
+  7. Editor renders trigger volumes as semi-transparent wireframes for level design positioning
+**Plans:** 3 plans
+
+Plans:
+- [ ] 13-01-PLAN.md — Behavior type definitions (ActionTypes, BehaviorComponent, TriggerComponent, NodeIndex) and scene parser extension with indented sub-line support
+- [ ] 13-02-PLAN.md — BehaviorSystem dispatcher, TriggerSystem overlap detection, DoorAnimationSystem refactor, runtime wiring
+- [ ] 13-03-PLAN.md — Scene file migration, scripted geometry cleanup, editor trigger visualization, end-to-end verification
+
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order: 1 → 1.1 → 2 → 2.1 → 3 → 4 → 5 → 6 → 7 → 8 → 9 → 10 → 11 → 12
+Phases execute in numeric order: 1 → 1.1 → 2 → 2.1 → 3 → 4 → 5 → 6 → 7 → 8 → 9 → 10 → 11 → 12 → 13
 
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
@@ -268,13 +288,4 @@ Phases execute in numeric order: 1 → 1.1 → 2 → 2.1 → 3 → 4 → 5 → 6
 | 10. Global Keyboard Shortcuts and Hover Highlight | v1.1 | 2/2 | Complete    | 2026-04-01 |
 | 11. Add Mesh Discoverability | v1.1 | 1/1 | Complete    | 2026-04-01 |
 | 12. Engine Quality | — | 4/4 | Complete    | 2026-04-01 |
-
-### Phase 13: Data-driven behavior system — native Action Component system with BehaviorSystem dispatcher, TriggerComponent, node ID targeting, scene file behavior declarations
-
-**Goal:** [To be planned]
-**Requirements**: TBD
-**Depends on:** Phase 12
-**Plans:** 0 plans
-
-Plans:
-- [ ] TBD (run /gsd:plan-phase 13 to break down)
+| 13. Data-driven Behavior System | — | 0/3 | Planned    | - |
