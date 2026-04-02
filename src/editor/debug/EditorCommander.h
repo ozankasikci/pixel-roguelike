@@ -9,12 +9,15 @@
 
 #include <nlohmann/json.hpp>
 
+struct GLFWwindow;
+
 class EditorCommander {
 public:
     EditorCommander(EditorSceneDocument& doc,
                     std::vector<std::uint64_t>& selectedIds,
                     EditorUiState& ui,
-                    EditorCommandStack& cmdStack);
+                    EditorCommandStack& cmdStack,
+                    GLFWwindow* window);
 
     EditorCommander(const EditorCommander&) = delete;
     EditorCommander& operator=(const EditorCommander&) = delete;
@@ -26,14 +29,15 @@ public:
     nlohmann::json redo(const nlohmann::json& args);
     nlohmann::json togglePanel(const nlohmann::json& args);
 
-    // These are deferred to a future implementation that injects GLFW events
     nlohmann::json keyPress(const nlohmann::json& args);
     nlohmann::json mouseClick(const nlohmann::json& args);
     nlohmann::json drag(const nlohmann::json& args);
+    nlohmann::json mouseRelease(const nlohmann::json& args);
 
 private:
     EditorSceneDocument& doc_;
     std::vector<std::uint64_t>& selectedIds_;
     EditorUiState& ui_;
     EditorCommandStack& cmdStack_;
+    GLFWwindow* window_;
 };

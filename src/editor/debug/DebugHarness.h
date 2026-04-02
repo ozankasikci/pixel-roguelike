@@ -14,12 +14,15 @@
 #include <memory>
 #include <vector>
 
+struct GLFWwindow;
+
 class DebugHarness {
 public:
     DebugHarness(EditorSceneDocument& doc,
                  std::vector<std::uint64_t>& selectedIds,
                  EditorUiState& ui,
-                 EditorCommandStack& cmdStack);
+                 EditorCommandStack& cmdStack,
+                 GLFWwindow* window);
     ~DebugHarness() = default;
 
     DebugHarness(const DebugHarness&) = delete;
@@ -34,6 +37,7 @@ private:
     std::vector<std::uint64_t>& selectedIds_;
     EditorUiState& ui_;
     EditorCommandStack& cmdStack_;
+    GLFWwindow* window_;
 
     CommandRegistry registry_;
     DebugServer server_;

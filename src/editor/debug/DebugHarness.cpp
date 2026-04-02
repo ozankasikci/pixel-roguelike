@@ -5,13 +5,14 @@
 DebugHarness::DebugHarness(EditorSceneDocument& doc,
                            std::vector<std::uint64_t>& selectedIds,
                            EditorUiState& ui,
-                           EditorCommandStack& cmdStack)
-    : doc_(doc), selectedIds_(selectedIds), ui_(ui), cmdStack_(cmdStack) {
+                           EditorCommandStack& cmdStack,
+                           GLFWwindow* window)
+    : doc_(doc), selectedIds_(selectedIds), ui_(ui), cmdStack_(cmdStack), window_(window) {
 }
 
 void DebugHarness::init() {
     inspector_ = std::make_unique<EditorInspector>(doc_, selectedIds_, ui_, cmdStack_);
-    commander_ = std::make_unique<EditorCommander>(doc_, selectedIds_, ui_, cmdStack_);
+    commander_ = std::make_unique<EditorCommander>(doc_, selectedIds_, ui_, cmdStack_, window_);
 
     // --- inspect.* commands (read-only) ---
     registry_.registerCommand("inspect.selection", [this](const nlohmann::json& args) {
@@ -39,22 +40,21 @@ void DebugHarness::init() {
         return inspector_->panels();
     });
 
-    // --- command.* commands (mutating) ---
-    // These are wired through a helper so we can record them in the session recorder
-    auto wrapCommand = [this](auto fn) {
-        return [this, fn](const nlohmann::json& args) -> nlohmann::json {
-            nlohmann::json result = fn(args);
-            // Record commands that succeed
-            if (recorder_.isRecording()) {
-                if (result.value("ok", false)) {
-                    // Caller sets cmd name via outer lambda — we can't easily get it here
-                    // so just record the raw result; recordCommand() is called from DebugHarness::poll()
-                }
-            }
-            return result;
-        };
-    };
+    // Diagnostic inspect commands
+    registry_.registerCommand("inspect.imgui_capture", [this](const nlohmann::json& args) {
+        (void)args;
+        return inspector_->imguiCapture();
+    });
+    registry_.registerCommand("inspect.imguizmo_state", [this](const nlohmann::json& args) {
+        (void)args;
+        return inspector_->imguizmoState();
+    });
+    registry_.registerCommand("inspect.gizmo_detailed", [this](const nlohmann::json& args) {
+        (void)args;
+        return inspector_->gizmoDetailed();
+    });
 
+    // --- command.* commands (mutating) ---
     registry_.registerCommand("command.select_entity", [this](const nlohmann::json& args) {
         return commander_->selectEntity(args);
     });
@@ -73,7 +73,6 @@ void DebugHarness::init() {
     registry_.registerCommand("command.toggle_panel", [this](const nlohmann::json& args) {
         return commander_->togglePanel(args);
     });
-    // Deferred: these require GLFW event injection
     registry_.registerCommand("command.key_press", [this](const nlohmann::json& args) {
         return commander_->keyPress(args);
     });
@@ -82,6 +81,9 @@ void DebugHarness::init() {
     });
     registry_.registerCommand("command.drag", [this](const nlohmann::json& args) {
         return commander_->drag(args);
+    });
+    registry_.registerCommand("command.mouse_release", [this](const nlohmann::json& args) {
+        return commander_->mouseRelease(args);
     });
 
     // --- record.* commands ---
@@ -113,8 +115,6 @@ void DebugHarness::init() {
 
     server_.init();
     spdlog::info("DebugHarness: ready on {}", server_.socketPath());
-
-    (void)wrapCommand;  // suppress unused-variable warning
 }
 
 void DebugHarness::poll() {

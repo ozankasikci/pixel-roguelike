@@ -26,6 +26,11 @@ public:
     nlohmann::json undoStack() const;
     nlohmann::json panels() const;
 
+    // Diagnostic inspect commands
+    nlohmann::json imguiCapture() const;
+    nlohmann::json imguizmoState() const;
+    nlohmann::json gizmoDetailed() const;
+
 private:
     const EditorSceneDocument& doc_;
     const std::vector<std::uint64_t>& selectedIds_;

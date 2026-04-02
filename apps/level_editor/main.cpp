@@ -411,7 +411,7 @@ int main(int argc, char* argv[]) {
     std::vector<std::filesystem::path> pendingDroppedAssetPaths;
     ImGuiFontPreset editorFontPreset = imgui.fontPreset();
 
-    DebugHarness debugHarness(document, selectedIds, ui, commandStack);
+    DebugHarness debugHarness(document, selectedIds, ui, commandStack, window.handle());
     debugHarness.init();
 
     // Full-frame render lambda — called from the main loop and from
