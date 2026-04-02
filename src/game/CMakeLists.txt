@@ -25,6 +25,9 @@ target_link_libraries(game_rendering PUBLIC
 target_link_libraries(game_rendering PRIVATE tinygltf)
 
 add_library(gameplay STATIC
+    behavior/BehaviorSystem.cpp
+    behavior/DoorAnimationSystem.cpp
+    behavior/TriggerSystem.cpp
     level/LevelBuilder.cpp
     level/LevelLoader.cpp
     levels/cathedral/CathedralPrefabs.cpp
@@ -36,7 +39,6 @@ add_library(gameplay STATIC
     systems/AudioListenerSystem.cpp
     systems/CameraSystem.cpp
     systems/CheckpointSystem.cpp
-    systems/DoorSystem.cpp
     systems/InteractionSystem.cpp
     systems/InventorySystem.cpp
     systems/PlayerMovementSystem.cpp
