@@ -58,6 +58,20 @@ mesh prison_wall  3.5 0.0 6.0 0.5 1.0 1.0 0.0 180.0 0.0 material inst_beige_wall
 # Open doorway (left, X=-2.5) - no door mesh, just the open prison_wall_door frame
 # Warm light at Z=6.5 spills through the opening
 
+# Metal door (center) - locked stub per D-04
+mesh wood_door 0.0 0.0 5.95 1.0 1.0 1.0 0.0 0.0 0.0 material wood_door_1 tint 0.60 0.58 0.55 node n_door_metal
+  interactable "E  This door is locked" distance 2.0
+
+# Knob on metal door (handle height ~1.0m, on front face)
+mesh inst_door_knob 0.15 1.0 5.90 1.0 1.0 1.0 0.0 0.0 0.0 material metal_default tint 0.50 0.48 0.45 node n_knob_metal
+
+# Chained door (right) - locked stub per D-04
+mesh wood_door 2.5 0.0 5.95 1.0 1.0 1.0 0.0 0.0 0.0 material wood_door_1 tint 0.88 0.86 0.82 node n_door_chained
+  interactable "E  This door is locked" distance 2.0
+
+# Knob on chained door
+mesh inst_door_knob 2.65 1.0 5.90 1.0 1.0 1.0 0.0 0.0 0.0 material metal_default tint 0.50 0.48 0.45 node n_knob_chained
+
 # Baseboards - floor level along all walls using inst_dark_trim material
 # South wall baseboards
 mesh prison_baseboard -3.0 0.0 0.1 1.0 1.0 1.0 0.0 0.0 0.0 material inst_dark_trim tint 1.0 1.0 1.0 node node_bb_s1
