@@ -82,6 +82,7 @@ void applyEnvironmentSettings(DebugParams& params,
     params.lighting.enableDirectionalLights = settings.lighting.enableDirectionalLights;
     params.lighting.sunDirectional = settings.lighting.sun;
     params.lighting.fillDirectional = settings.lighting.fill;
+    params.lighting.torch = settings.lighting.torch;
     syncSkySunFromDirectional(params);
 }
 

@@ -153,7 +153,6 @@ void RuntimeGameSession::rebuild(const LevelDef& level,
 
     initializeRuntimeInteraction(registry_);
     initializeRuntimeInventory(registry_);
-    initializeRuntimeDoors(registry_);
     initializeRuntimeCheckpoints(registry_);
     physics_.update(registry_, 0.0f);
     captureBaselineState();
@@ -177,9 +176,7 @@ void RuntimeGameSession::resetForPlay() {
     resetTransientRuntimeState();
     initializeRuntimeInteraction(registry_);
     initializeRuntimeInventory(registry_);
-    initializeRuntimeDoors(registry_);
     initializeRuntimeCheckpoints(registry_);
-    updateRuntimeDoors(registry_, 0.0f);
     updateRuntimeCheckpoints(registry_, 0.0f, runSession_);
     physics_.update(registry_, 0.0f);
 
@@ -191,7 +188,6 @@ void RuntimeGameSession::tick(float deltaTime, float aspect) {
         return;
     }
     updateRuntimeInteraction(registry_, inputSystem_);
-    updateRuntimeDoors(registry_, deltaTime);
     updateRuntimeCheckpoints(registry_, deltaTime, runSession_);
     physics_.update(registry_, deltaTime);
 

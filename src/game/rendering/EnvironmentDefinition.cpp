@@ -492,6 +492,71 @@ EnvironmentDefinition loadEnvironmentDefinitionAsset(const std::string& path) {
             continue;
         }
 
+        if (key == "torch_enabled") {
+            definition.lighting.torch.enabled = parseBoolRecord(tokens, path, lineNumber, key);
+            continue;
+        }
+        if (key == "torch_master_intensity") {
+            definition.lighting.torch.masterIntensity = parseFloatRecord(tokens, path, lineNumber, key);
+            continue;
+        }
+        if (key == "torch_color") {
+            definition.lighting.torch.torchColor = parseVec3Record(tokens, path, lineNumber, key);
+            continue;
+        }
+        if (key == "torch_intensity") {
+            definition.lighting.torch.torchIntensity = parseFloatRecord(tokens, path, lineNumber, key);
+            continue;
+        }
+        if (key == "torch_radius") {
+            definition.lighting.torch.torchRadius = parseFloatRecord(tokens, path, lineNumber, key);
+            continue;
+        }
+        if (key == "torch_inner_cone") {
+            definition.lighting.torch.torchInnerConeDegrees = parseFloatRecord(tokens, path, lineNumber, key);
+            continue;
+        }
+        if (key == "torch_outer_cone") {
+            definition.lighting.torch.torchOuterConeDegrees = parseFloatRecord(tokens, path, lineNumber, key);
+            continue;
+        }
+        if (key == "torch_spill_color") {
+            definition.lighting.torch.spillColor = parseVec3Record(tokens, path, lineNumber, key);
+            continue;
+        }
+        if (key == "torch_spill_intensity") {
+            definition.lighting.torch.spillIntensity = parseFloatRecord(tokens, path, lineNumber, key);
+            continue;
+        }
+        if (key == "torch_spill_radius") {
+            definition.lighting.torch.spillRadius = parseFloatRecord(tokens, path, lineNumber, key);
+            continue;
+        }
+        if (key == "torch_halo_color") {
+            definition.lighting.torch.haloColor = parseVec3Record(tokens, path, lineNumber, key);
+            continue;
+        }
+        if (key == "torch_halo_intensity") {
+            definition.lighting.torch.haloIntensity = parseFloatRecord(tokens, path, lineNumber, key);
+            continue;
+        }
+        if (key == "torch_halo_radius") {
+            definition.lighting.torch.haloRadius = parseFloatRecord(tokens, path, lineNumber, key);
+            continue;
+        }
+        if (key == "torch_glow_color") {
+            definition.lighting.torch.handGlowColor = parseVec3Record(tokens, path, lineNumber, key);
+            continue;
+        }
+        if (key == "torch_glow_intensity") {
+            definition.lighting.torch.handGlowIntensity = parseFloatRecord(tokens, path, lineNumber, key);
+            continue;
+        }
+        if (key == "torch_glow_radius") {
+            definition.lighting.torch.handGlowRadius = parseFloatRecord(tokens, path, lineNumber, key);
+            continue;
+        }
+
         if (key == "ssao_enabled") {
             definition.post.enableSsao = parseBoolRecord(tokens, path, lineNumber, key);
             continue;
@@ -613,6 +678,22 @@ std::string serializeEnvironmentDefinitionAsset(const EnvironmentDefinition& def
     writeVec3(out, "fill_direction", definition.lighting.fill.direction);
     writeVec3(out, "fill_color", definition.lighting.fill.color);
     writeFloat(out, "fill_intensity", definition.lighting.fill.intensity);
+    writeBool(out, "torch_enabled", definition.lighting.torch.enabled);
+    writeFloat(out, "torch_master_intensity", definition.lighting.torch.masterIntensity);
+    writeVec3(out, "torch_color", definition.lighting.torch.torchColor);
+    writeFloat(out, "torch_intensity", definition.lighting.torch.torchIntensity);
+    writeFloat(out, "torch_radius", definition.lighting.torch.torchRadius);
+    writeFloat(out, "torch_inner_cone", definition.lighting.torch.torchInnerConeDegrees);
+    writeFloat(out, "torch_outer_cone", definition.lighting.torch.torchOuterConeDegrees);
+    writeVec3(out, "torch_spill_color", definition.lighting.torch.spillColor);
+    writeFloat(out, "torch_spill_intensity", definition.lighting.torch.spillIntensity);
+    writeFloat(out, "torch_spill_radius", definition.lighting.torch.spillRadius);
+    writeVec3(out, "torch_halo_color", definition.lighting.torch.haloColor);
+    writeFloat(out, "torch_halo_intensity", definition.lighting.torch.haloIntensity);
+    writeFloat(out, "torch_halo_radius", definition.lighting.torch.haloRadius);
+    writeVec3(out, "torch_glow_color", definition.lighting.torch.handGlowColor);
+    writeFloat(out, "torch_glow_intensity", definition.lighting.torch.handGlowIntensity);
+    writeFloat(out, "torch_glow_radius", definition.lighting.torch.handGlowRadius);
 
     return out.str();
 }
