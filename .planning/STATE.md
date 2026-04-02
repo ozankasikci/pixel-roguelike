@@ -241,10 +241,11 @@ None yet.
 | 260402-okw | Implement editor debug harness with Unix socket remote control | 2026-04-02 | f807b20 | [260402-okw-implement-editor-debug-harness-with-unix](./quick/260402-okw-implement-editor-debug-harness-with-unix/) |
 | 260402-prr | Write tests for the editor debug harness | 2026-04-02 | 28e297f | [260402-prr-write-tests-for-the-editor-debug-harness](./quick/260402-prr-write-tests-for-the-editor-debug-harness/) |
 | 260402-q3f | Debug harness input simulation (keyPress/mouseClick/drag) and gizmo diagnostic script | 2026-04-02 | 08b8502 | [260402-q3f-use-debug-harness-to-diagnose-why-gizmo-](./quick/260402-q3f-use-debug-harness-to-diagnose-why-gizmo-/) |
+| 260402-rkd | Expand debug harness with entity listing, focus camera, gizmo-aware drag, wait-for-idle | 2026-04-02 | edbfff1 | [260402-rkd-expand-debug-harness-with-entity-listing](./quick/260402-rkd-expand-debug-harness-with-entity-listing/) |
 
 ## Session Continuity
 
-Last activity: 2026-04-02 - Completed quick task 260402-q3f: Debug harness input simulation and gizmo diagnostic script
+Last activity: 2026-04-02 - Completed quick task 260402-rkd: Expand debug harness capabilities
 Last session: 2026-04-02T16:27:21Z
 Stopped at: Completed quick task 260402-q3f: Debug harness input simulation and gizmo diagnostic script
 Resume file: None
