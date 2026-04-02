@@ -431,6 +431,55 @@ bool renderEnvironmentPanel(EditorSceneDocument& document,
             trackEnvItem(beforeState, "Adjust Fill Intensity", ImGui::DragFloat("Fill Intensity##slot", &environment.lighting.fill.intensity, 0.01f, 0.0f, 4.0f, "%.2f"));
             ImGui::TreePop();
         }
+        if (ImGui::TreeNodeEx("Player Torch", ImGuiTreeNodeFlags_DefaultOpen)) {
+            // Enable + master
+            beforeState = document.captureState();
+            trackEnvItem(beforeState, "Toggle Torch", ImGui::Checkbox("Torch Enabled", &environment.lighting.torch.enabled));
+            beforeState = document.captureState();
+            trackEnvItem(beforeState, "Adjust Torch Master Intensity", ImGui::DragFloat("Master Intensity##torch", &environment.lighting.torch.masterIntensity, 0.01f, 0.0f, 3.0f, "%.2f"));
+
+            // Main spotlight
+            ImGui::SeparatorText("Spotlight");
+            beforeState = document.captureState();
+            trackEnvItem(beforeState, "Change Torch Color", editColor("Torch Color##torch", environment.lighting.torch.torchColor));
+            beforeState = document.captureState();
+            trackEnvItem(beforeState, "Adjust Torch Intensity", ImGui::DragFloat("Torch Intensity##torch", &environment.lighting.torch.torchIntensity, 0.01f, 0.0f, 2.0f, "%.2f"));
+            beforeState = document.captureState();
+            trackEnvItem(beforeState, "Adjust Torch Radius", ImGui::DragFloat("Torch Radius##torch", &environment.lighting.torch.torchRadius, 0.1f, 0.5f, 20.0f, "%.1f"));
+            beforeState = document.captureState();
+            trackEnvItem(beforeState, "Adjust Torch Inner Cone", ImGui::DragFloat("Inner Cone##torch", &environment.lighting.torch.torchInnerConeDegrees, 0.5f, 5.0f, 90.0f, "%.1f"));
+            beforeState = document.captureState();
+            trackEnvItem(beforeState, "Adjust Torch Outer Cone", ImGui::DragFloat("Outer Cone##torch", &environment.lighting.torch.torchOuterConeDegrees, 0.5f, 10.0f, 120.0f, "%.1f"));
+
+            // Spill
+            ImGui::SeparatorText("Spill");
+            beforeState = document.captureState();
+            trackEnvItem(beforeState, "Change Spill Color", editColor("Spill Color##torch", environment.lighting.torch.spillColor));
+            beforeState = document.captureState();
+            trackEnvItem(beforeState, "Adjust Spill Intensity", ImGui::DragFloat("Spill Intensity##torch", &environment.lighting.torch.spillIntensity, 0.01f, 0.0f, 5.0f, "%.2f"));
+            beforeState = document.captureState();
+            trackEnvItem(beforeState, "Adjust Spill Radius", ImGui::DragFloat("Spill Radius##torch", &environment.lighting.torch.spillRadius, 0.1f, 0.5f, 20.0f, "%.1f"));
+
+            // Halo
+            ImGui::SeparatorText("Halo");
+            beforeState = document.captureState();
+            trackEnvItem(beforeState, "Change Halo Color", editColor("Halo Color##torch", environment.lighting.torch.haloColor));
+            beforeState = document.captureState();
+            trackEnvItem(beforeState, "Adjust Halo Intensity", ImGui::DragFloat("Halo Intensity##torch", &environment.lighting.torch.haloIntensity, 0.01f, 0.0f, 5.0f, "%.2f"));
+            beforeState = document.captureState();
+            trackEnvItem(beforeState, "Adjust Halo Radius", ImGui::DragFloat("Halo Radius##torch", &environment.lighting.torch.haloRadius, 0.1f, 0.5f, 20.0f, "%.1f"));
+
+            // Hand glow
+            ImGui::SeparatorText("Hand Glow");
+            beforeState = document.captureState();
+            trackEnvItem(beforeState, "Change Hand Glow Color", editColor("Glow Color##torch", environment.lighting.torch.handGlowColor));
+            beforeState = document.captureState();
+            trackEnvItem(beforeState, "Adjust Hand Glow Intensity", ImGui::DragFloat("Glow Intensity##torch", &environment.lighting.torch.handGlowIntensity, 0.01f, 0.0f, 1.0f, "%.2f"));
+            beforeState = document.captureState();
+            trackEnvItem(beforeState, "Adjust Hand Glow Radius", ImGui::DragFloat("Glow Radius##torch", &environment.lighting.torch.handGlowRadius, 0.01f, 0.1f, 5.0f, "%.2f"));
+
+            ImGui::TreePop();
+        }
     }
 
     ImGui::End();
