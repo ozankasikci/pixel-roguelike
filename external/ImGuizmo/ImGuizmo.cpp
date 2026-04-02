@@ -2344,29 +2344,10 @@ namespace IMGUIZMO_NAMESPACE
          }
          else
          {
-            // Unity-style radial uniform scale: project mouse delta onto the
-            // screen-space direction from object center to initial click point.
-            // Dragging outward from the object center increases scale;
-            // dragging inward decreases it.
-            float dx = gContext.mSaveMousePosx - gContext.mScreenSquareCenter.x;
-            float dy = gContext.mSaveMousePosy - gContext.mScreenSquareCenter.y;
-            float radialLen = sqrtf(dx * dx + dy * dy);
-            if (radialLen > 0.001f)
-            {
-               float rdx = dx / radialLen;
-               float rdy = dy / radialLen;
-               float mouseDeltaX = io.MousePos.x - gContext.mSaveMousePosx;
-               float mouseDeltaY = io.MousePos.y - gContext.mSaveMousePosy;
-               float projectedDelta = (mouseDeltaX * rdx + mouseDeltaY * rdy);
-               float scaleDelta = projectedDelta * 0.01f;
-               gContext.mScale.Set(max(1.f + scaleDelta, 0.001f));
-            }
-            else
-            {
-               // Fallback: if click is exactly on center, use horizontal delta
-               float scaleDelta = (io.MousePos.x - gContext.mSaveMousePosx) * 0.01f;
-               gContext.mScale.Set(max(1.f + scaleDelta, 0.001f));
-            }
+            // Unity-style uniform scale: drag up = scale up, drag down = scale down.
+            // Screen Y increases downward, so negate the delta.
+            float scaleDelta = -(io.MousePos.y - gContext.mSaveMousePosy) * 0.01f;
+            gContext.mScale.Set(max(1.f + scaleDelta, 0.001f));
          }
 
          // snap
