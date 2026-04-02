@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: Editor UX
-status: Milestone complete
-stopped_at: Phase 13 context gathered
-last_updated: "2026-04-01T23:58:14.045Z"
-last_activity: "2026-04-02 - Completed quick task 260402-3qe: Unity-style double-F focus toggle"
+status: Ready to execute
+stopped_at: "Completed Phase 13 Plan 01: Behavior system type foundation"
+last_updated: "2026-04-02T06:30:56.603Z"
+last_activity: 2026-04-02
 progress:
   total_phases: 15
   completed_phases: 13
-  total_plans: 35
-  completed_plans: 35
+  total_plans: 38
+  completed_plans: 36
 ---
 
 # Project State
@@ -20,12 +20,12 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-23)
 
 **Core value:** The Stanley Parable-inspired art style — clean, minimalist environments with warm soft lighting, muted color palette, and stylized realism
-**Current focus:** Phase 07 — data-driven-material-system-replace-hardcoded-materials-with-a-proper-material-pipeline
+**Current focus:** Phase 13 — data-driven-behavior-system
 
 ## Current Position
 
-Phase: 07
-Plan: Not started
+Phase: 13 (data-driven-behavior-system) — EXECUTING
+Plan: 2 of 3
 
 ## Performance Metrics
 
@@ -71,6 +71,7 @@ Plan: Not started
 | Phase 07 P02 | 5 | 3 tasks | 26 files |
 | Phase 07 P04 | 525609 | 2 tasks | 6 files |
 | Phase 07 P03 | 10 | 2 tasks | 4 files |
+| Phase 13-data-driven-behavior-system P01 | 15 | 3 tasks | 10 files |
 
 ## Accumulated Context
 
@@ -174,6 +175,8 @@ Recent decisions affecting current work:
 - [Phase 12]: culledInput pattern: copy SceneRenderInput, swap objects pointer to culledObjects vector — cleanest way to thread culled list through sub-passes without signature changes
 - [Phase 12]: FrustumCulling uses Gribb-Hartmann VP matrix extraction; isAabbInsideFrustum transforms 8 local AABB corners to world space before plane test
 - [Phase quick]: AI_CONFIG_FBX_CONVERT_TO_M set via SetPropertyBool on both AssimpLoader import paths — converts FBX cm vertices to meters at import, eliminates 0.01 scale workarounds in scene files and scripted geometry
+- [Phase 13-data-driven-behavior-system]: NodeIndex built via registry.view<NodeIdComponent>() after all entity placement, not from parallel vectors — ensures scripted geometry entities are also indexed
+- [Phase 13-data-driven-behavior-system]: LevelDef.cpp parser refactored to buffer all lines and detect indented sub-lines for behavior/interactable declarations
 
 ### Roadmap Evolution
 
@@ -235,7 +238,7 @@ None yet.
 
 ## Session Continuity
 
-Last activity: 2026-04-02 - Completed quick task 260402-4is: Make player torch light adjustable in debug overlay
-Last session: 2026-04-02T00:00:44Z
-Stopped at: Completed quick task 260402-4gx: Fix scale gizmo radial uniform scale direction
-Resume file: .planning/phases/13-data-driven-behavior-system-native-action-component-system-with-behaviorsystem-dispatcher-triggercomponent-node-id-targeting-scene-file-behavior-declarations/13-CONTEXT.md
+Last activity: 2026-04-02
+Last session: 2026-04-02T06:30:56.598Z
+Stopped at: Completed Phase 13 Plan 01: Behavior system type foundation
+Resume file: None

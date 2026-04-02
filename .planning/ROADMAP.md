@@ -260,10 +260,10 @@ Plans:
   5. DoorSystem is replaced by DoorAnimationSystem (animation only, no activation logic)
   6. Institutional room doors are defined in the .scene file with interactable sub-lines (not scripted geometry)
   7. Editor renders trigger volumes as semi-transparent wireframes for level design positioning
-**Plans:** 3 plans
+**Plans:** 1/3 plans executed
 
 Plans:
-- [ ] 13-01-PLAN.md — Behavior type definitions (ActionTypes, BehaviorComponent, TriggerComponent, NodeIndex) and scene parser extension with indented sub-line support
+- [x] 13-01-PLAN.md — Behavior type definitions (ActionTypes, BehaviorComponent, TriggerComponent, NodeIndex) and scene parser extension with indented sub-line support
 - [ ] 13-02-PLAN.md — BehaviorSystem dispatcher, TriggerSystem overlap detection, DoorAnimationSystem refactor, runtime wiring
 - [ ] 13-03-PLAN.md — Scene file migration, scripted geometry cleanup, editor trigger visualization, end-to-end verification
 
@@ -288,4 +288,4 @@ Phases execute in numeric order: 1 → 1.1 → 2 → 2.1 → 3 → 4 → 5 → 6
 | 10. Global Keyboard Shortcuts and Hover Highlight | v1.1 | 2/2 | Complete    | 2026-04-01 |
 | 11. Add Mesh Discoverability | v1.1 | 1/1 | Complete    | 2026-04-01 |
 | 12. Engine Quality | — | 4/4 | Complete    | 2026-04-01 |
-| 13. Data-driven Behavior System | — | 0/3 | Planned    | - |
+| 13. Data-driven Behavior System | — | 1/3 | In Progress|  |
