@@ -1,6 +1,8 @@
 #pragma once
 
 #include "engine/rendering/lighting/RenderLight.h"
+#include "game/behavior/ActionTypes.h"
+#include "game/behavior/TriggerComponent.h"
 #include "game/rendering/EnvironmentProfile.h"
 
 #include <glm/glm.hpp>
@@ -8,6 +10,28 @@
 #include <optional>
 #include <string>
 #include <vector>
+
+struct BehaviorDeclaration {
+    std::string eventType;   // "on_activate", "on_enter", "on_exit", "on_timer"
+    ActionEntry action;
+};
+
+struct InteractableDeclaration {
+    std::string promptText;
+    float distance = 2.0f;
+    float dotThreshold = 0.55f;
+};
+
+struct TriggerPlacement {
+    TriggerShape shape = TriggerShape::Box;
+    glm::vec3 position{0.0f};
+    glm::vec3 halfExtents{1.0f};
+    float radius = 1.0f;
+    std::string nodeId;
+    std::string parentNodeId;
+    bool fireOnce = false;
+    std::vector<BehaviorDeclaration> behaviors;
+};
 
 struct LevelMeshPlacement {
     std::string meshId;
@@ -18,6 +42,8 @@ struct LevelMeshPlacement {
     std::string parentNodeId;
     std::string materialId;
     std::optional<glm::vec3> tint;
+    std::vector<BehaviorDeclaration> behaviors;
+    std::optional<InteractableDeclaration> interactable;
 };
 
 struct LevelLightPlacement {
@@ -32,6 +58,7 @@ struct LevelLightPlacement {
     float innerConeDegrees = 20.0f;
     float outerConeDegrees = 30.0f;
     bool castsShadows = false;
+    std::vector<BehaviorDeclaration> behaviors;
 };
 
 struct LevelBoxColliderPlacement {
@@ -86,6 +113,7 @@ struct LevelDef {
     bool hasPlayerSpawn = false;
     std::vector<LevelArchetypePlacement> archetypes;
     std::vector<LevelGroupNode> groups;
+    std::vector<TriggerPlacement> triggers;
 };
 
 LevelDef loadLevelDef(const std::string& path);

@@ -143,6 +143,327 @@ struct LevelNodeRef {
     std::string parentNodeId;
 };
 
+bool isIndentedLine(const std::string& line) {
+    return !line.empty() && (line[0] == ' ' || line[0] == '\t');
+}
+
+ActionType parseActionTypeName(const std::string& path, int lineNumber, const std::string& name) {
+    if (name == "open_door")       return ActionType::OpenDoor;
+    if (name == "close_door")      return ActionType::CloseDoor;
+    if (name == "toggle_door")     return ActionType::ToggleDoor;
+    if (name == "play_sound")      return ActionType::PlaySound;
+    if (name == "set_light")       return ActionType::SetLight;
+    if (name == "flicker_light")   return ActionType::FlickerLight;
+    if (name == "show_message")    return ActionType::ShowMessage;
+    if (name == "delay")           return ActionType::Delay;
+    if (name == "enable_entity")   return ActionType::EnableEntity;
+    if (name == "disable_entity")  return ActionType::DisableEntity;
+    if (name == "emit_event")      return ActionType::EmitEvent;
+    if (name == "lock_player")     return ActionType::LockPlayer;
+    if (name == "unlock_player")   return ActionType::UnlockPlayer;
+    if (name == "teleport_player") return ActionType::TeleportPlayer;
+    throwParseError(path, lineNumber, "unknown action type '" + name + "'");
+    return ActionType::Delay; // unreachable
+}
+
+ActionEntry parseActionEntry(const std::string& path,
+                             int lineNumber,
+                             const std::string& actionTypeName,
+                             const std::vector<std::string>& tokens,
+                             std::size_t startIndex) {
+    ActionEntry entry;
+    entry.type = parseActionTypeName(path, lineNumber, actionTypeName);
+
+    // Initialize default params based on type
+    switch (entry.type) {
+    case ActionType::OpenDoor:
+    case ActionType::CloseDoor:
+    case ActionType::ToggleDoor:
+        entry.params = DoorActionParams{};
+        break;
+    case ActionType::PlaySound:
+        entry.params = SoundActionParams{};
+        break;
+    case ActionType::SetLight:
+        entry.params = LightActionParams{};
+        break;
+    case ActionType::FlickerLight:
+        entry.params = FlickerLightParams{};
+        break;
+    case ActionType::ShowMessage:
+        entry.params = MessageActionParams{};
+        break;
+    case ActionType::Delay:
+        entry.params = DelayActionParams{};
+        break;
+    case ActionType::EnableEntity:
+    case ActionType::DisableEntity:
+        entry.params = EntityToggleParams{};
+        break;
+    case ActionType::EmitEvent:
+        entry.params = EventActionParams{};
+        break;
+    case ActionType::LockPlayer:
+        entry.params = PlayerLockParams{};
+        break;
+    case ActionType::UnlockPlayer:
+        entry.params = PlayerLockParams{};
+        break;
+    case ActionType::TeleportPlayer:
+        entry.params = TeleportPlayerParams{};
+        break;
+    }
+
+    for (std::size_t i = startIndex; i < tokens.size();) {
+        const std::string& tok = tokens[i];
+
+        if (tok == "target") {
+            if (i + 1 >= tokens.size()) throwParseError(path, lineNumber, "missing target node id");
+            entry.targetNodeId = tokens[i + 1];
+            i += 2;
+            continue;
+        }
+        if (tok == "delay") {
+            if (i + 1 >= tokens.size()) throwParseError(path, lineNumber, "missing delay value");
+            float v = 0.0f;
+            if (!tryParseFloatToken(tokens[i + 1], v)) throwParseError(path, lineNumber, "invalid delay value");
+            entry.delay = v;
+            i += 2;
+            continue;
+        }
+        if (tok == "fire_once") {
+            entry.fireOnce = true;
+            i += 1;
+            continue;
+        }
+        if (tok == "duration") {
+            if (i + 1 >= tokens.size()) throwParseError(path, lineNumber, "missing duration value");
+            float v = 0.0f;
+            if (!tryParseFloatToken(tokens[i + 1], v)) throwParseError(path, lineNumber, "invalid duration value");
+            if (auto* p = std::get_if<DoorActionParams>(&entry.params)) { p->duration = v; }
+            else if (auto* p2 = std::get_if<FlickerLightParams>(&entry.params)) { p2->duration = v; }
+            else if (auto* p3 = std::get_if<MessageActionParams>(&entry.params)) { p3->duration = v; }
+            else if (auto* p4 = std::get_if<PlayerLockParams>(&entry.params)) { p4->duration = v; }
+            else if (auto* p5 = std::get_if<DelayActionParams>(&entry.params)) { p5->seconds = v; }
+            i += 2;
+            continue;
+        }
+        if (tok == "sound") {
+            if (i + 1 >= tokens.size()) throwParseError(path, lineNumber, "missing sound id");
+            if (auto* p = std::get_if<SoundActionParams>(&entry.params)) { p->soundId = tokens[i + 1]; }
+            i += 2;
+            continue;
+        }
+        if (tok == "volume") {
+            if (i + 1 >= tokens.size()) throwParseError(path, lineNumber, "missing volume value");
+            float v = 0.0f;
+            if (!tryParseFloatToken(tokens[i + 1], v)) throwParseError(path, lineNumber, "invalid volume value");
+            if (auto* p = std::get_if<SoundActionParams>(&entry.params)) { p->volume = v; }
+            i += 2;
+            continue;
+        }
+        if (tok == "intensity") {
+            if (i + 1 >= tokens.size()) throwParseError(path, lineNumber, "missing intensity value");
+            float v = 0.0f;
+            if (!tryParseFloatToken(tokens[i + 1], v)) throwParseError(path, lineNumber, "invalid intensity value");
+            if (auto* p = std::get_if<LightActionParams>(&entry.params)) { p->intensity = v; }
+            i += 2;
+            continue;
+        }
+        if (tok == "color") {
+            if (i + 3 >= tokens.size()) throwParseError(path, lineNumber, "missing color values");
+            glm::vec3 col{1.0f};
+            if (!tryParseVec3Tokens(tokens, i + 1, col)) throwParseError(path, lineNumber, "invalid color values");
+            if (auto* p = std::get_if<LightActionParams>(&entry.params)) { p->color = col; }
+            i += 4;
+            continue;
+        }
+        if (tok == "radius") {
+            if (i + 1 >= tokens.size()) throwParseError(path, lineNumber, "missing radius value");
+            float v = 0.0f;
+            if (!tryParseFloatToken(tokens[i + 1], v)) throwParseError(path, lineNumber, "invalid radius value");
+            if (auto* p = std::get_if<LightActionParams>(&entry.params)) { p->radius = v; }
+            i += 2;
+            continue;
+        }
+        if (tok == "rate") {
+            if (i + 1 >= tokens.size()) throwParseError(path, lineNumber, "missing rate value");
+            float v = 0.0f;
+            if (!tryParseFloatToken(tokens[i + 1], v)) throwParseError(path, lineNumber, "invalid rate value");
+            if (auto* p = std::get_if<FlickerLightParams>(&entry.params)) { p->rate = v; }
+            i += 2;
+            continue;
+        }
+        if (tok == "text") {
+            if (i + 1 >= tokens.size()) throwParseError(path, lineNumber, "missing text value");
+            if (auto* p = std::get_if<MessageActionParams>(&entry.params)) { p->text = tokens[i + 1]; }
+            i += 2;
+            continue;
+        }
+        if (tok == "event") {
+            if (i + 1 >= tokens.size()) throwParseError(path, lineNumber, "missing event name");
+            if (auto* p = std::get_if<EventActionParams>(&entry.params)) { p->eventName = tokens[i + 1]; }
+            i += 2;
+            continue;
+        }
+        if (tok == "position") {
+            if (i + 3 >= tokens.size()) throwParseError(path, lineNumber, "missing position values");
+            glm::vec3 pos{0.0f};
+            if (!tryParseVec3Tokens(tokens, i + 1, pos)) throwParseError(path, lineNumber, "invalid position values");
+            if (auto* p = std::get_if<TeleportPlayerParams>(&entry.params)) { p->position = pos; }
+            i += 4;
+            continue;
+        }
+        throwParseError(path, lineNumber, "unknown action parameter '" + tok + "'");
+    }
+
+    return entry;
+}
+
+BehaviorDeclaration parseSubLineBehavior(const std::string& path,
+                                         int lineNumber,
+                                         const std::string& trimmedLine) {
+    std::istringstream stream(trimmedLine);
+    std::string eventType;
+    stream >> eventType;
+
+    // Normalize: "behavior on_activate <action>" or "on_activate <action>"
+    std::string actionTypeName;
+    if (eventType == "behavior") {
+        stream >> eventType >> actionTypeName;
+    } else {
+        // eventType is already "on_activate", "on_enter", etc.
+        stream >> actionTypeName;
+    }
+
+    const auto tokens = collectRemainingTokens(stream);
+    BehaviorDeclaration decl;
+    decl.eventType = eventType;
+    decl.action = parseActionEntry(path, lineNumber, actionTypeName, tokens, 0);
+    return decl;
+}
+
+InteractableDeclaration parseSubLineInteractable(const std::string& path,
+                                                  int lineNumber,
+                                                  const std::string& trimmedLine) {
+    // Format: interactable "<prompt>" distance <float> [dot_threshold <float>]
+    // Or:     interactable <prompt_no_spaces> distance <float>
+    std::istringstream stream(trimmedLine);
+    std::string keyword;
+    stream >> keyword; // "interactable"
+
+    InteractableDeclaration decl;
+
+    // Try to read quoted or unquoted prompt text
+    stream >> std::ws;
+    if (stream.peek() == '"') {
+        stream.ignore(); // consume opening quote
+        std::getline(stream, decl.promptText, '"');
+    } else {
+        stream >> decl.promptText;
+    }
+
+    // Parse remaining keyword tokens
+    const auto tokens = collectRemainingTokens(stream);
+    for (std::size_t i = 0; i < tokens.size();) {
+        if (tokens[i] == "distance") {
+            if (i + 1 >= tokens.size()) throwParseError(path, lineNumber, "missing interactable distance");
+            if (!tryParseFloatToken(tokens[i + 1], decl.distance)) throwParseError(path, lineNumber, "invalid interactable distance");
+            i += 2;
+            continue;
+        }
+        if (tokens[i] == "dot_threshold") {
+            if (i + 1 >= tokens.size()) throwParseError(path, lineNumber, "missing interactable dot_threshold");
+            if (!tryParseFloatToken(tokens[i + 1], decl.dotThreshold)) throwParseError(path, lineNumber, "invalid interactable dot_threshold");
+            i += 2;
+            continue;
+        }
+        throwParseError(path, lineNumber, "unknown interactable parameter '" + tokens[i] + "'");
+    }
+    return decl;
+}
+
+std::string trimLeadingWhitespace(const std::string& line) {
+    std::size_t start = 0;
+    while (start < line.size() && (line[start] == ' ' || line[start] == '\t')) {
+        ++start;
+    }
+    return line.substr(start);
+}
+
+const char* actionTypeName(ActionType type) {
+    switch (type) {
+    case ActionType::OpenDoor:       return "open_door";
+    case ActionType::CloseDoor:      return "close_door";
+    case ActionType::ToggleDoor:     return "toggle_door";
+    case ActionType::PlaySound:      return "play_sound";
+    case ActionType::SetLight:       return "set_light";
+    case ActionType::FlickerLight:   return "flicker_light";
+    case ActionType::ShowMessage:    return "show_message";
+    case ActionType::Delay:          return "delay";
+    case ActionType::EnableEntity:   return "enable_entity";
+    case ActionType::DisableEntity:  return "disable_entity";
+    case ActionType::EmitEvent:      return "emit_event";
+    case ActionType::LockPlayer:     return "lock_player";
+    case ActionType::UnlockPlayer:   return "unlock_player";
+    case ActionType::TeleportPlayer: return "teleport_player";
+    }
+    return "delay";
+}
+
+void serializeActionEntry(std::ostringstream& out, const std::string& eventType, const ActionEntry& entry) {
+    out << "  " << eventType << " " << actionTypeName(entry.type);
+    if (!entry.targetNodeId.empty()) {
+        out << " target " << entry.targetNodeId;
+    }
+    if (entry.delay > 0.0f) {
+        out << " delay " << formatFloat(entry.delay);
+    }
+    if (entry.fireOnce) {
+        out << " fire_once";
+    }
+    std::visit([&](const auto& params) {
+        using T = std::decay_t<decltype(params)>;
+        if constexpr (std::is_same_v<T, DoorActionParams>) {
+            out << " duration " << formatFloat(params.duration);
+        } else if constexpr (std::is_same_v<T, SoundActionParams>) {
+            if (!params.soundId.empty()) out << " sound " << params.soundId;
+            out << " volume " << formatFloat(params.volume);
+        } else if constexpr (std::is_same_v<T, LightActionParams>) {
+            out << " intensity " << formatFloat(params.intensity);
+            out << " color " << formatFloat(params.color.r) << ' '
+                << formatFloat(params.color.g) << ' '
+                << formatFloat(params.color.b);
+            if (params.radius > 0.0f) out << " radius " << formatFloat(params.radius);
+        } else if constexpr (std::is_same_v<T, FlickerLightParams>) {
+            out << " duration " << formatFloat(params.duration);
+            out << " rate " << formatFloat(params.rate);
+        } else if constexpr (std::is_same_v<T, MessageActionParams>) {
+            if (!params.text.empty()) out << " text " << params.text;
+            out << " duration " << formatFloat(params.duration);
+        } else if constexpr (std::is_same_v<T, DelayActionParams>) {
+            out << " duration " << formatFloat(params.seconds);
+        } else if constexpr (std::is_same_v<T, EntityToggleParams>) {
+            // nothing
+        } else if constexpr (std::is_same_v<T, EventActionParams>) {
+            if (!params.eventName.empty()) out << " event " << params.eventName;
+        } else if constexpr (std::is_same_v<T, PlayerLockParams>) {
+            if (params.duration > 0.0f) out << " duration " << formatFloat(params.duration);
+        } else if constexpr (std::is_same_v<T, TeleportPlayerParams>) {
+            out << " position " << formatFloat(params.position.x) << ' '
+                << formatFloat(params.position.y) << ' '
+                << formatFloat(params.position.z);
+        }
+    }, entry.params);
+    out << '\n';
+}
+
+void serializeBehaviors(std::ostringstream& out, const std::vector<BehaviorDeclaration>& behaviors) {
+    for (const auto& decl : behaviors) {
+        serializeActionEntry(out, decl.eventType, decl.action);
+    }
+}
+
 } // namespace
 
 LevelDef loadLevelDef(const std::string& path) {
@@ -152,11 +473,64 @@ LevelDef loadLevelDef(const std::string& path) {
     }
 
     LevelDef data;
-    std::string line;
     int lineNumber = 0;
 
-    while (std::getline(file, line)) {
+    // Read all lines first so we can look ahead for indented sub-lines
+    std::vector<std::string> allLines;
+    {
+        std::string line;
+        while (std::getline(file, line)) {
+            allLines.push_back(line);
+        }
+    }
+
+    // Track which entity type we're currently appending sub-lines to
+    enum class CurrentEntityKind { None, Mesh, Light, Trigger };
+    CurrentEntityKind currentKind = CurrentEntityKind::None;
+    std::size_t currentIndex = 0;
+
+    auto attachSubLine = [&](const std::string& rawSubLine, int subLineNumber) {
+        const std::string trimmed = trimLeadingWhitespace(rawSubLine);
+        if (isCommentOrEmpty(trimmed)) return;
+
+        std::istringstream st(trimmed);
+        std::string subKeyword;
+        st >> subKeyword;
+
+        if (subKeyword == "on_activate" || subKeyword == "on_enter"
+            || subKeyword == "on_exit" || subKeyword == "on_timer"
+            || subKeyword == "behavior") {
+            BehaviorDeclaration decl = parseSubLineBehavior(path, subLineNumber, trimmed);
+            if (currentKind == CurrentEntityKind::Mesh) {
+                data.meshes[currentIndex].behaviors.push_back(std::move(decl));
+            } else if (currentKind == CurrentEntityKind::Light) {
+                data.lights[currentIndex].behaviors.push_back(std::move(decl));
+            } else if (currentKind == CurrentEntityKind::Trigger) {
+                data.triggers[currentIndex].behaviors.push_back(std::move(decl));
+            }
+            return;
+        }
+
+        if (subKeyword == "interactable") {
+            if (currentKind == CurrentEntityKind::Mesh) {
+                data.meshes[currentIndex].interactable = parseSubLineInteractable(path, subLineNumber, trimmed);
+            }
+            return;
+        }
+
+        throwParseError(path, subLineNumber, "unknown sub-line keyword '" + subKeyword + "'");
+    };
+
+    for (std::size_t lineIdx = 0; lineIdx < allLines.size(); ++lineIdx) {
+        const std::string& line = allLines[lineIdx];
         ++lineNumber;
+
+        // If this line is indented, it's a sub-line
+        if (isIndentedLine(line)) {
+            attachSubLine(line, lineNumber);
+            continue;
+        }
+
         if (isCommentOrEmpty(line)) {
             continue;
         }
@@ -223,6 +597,8 @@ LevelDef loadLevelDef(const std::string& path) {
                     }
                 }
             }
+            currentKind = CurrentEntityKind::Mesh;
+            currentIndex = data.meshes.size();
             data.meshes.push_back(std::move(placement));
             continue;
         }
@@ -266,6 +642,8 @@ LevelDef loadLevelDef(const std::string& path) {
                 }
                 throwParseError(path, lineNumber, "invalid light metadata");
             }
+            currentKind = CurrentEntityKind::Light;
+            currentIndex = data.lights.size();
             data.lights.push_back(placement);
             continue;
         }
@@ -305,6 +683,8 @@ LevelDef loadLevelDef(const std::string& path) {
                 }
                 throwParseError(path, lineNumber, "invalid spot_light metadata");
             }
+            currentKind = CurrentEntityKind::Light;
+            currentIndex = data.lights.size();
             data.lights.push_back(placement);
             continue;
         }
@@ -338,6 +718,8 @@ LevelDef loadLevelDef(const std::string& path) {
                 }
                 throwParseError(path, lineNumber, "invalid dir_light metadata");
             }
+            currentKind = CurrentEntityKind::Light;
+            currentIndex = data.lights.size();
             data.lights.push_back(placement);
             continue;
         }
@@ -375,6 +757,7 @@ LevelDef loadLevelDef(const std::string& path) {
                 }
                 throwParseError(path, lineNumber, "invalid collider_box metadata");
             }
+            currentKind = CurrentEntityKind::None;
             data.boxColliders.push_back(placement);
             continue;
         }
@@ -412,6 +795,7 @@ LevelDef loadLevelDef(const std::string& path) {
                 }
                 throwParseError(path, lineNumber, "invalid collider_cylinder metadata");
             }
+            currentKind = CurrentEntityKind::None;
             data.cylinderColliders.push_back(placement);
             continue;
         }
@@ -442,6 +826,7 @@ LevelDef loadLevelDef(const std::string& path) {
                 }
                 throwParseError(path, lineNumber, "invalid player_spawn metadata");
             }
+            currentKind = CurrentEntityKind::None;
             data.playerSpawn = placement;
             data.hasPlayerSpawn = true;
             continue;
@@ -474,6 +859,7 @@ LevelDef loadLevelDef(const std::string& path) {
                 }
                 throwParseError(path, lineNumber, "invalid archetype metadata");
             }
+            currentKind = CurrentEntityKind::None;
             data.archetypes.push_back(std::move(placement));
             continue;
         }
@@ -506,7 +892,76 @@ LevelDef loadLevelDef(const std::string& path) {
                 }
                 throwParseError(path, lineNumber, "invalid group metadata");
             }
+            currentKind = CurrentEntityKind::None;
             data.groups.push_back(std::move(placement));
+            continue;
+        }
+
+        if (kind == "trigger_box") {
+            TriggerPlacement placement;
+            placement.shape = TriggerShape::Box;
+            if (!(stream >> placement.position.x >> placement.position.y >> placement.position.z
+                         >> placement.halfExtents.x >> placement.halfExtents.y >> placement.halfExtents.z)) {
+                throwParseError(path, lineNumber, "invalid trigger_box record");
+            }
+            const auto tokens = collectRemainingTokens(stream);
+            for (std::size_t index = 0; index < tokens.size();) {
+                if (tokens[index] == "node") {
+                    if (index + 1 >= tokens.size()) throwParseError(path, lineNumber, "missing trigger_box node id");
+                    placement.nodeId = tokens[index + 1];
+                    index += 2;
+                    continue;
+                }
+                if (tokens[index] == "parent") {
+                    if (index + 1 >= tokens.size()) throwParseError(path, lineNumber, "missing trigger_box parent node id");
+                    placement.parentNodeId = tokens[index + 1];
+                    index += 2;
+                    continue;
+                }
+                if (tokens[index] == "fire_once") {
+                    placement.fireOnce = true;
+                    index += 1;
+                    continue;
+                }
+                throwParseError(path, lineNumber, "invalid trigger_box metadata");
+            }
+            currentKind = CurrentEntityKind::Trigger;
+            currentIndex = data.triggers.size();
+            data.triggers.push_back(std::move(placement));
+            continue;
+        }
+
+        if (kind == "trigger_sphere") {
+            TriggerPlacement placement;
+            placement.shape = TriggerShape::Sphere;
+            if (!(stream >> placement.position.x >> placement.position.y >> placement.position.z
+                         >> placement.radius)) {
+                throwParseError(path, lineNumber, "invalid trigger_sphere record");
+            }
+            const auto tokens = collectRemainingTokens(stream);
+            for (std::size_t index = 0; index < tokens.size();) {
+                if (tokens[index] == "node") {
+                    if (index + 1 >= tokens.size()) throwParseError(path, lineNumber, "missing trigger_sphere node id");
+                    placement.nodeId = tokens[index + 1];
+                    index += 2;
+                    continue;
+                }
+                if (tokens[index] == "parent") {
+                    if (index + 1 >= tokens.size()) throwParseError(path, lineNumber, "missing trigger_sphere parent node id");
+                    placement.parentNodeId = tokens[index + 1];
+                    index += 2;
+                    continue;
+                }
+                if (tokens[index] == "fire_once") {
+                    placement.fireOnce = true;
+                    index += 1;
+                    continue;
+                }
+                throwParseError(path, lineNumber, "invalid trigger_sphere metadata");
+            }
+            currentKind = CurrentEntityKind::Trigger;
+            currentIndex = data.triggers.size();
+            data.triggers.push_back(std::move(placement));
             continue;
         }
 
@@ -729,6 +1184,15 @@ std::string serializeLevelDef(const LevelDef& data) {
         }
         appendNodeMetadata(out, placement.nodeId, placement.parentNodeId);
         out << '\n';
+        if (placement.interactable.has_value()) {
+            const auto& ia = *placement.interactable;
+            out << "  interactable \"" << ia.promptText << "\" distance " << formatFloat(ia.distance);
+            if (std::abs(ia.dotThreshold - 0.55f) > 0.0001f) {
+                out << " dot_threshold " << formatFloat(ia.dotThreshold);
+            }
+            out << '\n';
+        }
+        serializeBehaviors(out, placement.behaviors);
     }
 
     for (const auto& placement : data.lights) {
@@ -750,6 +1214,7 @@ std::string serializeLevelDef(const LevelDef& data) {
                 << (placement.castsShadows ? "true" : "false");
             appendNodeMetadata(out, placement.nodeId, placement.parentNodeId);
             out << '\n';
+            serializeBehaviors(out, placement.behaviors);
             continue;
         }
 
@@ -764,6 +1229,7 @@ std::string serializeLevelDef(const LevelDef& data) {
                 << formatFloat(placement.intensity);
             appendNodeMetadata(out, placement.nodeId, placement.parentNodeId);
             out << '\n';
+            serializeBehaviors(out, placement.behaviors);
             continue;
         }
 
@@ -778,6 +1244,7 @@ std::string serializeLevelDef(const LevelDef& data) {
             << formatFloat(placement.intensity);
         appendNodeMetadata(out, placement.nodeId, placement.parentNodeId);
         out << '\n';
+        serializeBehaviors(out, placement.behaviors);
     }
 
     for (const auto& placement : data.boxColliders) {
@@ -848,6 +1315,30 @@ std::string serializeLevelDef(const LevelDef& data) {
             << formatFloat(placement.rotation.z);
         appendNodeMetadata(out, placement.nodeId, placement.parentNodeId);
         out << '\n';
+    }
+
+    for (const auto& placement : data.triggers) {
+        if (placement.shape == TriggerShape::Box) {
+            out << "trigger_box "
+                << formatFloat(placement.position.x) << ' '
+                << formatFloat(placement.position.y) << ' '
+                << formatFloat(placement.position.z) << ' '
+                << formatFloat(placement.halfExtents.x) << ' '
+                << formatFloat(placement.halfExtents.y) << ' '
+                << formatFloat(placement.halfExtents.z);
+        } else {
+            out << "trigger_sphere "
+                << formatFloat(placement.position.x) << ' '
+                << formatFloat(placement.position.y) << ' '
+                << formatFloat(placement.position.z) << ' '
+                << formatFloat(placement.radius);
+        }
+        if (placement.fireOnce) {
+            out << " fire_once";
+        }
+        appendNodeMetadata(out, placement.nodeId, placement.parentNodeId);
+        out << '\n';
+        serializeBehaviors(out, placement.behaviors);
     }
 
     return out.str();
