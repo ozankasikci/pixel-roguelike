@@ -236,6 +236,7 @@ None yet.
 | 260402-4gx | Fix scale gizmo uniform drag to use Unity-style screen-space radial direction | 2026-04-02 | 8b1e428 | [260402-4gx-fix-scale-gizmo-drag-direction-to-work-c](./quick/260402-4gx-fix-scale-gizmo-drag-direction-to-work-c/) |
 | 260402-4is | Make player torch light adjustable in debug overlay | 2026-04-02 | c7de887 | [260402-4is-investigate-player-attached-light-and-ma](./quick/260402-4is-investigate-player-attached-light-and-ma/) |
 | 260402-d7q | Wire player torch override into level editor Environment panel with full persistence | 2026-04-02 | e51d45d | [260402-d7q-wire-player-torch-override-into-level-ed](./quick/260402-d7q-wire-player-torch-override-into-level-ed/) |
+| 260402-dec | Shadow frustum culling and render state sorting for performance | 2026-04-02 | 1a15376 | [260402-dec-shadow-frustum-culling-and-render-state-](./quick/260402-dec-shadow-frustum-culling-and-render-state-/) |
 
 ## Session Continuity
 
