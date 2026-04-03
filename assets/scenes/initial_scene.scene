@@ -20,44 +20,44 @@ mesh SM_Floor -3.0 0.0 6.0 0.008 0.008 0.008 0.0 0.0 0.0 material qdp_floor tint
 mesh SM_Floor -1.0 0.0 6.0 0.008 0.008 0.008 0.0 0.0 0.0 material qdp_floor tint 1.01 1.0 1.0 node n_f18
 mesh SM_Floor 1.0 0.0 6.0 0.008 0.008 0.008 0.0 0.0 0.0 material qdp_floor tint 1.0 1.0 1.0 node n_f19
 mesh SM_Floor 3.0 0.0 6.0 0.008 0.008 0.008 0.0 0.0 0.0 material qdp_floor tint 1.01 1.01 1.0 node n_f20
-mesh prison_ceiling -4.0 4.0 -1.0 1.0 1.0 1.0 0.0 0.0 0.0 material ceiling_default tint 0.94 0.92 0.88 node n_c01
-mesh prison_ceiling -2.0 4.0 -1.0 1.0 1.0 1.0 0.0 0.0 0.0 material ceiling_default tint 0.93 0.91 0.87 node n_c02
-mesh prison_ceiling 0.0 4.0 -1.0 1.0 1.0 1.0 0.0 0.0 0.0 material ceiling_default tint 0.94 0.92 0.88 node n_c03
-mesh prison_ceiling 2.0 4.0 -1.0 1.0 1.0 1.0 0.0 0.0 0.0 material ceiling_default tint 0.93 0.91 0.87 node n_c04
-mesh prison_ceiling 4.0 4.0 -1.0 1.0 1.0 1.0 0.0 0.0 0.0 material ceiling_default tint 0.94 0.92 0.88 node n_c05
-mesh prison_ceiling -4.0 4.0 1.0 1.0 1.0 1.0 0.0 0.0 0.0 material ceiling_default tint 0.93 0.91 0.87 node n_c06
-mesh prison_ceiling -2.0 4.0 1.0 1.0 1.0 1.0 0.0 0.0 0.0 material ceiling_default tint 0.94 0.92 0.88 node n_c07
-mesh prison_ceiling 0.0 4.0 1.0 1.0 1.0 1.0 0.0 0.0 0.0 material ceiling_default tint 0.93 0.91 0.87 node n_c08
-mesh prison_ceiling 2.0 4.0 1.0 1.0 1.0 1.0 0.0 0.0 0.0 material ceiling_default tint 0.94 0.92 0.88 node n_c09
-mesh prison_ceiling 4.0 4.0 1.0 1.0 1.0 1.0 0.0 0.0 0.0 material ceiling_default tint 0.93 0.91 0.87 node n_c10
-mesh prison_ceiling -4.0 4.0 3.0 1.0 1.0 1.0 0.0 0.0 0.0 material ceiling_default tint 0.94 0.92 0.88 node n_c11
-mesh prison_ceiling -2.0 4.0 3.0 1.0 1.0 1.0 0.0 0.0 0.0 material ceiling_default tint 0.93 0.91 0.87 node n_c12
-mesh prison_ceiling 0.0 4.0 3.0 1.0 1.0 1.0 0.0 0.0 0.0 material ceiling_default tint 0.94 0.92 0.88 node n_c13
-mesh prison_ceiling 2.0 4.0 3.0 1.0 1.0 1.0 0.0 0.0 0.0 material ceiling_default tint 0.93 0.91 0.87 node n_c14
-mesh prison_ceiling 4.0 4.0 3.0 1.0 1.0 1.0 0.0 0.0 0.0 material ceiling_default tint 0.94 0.92 0.88 node n_c15
-mesh prison_ceiling -4.0 4.0 5.0 1.0 1.0 1.0 0.0 0.0 0.0 material ceiling_default tint 0.93 0.91 0.87 node n_c16
-mesh prison_ceiling -2.0 4.0 5.0 1.0 1.0 1.0 0.0 0.0 0.0 material ceiling_default tint 0.94 0.92 0.88 node n_c17
-mesh prison_ceiling 0.0 4.0 5.0 1.0 1.0 1.0 0.0 0.0 0.0 material ceiling_default tint 0.93 0.91 0.87 node n_c18
-mesh prison_ceiling 2.0 4.0 5.0 1.0 1.0 1.0 0.0 0.0 0.0 material ceiling_default tint 0.94 0.92 0.88 node n_c19
-mesh prison_ceiling 4.0 4.0 5.0 1.0 1.0 1.0 0.0 0.0 0.0 material ceiling_default tint 0.93 0.91 0.87 node n_c20
-mesh SM_Wall -5.0 0.0 -2.0 0.008 0.016 0.008 0.0 0.0 0.0 material qdp_wall tint 1.0 1.0 1.0 node n_ws1
-mesh SM_Wall -3.0 0.0 -2.0 0.008 0.016 0.008 0.0 0.0 0.0 material qdp_wall tint 1.0 1.0 1.0 node n_ws2
-mesh SM_Wall -1.0 0.0 -2.0 0.008 0.016 0.008 0.0 0.0 0.0 material qdp_wall tint 1.0 1.0 1.0 node n_ws3
-mesh SM_Wall 1.0 0.0 -2.0 0.008 0.016 0.008 0.0 0.0 0.0 material qdp_wall tint 1.0 1.0 1.0 node n_ws4
-mesh SM_Wall 3.0 0.0 -2.0 0.008 0.016 0.008 0.0 0.0 0.0 material qdp_wall tint 1.0 1.0 1.0 node n_ws5
-mesh SM_Wall -3.0 0.0 6.0 0.008 0.016 0.008 0.0 180.0 0.0 material qdp_wall tint 1.0 1.0 1.0 node n_wn1
-mesh SM_Wall -1.0 0.0 6.0 0.008 0.016 0.008 0.0 180.0 0.0 material qdp_wall tint 1.0 1.0 1.0 node n_wn2
-mesh prison_wall_door 0.0 0.0 6.0 1.0 1.0 1.0 0.0 180.0 0.0 material inst_beige_wall tint 1.0 1.0 1.0 node n_wn3
-mesh SM_Wall 3.0 0.0 6.0 0.008 0.016 0.008 0.0 180.0 0.0 material qdp_wall tint 1.0 1.0 1.0 node n_wn4
-mesh SM_Wall 5.0 0.0 6.0 0.008 0.016 0.008 0.0 180.0 0.0 material qdp_wall tint 1.0 1.0 1.0 node n_wn5
-mesh SM_Wall -5.0 0.0 0.0 0.008 0.016 0.008 0.0 90.0 0.0 material qdp_wall tint 1.0 1.0 1.0 node n_ww1
-mesh prison_wall_door -5.0 0.0 1.0 1.0 1.0 1.0 0.0 90.0 0.0 material inst_beige_wall tint 1.0 1.0 1.0 node n_ww2
-mesh SM_Wall -5.0 0.0 4.0 0.008 0.016 0.008 0.0 90.0 0.0 material qdp_wall tint 1.0 1.0 1.0 node n_ww3
-mesh SM_Wall -5.0 0.0 6.0 0.008 0.016 0.008 0.0 90.0 0.0 material qdp_wall tint 1.0 1.0 1.0 node n_ww4
-mesh SM_Wall 5.0 0.0 -2.0 0.008 0.016 0.008 0.0 -90.0 0.0 material qdp_wall tint 1.0 1.0 1.0 node n_we1
-mesh SM_Wall 5.0 0.0 0.0 0.008 0.016 0.008 0.0 -90.0 0.0 material qdp_wall tint 1.0 1.0 1.0 node n_we2
-mesh prison_wall_door 5.0 0.0 3.0 1.0 1.0 1.0 0.0 -90.0 0.0 material inst_beige_wall tint 1.0 1.0 1.0 node n_we3
-mesh SM_Wall 5.0 0.0 4.0 0.008 0.016 0.008 0.0 -90.0 0.0 material qdp_wall tint 1.0 1.0 1.0 node n_we4
+mesh prison_ceiling -4.0 6.0 -1.0 1.0 1.0 1.0 0.0 0.0 0.0 material ceiling_default tint 0.94 0.92 0.88 node n_c01
+mesh prison_ceiling -2.0 6.0 -1.0 1.0 1.0 1.0 0.0 0.0 0.0 material ceiling_default tint 0.93 0.91 0.87 node n_c02
+mesh prison_ceiling 0.0 6.0 -1.0 1.0 1.0 1.0 0.0 0.0 0.0 material ceiling_default tint 0.94 0.92 0.88 node n_c03
+mesh prison_ceiling 2.0 6.0 -1.0 1.0 1.0 1.0 0.0 0.0 0.0 material ceiling_default tint 0.93 0.91 0.87 node n_c04
+mesh prison_ceiling 4.0 6.0 -1.0 1.0 1.0 1.0 0.0 0.0 0.0 material ceiling_default tint 0.94 0.92 0.88 node n_c05
+mesh prison_ceiling -4.0 6.0 1.0 1.0 1.0 1.0 0.0 0.0 0.0 material ceiling_default tint 0.93 0.91 0.87 node n_c06
+mesh prison_ceiling -2.0 6.0 1.0 1.0 1.0 1.0 0.0 0.0 0.0 material ceiling_default tint 0.94 0.92 0.88 node n_c07
+mesh prison_ceiling 0.0 6.0 1.0 1.0 1.0 1.0 0.0 0.0 0.0 material ceiling_default tint 0.93 0.91 0.87 node n_c08
+mesh prison_ceiling 2.0 6.0 1.0 1.0 1.0 1.0 0.0 0.0 0.0 material ceiling_default tint 0.94 0.92 0.88 node n_c09
+mesh prison_ceiling 4.0 6.0 1.0 1.0 1.0 1.0 0.0 0.0 0.0 material ceiling_default tint 0.93 0.91 0.87 node n_c10
+mesh prison_ceiling -4.0 6.0 3.0 1.0 1.0 1.0 0.0 0.0 0.0 material ceiling_default tint 0.94 0.92 0.88 node n_c11
+mesh prison_ceiling -2.0 6.0 3.0 1.0 1.0 1.0 0.0 0.0 0.0 material ceiling_default tint 0.93 0.91 0.87 node n_c12
+mesh prison_ceiling 0.0 6.0 3.0 1.0 1.0 1.0 0.0 0.0 0.0 material ceiling_default tint 0.94 0.92 0.88 node n_c13
+mesh prison_ceiling 2.0 6.0 3.0 1.0 1.0 1.0 0.0 0.0 0.0 material ceiling_default tint 0.93 0.91 0.87 node n_c14
+mesh prison_ceiling 4.0 6.0 3.0 1.0 1.0 1.0 0.0 0.0 0.0 material ceiling_default tint 0.94 0.92 0.88 node n_c15
+mesh prison_ceiling -4.0 6.0 5.0 1.0 1.0 1.0 0.0 0.0 0.0 material ceiling_default tint 0.93 0.91 0.87 node n_c16
+mesh prison_ceiling -2.0 6.0 5.0 1.0 1.0 1.0 0.0 0.0 0.0 material ceiling_default tint 0.94 0.92 0.88 node n_c17
+mesh prison_ceiling 0.0 6.0 5.0 1.0 1.0 1.0 0.0 0.0 0.0 material ceiling_default tint 0.93 0.91 0.87 node n_c18
+mesh prison_ceiling 2.0 6.0 5.0 1.0 1.0 1.0 0.0 0.0 0.0 material ceiling_default tint 0.94 0.92 0.88 node n_c19
+mesh prison_ceiling 4.0 6.0 5.0 1.0 1.0 1.0 0.0 0.0 0.0 material ceiling_default tint 0.93 0.91 0.87 node n_c20
+mesh SM_Wall -5.0 0.0 -2.0 0.008 0.024 0.008 0.0 0.0 0.0 material qdp_wall tint 1.0 1.0 1.0 node n_ws1
+mesh SM_Wall -3.0 0.0 -2.0 0.008 0.024 0.008 0.0 0.0 0.0 material qdp_wall tint 1.0 1.0 1.0 node n_ws2
+mesh SM_Wall -1.0 0.0 -2.0 0.008 0.024 0.008 0.0 0.0 0.0 material qdp_wall tint 1.0 1.0 1.0 node n_ws3
+mesh SM_Wall 1.0 0.0 -2.0 0.008 0.024 0.008 0.0 0.0 0.0 material qdp_wall tint 1.0 1.0 1.0 node n_ws4
+mesh SM_Wall 3.0 0.0 -2.0 0.008 0.024 0.008 0.0 0.0 0.0 material qdp_wall tint 1.0 1.0 1.0 node n_ws5
+mesh SM_Wall -3.0 0.0 6.0 0.008 0.024 0.008 0.0 180.0 0.0 material qdp_wall tint 1.0 1.0 1.0 node n_wn1
+mesh SM_Wall -1.0 0.0 6.0 0.008 0.024 0.008 0.0 180.0 0.0 material qdp_wall tint 1.0 1.0 1.0 node n_wn2
+mesh prison_wall_door 0.0 0.0 6.0 1.0 1.5 1.0 0.0 180.0 0.0 material qdp_wall_door tint 1.0 1.0 1.0 node n_wn3
+mesh SM_Wall 3.0 0.0 6.0 0.008 0.024 0.008 0.0 180.0 0.0 material qdp_wall tint 1.0 1.0 1.0 node n_wn4
+mesh SM_Wall 5.0 0.0 6.0 0.008 0.024 0.008 0.0 180.0 0.0 material qdp_wall tint 1.0 1.0 1.0 node n_wn5
+mesh SM_Wall -5.0 0.0 0.0 0.008 0.024 0.008 0.0 90.0 0.0 material qdp_wall tint 1.0 1.0 1.0 node n_ww1
+mesh prison_wall_door -5.0 0.0 1.0 1.0 1.5 1.0 0.0 90.0 0.0 material qdp_wall_door tint 1.0 1.0 1.0 node n_ww2
+mesh SM_Wall -5.0 0.0 4.0 0.008 0.024 0.008 0.0 90.0 0.0 material qdp_wall tint 1.0 1.0 1.0 node n_ww3
+mesh SM_Wall -5.0 0.0 6.0 0.008 0.024 0.008 0.0 90.0 0.0 material qdp_wall tint 1.0 1.0 1.0 node n_ww4
+mesh SM_Wall 5.0 0.0 -2.0 0.008 0.024 0.008 0.0 -90.0 0.0 material qdp_wall tint 1.0 1.0 1.0 node n_we1
+mesh SM_Wall 5.0 0.0 0.0 0.008 0.024 0.008 0.0 -90.0 0.0 material qdp_wall tint 1.0 1.0 1.0 node n_we2
+mesh prison_wall_door 5.0 0.0 3.0 1.0 1.5 1.0 0.0 -90.0 0.0 material qdp_wall_door tint 1.0 1.0 1.0 node n_we3
+mesh SM_Wall 5.0 0.0 4.0 0.008 0.024 0.008 0.0 -90.0 0.0 material qdp_wall tint 1.0 1.0 1.0 node n_we4
 mesh SM_FrameA -0.014177 0.0 0.213394 0.23 0.23 0.23 -0.0 89.999992 0.0 material qdp_door_a tint 1.0 1.0 1.0 node n_frame_a parent node_123
 mesh SM_DoorA 0.014177 0.0 -0.213394 0.23 0.23 0.23 -0.0 89.999985 0.0 material qdp_door_a tint 1.0 1.0 1.0 node n_door_a parent node_123
 mesh SM_FrameD 0.0 0.0 5.85 0.23 0.23 0.23 0.0 180.0 0.0 material qdp_door_d tint 0.65 0.63 0.6 node n_frame_b
@@ -65,25 +65,25 @@ mesh SM_DoorD 0.0 0.0 5.85 0.23 0.23 0.23 0.0 180.0 0.0 material qdp_door_d tint
 mesh SM_FrameC 4.85 0.0 3.0 0.23 0.23 0.23 0.0 -90.0 0.0 material qdp_door_c tint 0.85 0.82 0.78 node n_frame_c
 mesh SM_DoorC 4.85 0.0 3.0 0.23 0.23 0.23 0.0 -90.0 0.0 material qdp_door_c tint 0.88 0.85 0.8 node n_door_c
 mesh inst_chain_padlock 4.8 1.1 3.0 1.0 1.0 1.0 0.0 -90.0 0.0 material metal_default tint 0.2 0.16 0.12 node n_chain
-mesh inst_hvac_vent 0.0 3.2 5.95 1.0 1.0 1.0 0.0 180.0 0.0 material metal_default tint 0.55 0.53 0.5 node n_hvac
-mesh inst_smoke_detector 1.0 3.97 1.5 1.0 1.0 1.0 0.0 0.0 0.0 material stone_default tint 0.92 0.9 0.88 node n_smoke
-mesh ceiling_light_panel -2.5 3.99 0.5 1.0 1.0 1.0 0.0 0.0 0.0 material stone_default tint 0.98 0.96 0.9 node n_clp1
-mesh ceiling_light_panel 2.5 3.99 0.5 1.0 1.0 1.0 0.0 0.0 0.0 material stone_default tint 0.98 0.96 0.9 node n_clp2
-mesh ceiling_light_panel -2.5 3.99 3.5 1.0 1.0 1.0 0.0 0.0 0.0 material stone_default tint 0.98 0.96 0.9 node n_clp3
-mesh ceiling_light_panel 2.5 3.99 3.5 1.0 1.0 1.0 0.0 0.0 0.0 material stone_default tint 0.98 0.96 0.9 node n_clp4
-light -2.5 3.7 0.5 1.0 0.97 0.88 6.0 4.5 node n_l1
-light 2.5 3.7 0.5 1.0 0.97 0.88 6.0 4.5 node n_l2
-light -2.5 3.7 3.5 1.0 0.97 0.88 6.0 4.5 node n_l3
-light 2.5 3.7 3.5 1.0 0.97 0.88 6.0 4.5 node n_l4
+mesh inst_hvac_vent 0.0 5.2 5.95 1.0 1.0 1.0 0.0 180.0 0.0 material metal_default tint 0.55 0.53 0.5 node n_hvac
+mesh inst_smoke_detector 1.0 5.97 1.5 1.0 1.0 1.0 0.0 0.0 0.0 material stone_default tint 0.92 0.9 0.88 node n_smoke
+mesh ceiling_light_panel -2.5 5.99 0.5 1.0 1.0 1.0 0.0 0.0 0.0 material stone_default tint 0.98 0.96 0.9 node n_clp1
+mesh ceiling_light_panel 2.5 5.99 0.5 1.0 1.0 1.0 0.0 0.0 0.0 material stone_default tint 0.98 0.96 0.9 node n_clp2
+mesh ceiling_light_panel -2.5 5.99 3.5 1.0 1.0 1.0 0.0 0.0 0.0 material stone_default tint 0.98 0.96 0.9 node n_clp3
+mesh ceiling_light_panel 2.5 5.99 3.5 1.0 1.0 1.0 0.0 0.0 0.0 material stone_default tint 0.98 0.96 0.9 node n_clp4
+light -2.5 5.7 0.5 1.0 0.97 0.88 6.0 4.5 node n_l1
+light 2.5 5.7 0.5 1.0 0.97 0.88 6.0 4.5 node n_l2
+light -2.5 5.7 3.5 1.0 0.97 0.88 6.0 4.5 node n_l3
+light 2.5 5.7 3.5 1.0 0.97 0.88 6.0 4.5 node n_l4
 light -5.5 1.5 1.0 1.0 0.9 0.65 8.0 5.0 node n_l_door_a
 light -4.8 0.3 1.0 1.0 0.85 0.55 3.0 1.5 node n_l_door_a_floor
 light 0.0 2.5 -1.5 0.85 0.8 0.72 5.0 1.0 node n_l_fill
-light 1.0 3.85 1.5 1.0 0.05 0.02 0.5 0.3 node n_l_led
+light 1.0 5.85 1.5 1.0 0.05 0.02 0.5 0.3 node n_l_led
 collider_box 0.0 -0.05 2.0 5.0 0.05 4.0 node n_col_floor
-collider_box 0.0 4.05 2.0 5.0 0.05 4.0 node n_col_ceil
-collider_box 0.0 2.0 -2.0 5.0 2.0 0.1 node n_col_south
-collider_box 0.0 2.0 6.0 5.0 2.0 0.1 node n_col_north
-collider_box 5.0 2.0 2.0 0.1 2.0 4.0 node n_col_east
-collider_box -5.0 2.0 2.0 0.1 2.0 4.0 node n_col_west
+collider_box 0.0 6.05 2.0 5.0 0.05 4.0 node n_col_ceil
+collider_box 0.0 3.0 -2.0 5.0 3.0 0.1 node n_col_south
+collider_box 0.0 3.0 6.0 5.0 3.0 0.1 node n_col_north
+collider_box 5.0 3.0 2.0 0.1 3.0 4.0 node n_col_east
+collider_box -5.0 3.0 2.0 0.1 3.0 4.0 node n_col_west
 player_spawn 0.0 1.0 -0.5 -2.0 node n_spawn
 group Group -4.835823 0.0 0.786606 1.0 1.0 1.0 0.0 0.0 0.0 node node_123

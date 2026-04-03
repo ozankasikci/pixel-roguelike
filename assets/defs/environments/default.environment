@@ -2,8 +2,8 @@ id default
 enable_sky true
 enable_edges false
 enable_fog false
-enable_tone_map false
-enable_bloom false
+enable_tone_map true
+enable_bloom true
 enable_vignette true
 enable_grain false
 enable_scanlines false
@@ -13,17 +13,17 @@ edge_threshold 0.17
 fog_density 0.005
 fog_start 30.0
 depth_view_scale 0.08
-exposure 1.0
+exposure 0.76
 gamma 1.0
 contrast 1.02
 saturation 0.88
 bloom_threshold 0.8
-bloom_intensity 0.06
+bloom_intensity 0.22
 bloom_radius 1.5
 ssao_enabled true
 ssao_radius 0.5
 ssao_bias 0.025
-ssao_strength 0.5
+ssao_strength 0.15
 csm_lambda 0.5
 vignette_strength 0.08
 vignette_softness 0.78
@@ -80,3 +80,19 @@ fill_enabled true
 fill_direction -0.177734 0.866453 -0.466551
 fill_color 0.7 0.78 0.9
 fill_intensity 0.12
+torch_enabled true
+torch_master_intensity 1.0
+torch_color 1.0 0.89 0.76
+torch_intensity 0.15
+torch_radius 3.1
+torch_inner_cone 58.0
+torch_outer_cone 82.0
+torch_spill_color 1.0 0.78 0.46
+torch_spill_intensity 2.5
+torch_spill_radius 7.2
+torch_halo_color 1.0 0.84 0.58
+torch_halo_intensity 1.2
+torch_halo_radius 5.4
+torch_glow_color 0.98 0.91 0.82
+torch_glow_intensity 0.08
+torch_glow_radius 1.1

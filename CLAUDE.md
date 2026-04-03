@@ -239,6 +239,17 @@ assets/
 ```
 <!-- GSD:architecture-end -->
 
+## Editor Debug Harness
+
+When debugging editor issues (gizmo bugs, selection problems, undo/redo, camera behavior), use the **debug harness** — a Unix socket remote control system in `src/editor/debug/` that lets you programmatically inspect and manipulate the running editor.
+
+- **Socket:** `/tmp/pixel-roguelike-editor-{pid}.sock` (find with `ls /tmp/pixel-roguelike-editor-*.sock`)
+- **Protocol:** Line-delimited JSON — `{"id": 1, "cmd": "inspect.entities", "args": {}}`
+- **33 commands:** `inspect.*` (read-only state queries), `command.*` (mutating actions), `record.*`/`replay.*` (session capture)
+- **Key commands:** `inspect.entities`, `command.select_entity`, `command.focus_entity`, `command.gizmo_drag`, `command.wait_events`, `inspect.gizmo_detailed`
+
+Always prefer the harness over guessing or asking the user to reproduce. See the full command reference in memory (`editor_debug_harness.md`).
+
 <!-- GSD:workflow-start source:GSD defaults -->
 ## GSD Workflow Enforcement
 
