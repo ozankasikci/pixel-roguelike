@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: Editor UX
 status: Executing Phase 14
-stopped_at: "Completed quick task 260403-v4x: Fix editor freezing after gizmo or inspector scene changes trigger runtime preview rebuild"
-last_updated: "2026-04-03T19:31:00Z"
+stopped_at: "Completed quick task 260403-wsw: Enable arrow-key navigation in the hierarchy panel"
+last_updated: "2026-04-03T20:45:00Z"
 last_activity: 2026-04-03
 progress:
   total_phases: 16
@@ -247,10 +247,11 @@ None yet.
 | 260402-uz2 | Fix walls/floors to use QuestDoorsPack textured materials with mesh UVs | 2026-04-02 | f7d1abe | [260402-uz2-fix-walls-and-floors-to-use-questdoorspa](./quick/260402-uz2-fix-walls-and-floors-to-use-questdoorspa/) |
 | 260403-udy | Fix play preview texture corruption after moving a scene mesh with the gizmo | 2026-04-03 | 9d1ee2b | [260403-udy-fix-play-preview-texture-corruption-afte](./quick/260403-udy-fix-play-preview-texture-corruption-afte/) |
 | 260403-v4x | Fix editor freezing after gizmo or inspector scene changes trigger runtime preview rebuild | 2026-04-03 | ff7ce59 | [260403-v4x-fix-editor-freezing-after-gizmo-or-inspe](./quick/260403-v4x-fix-editor-freezing-after-gizmo-or-inspe/) |
+| 260403-wsw | Enable arrow-key navigation in the hierarchy panel | 2026-04-03 | 534ed10 | [260403-wsw-enable-arrow-key-navigation-in-the-hiera](./quick/260403-wsw-enable-arrow-key-navigation-in-the-hiera/) |
 
 ## Session Continuity
 
-Last activity: 2026-04-03 - Completed quick task 260403-v4x: Fix editor freezing after gizmo or inspector scene changes trigger runtime preview rebuild
+Last activity: 2026-04-03 - Completed quick task 260403-wsw: Enable arrow-key navigation in the hierarchy panel
 Last session: 2026-04-02T19:24:45Z
-Stopped at: Completed quick task 260403-v4x: Fix editor freezing after gizmo or inspector scene changes trigger runtime preview rebuild
+Stopped at: Completed quick task 260403-wsw: Enable arrow-key navigation in the hierarchy panel
 Resume file: None
