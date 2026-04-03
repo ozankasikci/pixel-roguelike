@@ -1,0 +1,13 @@
+id qdp_door_d
+base_color 1.0 1.0 1.0
+uv_mode mesh
+uv_scale 1.0 1.0
+normal_strength 1.0
+roughness_scale 1.0
+roughness_bias 0.4
+metalness 0.25
+ao_strength 0.9
+albedo_map assets/packs/QuestDoorsPack/Texture/DoorD/T_DoorD_BaseColor.png
+normal_map assets/packs/QuestDoorsPack/Texture/DoorD/T_DoorD_Normal.png
+ao_map assets/packs/QuestDoorsPack/Texture/DoorD/T_DoorD_AO.png
+roughness_map assets/packs/QuestDoorsPack/Texture/DoorD/T_DoorD_Roughness.png

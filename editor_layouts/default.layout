@@ -1,0 +1,83 @@
+name default
+show_outliner 1
+show_inspector 1
+show_asset_browser 1
+show_environment 1
+show_viewport 1
+imgui_ini_begin
+[Window][Debug##Default]
+Pos=60,60
+Size=400,400
+Collapsed=0
+
+[Window][Debug Overlay]
+Pos=14,93
+Size=324,610
+Collapsed=1
+
+[Window][Movement]
+Pos=956,73
+Size=184,224
+Collapsed=1
+
+[Window][Viewmodel]
+Pos=42,63
+Size=250,269
+Collapsed=1
+
+[Window][Level Editor Root]
+Pos=0,0
+Size=2560,1377
+Collapsed=0
+
+[Window][Outliner]
+Pos=8,62
+Size=559,1307
+Collapsed=0
+DockId=0x00000001,0
+
+[Window][Inspector]
+Pos=2293,62
+Size=259,1307
+Collapsed=0
+DockId=0x00000006,0
+
+[Window][Environment]
+Pos=2293,62
+Size=259,1307
+Collapsed=0
+DockId=0x00000006,1
+
+[Window][Asset Browser]
+Pos=2036,62
+Size=255,1307
+Collapsed=0
+DockId=0x00000005,0
+
+[Window][Viewport]
+Pos=569,62
+Size=1465,1307
+Collapsed=0
+DockId=0x00000003,0
+
+[Window][Build Output]
+Pos=338,638
+Size=861,270
+Collapsed=0
+DockId=0x00000003
+
+[Window][Save Layout As]
+Pos=1081,631
+Size=397,114
+Collapsed=0
+
+[Docking][Data]
+DockSpace       ID=0x6A0BF2A2 Window=0xFA672319 Pos=8,62 Size=2544,1307 Split=X
+  DockNode      ID=0x00000001 Parent=0x6A0BF2A2 SizeRef=559,1307 Selected=0x66BFF854
+  DockNode      ID=0x00000002 Parent=0x6A0BF2A2 SizeRef=1983,1307 Split=X
+    DockNode    ID=0x00000003 Parent=0x00000002 SizeRef=1465,1307 CentralNode=1 Selected=0xC450F867
+    DockNode    ID=0x00000004 Parent=0x00000002 SizeRef=516,1307 Split=X Selected=0x36DC96AB
+      DockNode  ID=0x00000005 Parent=0x00000004 SizeRef=255,1307 Selected=0x36AF052B
+      DockNode  ID=0x00000006 Parent=0x00000004 SizeRef=259,1307 Selected=0x36DC96AB
+
+imgui_ini_end

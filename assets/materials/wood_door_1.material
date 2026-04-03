@@ -1,0 +1,13 @@
+id wood_door_1
+base_color 1.0 1.0 1.0
+uv_mode mesh
+uv_scale 1.0 1.0
+normal_strength 1.0
+roughness_scale 1.0
+roughness_bias 0.72
+metalness 0.0
+ao_strength 0.9
+albedo_map assets/textures/wood_door_1/Door_1_Albedo.png
+normal_map assets/textures/wood_door_1/Door_1_Normal.png
+ao_map assets/textures/wood_door_1/Door_1_AO.png
+normal_map_flip_y true
