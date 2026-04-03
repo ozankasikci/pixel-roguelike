@@ -435,6 +435,7 @@ int main(int argc, char* argv[]) {
     std::uint64_t previewEnvironmentRevision = document.environmentRevision();
     RuntimePreviewDirtyState runtimePreviewDirtyState = RuntimePreviewDirtyState::None;
     double lastRuntimePreviewStructuralChangeTime = glfwGetTime();
+    bool runtimePreviewAutoRebuildPending = false;
     PlayEnterTraceState playEnterTrace;
     EditorPendingCommand widgetCommand;
     EditorPendingCommand gizmoCommand;
@@ -1403,6 +1404,7 @@ int main(int argc, char* argv[]) {
                 previewSceneRevision = document.sceneRevision();
                 runtimePreviewDirtyState = RuntimePreviewDirtyState::FullWorldRebuild;
                 lastRuntimePreviewStructuralChangeTime = glfwGetTime();
+                runtimePreviewAutoRebuildPending = true;
             } else if (previewSceneRevision != document.sceneRevision()) {
                 previewWorld.syncTransforms(document);
                 previewWorld.syncMaterials(document, content);
@@ -1410,7 +1412,9 @@ int main(int argc, char* argv[]) {
                 previewSceneRevision = document.sceneRevision();
                 runtimePreviewDirtyState = mergeRuntimePreviewDirtyState(runtimePreviewDirtyState,
                                                                          RuntimePreviewDirtyState::FullWorldRebuild);
-                lastRuntimePreviewStructuralChangeTime = glfwGetTime();
+                // Ordinary scene edits should rebuild before the next play enter,
+                // but they should not stall the editor with an eager runtime rebuild.
+                runtimePreviewAutoRebuildPending = false;
             }
             if (previewEnvironmentRevision != document.environmentRevision()) {
                 previewEnvironmentRevision = document.environmentRevision();
@@ -1423,6 +1427,7 @@ int main(int argc, char* argv[]) {
             }
             if (!ui.playPreview
                 && runtimePreviewDirtyState == RuntimePreviewDirtyState::FullWorldRebuild
+                && runtimePreviewAutoRebuildPending
                 && !editorGizmoIsHot()
                 && !widgetCommand.active
                 && !gizmoCommand.active
@@ -1430,6 +1435,7 @@ int main(int argc, char* argv[]) {
                 runtimePreviewSession.rebuild(document, content);
                 runtimePreviewSession.prewarmRenderer(content);
                 runtimePreviewDirtyState = RuntimePreviewDirtyState::None;
+                runtimePreviewAutoRebuildPending = false;
             }
         }
         const auto selectionHandles = buildEditorSelectionHandles(document, previewWorld);
@@ -1841,6 +1847,7 @@ int main(int argc, char* argv[]) {
                 if (runtimePreviewDirtyState == RuntimePreviewDirtyState::FullWorldRebuild) {
                     runtimePreviewSession.rebuild(document, content);
                     runtimePreviewDirtyState = RuntimePreviewDirtyState::None;
+                    runtimePreviewAutoRebuildPending = false;
                 } else if (runtimePreviewDirtyState == RuntimePreviewDirtyState::GameplayStateReset) {
                     runtimePreviewSession.resetForPlay();
                     runtimePreviewDirtyState = RuntimePreviewDirtyState::None;
@@ -1877,6 +1884,7 @@ int main(int argc, char* argv[]) {
                 runtimePreviewSession.rebuild(document, content);
                 runtimePreviewSession.prewarmRenderer(content);
                 runtimePreviewDirtyState = RuntimePreviewDirtyState::None;
+                runtimePreviewAutoRebuildPending = false;
             } else if (!syncEditorCameraToRuntimeStart(document, editCamera) && previewWorld.sceneBounds().valid) {
                 focusEditorCameraOnBounds(editCamera, previewWorld.sceneBounds().min, previewWorld.sceneBounds().max);
             }
