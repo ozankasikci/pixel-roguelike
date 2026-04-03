@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: Editor UX
 status: Executing Phase 14
-stopped_at: "Completed quick task 260402-uz2: Fix walls/floors to use QuestDoorsPack textured materials"
-last_updated: "2026-04-03T10:58:31.213Z"
+stopped_at: "Completed quick task 260403-udy: Fix play preview texture corruption after moving a scene mesh with the gizmo"
+last_updated: "2026-04-03T19:05:00Z"
 last_activity: 2026-04-03
 progress:
   total_phases: 16
@@ -245,10 +245,11 @@ None yet.
 | 260402-tpl | Document the EditorCommander debugging harness for future debugging use | 2026-04-02 | — | [260402-tpl-document-the-editorcommander-debugging-h](./quick/260402-tpl-document-the-editorcommander-debugging-h/) |
 | 260402-uc1 | Use QuestDoorsPack walls/floor in initial scene, fix door gap/size, remove trim | 2026-04-02 | 86fa32e | [260402-uc1-use-questdoorspack-walls-and-floor-in-in](./quick/260402-uc1-use-questdoorspack-walls-and-floor-in-in/) |
 | 260402-uz2 | Fix walls/floors to use QuestDoorsPack textured materials with mesh UVs | 2026-04-02 | f7d1abe | [260402-uz2-fix-walls-and-floors-to-use-questdoorspa](./quick/260402-uz2-fix-walls-and-floors-to-use-questdoorspa/) |
+| 260403-udy | Fix play preview texture corruption after moving a scene mesh with the gizmo | 2026-04-03 | 9d1ee2b | [260403-udy-fix-play-preview-texture-corruption-afte](./quick/260403-udy-fix-play-preview-texture-corruption-afte/) |
 
 ## Session Continuity
 
-Last activity: 2026-04-03
+Last activity: 2026-04-03 - Completed quick task 260403-udy: Fix play preview texture corruption after moving a scene mesh with the gizmo
 Last session: 2026-04-02T19:24:45Z
-Stopped at: Completed quick task 260402-uz2: Fix walls/floors to use QuestDoorsPack textured materials
+Stopped at: Completed quick task 260403-udy: Fix play preview texture corruption after moving a scene mesh with the gizmo
 Resume file: None
