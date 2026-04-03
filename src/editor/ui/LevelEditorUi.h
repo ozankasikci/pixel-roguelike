@@ -127,6 +127,7 @@ struct EditorUiState {
     bool frameSelectionRequested = false;
     bool scrollToSelection = false;
     std::uint64_t outlinerAnchorId = 0;
+    std::unordered_set<std::uint64_t> expandedOutlinerIds;
     char layoutNameBuffer[64] = "default";
     char outlinerFilter[128] = {};
 };

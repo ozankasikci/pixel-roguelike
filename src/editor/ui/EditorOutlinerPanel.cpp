@@ -37,7 +37,197 @@ OutlinerDropMode outlinerDropModeForItem() {
     return OutlinerDropMode::MakeChild;
 }
 
+bool shouldHandleOutlinerKeys() {
+    return ImGui::IsWindowFocused(ImGuiFocusedFlags_RootAndChildWindows)
+        && !ImGui::GetIO().WantTextInput
+        && !ImGui::IsAnyItemActive()
+        && !ImGui::IsPopupOpen(nullptr, ImGuiPopupFlags_AnyPopupId);
+}
+
+int findOutlinerRowIndex(const std::vector<OutlinerVisibleRow>& rows, std::uint64_t objectId) {
+    for (std::size_t index = 0; index < rows.size(); ++index) {
+        if (rows[index].objectId == objectId) {
+            return static_cast<int>(index);
+        }
+    }
+    return -1;
+}
+
+std::unordered_set<std::uint64_t> buildFilterVisibleSet(const EditorSceneDocument& document,
+                                                        const EditorUiState& ui) {
+    std::unordered_set<std::uint64_t> filterVisible;
+    if (ui.outlinerFilter[0] == '\0') {
+        return filterVisible;
+    }
+
+    std::string lowerFilter(ui.outlinerFilter);
+    for (auto& c : lowerFilter) {
+        c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
+    }
+
+    std::function<void(std::uint64_t)> markVisible = [&](std::uint64_t id) {
+        while (id != 0 && !filterVisible.contains(id)) {
+            filterVisible.insert(id);
+            id = document.parentObjectId(id);
+        }
+    };
+
+    std::function<void(std::uint64_t)> scanObject = [&](std::uint64_t objectId) {
+        const EditorSceneObject* obj = document.findObject(objectId);
+        if (obj == nullptr) {
+            return;
+        }
+        std::string label = editorSceneObjectLabel(*obj);
+        for (auto& c : label) {
+            c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
+        }
+        if (label.find(lowerFilter) != std::string::npos) {
+            markVisible(objectId);
+        }
+        for (const auto childId : document.childObjectIds(objectId)) {
+            scanObject(childId);
+        }
+    };
+
+    for (const auto rootId : document.rootObjectIds()) {
+        scanObject(rootId);
+    }
+
+    return filterVisible;
+}
+
 } // namespace
+
+std::vector<OutlinerVisibleRow> buildOutlinerVisibleRows(const EditorSceneDocument& document,
+                                                         const EditorUiState& ui) {
+    const bool hasFilter = ui.outlinerFilter[0] != '\0';
+    const std::unordered_set<std::uint64_t> filterVisible = buildFilterVisibleSet(document, ui);
+
+    std::vector<OutlinerVisibleRow> rows;
+    std::function<void(std::uint64_t)> appendRows = [&](std::uint64_t objectId) {
+        const EditorSceneObject* object = document.findObject(objectId);
+        if (object == nullptr) {
+            return;
+        }
+
+        if (hasFilter && !filterVisible.contains(objectId)) {
+            return;
+        }
+
+        const auto children = document.childObjectIds(objectId);
+        const bool expanded = hasFilter || ui.expandedOutlinerIds.contains(objectId);
+        rows.push_back(OutlinerVisibleRow{
+            .objectId = objectId,
+            .parentObjectId = document.parentObjectId(objectId),
+            .hasChildren = !children.empty(),
+            .expanded = expanded,
+        });
+
+        if (!expanded) {
+            return;
+        }
+
+        for (const auto childId : children) {
+            appendRows(childId);
+        }
+    };
+
+    for (const auto rootId : document.rootObjectIds()) {
+        appendRows(rootId);
+    }
+
+    return rows;
+}
+
+bool applyOutlinerKeyboardNavigation(const EditorSceneDocument& document,
+                                     EditorUiState& ui,
+                                     std::vector<std::uint64_t>& selectedIds,
+                                     OutlinerNavDirection direction,
+                                     bool extendRange) {
+    const std::vector<OutlinerVisibleRow> rows = buildOutlinerVisibleRows(document, ui);
+    if (rows.empty()) {
+        return false;
+    }
+
+    const std::uint64_t activeId = selectedIds.empty() ? rows.front().objectId : selectedIds.back();
+    const int currentIndex = findOutlinerRowIndex(rows, activeId);
+    const int resolvedIndex = currentIndex >= 0 ? currentIndex : 0;
+    const OutlinerVisibleRow& currentRow = rows[static_cast<std::size_t>(resolvedIndex)];
+
+    auto selectRow = [&](std::uint64_t objectId) {
+        if (extendRange && (direction == OutlinerNavDirection::Up || direction == OutlinerNavDirection::Down)) {
+            const std::uint64_t anchorId = ui.outlinerAnchorId != 0 ? ui.outlinerAnchorId : activeId;
+            int anchorIndex = findOutlinerRowIndex(rows, anchorId);
+            int targetIndex = findOutlinerRowIndex(rows, objectId);
+            if (anchorIndex < 0) {
+                anchorIndex = resolvedIndex;
+            }
+            if (targetIndex < 0) {
+                targetIndex = resolvedIndex;
+            }
+            if (anchorIndex > targetIndex) {
+                std::swap(anchorIndex, targetIndex);
+            }
+            selectedIds.clear();
+            for (int index = anchorIndex; index <= targetIndex; ++index) {
+                selectedIds.push_back(rows[static_cast<std::size_t>(index)].objectId);
+            }
+        } else {
+            selectedIds = {objectId};
+            ui.outlinerAnchorId = objectId;
+        }
+        ui.inspectorContext = EditorInspectorContext::SceneSelection;
+        ui.scrollToSelection = true;
+    };
+
+    switch (direction) {
+    case OutlinerNavDirection::Up: {
+        const int targetIndex = std::max(resolvedIndex - 1, 0);
+        if (rows[static_cast<std::size_t>(targetIndex)].objectId != activeId) {
+            selectRow(rows[static_cast<std::size_t>(targetIndex)].objectId);
+            return true;
+        }
+        return false;
+    }
+    case OutlinerNavDirection::Down: {
+        const int targetIndex = std::min(resolvedIndex + 1, static_cast<int>(rows.size()) - 1);
+        if (rows[static_cast<std::size_t>(targetIndex)].objectId != activeId) {
+            selectRow(rows[static_cast<std::size_t>(targetIndex)].objectId);
+            return true;
+        }
+        return false;
+    }
+    case OutlinerNavDirection::Right: {
+        if (!currentRow.hasChildren) {
+            return false;
+        }
+        if (!currentRow.expanded) {
+            ui.expandedOutlinerIds.insert(currentRow.objectId);
+            return true;
+        }
+        const int childIndex = resolvedIndex + 1;
+        if (childIndex < static_cast<int>(rows.size())
+            && rows[static_cast<std::size_t>(childIndex)].parentObjectId == currentRow.objectId) {
+            selectRow(rows[static_cast<std::size_t>(childIndex)].objectId);
+            return true;
+        }
+        return false;
+    }
+    case OutlinerNavDirection::Left: {
+        if (currentRow.hasChildren && currentRow.expanded && ui.outlinerFilter[0] == '\0') {
+            ui.expandedOutlinerIds.erase(currentRow.objectId);
+            return true;
+        }
+        if (currentRow.parentObjectId != 0 && currentRow.parentObjectId != activeId) {
+            selectRow(currentRow.parentObjectId);
+            return true;
+        }
+        return false;
+    }
+    }
+
+    return false;
+}
 
 std::vector<std::uint64_t> renderOutliner(EditorSceneDocument& document,
                                           EditorUiState& ui,
@@ -56,20 +246,11 @@ std::vector<std::uint64_t> renderOutliner(EditorSceneDocument& document,
     const bool ctrlHeld = ImGui::GetIO().KeyMods & ImGuiMod_Super
                         || ImGui::GetIO().KeyMods & ImGuiMod_Ctrl;
 
-    // Build flat visible-order list for shift-range selection.
+    const std::vector<OutlinerVisibleRow> visibleRows = buildOutlinerVisibleRows(document, ui);
     std::vector<std::uint64_t> flatOrder;
-    std::function<void(std::uint64_t)> collectOrder = [&](std::uint64_t objectId) {
-        const EditorSceneObject* object = document.findObject(objectId);
-        if (object == nullptr) {
-            return;
-        }
-        flatOrder.push_back(objectId);
-        for (const auto childId : document.childObjectIds(objectId)) {
-            collectOrder(childId);
-        }
-    };
-    for (const auto rootId : document.rootObjectIds()) {
-        collectOrder(rootId);
+    flatOrder.reserve(visibleRows.size());
+    for (const auto& row : visibleRows) {
+        flatOrder.push_back(row.objectId);
     }
 
     ImGui::BeginDisabled(selectedIds.empty());
@@ -94,38 +275,27 @@ std::vector<std::uint64_t> renderOutliner(EditorSceneDocument& document,
     ImGui::SetNextItemWidth(-1.0f);
     ImGui::InputTextWithHint("##outliner_filter", "Search...", ui.outlinerFilter, sizeof(ui.outlinerFilter));
 
-    // Build set of objects matching the filter (and their ancestors, to preserve hierarchy).
     const bool hasFilter = ui.outlinerFilter[0] != '\0';
-    std::unordered_set<std::uint64_t> filterVisible;
-    if (hasFilter) {
-        std::string lowerFilter(ui.outlinerFilter);
-        for (auto& c : lowerFilter) c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
-
-        std::function<void(std::uint64_t)> markVisible = [&](std::uint64_t id) {
-            while (id != 0 && filterVisible.find(id) == filterVisible.end()) {
-                filterVisible.insert(id);
-                id = document.parentObjectId(id);
-            }
-        };
-
-        std::function<void(std::uint64_t)> scanObject = [&](std::uint64_t objectId) {
-            const EditorSceneObject* obj = document.findObject(objectId);
-            if (!obj) return;
-            std::string label = editorSceneObjectLabel(*obj);
-            for (auto& c : label) c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
-            if (label.find(lowerFilter) != std::string::npos) {
-                markVisible(objectId);
-            }
-            for (const auto childId : document.childObjectIds(objectId)) {
-                scanObject(childId);
-            }
-        };
-        for (const auto rootId : document.rootObjectIds()) {
-            scanObject(rootId);
-        }
-    }
+    const std::unordered_set<std::uint64_t> filterVisible = buildFilterVisibleSet(document, ui);
 
     ImGui::Separator();
+
+    if (shouldHandleOutlinerKeys()) {
+        const auto selectionBefore = selectedIds;
+        bool handled = false;
+        if (ImGui::IsKeyPressed(ImGuiKey_UpArrow)) {
+            handled = applyOutlinerKeyboardNavigation(document, ui, selectedIds, OutlinerNavDirection::Up, shiftHeld);
+        } else if (ImGui::IsKeyPressed(ImGuiKey_DownArrow)) {
+            handled = applyOutlinerKeyboardNavigation(document, ui, selectedIds, OutlinerNavDirection::Down, shiftHeld);
+        } else if (ImGui::IsKeyPressed(ImGuiKey_RightArrow)) {
+            handled = applyOutlinerKeyboardNavigation(document, ui, selectedIds, OutlinerNavDirection::Right);
+        } else if (ImGui::IsKeyPressed(ImGuiKey_LeftArrow)) {
+            handled = applyOutlinerKeyboardNavigation(document, ui, selectedIds, OutlinerNavDirection::Left);
+        }
+        if (handled && selectionBefore != selectedIds) {
+            commandStack.pushSelectionCommand("Select", &selectedIds, selectionBefore, selectedIds);
+        }
+    }
 
     if (ImGui::IsWindowFocused(ImGuiFocusedFlags_RootAndChildWindows)
         && !ImGui::GetIO().WantTextInput
@@ -170,16 +340,22 @@ std::vector<std::uint64_t> renderOutliner(EditorSceneDocument& document,
             flags |= ImGuiTreeNodeFlags_Selected;
         }
 
-        // Force-expand ancestors of the selected item so the selected row is visible.
-        // Also force-expand when filtering to reveal matches.
-        if (expandForScroll.count(objectId) > 0 || hasFilter) {
-            ImGui::SetNextItemOpen(true, ImGuiCond_Always);
-        }
+        const bool shouldOpen = hasFilter
+            || expandForScroll.count(objectId) > 0
+            || ui.expandedOutlinerIds.contains(objectId);
+        ImGui::SetNextItemOpen(shouldOpen, ImGuiCond_Always);
 
         const bool openNode = ImGui::TreeNodeEx(reinterpret_cast<void*>(static_cast<uintptr_t>(objectId)),
                                                 flags,
                                                 "%s",
                                                 editorSceneObjectLabel(*object).c_str());
+        if (ImGui::IsItemToggledOpen()) {
+            if (openNode) {
+                ui.expandedOutlinerIds.insert(objectId);
+            } else {
+                ui.expandedOutlinerIds.erase(objectId);
+            }
+        }
 
         // Scroll to the first selected item after a viewport-originated selection change.
         if (ui.scrollToSelection && !scrolledThisFrame && isSelected(selectedIds, objectId)) {

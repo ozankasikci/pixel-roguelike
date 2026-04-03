@@ -1,4 +1,6 @@
 #include "editor/scene/EditorSceneDocument.h"
+#include "editor/ui/EditorOutlinerPanel.h"
+#include "editor/ui/LevelEditorUi.h"
 #include "common/TestSupport.h"
 
 #include <cassert>
@@ -76,6 +78,52 @@ int main() {
     assert(roots[1] == childOfA);
     assert(roots[2] == rootB);
     assert(test_support::nearlyEqualVec3(translationOf(reorderDocument.worldTransformMatrix(childOfA)), childWorld));
+
+    EditorSceneDocument navDocument;
+    navDocument.clear();
+    const std::uint64_t navRootA = navDocument.addMesh(makeMesh(glm::vec3(0.0f)));
+    const std::uint64_t navRootB = navDocument.addMesh(makeMesh(glm::vec3(3.0f, 0.0f, 0.0f)));
+    const std::uint64_t navChild = navDocument.addMesh(makeMesh(glm::vec3(1.0f, 0.0f, 0.0f)));
+    assert(navDocument.setParent(navChild, navRootA));
+
+    EditorUiState ui;
+    std::vector<std::uint64_t> selectedIds{navRootA};
+
+    auto visibleRows = buildOutlinerVisibleRows(navDocument, ui);
+    assert(visibleRows.size() == 2);
+    assert(visibleRows[0].objectId == navRootA);
+    assert(visibleRows[1].objectId == navRootB);
+
+    assert(applyOutlinerKeyboardNavigation(navDocument, ui, selectedIds, OutlinerNavDirection::Right));
+    assert(ui.expandedOutlinerIds.contains(navRootA));
+    visibleRows = buildOutlinerVisibleRows(navDocument, ui);
+    assert(visibleRows.size() == 3);
+    assert(visibleRows[1].objectId == navChild);
+
+    assert(applyOutlinerKeyboardNavigation(navDocument, ui, selectedIds, OutlinerNavDirection::Down));
+    assert(selectedIds.size() == 1);
+    assert(selectedIds[0] == navChild);
+
+    assert(applyOutlinerKeyboardNavigation(navDocument, ui, selectedIds, OutlinerNavDirection::Left));
+    assert(selectedIds.size() == 1);
+    assert(selectedIds[0] == navRootA);
+
+    assert(applyOutlinerKeyboardNavigation(navDocument, ui, selectedIds, OutlinerNavDirection::Left));
+    assert(!ui.expandedOutlinerIds.contains(navRootA));
+    visibleRows = buildOutlinerVisibleRows(navDocument, ui);
+    assert(visibleRows.size() == 2);
+
+    assert(applyOutlinerKeyboardNavigation(navDocument, ui, selectedIds, OutlinerNavDirection::Down));
+    assert(selectedIds.size() == 1);
+    assert(selectedIds[0] == navRootB);
+
+    ui.expandedOutlinerIds.insert(navRootA);
+    selectedIds = {navRootA};
+    ui.outlinerAnchorId = navRootA;
+    assert(applyOutlinerKeyboardNavigation(navDocument, ui, selectedIds, OutlinerNavDirection::Down, true));
+    assert(selectedIds.size() == 2);
+    assert(selectedIds[0] == navRootA);
+    assert(selectedIds[1] == navChild);
 
     return 0;
 }
