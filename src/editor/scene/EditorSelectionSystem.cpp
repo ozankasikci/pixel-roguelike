@@ -173,13 +173,15 @@ int selectionPriority(const EditorSelectionHandle& handle) {
         return 0;
     case EditorSceneObjectKind::Light:
         return 1;
-    case EditorSceneObjectKind::PlayerSpawn:
+    case EditorSceneObjectKind::ReflectionProbe:
         return 2;
+    case EditorSceneObjectKind::PlayerSpawn:
+        return 3;
     case EditorSceneObjectKind::BoxCollider:
     case EditorSceneObjectKind::CylinderCollider:
-        return 3;
+        return 4;
     }
-    return 4;
+    return 5;
 }
 
 } // namespace
@@ -256,6 +258,13 @@ std::vector<EditorSelectionHandle> buildEditorSelectionHandles(const EditorScene
             handle.halfHeight = 0.5f;
             handle.anchor = glm::vec3(handle.localToWorld[3]);
             handle.placementSurface = true;
+            break;
+        }
+        case EditorSceneObjectKind::ReflectionProbe: {
+            handle.shape = EditorSelectionShape::OrientedBox;
+            handle.localToWorld = document.worldTransformMatrix(object.id);
+            handle.halfExtents = glm::vec3(0.5f);
+            handle.anchor = glm::vec3(handle.localToWorld[3]);
             break;
         }
         case EditorSceneObjectKind::PlayerSpawn:

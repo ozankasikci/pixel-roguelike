@@ -22,6 +22,7 @@ The editor library lives under [`src/editor/`](../src/editor) and is split inter
 - meshes
 - lights
 - box and cylinder colliders
+- reflection probes
 - player spawn
 - gameplay archetype placements
 - environment data and dirty state
@@ -56,6 +57,7 @@ The editor UI state also tracks:
 
 - transform tool
 - preview mode
+- play-preview quality
 - play-preview toggle
 - visibility toggles for helpers such as colliders and light markers
 - placement state for meshes, lights, colliders, player spawn, and archetypes
@@ -90,7 +92,8 @@ This state is editor-local and should not be confused with gameplay content.
 3. Use the inspector and environment panels to modify properties.
 4. Use placement tools to add meshes, lights, colliders, player spawn, or gameplay archetypes.
 5. Toggle play preview to rebuild a runtime session from the current document.
-6. Save the scene or related environment asset back to `assets/`.
+6. If play preview is too heavy in fullscreen, switch `View -> Preview Quality` to reduce render scale and shadow resolution before changing scene content.
+7. Save the scene or related environment asset back to `assets/`.
 
 ## When Editing Code
 

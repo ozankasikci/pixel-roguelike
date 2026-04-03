@@ -289,3 +289,21 @@ Phases execute in numeric order: 1 → 1.1 → 2 → 2.1 → 3 → 4 → 5 → 6
 | 11. Add Mesh Discoverability | v1.1 | 1/1 | Complete    | 2026-04-01 |
 | 12. Engine Quality | — | 4/4 | Complete    | 2026-04-01 |
 | 13. Data-driven Behavior System | — | 1/3 | In Progress|  |
+
+### Phase 14: improve lighting, reflections, occlusion, and shadow quality
+
+**Goal:** Upgrade the renderer from a strong direct-lighting base into a polished, performant lighting stack for this game: real sky-driven reflections, indoor reflection probes where needed, cleaner occlusion, more stable shadows, and editor preview quality controls that keep fullscreen play responsive
+**Requirements**: None (rendering polish phase; not mapped directly to `REQUIREMENTS.md` IDs)
+**Depends on:** Phase 13
+**Success Criteria** (what must be TRUE):
+  1. Glossy and metallic surfaces show believable environment reflections from sky/probe data rather than only direct-light highlights
+  2. Interior rooms can use local reflection probes with box projection for more convincing room-shaped reflections
+  3. Ambient occlusion remains subtle, tunable, and cheaper to run than the current fixed full-resolution path
+  4. Directional shadows are visibly more stable and tunable in large fullscreen views
+  5. Fullscreen editor play preview exposes render scale / quality controls and no longer forces a single expensive full-resolution rendering path
+**Plans:** 3 plans
+
+Plans:
+- [ ] 14-01-PLAN.md — Add global specular IBL from the existing sky cubemap path
+- [ ] 14-02-PLAN.md — Add local box-projected reflection probes and scene/editor authoring support
+- [ ] 14-03-PLAN.md — Improve SSAO/shadow quality and add preview quality/render-scale controls

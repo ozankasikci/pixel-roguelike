@@ -33,8 +33,8 @@ uniform RenderLight uLights[32];
 uniform int uNumLights;
 uniform sampler2D uLtcMat;    // 64x64 LTC inverse transform matrix LUT
 uniform sampler2D uLtcAmp;    // 64x64 LTC amplitude/Fresnel LUT
-uniform sampler2D uShadowMaps[8];
-uniform mat4 uShadowMatrices[8];
+uniform sampler2D uShadowMaps[6];
+uniform mat4 uShadowMatrices[6];
 uniform int uShadowCount;
 uniform int uEnableShadows;
 uniform float uShadowBias;
@@ -45,6 +45,20 @@ uniform mat4 uCsmMatrices[3];
 uniform float uCsmSplitDistances[3];
 uniform int uCsmCascadeCount;
 uniform int uCsmEnabled;
+uniform samplerCube uEnvironmentSpecularMap;
+uniform sampler2D uEnvironmentBrdfLut;
+uniform int uEnvironmentReflectionsEnabled;
+uniform int uEnvironmentSpecularMipCount;
+uniform float uEnvironmentReflectionStrength;
+uniform vec3 uEnvironmentReflectionTint;
+uniform samplerCube uReflectionProbeMap;
+uniform int uReflectionProbeEnabled;
+uniform vec3 uReflectionProbeCenter;
+uniform vec3 uReflectionProbeExtents;
+uniform float uReflectionProbeBlendDistance;
+uniform float uReflectionProbeIntensity;
+uniform int uReflectionProbeBoxProjection;
+uniform int uReflectionProbeMipCount;
 uniform vec3 uHemisphereSkyColor;
 uniform vec3 uHemisphereGroundColor;
 uniform float uHemisphereStrength;
@@ -754,6 +768,11 @@ vec3 fresnelSchlick(float cosTheta, vec3 F0) {
     return F0 + (1.0 - F0) * pow(clamp(1.0 - cosTheta, 0.0, 1.0), 5.0);
 }
 
+vec3 fresnelSchlickRoughness(float cosTheta, vec3 F0, float roughness) {
+    vec3 edgeReflectance = max(vec3(1.0 - roughness), F0);
+    return F0 + (edgeReflectance - F0) * pow(clamp(1.0 - cosTheta, 0.0, 1.0), 5.0);
+}
+
 float spotConeFactor(RenderLight light, vec3 L) {
     float theta = dot(-L, normalize(light.direction));
     return smoothstep(light.outerConeCos, light.innerConeCos, theta);
@@ -765,9 +784,7 @@ vec2 shadowTexelSize(int shadowIndex) {
     if (shadowIndex == 2) return 1.0 / vec2(textureSize(uShadowMaps[2], 0));
     if (shadowIndex == 3) return 1.0 / vec2(textureSize(uShadowMaps[3], 0));
     if (shadowIndex == 4) return 1.0 / vec2(textureSize(uShadowMaps[4], 0));
-    if (shadowIndex == 5) return 1.0 / vec2(textureSize(uShadowMaps[5], 0));
-    if (shadowIndex == 6) return 1.0 / vec2(textureSize(uShadowMaps[6], 0));
-    return 1.0 / vec2(textureSize(uShadowMaps[7], 0));
+    return 1.0 / vec2(textureSize(uShadowMaps[5], 0));
 }
 
 float shadowDepthAt(int shadowIndex, vec2 uv) {
@@ -776,9 +793,7 @@ float shadowDepthAt(int shadowIndex, vec2 uv) {
     if (shadowIndex == 2) return texture(uShadowMaps[2], uv).r;
     if (shadowIndex == 3) return texture(uShadowMaps[3], uv).r;
     if (shadowIndex == 4) return texture(uShadowMaps[4], uv).r;
-    if (shadowIndex == 5) return texture(uShadowMaps[5], uv).r;
-    if (shadowIndex == 6) return texture(uShadowMaps[6], uv).r;
-    return texture(uShadowMaps[7], uv).r;
+    return texture(uShadowMaps[5], uv).r;
 }
 
 vec4 shadowClipPosition(int shadowIndex) {
@@ -787,9 +802,7 @@ vec4 shadowClipPosition(int shadowIndex) {
     if (shadowIndex == 2) return uShadowMatrices[2] * vec4(vWorldPos, 1.0);
     if (shadowIndex == 3) return uShadowMatrices[3] * vec4(vWorldPos, 1.0);
     if (shadowIndex == 4) return uShadowMatrices[4] * vec4(vWorldPos, 1.0);
-    if (shadowIndex == 5) return uShadowMatrices[5] * vec4(vWorldPos, 1.0);
-    if (shadowIndex == 6) return uShadowMatrices[6] * vec4(vWorldPos, 1.0);
-    return uShadowMatrices[7] * vec4(vWorldPos, 1.0);
+    return uShadowMatrices[5] * vec4(vWorldPos, 1.0);
 }
 
 const vec2 poissonDisk[16] = vec2[16](
@@ -905,6 +918,61 @@ float sampleShadow(int shadowIndex, vec3 N, vec3 L) {
     return visibility / 16.0;
 }
 
+vec3 sampleEnvironmentSpecular(vec3 N, vec3 V, vec3 F0, float roughness) {
+    if (uEnvironmentReflectionsEnabled == 0 || uEnvironmentSpecularMipCount <= 0) {
+        return vec3(0.0);
+    }
+
+    vec3 R = reflect(-V, N);
+    vec3 envDir = normalize(vec3(R.x, R.y, -R.z));
+    float maxMip = float(max(uEnvironmentSpecularMipCount - 1, 0));
+    vec3 prefiltered = textureLod(uEnvironmentSpecularMap, envDir, roughness * maxMip).rgb;
+    vec2 brdf = texture(uEnvironmentBrdfLut, vec2(clamp(dot(N, V), 0.0, 1.0), roughness)).rg;
+    vec3 F = fresnelSchlickRoughness(max(dot(N, V), 0.0), F0, roughness);
+    vec3 reflectionTint = max(uEnvironmentReflectionTint, vec3(0.0));
+    float reflectionStrength = max(uEnvironmentReflectionStrength, 0.0);
+    vec3 iblSpecular = prefiltered * reflectionTint * (F * brdf.x + brdf.y);
+    return iblSpecular * reflectionStrength;
+}
+
+float distanceOutsideBox(vec3 point, vec3 center, vec3 extents) {
+    vec3 delta = abs(point - center) - extents;
+    return length(max(delta, vec3(0.0)));
+}
+
+vec3 boxProjectReflection(vec3 reflectionDir, vec3 worldPos, vec3 probeCenter, vec3 probeExtents) {
+    vec3 boxMin = probeCenter - probeExtents;
+    vec3 boxMax = probeCenter + probeExtents;
+    vec3 safeSign = mix(vec3(-1.0), vec3(1.0), step(vec3(0.0), reflectionDir));
+    vec3 safeDir = mix(reflectionDir, safeSign * vec3(0.0001), lessThan(abs(reflectionDir), vec3(0.0001)));
+
+    vec3 firstPlane = (boxMin - worldPos) / safeDir;
+    vec3 secondPlane = (boxMax - worldPos) / safeDir;
+    vec3 furthestPlane = max(firstPlane, secondPlane);
+    float travel = min(furthestPlane.x, min(furthestPlane.y, furthestPlane.z));
+    vec3 hitPosition = worldPos + safeDir * travel;
+    return hitPosition - probeCenter;
+}
+
+vec3 sampleLocalProbeSpecular(vec3 N, vec3 V, vec3 F0, float roughness) {
+    if (uReflectionProbeEnabled == 0 || uReflectionProbeMipCount <= 0) {
+        return vec3(0.0);
+    }
+
+    vec3 R = reflect(-V, N);
+    vec3 probeDir = R;
+    if (uReflectionProbeBoxProjection != 0) {
+        probeDir = boxProjectReflection(R, vWorldPos, uReflectionProbeCenter, uReflectionProbeExtents);
+    }
+    vec3 sampleDir = normalize(vec3(probeDir.x, probeDir.y, -probeDir.z));
+    float maxMip = float(max(uReflectionProbeMipCount - 1, 0));
+    vec3 prefiltered = textureLod(uReflectionProbeMap, sampleDir, roughness * maxMip).rgb;
+    vec2 brdf = texture(uEnvironmentBrdfLut, vec2(clamp(dot(N, V), 0.0, 1.0), roughness)).rg;
+    vec3 F = fresnelSchlickRoughness(max(dot(N, V), 0.0), F0, roughness);
+    vec3 iblSpecular = prefiltered * (F * brdf.x + brdf.y);
+    return iblSpecular * max(uReflectionProbeIntensity, 0.0);
+}
+
 void main() {
     vec3 geometricNormal = normalize(vNormal);
     fragGeomNormal = vec4(geometricNormal * 0.5 + 0.5, 1.0);
@@ -983,6 +1051,15 @@ void main() {
     float NdotV = max(dot(N, V), 0.0);
     vec3 dielectricF0 = vec3(0.02 + specularLevel * 0.10);
     vec3 F0 = mix(dielectricF0, albedo, metalness);
+    vec3 iblSpecular = sampleEnvironmentSpecular(N, V, F0, roughness);
+    if (uReflectionProbeEnabled != 0) {
+        float blendDistance = max(uReflectionProbeBlendDistance, 0.001);
+        float outsideDistance = distanceOutsideBox(vWorldPos, uReflectionProbeCenter, uReflectionProbeExtents);
+        float localBlend = 1.0 - smoothstep(0.0, blendDistance, outsideDistance);
+        vec3 localProbeSpecular = sampleLocalProbeSpecular(N, V, F0, roughness);
+        iblSpecular = mix(iblSpecular, localProbeSpecular, localBlend);
+    }
+    totalLight += iblSpecular * materialAo;
 
     for (int i = 0; i < uNumLights; ++i) {
         RenderLight light = uLights[i];

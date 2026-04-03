@@ -11,7 +11,7 @@ enum class LightType {
 };
 
 constexpr int kMaxRenderLights = 32;
-constexpr int kMaxShadowedSpotLights = 8;
+constexpr int kMaxShadowedSpotLights = 6;
 
 struct DirectionalLightSlot {
     bool enabled = false;

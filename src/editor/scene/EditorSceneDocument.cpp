@@ -74,6 +74,9 @@ void EditorSceneDocument::loadFromSceneFile(const std::string& scenePath, const 
     for (const auto& cylinder : level.cylinderColliders) {
         addCylinderCollider(cylinder);
     }
+    for (const auto& probe : level.reflectionProbes) {
+        addReflectionProbe(probe);
+    }
     if (level.hasPlayerSpawn) {
         setPlayerSpawn(level.playerSpawn);
     }
@@ -197,6 +200,10 @@ std::uint64_t EditorSceneDocument::addBoxCollider(const LevelBoxColliderPlacemen
 
 std::uint64_t EditorSceneDocument::addCylinderCollider(const LevelCylinderColliderPlacement& placement) {
     return addObject(EditorSceneObjectKind::CylinderCollider, placement);
+}
+
+std::uint64_t EditorSceneDocument::addReflectionProbe(const LevelReflectionProbePlacement& placement) {
+    return addObject(EditorSceneObjectKind::ReflectionProbe, placement);
 }
 
 std::uint64_t EditorSceneDocument::setPlayerSpawn(const LevelPlayerSpawn& placement) {
@@ -583,6 +590,15 @@ bool EditorSceneDocument::applyWorldTransform(std::uint64_t id, const glm::mat4&
         cylinder.halfHeight = std::max(0.05f, std::abs(scale.y) * 0.5f);
         break;
     }
+    case EditorSceneObjectKind::ReflectionProbe: {
+        auto& probe = std::get<LevelReflectionProbePlacement>(object->payload);
+        if (!decomposeTransformMatrix(localMatrix, position, rotation, scale)) {
+            return false;
+        }
+        probe.position = position;
+        probe.extents = glm::max(scale * 0.5f, glm::vec3(0.05f));
+        break;
+    }
     case EditorSceneObjectKind::PlayerSpawn: {
         auto& spawn = std::get<LevelPlayerSpawn>(object->payload);
         spawn.position = glm::vec3(localMatrix[3]);
@@ -662,6 +678,9 @@ LevelDef EditorSceneDocument::toLevelDef() const {
             break;
         case EditorSceneObjectKind::CylinderCollider:
             level.cylinderColliders.push_back(std::get<LevelCylinderColliderPlacement>(object.payload));
+            break;
+        case EditorSceneObjectKind::ReflectionProbe:
+            level.reflectionProbes.push_back(std::get<LevelReflectionProbePlacement>(object.payload));
             break;
         case EditorSceneObjectKind::PlayerSpawn:
             level.playerSpawn = std::get<LevelPlayerSpawn>(object.payload);
@@ -806,6 +825,10 @@ glm::mat4 EditorSceneDocument::localTransformMatrix(const EditorSceneObject& obj
                                    cylinder.rotation,
                                    glm::vec3(cylinder.radius * 2.0f, cylinder.halfHeight * 2.0f, cylinder.radius * 2.0f));
     }
+    case EditorSceneObjectKind::ReflectionProbe: {
+        const auto& probe = std::get<LevelReflectionProbePlacement>(object.payload);
+        return makeTransformMatrix(probe.position, glm::vec3(0.0f), probe.extents * 2.0f);
+    }
     case EditorSceneObjectKind::PlayerSpawn: {
         const auto& spawn = std::get<LevelPlayerSpawn>(object.payload);
         return makeTransformMatrix(spawn.position, glm::vec3(0.0f), glm::vec3(1.0f));
@@ -848,6 +871,8 @@ const char* editorSceneObjectKindName(EditorSceneObjectKind kind) {
         return "Box Collider";
     case EditorSceneObjectKind::CylinderCollider:
         return "Cylinder Collider";
+    case EditorSceneObjectKind::ReflectionProbe:
+        return "Reflection Probe";
     case EditorSceneObjectKind::PlayerSpawn:
         return "Player Spawn";
     case EditorSceneObjectKind::Archetype:
@@ -879,6 +904,9 @@ std::string editorSceneObjectLabel(const EditorSceneObject& object) {
     case EditorSceneObjectKind::Archetype:
         label << " [" << std::get<LevelArchetypePlacement>(object.payload).archetypeId << "]";
         break;
+    case EditorSceneObjectKind::ReflectionProbe:
+        label << " [local]";
+        break;
     case EditorSceneObjectKind::Group:
         label << " [" << std::get<LevelGroupNode>(object.payload).name << "]";
         break;
@@ -898,6 +926,8 @@ glm::vec3 editorSceneObjectAnchor(const EditorSceneObject& object) {
         return std::get<LevelBoxColliderPlacement>(object.payload).position;
     case EditorSceneObjectKind::CylinderCollider:
         return std::get<LevelCylinderColliderPlacement>(object.payload).position;
+    case EditorSceneObjectKind::ReflectionProbe:
+        return std::get<LevelReflectionProbePlacement>(object.payload).position;
     case EditorSceneObjectKind::PlayerSpawn:
         return std::get<LevelPlayerSpawn>(object.payload).position;
     case EditorSceneObjectKind::Archetype:

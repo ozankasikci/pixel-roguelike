@@ -84,11 +84,10 @@ int main() {
     assert(registry.findMaterial("brick_default") != nullptr);
     assert(registry.findMaterial("brick_wall_old") != nullptr);
     assert(registry.findMaterial("cloister_stone") != nullptr);
-    assert(registry.findEnvironment("neutral") != nullptr);
-    assert(registry.findEnvironment("cloister_daylight") != nullptr);
-    assert(registry.findEnvironment("game_ready_neutral") != nullptr);
-    assert(registry.findEnvironmentPath("cloister_daylight") != nullptr);
-    assert(registry.findEnvironmentPath("game_ready_neutral") != nullptr);
+    assert(registry.findEnvironment("default") != nullptr);
+    assert(registry.findEnvironment("outdoor_bright") != nullptr);
+    assert(registry.findEnvironmentPath("default") != nullptr);
+    assert(registry.findEnvironmentPath("outdoor_bright") != nullptr);
 
     EnvironmentDefinition customEnvironment = makeEnvironmentDefinition(EnvironmentProfile::Default);
     customEnvironment.id = "editor_custom_test";
@@ -102,7 +101,8 @@ int main() {
     assert(test_support::nearlyEqual(customLoaded->post.exposure, 1.23f));
     const auto* customLoadedPath = registry.findEnvironmentPath("editor_custom_test");
     assert(customLoadedPath != nullptr);
-    assert(std::filesystem::path(*customLoadedPath) == customEnvironmentPath);
+    assert(std::filesystem::weakly_canonical(std::filesystem::path(*customLoadedPath))
+        == std::filesystem::weakly_canonical(customEnvironmentPath));
     std::filesystem::remove(customEnvironmentPath);
     registry.loadDefaults();
     assert(registry.findEnvironment("editor_custom_test") == nullptr);
@@ -120,24 +120,27 @@ int main() {
     assert(resolvedStone.proceduralSource == MaterialProceduralSource::GeneratedStone);
     assert(test_support::nearlyEqual(resolvedStone.normalStrength, 0.34f));
 
-    const auto* cloister = registry.findEnvironment("cloister_daylight");
-    assert(cloister != nullptr);
-    assert(cloister->id == "cloister_daylight");
-    assert(cloister->sky.enabled);
-    assert(cloister->lighting.sun.enabled);
+    const auto* defaultEnvironment = registry.findEnvironment("default");
+    assert(defaultEnvironment != nullptr);
+    assert(defaultEnvironment->id == "default");
+    assert(defaultEnvironment->sky.enabled);
+    assert(defaultEnvironment->lighting.sun.enabled);
 
-    const auto* gameReady = registry.findEnvironment("game_ready_neutral");
-    assert(gameReady != nullptr);
-    assert(gameReady->id == "game_ready_neutral");
-    assert(gameReady->lighting.sun.enabled);
-    assert(gameReady->lighting.fill.enabled);
-    assert(!gameReady->post.enableGrain);
+    const auto* outdoorBright = registry.findEnvironment("outdoor_bright");
+    assert(outdoorBright != nullptr);
+    assert(outdoorBright->id == "outdoor_bright");
+    assert(outdoorBright->lighting.sun.enabled);
+    assert(outdoorBright->lighting.fill.enabled);
+    assert(!outdoorBright->post.enableBloom);
 
     EnvironmentDefinition roundtrip;
     roundtrip.id = "editor_roundtrip_test";
     roundtrip.post.toneMapMode = 0;
     roundtrip.post.depthViewScale = 0.133f;
     roundtrip.post.edgeThreshold = 0.27f;
+    roundtrip.post.ssaoHalfResolution = false;
+    roundtrip.post.ssaoFadeStart = 12.0f;
+    roundtrip.post.ssaoFadeEnd = 36.0f;
     roundtrip.sky.enabled = true;
     roundtrip.sky.panoramaPath = "assets/skies/test_panorama.jpg";
     roundtrip.sky.panoramaTint = glm::vec3(0.91f, 0.87f, 0.79f);
@@ -168,6 +171,9 @@ int main() {
     assert(loadedRoundtrip.post.toneMapMode == 0);
     assert(test_support::nearlyEqual(loadedRoundtrip.post.depthViewScale, 0.133f));
     assert(test_support::nearlyEqual(loadedRoundtrip.post.edgeThreshold, 0.27f));
+    assert(!loadedRoundtrip.post.ssaoHalfResolution);
+    assert(test_support::nearlyEqual(loadedRoundtrip.post.ssaoFadeStart, 12.0f));
+    assert(test_support::nearlyEqual(loadedRoundtrip.post.ssaoFadeEnd, 36.0f));
     assert(loadedRoundtrip.sky.panoramaPath == roundtrip.sky.panoramaPath);
     assert(test_support::nearlyEqualVec3(loadedRoundtrip.sky.panoramaTint, roundtrip.sky.panoramaTint));
     assert(test_support::nearlyEqual(loadedRoundtrip.sky.panoramaStrength, roundtrip.sky.panoramaStrength));

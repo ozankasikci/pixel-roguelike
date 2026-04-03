@@ -5,11 +5,13 @@
 #include "engine/rendering/geometry/Renderer.h"
 #include "engine/rendering/lighting/CascadedShadowMap.h"
 #include "engine/rendering/lighting/LtcData.h"
+#include "engine/rendering/lighting/ReflectionProbeRenderer.h"
 #include "engine/rendering/lighting/RenderLight.h"
 #include "engine/rendering/lighting/ShadowMap.h"
 #include "engine/rendering/post/BloomPass.h"
 #include "engine/rendering/post/CompositePass.h"
 #include "engine/rendering/post/PostProcessParams.h"
+#include "engine/rendering/post/SkyTextureLibrary.h"
 #include "engine/rendering/post/SsaoPass.h"
 #include "engine/rendering/post/StylizePass.h"
 
@@ -47,6 +49,7 @@ struct SceneRenderInput {
     float nearPlane = 0.1f;
     float farPlane = 100.0f;
     const PostProcessParams* postParams = nullptr;
+    const RenderReflectionProbeState* reflectionProbe = nullptr;
     LightingEnvironment lightingEnvironment;
     bool shadowsEnabled = true;
     int shadowResolutionIndex = 1;  // 0=512, 1=1024, 2=2048
@@ -91,7 +94,7 @@ public:
     const SceneRenderPipelineStats& lastStats() const { return lastStats_; }
 
 private:
-    void ensureFramebuffers(int w, int h);
+    void ensureFramebuffers(int w, int h, const PostProcessParams* postParams = nullptr);
     void assignShadowSlots(std::vector<RenderLight>& lights, bool enabled);
     glm::mat4 buildShadowMatrix(const RenderLight& light) const;
     void renderShadowPass(const std::vector<RenderObject>& objects,
@@ -119,6 +122,7 @@ private:
     SsaoPass ssaoPass_;
     CompositePass compositePass_;
     StylizePass stylizePass_;
+    SkyTextureLibrary skyTextures_;
     LtcData ltcData_;
     std::array<ShadowMap, kMaxShadowedSpotLights> shadowMaps_{};
     CascadedShadowMap csmShadowMap_;

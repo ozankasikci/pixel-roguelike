@@ -16,6 +16,8 @@ int main() {
     assert(settings.post.toneMapMode == 1);
     assert(!settings.post.enableEdges);
     assert(!settings.post.enableGrain);
+    assert(settings.post.ssaoHalfResolution);
+    assert(settings.post.ssaoFadeEnd > settings.post.ssaoFadeStart);
     assert(test_support::nearlyEqualVec3(settings.lighting.sun.direction, settings.sky.sunDirection));
 
     const auto defaultSettings = makeDefaultEnvironmentRenderSettings();

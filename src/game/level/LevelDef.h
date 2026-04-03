@@ -78,6 +78,16 @@ struct LevelCylinderColliderPlacement {
     float halfHeight = 0.0f;
 };
 
+struct LevelReflectionProbePlacement {
+    glm::vec3 position{0.0f};
+    glm::vec3 extents{4.0f, 3.0f, 4.0f};
+    float blendDistance = 1.0f;
+    float intensity = 1.0f;
+    bool boxProjection = true;
+    std::string nodeId;
+    std::string parentNodeId;
+};
+
 struct LevelPlayerSpawn {
     glm::vec3 position{0.0f};
     std::string nodeId;
@@ -109,6 +119,7 @@ struct LevelDef {
     std::vector<LevelLightPlacement> lights;
     std::vector<LevelBoxColliderPlacement> boxColliders;
     std::vector<LevelCylinderColliderPlacement> cylinderColliders;
+    std::vector<LevelReflectionProbePlacement> reflectionProbes;
     LevelPlayerSpawn playerSpawn;
     bool hasPlayerSpawn = false;
     std::vector<LevelArchetypePlacement> archetypes;

@@ -910,6 +910,24 @@ void renderSceneSelectionInspector(EditorSceneDocument& document,
         trackSceneItem(beforeState, "Adjust Cylinder Height", ImGui::DragFloat("Half Height", &cylinder.halfHeight, 0.02f, 0.05f, 20.0f, "%.2f"));
         break;
     }
+    case EditorSceneObjectKind::ReflectionProbe: {
+        auto& probe = std::get<LevelReflectionProbePlacement>(object->payload);
+        auto beforeState = document.captureState();
+        trackSceneItem(beforeState, "Move Reflection Probe", editVec3("Position", probe.position));
+        beforeState = document.captureState();
+        const bool extentsChanged = editVec3("Extents", probe.extents, 0.02f);
+        if (extentsChanged) {
+            probe.extents = glm::max(probe.extents, glm::vec3(0.05f));
+        }
+        trackSceneItem(beforeState, "Resize Reflection Probe", extentsChanged);
+        beforeState = document.captureState();
+        trackSceneItem(beforeState, "Adjust Probe Blend Distance", ImGui::DragFloat("Blend Distance", &probe.blendDistance, 0.02f, 0.0f, 20.0f, "%.2f"));
+        beforeState = document.captureState();
+        trackSceneItem(beforeState, "Adjust Probe Intensity", ImGui::DragFloat("Intensity", &probe.intensity, 0.02f, 0.0f, 4.0f, "%.2f"));
+        beforeState = document.captureState();
+        trackSceneItem(beforeState, "Toggle Box Projection", ImGui::Checkbox("Box Projection", &probe.boxProjection));
+        break;
+    }
     case EditorSceneObjectKind::PlayerSpawn: {
         auto& spawn = std::get<LevelPlayerSpawn>(object->payload);
         auto beforeState = document.captureState();

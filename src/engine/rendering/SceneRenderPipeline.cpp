@@ -31,6 +31,7 @@ void SceneRenderPipeline::init() {
     renderer_ = std::make_unique<Renderer>(sceneShader_.get());
     bloomPass_.init();
     ssaoPass_.init();
+    skyTextures_.initReflectionResources();
     ltcData_.init();
     ensureFramebuffers(1280, 720);
 }
@@ -48,7 +49,7 @@ void SceneRenderPipeline::render(const SceneRenderInput& input,
                                   int outputHeight,
                                   GLuint targetFramebuffer) {
     const double t0 = glfwGetTime();
-    ensureFramebuffers(internalWidth, internalHeight);
+    ensureFramebuffers(internalWidth, internalHeight, input.postParams);
 
     // Frustum culling (D-01: AABB only, D-02: at pipeline level)
     const glm::mat4 vp = input.projectionMatrix * input.viewMatrix;
@@ -254,7 +255,7 @@ void SceneRenderPipeline::renderScenePass(const SceneRenderInput& input,
                                            const ShadowRenderData& shadowData,
                                            int internalWidth,
                                            int internalHeight) {
-    ensureFramebuffers(internalWidth, internalHeight);
+    ensureFramebuffers(internalWidth, internalHeight, input.postParams);
 
     sceneFBO_.bind();
     glViewport(0, 0, sceneFBO_.width(), sceneFBO_.height());
@@ -291,6 +292,41 @@ void SceneRenderPipeline::renderScenePass(const SceneRenderInput& input,
     glActiveTexture(GL_TEXTURE0 + TextureUnits::kLtcAmp);
     glBindTexture(GL_TEXTURE_2D, ltcData_.ltcAmpTexture());
     sceneShader_->setInt("uLtcAmp", TextureUnits::kLtcAmp);
+
+    const auto& reflectionSet = skyTextures_.resolvePrefilteredCube(input.postParams->sky.cubemapFacePaths);
+    const bool hasEnvironmentCubemap = !input.postParams->sky.cubemapFacePaths[0].empty();
+    const bool environmentReflectionsEnabled =
+        hasEnvironmentCubemap &&
+        reflectionSet.prefilteredSpecularCubemap != 0 &&
+        skyTextures_.brdfLutTexture() != 0 &&
+        input.postParams->sky.cubemapStrength > 0.0f;
+    glActiveTexture(GL_TEXTURE0 + TextureUnits::kEnvironmentSpecular);
+    glBindTexture(GL_TEXTURE_CUBE_MAP, reflectionSet.prefilteredSpecularCubemap);
+    sceneShader_->setInt("uEnvironmentSpecularMap", TextureUnits::kEnvironmentSpecular);
+    glActiveTexture(GL_TEXTURE0 + TextureUnits::kEnvironmentBrdfLut);
+    glBindTexture(GL_TEXTURE_2D, skyTextures_.brdfLutTexture());
+    sceneShader_->setInt("uEnvironmentBrdfLut", TextureUnits::kEnvironmentBrdfLut);
+    sceneShader_->setInt("uEnvironmentReflectionsEnabled", environmentReflectionsEnabled ? 1 : 0);
+    sceneShader_->setInt("uEnvironmentSpecularMipCount", reflectionSet.specularMipCount);
+    sceneShader_->setFloat("uEnvironmentReflectionStrength", input.postParams->sky.cubemapStrength);
+    sceneShader_->setVec3("uEnvironmentReflectionTint", input.postParams->sky.cubemapTint);
+
+    const RenderReflectionProbeState* reflectionProbe = input.reflectionProbe;
+    const bool localProbeEnabled =
+        reflectionProbe != nullptr &&
+        reflectionProbe->enabled &&
+        reflectionProbe->cubemap != 0 &&
+        reflectionProbe->intensity > 0.0f;
+    glActiveTexture(GL_TEXTURE0 + TextureUnits::kReflectionProbeMap);
+    glBindTexture(GL_TEXTURE_CUBE_MAP, localProbeEnabled ? reflectionProbe->cubemap : 0);
+    sceneShader_->setInt("uReflectionProbeMap", TextureUnits::kReflectionProbeMap);
+    sceneShader_->setInt("uReflectionProbeEnabled", localProbeEnabled ? 1 : 0);
+    sceneShader_->setVec3("uReflectionProbeCenter", localProbeEnabled ? reflectionProbe->center : glm::vec3(0.0f));
+    sceneShader_->setVec3("uReflectionProbeExtents", localProbeEnabled ? reflectionProbe->extents : glm::vec3(1.0f));
+    sceneShader_->setFloat("uReflectionProbeBlendDistance", localProbeEnabled ? reflectionProbe->blendDistance : 0.0f);
+    sceneShader_->setFloat("uReflectionProbeIntensity", localProbeEnabled ? reflectionProbe->intensity : 0.0f);
+    sceneShader_->setInt("uReflectionProbeBoxProjection", localProbeEnabled ? reflectionProbe->boxProjection : 0);
+    sceneShader_->setInt("uReflectionProbeMipCount", localProbeEnabled ? reflectionProbe->mipCount : 1);
     glActiveTexture(GL_TEXTURE0);
 
     renderer_->drawScene(*input.objects,
@@ -354,7 +390,9 @@ void SceneRenderPipeline::renderPostProcess(const SceneRenderInput& input,
                           input.viewMatrix,
                           post.ssaoRadius,
                           post.ssaoBias,
-                          post.ssaoStrength);
+                          post.ssaoStrength,
+                          post.ssaoFadeStart,
+                          post.ssaoFadeEnd);
     }
     lastStats_.ssaoMs = (glfwGetTime() - tSsaoStart) * 1000.0;
 
@@ -380,7 +418,9 @@ void SceneRenderPipeline::renderPostProcess(const SceneRenderInput& input,
     lastStats_.compositeMs = (glfwGetTime() - tCompositeStart) * 1000.0;
 }
 
-void SceneRenderPipeline::ensureFramebuffers(int internalWidth, int internalHeight) {
+void SceneRenderPipeline::ensureFramebuffers(int internalWidth,
+                                             int internalHeight,
+                                             const PostProcessParams* postParams) {
     const int safeW = std::max(internalWidth, 1);
     const int safeH = std::max(internalHeight, 1);
     if (sceneFBO_.framebuffer() == 0) {
@@ -396,7 +436,7 @@ void SceneRenderPipeline::ensureFramebuffers(int internalWidth, int internalHeig
     }
 
     bloomPass_.resize(safeW, safeH);
-    // SSAO runs at half resolution for performance — the bilateral blur
-    // hides the resolution reduction while cutting sample cost by 4x.
-    ssaoPass_.resize(std::max(safeW / 2, 1), std::max(safeH / 2, 1));
+    const bool ssaoHalfResolution = (postParams == nullptr) ? true : postParams->ssaoHalfResolution;
+    ssaoPass_.resize(ssaoHalfResolution ? std::max(safeW / 2, 1) : safeW,
+                     ssaoHalfResolution ? std::max(safeH / 2, 1) : safeH);
 }

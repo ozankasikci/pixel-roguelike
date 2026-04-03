@@ -181,11 +181,17 @@ bool renderEnvironmentPanel(EditorSceneDocument& document,
         trackEnvItem(beforeState, "Toggle SSAO", ImGui::Checkbox("Enable SSAO", &environment.post.enableSsao));
         if (environment.post.enableSsao) {
             beforeState = document.captureState();
+            trackEnvItem(beforeState, "Toggle SSAO Half Resolution", ImGui::Checkbox("AO Half Resolution", &environment.post.ssaoHalfResolution));
+            beforeState = document.captureState();
             trackEnvItem(beforeState, "Adjust SSAO Radius", ImGui::DragFloat("AO Radius", &environment.post.ssaoRadius, 0.01f, 0.1f, 2.0f, "%.2f"));
             beforeState = document.captureState();
             trackEnvItem(beforeState, "Adjust SSAO Bias", ImGui::DragFloat("AO Bias", &environment.post.ssaoBias, 0.001f, 0.001f, 0.1f, "%.3f"));
             beforeState = document.captureState();
             trackEnvItem(beforeState, "Adjust SSAO Strength", ImGui::DragFloat("AO Strength", &environment.post.ssaoStrength, 0.01f, 0.0f, 2.0f, "%.2f"));
+            beforeState = document.captureState();
+            trackEnvItem(beforeState, "Adjust SSAO Fade Start", ImGui::DragFloat("AO Fade Start", &environment.post.ssaoFadeStart, 0.1f, 0.0f, 120.0f, "%.1f"));
+            beforeState = document.captureState();
+            trackEnvItem(beforeState, "Adjust SSAO Fade End", ImGui::DragFloat("AO Fade End", &environment.post.ssaoFadeEnd, 0.1f, 0.0f, 160.0f, "%.1f"));
         }
 
         // --- Fog ---

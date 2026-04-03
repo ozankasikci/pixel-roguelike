@@ -94,6 +94,15 @@ void LevelLoader::load(const LevelLoadRequest& request, const LevelLoadArgs& arg
         builder.addCylinderCollider(placement.position, placement.radius, placement.halfHeight, placement.rotation);
     }
 
+    for (const auto& placement : level.reflectionProbes) {
+        auto entity = builder.addReflectionProbe(placement.position,
+                                                 placement.extents,
+                                                 placement.blendDistance,
+                                                 placement.intensity,
+                                                 placement.boxProjection);
+        builder.attachNodeId(entity, placement.nodeId);
+    }
+
     for (const auto& placement : level.archetypes) {
         const GameplayArchetypeDefinition* archetype = content.findArchetype(placement.archetypeId);
         if (archetype == nullptr) {

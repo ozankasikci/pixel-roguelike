@@ -58,16 +58,21 @@ private:
     void collectLights(entt::registry& registry,
                        const DebugParams& params,
                        std::vector<RenderLight>& out) const;
+    void collectReflectionProbes(entt::registry& registry,
+                                 std::vector<RenderReflectionProbeInput>& out) const;
     void updateDebugParams(DebugParams& params,
                            const CameraState& camera,
                            float deltaTime,
                            std::size_t drawCalls) const;
 
     SceneRenderPipeline pipeline_;
+    ReflectionProbeRenderer reflectionProbeRenderer_;
     MaterialTextureLibrary materialTextureLibrary_;
 
     // Reused per-frame scratch vectors (mutable to allow const callers)
     mutable std::vector<RenderObject> scene_objects_;
     mutable std::vector<RenderObject> viewmodel_objects_;
     mutable std::vector<RenderLight> lights_;
+    mutable std::vector<RenderReflectionProbeInput> reflection_probes_;
+    mutable RenderReflectionProbeState active_reflection_probe_;
 };

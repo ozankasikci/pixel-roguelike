@@ -54,6 +54,14 @@ int main() {
         .radius = 0.8f,
         .halfHeight = 1.6f,
     });
+    level.reflectionProbes.push_back(LevelReflectionProbePlacement{
+        .position = glm::vec3(7.0f, 2.0f, -4.0f),
+        .extents = glm::vec3(5.0f, 3.0f, 6.0f),
+        .blendDistance = 1.4f,
+        .intensity = 0.85f,
+        .boxProjection = false,
+        .nodeId = "probe_1",
+    });
     level.playerSpawn = LevelPlayerSpawn{
         .position = glm::vec3(0.0f, 1.6f, 6.0f),
         .nodeId = "spawn_1",
@@ -73,6 +81,7 @@ int main() {
     assert(serialized.find("node root_mesh") != std::string::npos);
     assert(serialized.find("parent root_mesh") != std::string::npos);
     assert(serialized.find("rotation 0.0 15.0 0.0") != std::string::npos);
+    assert(serialized.find("reflection_probe 7.0 2.0 -4.0 5.0 3.0 6.0 1.4 0.85 false") != std::string::npos);
 
     const fs::path tempPath = test_support::tempPath("gsd_level_roundtrip.scene");
     saveLevelDef(tempPath.string(), level);
@@ -92,6 +101,12 @@ int main() {
     assert(loaded.lights.front().castsShadows);
     assert(loaded.boxColliders.size() == 1);
     assert(loaded.cylinderColliders.size() == 1);
+    assert(loaded.reflectionProbes.size() == 1);
+    assert(loaded.reflectionProbes.front().nodeId == "probe_1");
+    assert(test_support::nearlyEqualVec3(loaded.reflectionProbes.front().extents, glm::vec3(5.0f, 3.0f, 6.0f)));
+    assert(test_support::nearlyEqual(loaded.reflectionProbes.front().blendDistance, 1.4f));
+    assert(test_support::nearlyEqual(loaded.reflectionProbes.front().intensity, 0.85f));
+    assert(!loaded.reflectionProbes.front().boxProjection);
     assert(loaded.hasPlayerSpawn);
     assert(loaded.archetypes.size() == 1);
 

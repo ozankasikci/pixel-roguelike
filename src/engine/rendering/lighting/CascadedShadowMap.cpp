@@ -159,6 +159,24 @@ glm::mat4 CascadedShadowMap::buildCascadeMatrix(const glm::vec3& lightDir,
         minZ = std::min(minZ, lc.z); maxZ = std::max(maxZ, lc.z);
     }
 
+    const float extentX = maxX - minX;
+    const float extentY = maxY - minY;
+    const int resolution = std::max(resolution_, 1);
+    const float texelSizeX = extentX / static_cast<float>(resolution);
+    const float texelSizeY = extentY / static_cast<float>(resolution);
+    float centerX = (minX + maxX) * 0.5f;
+    float centerY = (minY + maxY) * 0.5f;
+    if (texelSizeX > 0.0f) {
+        centerX = std::round(centerX / texelSizeX) * texelSizeX;
+    }
+    if (texelSizeY > 0.0f) {
+        centerY = std::round(centerY / texelSizeY) * texelSizeY;
+    }
+    minX = centerX - extentX * 0.5f;
+    maxX = centerX + extentX * 0.5f;
+    minY = centerY - extentY * 0.5f;
+    maxY = centerY + extentY * 0.5f;
+
     // Pull near plane back to capture shadow casters outside the frustum
     constexpr float zMult = 10.0f;
     if (minZ < 0) { minZ *= zMult; } else { minZ /= zMult; }

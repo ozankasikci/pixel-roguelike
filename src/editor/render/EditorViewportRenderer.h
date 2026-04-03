@@ -43,8 +43,9 @@ public:
     void shutdown();
 
     // Render the edit-mode viewport into targetFBO using the full pipeline.
-    // outputW/outputH are the pixel dimensions of the render target.
+    // internalW/internalH is the render resolution; outputW/outputH is the final display size.
     void render(const EditorViewportRenderParams& params,
+                int internalW, int internalH,
                 int outputW, int outputH,
                 GLuint targetFBO);
 

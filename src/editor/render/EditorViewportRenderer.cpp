@@ -12,6 +12,7 @@ void EditorViewportRenderer::shutdown() {
 }
 
 void EditorViewportRenderer::render(const EditorViewportRenderParams& params,
+                                     int internalW, int internalH,
                                      int outputW, int outputH,
                                      GLuint targetFBO) {
     if (!params.objects || !params.lights || !params.environment) {
@@ -43,5 +44,5 @@ void EditorViewportRenderer::render(const EditorViewportRenderParams& params,
     input.lightingEnvironment.shadowBias = envLighting.shadowBias;
     input.lightingEnvironment.shadowNormalBias = envLighting.shadowNormalBias;
 
-    pipeline_.render(input, outputW, outputH, outputW, outputH, targetFBO);
+    pipeline_.render(input, internalW, internalH, outputW, outputH, targetFBO);
 }

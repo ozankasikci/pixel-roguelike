@@ -7,6 +7,7 @@
 #include "game/components/LightComponent.h"
 #include "game/components/MeshComponent.h"
 #include "game/components/PrimaryCameraTag.h"
+#include "game/components/ReflectionProbeComponent.h"
 #include "game/components/TransformComponent.h"
 #include "game/components/ViewmodelComponent.h"
 #include "game/content/ContentRegistry.h"
@@ -72,10 +73,12 @@ float clampOuterCone(float innerConeDegrees, float outerConeDegrees) {
 
 void RuntimeSceneRenderer::init(const ContentRegistry& content) {
     pipeline_.init();
+    reflectionProbeRenderer_.init();
     materialTextureLibrary_.init(content);
 }
 
 void RuntimeSceneRenderer::shutdown() {
+    reflectionProbeRenderer_.shutdown();
     pipeline_.shutdown();
 }
 
@@ -276,6 +279,24 @@ void RuntimeSceneRenderer::collectLights(entt::registry& registry,
     }
 }
 
+void RuntimeSceneRenderer::collectReflectionProbes(entt::registry& registry,
+                                                    std::vector<RenderReflectionProbeInput>& out) const {
+    out.clear();
+
+    auto probeView = registry.view<TransformComponent, ReflectionProbeComponent>();
+    for (auto [entity, transform, probe] : probeView.each()) {
+        RenderReflectionProbeInput inputProbe;
+        inputProbe.id = static_cast<std::uint64_t>(entt::to_integral(entity));
+        inputProbe.center = transform.position;
+        inputProbe.extents = probe.extents;
+        inputProbe.blendDistance = probe.blendDistance;
+        inputProbe.intensity = probe.intensity;
+        inputProbe.boxProjection = probe.boxProjection;
+        inputProbe.dirty = probe.dirty;
+        out.push_back(inputProbe);
+    }
+}
+
 void RuntimeSceneRenderer::updateDebugParams(DebugParams& params,
                                              const CameraState& camera,
                                              float deltaTime,
@@ -307,6 +328,7 @@ void RuntimeSceneRenderer::render(entt::registry& registry,
     collectSceneObjects(registry, scene_objects_);
     collectViewmodelObjects(registry, camera, deltaTime, viewmodel_objects_);
     collectLights(registry, params, lights_);
+    collectReflectionProbes(registry, reflection_probes_);
 
     // Build SceneRenderInput from ECS-collected data
     SceneRenderInput input;
@@ -336,6 +358,20 @@ void RuntimeSceneRenderer::render(entt::registry& registry,
     input.lightingEnvironment.enableShadows = params.lighting.shadowsEnabled;
     input.lightingEnvironment.shadowBias = params.lighting.shadowBias;
     input.lightingEnvironment.shadowNormalBias = params.lighting.shadowNormalBias;
+
+    const auto capturedProbeIds = reflectionProbeRenderer_.updateDirtyProbes(reflection_probes_, input, pipeline_);
+    if (!capturedProbeIds.empty()) {
+        auto probeView = registry.view<ReflectionProbeComponent>();
+        for (auto [entity, probe] : probeView.each()) {
+            const std::uint64_t probeId = static_cast<std::uint64_t>(entt::to_integral(entity));
+            if (std::find(capturedProbeIds.begin(), capturedProbeIds.end(), probeId) != capturedProbeIds.end()) {
+                probe.dirty = false;
+            }
+        }
+    }
+
+    active_reflection_probe_ = reflectionProbeRenderer_.selectNearestProbe(camera.position, reflection_probes_);
+    input.reflectionProbe = active_reflection_probe_.enabled ? &active_reflection_probe_ : nullptr;
 
     pipeline_.render(input, internalWidth, internalHeight, outputWidth, outputHeight, targetFramebuffer);
     updateDebugParams(params, camera, deltaTime, scene_objects_.size());

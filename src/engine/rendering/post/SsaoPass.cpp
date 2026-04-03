@@ -4,6 +4,7 @@
 #include <glm/gtc/type_ptr.hpp>
 #include <spdlog/spdlog.h>
 
+#include <algorithm>
 #include <random>
 
 namespace {
@@ -175,7 +176,9 @@ void SsaoPass::render(GLuint sceneDepthTex,
                       const glm::mat4& view,
                       float aoRadius,
                       float aoBias,
-                      float aoStrength) {
+                      float aoStrength,
+                      float aoFadeStart,
+                      float aoFadeEnd) {
     if (ssaoFbo_ == 0 || ssaoShader_ == nullptr) {
         return;
     }
@@ -219,6 +222,8 @@ void SsaoPass::render(GLuint sceneDepthTex,
     ssaoShader_->setFloat("uAoRadius", aoRadius);
     ssaoShader_->setFloat("uAoBias", aoBias);
     ssaoShader_->setFloat("uAoStrength", aoStrength);
+    ssaoShader_->setFloat("uAoFadeStart", std::max(0.0f, aoFadeStart));
+    ssaoShader_->setFloat("uAoFadeEnd", std::max(aoFadeStart + 0.001f, aoFadeEnd));
 
     glBindVertexArray(quadVAO_);
     glDrawArrays(GL_TRIANGLES, 0, 6);

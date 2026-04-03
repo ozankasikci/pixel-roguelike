@@ -132,6 +132,7 @@ struct LevelNodeRef {
         Light,
         BoxCollider,
         CylinderCollider,
+        ReflectionProbe,
         PlayerSpawn,
         Archetype,
         Group,
@@ -800,6 +801,43 @@ LevelDef loadLevelDef(const std::string& path) {
             continue;
         }
 
+        if (kind == "reflection_probe") {
+            LevelReflectionProbePlacement placement;
+            std::string boxProjectionToken;
+            if (!(stream >> placement.position.x >> placement.position.y >> placement.position.z
+                         >> placement.extents.x >> placement.extents.y >> placement.extents.z
+                         >> placement.blendDistance >> placement.intensity
+                         >> boxProjectionToken)) {
+                throwParseError(path, lineNumber, "invalid reflection_probe record");
+            }
+            if (!tryParseBoolToken(boxProjectionToken, placement.boxProjection)) {
+                throwParseError(path, lineNumber, "invalid reflection_probe box_projection flag");
+            }
+            const auto tokens = collectRemainingTokens(stream);
+            for (std::size_t index = 0; index < tokens.size();) {
+                if (tokens[index] == "node") {
+                    if (index + 1 >= tokens.size()) {
+                        throwParseError(path, lineNumber, "missing reflection_probe node id");
+                    }
+                    placement.nodeId = tokens[index + 1];
+                    index += 2;
+                    continue;
+                }
+                if (tokens[index] == "parent") {
+                    if (index + 1 >= tokens.size()) {
+                        throwParseError(path, lineNumber, "missing reflection_probe parent node id");
+                    }
+                    placement.parentNodeId = tokens[index + 1];
+                    index += 2;
+                    continue;
+                }
+                throwParseError(path, lineNumber, "invalid reflection_probe metadata");
+            }
+            currentKind = CurrentEntityKind::None;
+            data.reflectionProbes.push_back(std::move(placement));
+            continue;
+        }
+
         if (kind == "player_spawn") {
             LevelPlayerSpawn placement;
             if (!(stream >> placement.position.x >> placement.position.y >> placement.position.z
@@ -979,6 +1017,7 @@ LevelDef resolveLevelHierarchy(const LevelDef& data) {
                  + data.lights.size()
                  + data.boxColliders.size()
                  + data.cylinderColliders.size()
+                 + data.reflectionProbes.size()
                  + data.archetypes.size()
                  + data.groups.size()
                  + (data.hasPlayerSpawn ? 1u : 0u));
@@ -994,6 +1033,9 @@ LevelDef resolveLevelHierarchy(const LevelDef& data) {
     }
     for (std::size_t i = 0; i < data.cylinderColliders.size(); ++i) {
         refs.push_back(LevelNodeRef{LevelNodeRef::Kind::CylinderCollider, i, data.cylinderColliders[i].nodeId, data.cylinderColliders[i].parentNodeId});
+    }
+    for (std::size_t i = 0; i < data.reflectionProbes.size(); ++i) {
+        refs.push_back(LevelNodeRef{LevelNodeRef::Kind::ReflectionProbe, i, data.reflectionProbes[i].nodeId, data.reflectionProbes[i].parentNodeId});
     }
     if (data.hasPlayerSpawn) {
         refs.push_back(LevelNodeRef{LevelNodeRef::Kind::PlayerSpawn, 0, data.playerSpawn.nodeId, data.playerSpawn.parentNodeId});
@@ -1038,6 +1080,10 @@ LevelDef resolveLevelHierarchy(const LevelDef& data) {
             return makeTransformMatrix(placement.position,
                                        placement.rotation,
                                        glm::vec3(placement.radius * 2.0f, placement.halfHeight * 2.0f, placement.radius * 2.0f));
+        }
+        case LevelNodeRef::Kind::ReflectionProbe: {
+            const auto& placement = data.reflectionProbes[ref.index];
+            return makeTransformMatrix(placement.position, glm::vec3(0.0f), placement.extents * 2.0f);
         }
         case LevelNodeRef::Kind::PlayerSpawn:
             return makeTransformMatrix(data.playerSpawn.position, glm::vec3(0.0f), glm::vec3(1.0f));
@@ -1122,6 +1168,16 @@ LevelDef resolveLevelHierarchy(const LevelDef& data) {
                 placement.rotation = rotation;
                 placement.radius = std::max(0.001f, (std::abs(scale.x) + std::abs(scale.z)) * 0.25f);
                 placement.halfHeight = std::max(0.001f, std::abs(scale.y) * 0.5f);
+            }
+            break;
+        }
+        case LevelNodeRef::Kind::ReflectionProbe: {
+            auto& placement = resolved.reflectionProbes[refs[idx].index];
+            glm::vec3 position(0.0f), rotation(0.0f), scale(1.0f);
+            if (decomposeTransformMatrix(worldMatrices[idx], position, rotation, scale)) {
+                (void)rotation;
+                placement.position = position;
+                placement.extents = glm::max(scale * 0.5f, glm::vec3(0.05f));
             }
             break;
         }
@@ -1278,6 +1334,21 @@ std::string serializeLevelDef(const LevelDef& data) {
                 << formatFloat(placement.rotation.y) << ' '
                 << formatFloat(placement.rotation.z);
         }
+        appendNodeMetadata(out, placement.nodeId, placement.parentNodeId);
+        out << '\n';
+    }
+
+    for (const auto& placement : data.reflectionProbes) {
+        out << "reflection_probe "
+            << formatFloat(placement.position.x) << ' '
+            << formatFloat(placement.position.y) << ' '
+            << formatFloat(placement.position.z) << ' '
+            << formatFloat(placement.extents.x) << ' '
+            << formatFloat(placement.extents.y) << ' '
+            << formatFloat(placement.extents.z) << ' '
+            << formatFloat(placement.blendDistance) << ' '
+            << formatFloat(placement.intensity) << ' '
+            << (placement.boxProjection ? "true" : "false");
         appendNodeMetadata(out, placement.nodeId, placement.parentNodeId);
         out << '\n';
     }

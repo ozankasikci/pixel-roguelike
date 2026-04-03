@@ -73,6 +73,7 @@ constexpr const char* kAssetBrowserWindowName = "Asset Browser";
 constexpr const char* kEnvironmentWindowName = "Environment";
 constexpr float kRuntimeViewportAspect = 1280.0f / 720.0f;
 constexpr const char* kPreviewModes[] = {"Final", "Lighting", "Sky"};
+constexpr const char* kPreviewQualityLabels[] = {"Fast", "Balanced", "High"};
 constexpr const char* kWindowGeometryFile = "editor_window.ini";
 constexpr const char* kBuildOutputWindowName = "Build Output";
 constexpr const char* kBuildConfigFile = "editor_build.ini";
@@ -329,7 +330,9 @@ int main(int argc, char* argv[]) {
         }
     }
     EditorUiState ui;
+    applyEditorPreviewQuality(ui, ui.previewQuality);
     ui.pendingScenePath = initialScene; // empty if no scene loaded
+    runtimePreviewSession.debugParams().lighting.shadowMapResolutionIndex = ui.shadowResolutionIndex;
     EditorPlacementState placementState;
     std::vector<std::uint64_t> selectedIds;
     EditorSelectionPickerState selectionPicker;
@@ -600,6 +603,19 @@ int main(int argc, char* argv[]) {
                             ui.previewMode = mode;
                         }
                     }
+                    ImGui::EndMenu();
+                }
+                if (ImGui::BeginMenu("Preview Quality")) {
+                    for (int index = 0; index < 3; ++index) {
+                        const auto quality = static_cast<EditorPreviewQuality>(index);
+                        if (ImGui::MenuItem(kPreviewQualityLabels[index], nullptr, ui.previewQuality == quality)) {
+                            applyEditorPreviewQuality(ui, quality);
+                            runtimePreviewSession.debugParams().lighting.shadowMapResolutionIndex = ui.shadowResolutionIndex;
+                        }
+                    }
+                    ImGui::Separator();
+                    ImGui::TextDisabled("Play render scale: %.0f%%", ui.previewRenderScale * 100.0f);
+                    ImGui::TextDisabled("Shadow resolution: %s", ui.shadowResolutionIndex == 0 ? "512" : (ui.shadowResolutionIndex == 1 ? "1024" : "2048"));
                     ImGui::EndMenu();
                 }
                 if (ImGui::BeginMenu("Interface Font")) {
@@ -1257,6 +1273,13 @@ int main(int argc, char* argv[]) {
                         ui.previewMode = static_cast<EditorPreviewMode>(previewModeIndex);
                     }
                     ImGui::SameLine();
+                    int previewQualityIndex = static_cast<int>(ui.previewQuality);
+                    ImGui::SetNextItemWidth(110.0f);
+                    if (ImGui::Combo("##viewport_previewquality", &previewQualityIndex, kPreviewQualityLabels, 3)) {
+                        applyEditorPreviewQuality(ui, static_cast<EditorPreviewQuality>(previewQualityIndex));
+                        runtimePreviewSession.debugParams().lighting.shadowMapResolutionIndex = ui.shadowResolutionIndex;
+                    }
+                    ImGui::SameLine();
                     ImGui::Checkbox("Snap", &ui.snappingEnabled);
                     ImGui::SameLine();
                     if (ImGui::Button("Snap Settings")) {
@@ -1334,6 +1357,9 @@ int main(int argc, char* argv[]) {
         const ImVec2 fbScale = io.DisplayFramebufferScale;
         const int targetW = std::max(1, static_cast<int>(std::max(renderViewportState.size.x, 64.0f) * fbScale.x));
         const int targetH = std::max(1, static_cast<int>(std::max(renderViewportState.size.y, 64.0f) * fbScale.y));
+        const float previewRenderScale = ui.playPreview ? std::clamp(ui.previewRenderScale, 0.50f, 1.0f) : 1.0f;
+        const int internalTargetW = std::max(1, static_cast<int>(std::lround(static_cast<float>(targetW) * previewRenderScale)));
+        const int internalTargetH = std::max(1, static_cast<int>(std::lround(static_cast<float>(targetH) * previewRenderScale)));
         if (!startupViewportHandoffActive && (finalFbo.width() != targetW || finalFbo.height() != targetH)) {
             finalFbo.resize(targetW, targetH);
         }
@@ -1475,8 +1501,9 @@ int main(int argc, char* argv[]) {
             renderParams.shadowsEnabled = previewEnvironment.lighting.enableShadows;
             renderParams.shadowResolutionIndex = ui.shadowResolutionIndex;
 
-            editorViewportRenderer.render(renderParams, targetW, targetH, finalFbo.framebuffer());
+            editorViewportRenderer.render(renderParams, targetW, targetH, targetW, targetH, finalFbo.framebuffer());
         } else if (!ui.pendingScenePath.empty() && !startupViewportHandoffActive) {
+            runtimePreviewSession.debugParams().lighting.shadowMapResolutionIndex = ui.shadowResolutionIndex;
             runtimePreviewSession.updateInput(window.handle(), io);
             runtimePreviewSession.tick(deltaTime, kRuntimeViewportAspect);
             runtimePreviewSession.syncCursor(window.handle());
@@ -1484,8 +1511,8 @@ int main(int argc, char* argv[]) {
                 runtimePreviewSession.endCapture(window.handle());
             }
             runtimePreviewSession.render(deltaTime,
-                                         targetW,
-                                         targetH,
+                                         internalTargetW,
+                                         internalTargetH,
                                          targetW,
                                          targetH,
                                          finalFbo.framebuffer());
@@ -1548,13 +1575,13 @@ int main(int argc, char* argv[]) {
                     const auto& ps = runtimePreviewSession.pipelineStats();
                     char line1[128], line2[128], line3[128];
                     std::snprintf(line1, sizeof(line1),
-                                  "%.1f ms  %.0f FPS  render: %.1f ms", frameMs, fps, perf.lastRenderMs);
+                                  "%.1f ms  %.0f FPS  render: %.1f ms  scale: %.0f%%", frameMs, fps, perf.lastRenderMs, ui.previewRenderScale * 100.0f);
                     std::snprintf(line2, sizeof(line2),
                                   "shadow: %.1f  scene: %.1f  ssao: %.1f  bloom: %.1f  comp: %.1f ms",
                                   ps.shadowPassMs, ps.scenePassMs, ps.ssaoMs, ps.bloomMs, ps.compositeMs);
                     std::snprintf(line3, sizeof(line3),
-                                  "objects: %d  draws: %d  culled: %d  shadow_culled: %d  lights: %d",
-                                  ps.objectCount, ps.drawCalls, ps.culledCount, ps.shadowCulledCount, ps.lightCount);
+                                  "objects: %d  draws: %d  culled: %d  shadow_culled: %d  lights: %d  %s",
+                                  ps.objectCount, ps.drawCalls, ps.culledCount, ps.shadowCulledCount, ps.lightCount, editorPreviewQualityLabel(ui.previewQuality));
                     const float lineH = ImGui::GetTextLineHeight();
                     const ImVec2 statsPos(renderViewportState.origin.x + 8.0f,
                                           renderViewportState.origin.y + renderViewportState.size.y - 16.0f - lineH * 3.0f);

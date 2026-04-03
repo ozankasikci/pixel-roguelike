@@ -6,6 +6,7 @@
 #include "game/components/InteractableComponent.h"
 #include "game/components/LightComponent.h"
 #include "game/components/MeshComponent.h"
+#include "game/components/ReflectionProbeComponent.h"
 #include "game/rendering/RetroPalette.h"
 #include "game/components/StaticColliderComponent.h"
 #include "game/components/TransformComponent.h"
@@ -219,6 +220,22 @@ entt::entity LevelBuilder::addCylinderCollider(const glm::vec3& position,
     collider.radius = radius;
     collider.halfHeight = halfHeight;
     context_.registry.emplace<StaticColliderComponent>(entity, collider);
+    return entity;
+}
+
+entt::entity LevelBuilder::addReflectionProbe(const glm::vec3& position,
+                                              const glm::vec3& extents,
+                                              float blendDistance,
+                                              float intensity,
+                                              bool boxProjection) {
+    auto entity = createTransformEntity(position);
+    ReflectionProbeComponent probe;
+    probe.extents = extents;
+    probe.blendDistance = blendDistance;
+    probe.intensity = intensity;
+    probe.boxProjection = boxProjection;
+    probe.dirty = true;
+    context_.registry.emplace<ReflectionProbeComponent>(entity, probe);
     return entity;
 }
 

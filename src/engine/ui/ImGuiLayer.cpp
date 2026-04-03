@@ -313,9 +313,12 @@ void ImGuiLayer::renderOverlay(DebugParams& params, std::vector<RenderLight>& li
     if (ImGui::CollapsingHeader("Ambient Occlusion", ImGuiTreeNodeFlags_DefaultOpen)) {
         ImGui::Checkbox("Enable SSAO", &params.post.enableSsao);
         ImGui::BeginDisabled(!params.post.enableSsao);
+        ImGui::Checkbox("AO Half Resolution", &params.post.ssaoHalfResolution);
         ImGui::SliderFloat("AO Radius", &params.post.ssaoRadius, 0.1f, 2.0f, "%.2f");
         ImGui::SliderFloat("AO Bias", &params.post.ssaoBias, 0.001f, 0.1f, "%.3f");
         ImGui::SliderFloat("AO Strength", &params.post.ssaoStrength, 0.0f, 2.0f, "%.2f");
+        ImGui::SliderFloat("AO Fade Start", &params.post.ssaoFadeStart, 0.0f, 120.0f, "%.1f");
+        ImGui::SliderFloat("AO Fade End", &params.post.ssaoFadeEnd, 0.0f, 160.0f, "%.1f");
         ImGui::EndDisabled();
     }
 
@@ -461,4 +464,3 @@ void ImGuiLayer::renderOverlay(DebugParams& params, std::vector<RenderLight>& li
 
     ImGui::End();
 }
-

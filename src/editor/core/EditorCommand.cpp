@@ -31,6 +31,9 @@ LevelDef makeLevelDefFromState(const EditorSceneDocumentState& state) {
         case EditorSceneObjectKind::CylinderCollider:
             level.cylinderColliders.push_back(std::get<LevelCylinderColliderPlacement>(object.payload));
             break;
+        case EditorSceneObjectKind::ReflectionProbe:
+            level.reflectionProbes.push_back(std::get<LevelReflectionProbePlacement>(object.payload));
+            break;
         case EditorSceneObjectKind::PlayerSpawn:
             level.playerSpawn = std::get<LevelPlayerSpawn>(object.payload);
             level.hasPlayerSpawn = true;

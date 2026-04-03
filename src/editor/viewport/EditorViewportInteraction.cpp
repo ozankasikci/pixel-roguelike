@@ -28,6 +28,8 @@ bool isViewportSelectableKind(const EditorSelectionHandle& handle, const EditorU
         return ui.showColliders;
     case EditorSceneObjectKind::Light:
         return ui.showLightHelpers;
+    case EditorSceneObjectKind::ReflectionProbe:
+        return true;
     case EditorSceneObjectKind::PlayerSpawn:
         return ui.showSpawnMarker;
     case EditorSceneObjectKind::Mesh:
@@ -283,6 +285,7 @@ bool applyGizmoToSelectedObject(EditorSceneDocument& document,
         case EditorSceneObjectKind::Mesh:
         case EditorSceneObjectKind::BoxCollider:
         case EditorSceneObjectKind::CylinderCollider:
+        case EditorSceneObjectKind::ReflectionProbe:
         case EditorSceneObjectKind::Archetype:
         case EditorSceneObjectKind::Group:
             model = document.worldTransformMatrix(object->id);
@@ -335,6 +338,7 @@ bool applyGizmoToSelectedObject(EditorSceneDocument& document,
         case EditorSceneObjectKind::Mesh:
         case EditorSceneObjectKind::BoxCollider:
         case EditorSceneObjectKind::CylinderCollider:
+        case EditorSceneObjectKind::ReflectionProbe:
         case EditorSceneObjectKind::Archetype:
         case EditorSceneObjectKind::Group:
             if (!document.applyWorldTransform(object->id, model)) {
@@ -435,6 +439,7 @@ bool applyGizmoToSelectedObject(EditorSceneDocument& document,
         case EditorSceneObjectKind::Mesh:
         case EditorSceneObjectKind::BoxCollider:
         case EditorSceneObjectKind::CylinderCollider:
+        case EditorSceneObjectKind::ReflectionProbe:
         case EditorSceneObjectKind::Archetype:
         case EditorSceneObjectKind::Group: {
             auto it = multiGizmoState.cachedTransforms.find(id);

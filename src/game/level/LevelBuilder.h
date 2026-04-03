@@ -58,6 +58,11 @@ public:
                                      float radius,
                                      float halfHeight,
                                      const glm::vec3& rotation = glm::vec3(0.0f));
+    entt::entity addReflectionProbe(const glm::vec3& position,
+                                    const glm::vec3& extents,
+                                    float blendDistance,
+                                    float intensity,
+                                    bool boxProjection);
 
     // Behavior and trigger attachment methods
     void attachNodeId(entt::entity entity, const std::string& nodeId);

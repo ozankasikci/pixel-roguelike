@@ -39,6 +39,18 @@ pixel_roguelike_add_test(test_editor_runtime_preview
     LABELS editor
 )
 
+pixel_roguelike_add_test(test_editor_scene_document
+    SOURCES test_editor_scene_document.cpp
+    LIBRARIES editor
+    LABELS editor
+)
+
+pixel_roguelike_add_test(test_runtime_preview_quality
+    SOURCES test_runtime_preview_quality.cpp
+    LIBRARIES editor
+    LABELS editor
+)
+
 pixel_roguelike_add_profile(profile_play_preview
     SOURCES profile_play_preview.cpp
     LIBRARIES editor

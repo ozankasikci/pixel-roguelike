@@ -11,6 +11,8 @@ uniform vec2 uNoiseScale;
 uniform float uAoRadius;
 uniform float uAoBias;
 uniform float uAoStrength;
+uniform float uAoFadeStart;
+uniform float uAoFadeEnd;
 
 in vec2 vTexCoord;
 out vec4 fragColor;
@@ -29,6 +31,7 @@ void main() {
     }
 
     vec3 viewPos = reconstructViewPos(vTexCoord, depth);
+    float viewDistance = abs(viewPos.z);
     vec3 worldNormal = texture(uGeomNormalTex, vTexCoord).rgb * 2.0 - 1.0;
     vec3 normal = normalize(mat3(uView) * worldNormal);
 
@@ -48,5 +51,6 @@ void main() {
         occlusion += (sampleDepth >= samplePos.z + uAoBias) ? 0.0 : 1.0 * rangeCheck;
     }
 
-    fragColor = vec4(vec3(1.0 - (occlusion / 32.0) * uAoStrength), 1.0);
+    float fade = 1.0 - smoothstep(uAoFadeStart, uAoFadeEnd, viewDistance);
+    fragColor = vec4(vec3(1.0 - (occlusion / 32.0) * uAoStrength * fade), 1.0);
 }

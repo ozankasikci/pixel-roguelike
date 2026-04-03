@@ -22,6 +22,41 @@ enum class EditorPreviewMode {
     SkyOnly,
 };
 
+enum class EditorPreviewQuality {
+    Fast,
+    Balanced,
+    High,
+};
+
+struct EditorPreviewQualitySettings {
+    float renderScale = 1.0f;
+    int shadowResolutionIndex = 1;
+};
+
+inline const char* editorPreviewQualityLabel(EditorPreviewQuality quality) {
+    switch (quality) {
+    case EditorPreviewQuality::Fast:
+        return "Fast";
+    case EditorPreviewQuality::Balanced:
+        return "Balanced";
+    case EditorPreviewQuality::High:
+        return "High";
+    }
+    return "Balanced";
+}
+
+inline EditorPreviewQualitySettings editorPreviewQualitySettings(EditorPreviewQuality quality) {
+    switch (quality) {
+    case EditorPreviewQuality::Fast:
+        return EditorPreviewQualitySettings{0.67f, 0};
+    case EditorPreviewQuality::Balanced:
+        return EditorPreviewQualitySettings{0.80f, 1};
+    case EditorPreviewQuality::High:
+        return EditorPreviewQualitySettings{1.0f, 2};
+    }
+    return EditorPreviewQualitySettings{0.80f, 1};
+}
+
 enum class EditorPlacementKind {
     None,
     Mesh,
@@ -52,6 +87,7 @@ struct EditorInspectedAsset {
 struct EditorUiState {
     EditorTransformTool tool = EditorTransformTool::Translate;
     EditorPreviewMode previewMode = EditorPreviewMode::Final;
+    EditorPreviewQuality previewQuality = EditorPreviewQuality::Balanced;
     bool playPreview = false;
     bool showOutliner = true;
     bool showInspector = true;
@@ -72,6 +108,7 @@ struct EditorUiState {
     float moveSnap = 0.5f;
     float rotateSnap = 15.0f;
     float scaleSnap = 0.1f;
+    float previewRenderScale = 0.80f;
     int shadowResolutionIndex = 1;
     std::string selectedMeshId = "cube";
     std::string selectedMaterialId = "stone_default";
@@ -88,6 +125,13 @@ struct EditorUiState {
     char layoutNameBuffer[64] = "default";
     char outlinerFilter[128] = {};
 };
+
+inline void applyEditorPreviewQuality(EditorUiState& ui, EditorPreviewQuality quality) {
+    const EditorPreviewQualitySettings settings = editorPreviewQualitySettings(quality);
+    ui.previewQuality = quality;
+    ui.previewRenderScale = settings.renderScale;
+    ui.shadowResolutionIndex = settings.shadowResolutionIndex;
+}
 
 struct EditorPlacementState {
     EditorPlacementKind kind = EditorPlacementKind::None;

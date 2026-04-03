@@ -4,6 +4,7 @@
 #include "engine/rendering/assets/ModelLoader.h"
 #include "game/components/LightComponent.h"
 #include "game/components/MeshComponent.h"
+#include "game/components/ReflectionProbeComponent.h"
 #include "game/components/StaticColliderComponent.h"
 #include "game/components/TransformComponent.h"
 #include "game/content/ContentRegistry.h"
@@ -208,6 +209,21 @@ void EditorPreviewWorld::rebuild(const EditorSceneDocument& document, const Cont
             builder.addCylinderCollider(placement.position, placement.radius, placement.halfHeight, placement.rotation);
             break;
         }
+        case EditorSceneObjectKind::ReflectionProbe: {
+            auto placement = std::get<LevelReflectionProbePlacement>(object.payload);
+            glm::vec3 position(0.0f), rotation(0.0f), scale(1.0f);
+            if (decomposeTransformMatrix(document.worldTransformMatrix(object.id), position, rotation, scale)) {
+                (void)rotation;
+                placement.position = position;
+                placement.extents = glm::max(scale * 0.5f, glm::vec3(0.05f));
+            }
+            builder.addReflectionProbe(placement.position,
+                                       placement.extents,
+                                       placement.blendDistance,
+                                       placement.intensity,
+                                       placement.boxProjection);
+            break;
+        }
         case EditorSceneObjectKind::PlayerSpawn:
             break;
         case EditorSceneObjectKind::Group:
@@ -334,6 +350,11 @@ void EditorPreviewWorld::syncTransforms(const EditorSceneDocument& document) {
             }
             break;
         }
+        case EditorSceneObjectKind::ReflectionProbe:
+            transform.position = position;
+            transform.rotation = glm::vec3(0.0f);
+            transform.scale = scale;
+            break;
         case EditorSceneObjectKind::Light:
             transform.position = position;
             break;
@@ -408,6 +429,17 @@ void EditorPreviewWorld::rebuildBounds() {
         }
         const float helperRadius = light.type == LightType::Directional ? 0.35f : std::max(0.25f, light.radius * 0.08f);
         const EditorObjectBounds bounds = sphereBounds(transform.position, helperRadius);
+        objectBounds_[ownerIt->second].expand(bounds);
+        sceneBounds_.expand(bounds);
+    }
+
+    auto probeView = registry_.view<TransformComponent, ReflectionProbeComponent>();
+    for (auto [entity, transform, probe] : probeView.each()) {
+        auto ownerIt = ownerMap_.find(entity);
+        if (ownerIt == ownerMap_.end()) {
+            continue;
+        }
+        const EditorObjectBounds bounds = transformBounds(-probe.extents, probe.extents, transform.modelMatrix());
         objectBounds_[ownerIt->second].expand(bounds);
         sceneBounds_.expand(bounds);
     }

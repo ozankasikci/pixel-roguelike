@@ -23,7 +23,9 @@ public:
                 const glm::mat4& view,
                 float aoRadius,
                 float aoBias,
-                float aoStrength);
+                float aoStrength,
+                float aoFadeStart,
+                float aoFadeEnd);
     GLuint aoTexture() const;
 
 private:

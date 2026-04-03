@@ -561,6 +561,10 @@ EnvironmentDefinition loadEnvironmentDefinitionAsset(const std::string& path) {
             definition.post.enableSsao = parseBoolRecord(tokens, path, lineNumber, key);
             continue;
         }
+        if (key == "ssao_half_resolution") {
+            definition.post.ssaoHalfResolution = parseBoolRecord(tokens, path, lineNumber, key);
+            continue;
+        }
         if (key == "ssao_radius") {
             definition.post.ssaoRadius = parseFloatRecord(tokens, path, lineNumber, key);
             continue;
@@ -571,6 +575,14 @@ EnvironmentDefinition loadEnvironmentDefinitionAsset(const std::string& path) {
         }
         if (key == "ssao_strength") {
             definition.post.ssaoStrength = parseFloatRecord(tokens, path, lineNumber, key);
+            continue;
+        }
+        if (key == "ssao_fade_start") {
+            definition.post.ssaoFadeStart = parseFloatRecord(tokens, path, lineNumber, key);
+            continue;
+        }
+        if (key == "ssao_fade_end") {
+            definition.post.ssaoFadeEnd = parseFloatRecord(tokens, path, lineNumber, key);
             continue;
         }
         if (key == "csm_lambda") {
@@ -614,9 +626,12 @@ std::string serializeEnvironmentDefinitionAsset(const EnvironmentDefinition& def
     writeFloat(out, "bloom_intensity", definition.post.bloomIntensity);
     writeFloat(out, "bloom_radius", definition.post.bloomRadius);
     writeBool(out, "ssao_enabled", definition.post.enableSsao);
+    writeBool(out, "ssao_half_resolution", definition.post.ssaoHalfResolution);
     writeFloat(out, "ssao_radius", definition.post.ssaoRadius);
     writeFloat(out, "ssao_bias", definition.post.ssaoBias);
     writeFloat(out, "ssao_strength", definition.post.ssaoStrength);
+    writeFloat(out, "ssao_fade_start", definition.post.ssaoFadeStart);
+    writeFloat(out, "ssao_fade_end", definition.post.ssaoFadeEnd);
     writeFloat(out, "csm_lambda", definition.post.csmLambda);
     writeFloat(out, "vignette_strength", definition.post.vignetteStrength);
     writeFloat(out, "vignette_softness", definition.post.vignetteSoftness);
