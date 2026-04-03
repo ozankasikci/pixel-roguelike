@@ -1,8 +1,10 @@
 #include "editor/core/EditorRuntimePreviewSession.h"
 #include "editor/scene/EditorSceneDocument.h"
 #include "engine/core/Window.h"
+#include "game/behavior/NodeIdComponent.h"
 #include "game/components/CameraComponent.h"
 #include "game/components/CheckpointComponent.h"
+#include "game/components/MeshComponent.h"
 #include "game/components/PlayerInteractionLockComponent.h"
 #include "game/components/PlayerMovementComponent.h"
 #include "game/components/PlayerSpawnComponent.h"
@@ -24,6 +26,10 @@ constexpr float kEpsilon = 0.0001f;
 
 bool nearlyEqual(float a, float b) {
     return std::abs(a - b) <= kEpsilon;
+}
+
+bool nearlyEqualVec3(const glm::vec3& a, const glm::vec3& b) {
+    return glm::length(a - b) <= kEpsilon;
 }
 
 } // namespace
@@ -51,6 +57,53 @@ int main() {
     preview.render(1.0f / 60.0f, 320, 180, 320, 180, 0);
     const RuntimeSessionPerformanceStats& firstRenderStats = preview.performanceStats();
     assert(firstRenderStats.lastRenderMs > 0.0);
+
+    std::uint64_t movedMeshObjectId = 0;
+    std::string movedMeshNodeId;
+    for (const auto& object : document.objects()) {
+        if (object.kind != EditorSceneObjectKind::Mesh) {
+            continue;
+        }
+        const auto& placement = std::get<LevelMeshPlacement>(object.payload);
+        if (!placement.parentNodeId.empty()) {
+            continue;
+        }
+        movedMeshObjectId = object.id;
+        movedMeshNodeId = placement.nodeId;
+        break;
+    }
+    assert(movedMeshObjectId != 0);
+    assert(!movedMeshNodeId.empty());
+
+    EditorSceneObject* movedMeshObject = document.findObject(movedMeshObjectId);
+    assert(movedMeshObject != nullptr);
+    auto& movedMeshPlacement = std::get<LevelMeshPlacement>(movedMeshObject->payload);
+    const glm::vec3 updatedMeshPosition = movedMeshPlacement.position + glm::vec3(0.85f, 0.0f, -1.10f);
+    const glm::vec3 updatedMeshTint(0.82f, 0.74f, 0.61f);
+    movedMeshPlacement.position = updatedMeshPosition;
+    movedMeshPlacement.materialId = "wood_default";
+    movedMeshPlacement.tint = updatedMeshTint;
+    document.markSceneDirty();
+
+    preview.rebuild(document, content);
+    preview.render(1.0f / 60.0f, 320, 180, 320, 180, 0);
+    assert(preview.performanceStats().lastRenderMs > 0.0);
+
+    entt::entity movedMeshEntity = entt::null;
+    auto runtimeMeshView = preview.registry().view<NodeIdComponent, MeshComponent>();
+    for (auto entity : runtimeMeshView) {
+        if (runtimeMeshView.get<NodeIdComponent>(entity).nodeId == movedMeshNodeId) {
+            movedMeshEntity = entity;
+            break;
+        }
+    }
+    assert(movedMeshEntity != entt::null);
+
+    const auto& rebuiltMesh = preview.registry().get<MeshComponent>(movedMeshEntity);
+    assert(rebuiltMesh.materialId == "wood_default");
+    assert(nearlyEqualVec3(rebuiltMesh.tint, updatedMeshTint));
+    assert(rebuiltMesh.useModelOverride);
+    assert(nearlyEqualVec3(glm::vec3(rebuiltMesh.modelOverride[3]), updatedMeshPosition));
 
     auto playerView = preview.registry().view<TransformComponent,
                                               CameraComponent,

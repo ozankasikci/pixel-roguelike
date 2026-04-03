@@ -1407,8 +1407,10 @@ int main(int argc, char* argv[]) {
                 previewWorld.syncTransforms(document);
                 previewWorld.syncMaterials(document, content);
                 previewWorld.syncLights(document);
-                runtimePreviewSession.syncMaterials(document, content);
                 previewSceneRevision = document.sceneRevision();
+                runtimePreviewDirtyState = mergeRuntimePreviewDirtyState(runtimePreviewDirtyState,
+                                                                         RuntimePreviewDirtyState::FullWorldRebuild);
+                lastRuntimePreviewStructuralChangeTime = glfwGetTime();
             }
             if (previewEnvironmentRevision != document.environmentRevision()) {
                 previewEnvironmentRevision = document.environmentRevision();
