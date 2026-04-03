@@ -22,6 +22,7 @@
 #include "game/ui/InteractionPromptState.h"
 #include "game/ui/InventoryMenuState.h"
 
+#include <algorithm>
 #include <GLFW/glfw3.h>
 #include <chrono>
 #include <filesystem>
@@ -213,6 +214,40 @@ void RuntimeGameSession::prewarmRenderer(ContentRegistry& content) {
         (void)renderer_.prewarmMaterialResources(registry_);
     }
     performanceStats_.rendererPrewarmMs = elapsedMilliseconds(start, Clock::now());
+}
+
+bool RuntimeGameSession::setPrimaryCameraView(const glm::vec3& position,
+                                              float yaw,
+                                              float pitch,
+                                              const std::optional<float>& fov) {
+    auto view = registry_.view<TransformComponent, CameraComponent, PrimaryCameraTag>();
+    for (auto [entity, transform, camera] : view.each()) {
+        transform.position = position;
+        camera.yaw = yaw;
+        camera.pitch = std::clamp(pitch, -89.0f, 89.0f);
+        if (fov.has_value()) {
+            camera.fov = fov.value();
+        }
+
+        if (registry_.all_of<PlayerMovementComponent>(entity)) {
+            auto& movement = registry_.get<PlayerMovementComponent>(entity);
+            movement.velocity = glm::vec3(0.0f);
+            movement.grounded = false;
+            movement.jumpHeld = false;
+            movement.jumpHoldTimer = 0.0f;
+        }
+
+        if (registry_.all_of<CharacterControllerComponent>(entity)) {
+            const auto& controller = registry_.get<CharacterControllerComponent>(entity);
+            physics_.setCharacterVelocity(entity, glm::vec3(0.0f));
+            physics_.setCharacterPosition(entity,
+                                          position - glm::vec3(0.0f, controller.eyeOffset(), 0.0f));
+        }
+
+        return true;
+    }
+
+    return false;
 }
 
 void RuntimeGameSession::setEnvironmentOverride(const EnvironmentDefinition& definition) {

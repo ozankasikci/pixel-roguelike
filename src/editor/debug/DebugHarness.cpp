@@ -1,4 +1,5 @@
 #include "editor/debug/DebugHarness.h"
+#include "editor/core/EditorRuntimePreviewSession.h"
 
 #include <ImGuizmo.h>
 #include <spdlog/spdlog.h>
@@ -11,7 +12,8 @@ DebugHarness::DebugHarness(EditorSceneDocument& doc,
                            EditorCamera& camera,
                            EditorCameraAnimation& cameraAnim,
                            const EditorViewportState& viewport,
-                           const EditorPreviewWorld& previewWorld)
+                           const EditorPreviewWorld& previewWorld,
+                           EditorRuntimePreviewSession* runtimePreviewSession)
     : doc_(doc)
     , selectedIds_(selectedIds)
     , ui_(ui)
@@ -20,12 +22,13 @@ DebugHarness::DebugHarness(EditorSceneDocument& doc,
     , camera_(camera)
     , cameraAnim_(cameraAnim)
     , viewport_(viewport)
-    , previewWorld_(previewWorld) {
+    , previewWorld_(previewWorld)
+    , runtimePreviewSession_(runtimePreviewSession) {
 }
 
 void DebugHarness::init() {
-    inspector_ = std::make_unique<EditorInspector>(doc_, selectedIds_, ui_, cmdStack_, camera_, viewport_, previewWorld_);
-    commander_ = std::make_unique<EditorCommander>(doc_, selectedIds_, ui_, cmdStack_, window_, camera_, cameraAnim_, viewport_, previewWorld_);
+    inspector_ = std::make_unique<EditorInspector>(doc_, selectedIds_, ui_, cmdStack_, camera_, viewport_, &previewWorld_, runtimePreviewSession_);
+    commander_ = std::make_unique<EditorCommander>(doc_, selectedIds_, ui_, cmdStack_, window_, camera_, cameraAnim_, viewport_, &previewWorld_, runtimePreviewSession_, &pendingScreenshotPath_);
 
     // --- inspect.* commands (read-only) ---
     registry_.registerCommand("inspect.selection", [this](const nlohmann::json& args) {
@@ -51,6 +54,10 @@ void DebugHarness::init() {
     registry_.registerCommand("inspect.panels", [this](const nlohmann::json& args) {
         (void)args;
         return inspector_->panels();
+    });
+    registry_.registerCommand("inspect.play_preview", [this](const nlohmann::json& args) {
+        (void)args;
+        return inspector_->playPreviewState();
     });
 
     // Diagnostic inspect commands
@@ -78,6 +85,10 @@ void DebugHarness::init() {
     registry_.registerCommand("inspect.camera", [this](const nlohmann::json& args) {
         (void)args;
         return inspector_->camera();
+    });
+    registry_.registerCommand("inspect.runtime_camera", [this](const nlohmann::json& args) {
+        (void)args;
+        return inspector_->runtimeCamera();
     });
     registry_.registerCommand("inspect.gizmo_screen_pos", [this](const nlohmann::json& /*args*/) {
         ImVec2 center = ImGuizmo::GetScreenCenter();
@@ -111,6 +122,15 @@ void DebugHarness::init() {
     registry_.registerCommand("command.toggle_panel", [this](const nlohmann::json& args) {
         return commander_->togglePanel(args);
     });
+    registry_.registerCommand("command.toggle_play_preview", [this](const nlohmann::json& args) {
+        return commander_->togglePlayPreview(args);
+    });
+    registry_.registerCommand("command.set_preview_mode", [this](const nlohmann::json& args) {
+        return commander_->setPreviewMode(args);
+    });
+    registry_.registerCommand("command.set_runtime_camera", [this](const nlohmann::json& args) {
+        return commander_->setRuntimeCamera(args);
+    });
     registry_.registerCommand("command.key_press", [this](const nlohmann::json& args) {
         return commander_->keyPress(args);
     });
@@ -131,6 +151,9 @@ void DebugHarness::init() {
     });
     registry_.registerCommand("command.wait_events", [this](const nlohmann::json& args) {
         return commander_->waitEvents(args);
+    });
+    registry_.registerCommand("command.capture_screenshot", [this](const nlohmann::json& args) {
+        return commander_->captureScreenshot(args);
     });
 
     // --- record.* commands ---
@@ -174,4 +197,10 @@ void DebugHarness::shutdown() {
         recorder_.stop();
     }
     server_.shutdown();
+}
+
+std::string DebugHarness::consumePendingScreenshotPath() {
+    std::string path = std::move(pendingScreenshotPath_);
+    pendingScreenshotPath_.clear();
+    return path;
 }

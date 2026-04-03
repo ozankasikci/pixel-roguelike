@@ -33,8 +33,12 @@ int main() {
     EditorUiState ui;
     EditorCommandStack cmdStack;
     cmdStack.reset(doc);
+    EditorCamera camera;
+    EditorCameraAnimation cameraAnim;
+    EditorViewportState viewport;
+    std::string screenshotRequestPath;
 
-    EditorCommander commander(doc, selectedIds, ui, cmdStack);
+    EditorCommander commander(doc, selectedIds, ui, cmdStack, nullptr, camera, cameraAnim, viewport, nullptr, nullptr, &screenshotRequestPath);
 
     // ---- EditorCommander tests ----
 
@@ -166,6 +170,38 @@ int main() {
         assert(result.contains("error"));
     }
 
+    // Test 15a: togglePlayPreview queues a play preview toggle.
+    {
+        ui.playPreview = false;
+        ui.playPreviewToggleRequested = false;
+        nlohmann::json result = commander.togglePlayPreview(nlohmann::json::object());
+        assert(result.value("ok", false) == true);
+        assert(ui.playPreviewToggleRequested);
+        assert(result.value("currently_active", true) == false);
+    }
+
+    // Test 15b: setPreviewMode updates the editor preview mode.
+    {
+        nlohmann::json result = commander.setPreviewMode({{"mode", "sun_shadow"}});
+        assert(result.value("ok", false) == true);
+        assert(ui.previewMode == EditorPreviewMode::SunShadowVisibility);
+        assert(result.value("mode", "") == "sun_shadow");
+    }
+
+    // Test 15c: setPreviewMode rejects unknown values.
+    {
+        nlohmann::json result = commander.setPreviewMode({{"mode", "unknown_mode"}});
+        assert(result.value("ok", true) == false);
+        assert(result.contains("error"));
+    }
+
+    // Test 15d: setRuntimeCamera reports unavailable without a runtime preview session.
+    {
+        nlohmann::json result = commander.setRuntimeCamera({{"x", 1.0f}});
+        assert(result.value("ok", true) == false);
+        assert(result.contains("error"));
+    }
+
     // Test 16: undo with nothing to undo returns ok=false.
     {
         // Fresh stack with no commands
@@ -176,7 +212,11 @@ int main() {
         EditorUiState freshUi;
         EditorCommandStack freshStack;
         freshStack.reset(freshDoc);
-        EditorCommander freshCmd(freshDoc, freshSel, freshUi, freshStack);
+        EditorCamera freshCamera;
+        EditorCameraAnimation freshCameraAnim;
+        EditorViewportState freshViewport;
+        std::string freshScreenshotRequestPath;
+        EditorCommander freshCmd(freshDoc, freshSel, freshUi, freshStack, nullptr, freshCamera, freshCameraAnim, freshViewport, nullptr, nullptr, &freshScreenshotRequestPath);
 
         nlohmann::json result = freshCmd.undo(nlohmann::json::object());
         assert(result.value("ok", true) == false);
@@ -192,7 +232,11 @@ int main() {
         EditorUiState roundUi;
         EditorCommandStack roundStack;
         roundStack.reset(roundDoc);
-        EditorCommander roundCmd(roundDoc, roundSel, roundUi, roundStack);
+        EditorCamera roundCamera;
+        EditorCameraAnimation roundCameraAnim;
+        EditorViewportState roundViewport;
+        std::string roundScreenshotRequestPath;
+        EditorCommander roundCmd(roundDoc, roundSel, roundUi, roundStack, nullptr, roundCamera, roundCameraAnim, roundViewport, nullptr, nullptr, &roundScreenshotRequestPath);
 
         // Push a document state change
         const EditorSceneDocumentState before = roundDoc.captureState();
@@ -219,11 +263,20 @@ int main() {
             std::get<LevelMeshPlacement>(roundDoc.findObject(rId)->payload).position.x, 5.0f));
     }
 
+    // Test 18: captureScreenshot queues a requested path.
+    {
+        screenshotRequestPath.clear();
+        nlohmann::json result = commander.captureScreenshot({{"path", "/tmp/debug-harness-shot.png"}});
+        assert(result.value("ok", false) == true);
+        assert(result.value("queued", false) == true);
+        assert(screenshotRequestPath == "/tmp/debug-harness-shot.png");
+    }
+
     // ---- EditorInspector tests ----
 
-    EditorInspector inspector(doc, selectedIds, ui, cmdStack);
+    EditorInspector inspector(doc, selectedIds, ui, cmdStack, camera, viewport, nullptr, nullptr);
 
-    // Test 18: undoStack with empty cmdStack returns ok=true, can_undo=false, can_redo=false.
+    // Test 19: undoStack with empty cmdStack returns ok=true, can_undo=false, can_redo=false.
     {
         // Reset to fresh state with no commands
         EditorSceneDocument inspDoc;
@@ -233,7 +286,9 @@ int main() {
         EditorUiState inspUi;
         EditorCommandStack inspStack;
         inspStack.reset(inspDoc);
-        EditorInspector insp(inspDoc, inspSel, inspUi, inspStack);
+        EditorCamera inspCamera;
+        EditorViewportState inspViewport;
+        EditorInspector insp(inspDoc, inspSel, inspUi, inspStack, inspCamera, inspViewport, nullptr);
 
         nlohmann::json result = insp.undoStack();
         assert(result.value("ok", false) == true);
@@ -254,7 +309,7 @@ int main() {
         assert(result2["data"].value("can_undo", false) == true);
     }
 
-    // Test 19: panels returns ok=true and data matches ui field values.
+    // Test 20: panels returns ok=true and data matches ui field values.
     {
         EditorSceneDocument panelDoc;
         panelDoc.clear();
@@ -268,7 +323,9 @@ int main() {
         panelUi.showBuildOutput = false;
         EditorCommandStack panelStack;
         panelStack.reset(panelDoc);
-        EditorInspector panelInsp(panelDoc, panelSel, panelUi, panelStack);
+        EditorCamera panelCamera;
+        EditorViewportState panelViewport;
+        EditorInspector panelInsp(panelDoc, panelSel, panelUi, panelStack, panelCamera, panelViewport, nullptr);
 
         nlohmann::json result = panelInsp.panels();
         assert(result.value("ok", false) == true);

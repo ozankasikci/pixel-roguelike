@@ -40,6 +40,7 @@ uniform int uEnableShadows;
 uniform float uShadowBias;
 uniform float uShadowNormalBias;
 uniform mat4 uViewMatrix;
+uniform int uDebugViewMode;
 uniform sampler2DArrayShadow uCsmShadowMap;
 uniform mat4 uCsmMatrices[3];
 uniform float uCsmSplitDistances[3];
@@ -829,16 +830,53 @@ int selectCascade(float viewDepth) {
     return uCsmCascadeCount - 1;
 }
 
+bool computeCsmProjection(vec3 fragWorldPos, vec3 fragViewPos, out int layer, out vec3 projCoords) {
+    if (uCsmEnabled == 0 || uCsmCascadeCount <= 0) {
+        layer = 0;
+        projCoords = vec3(0.0);
+        return false;
+    }
+
+    layer = selectCascade(abs(fragViewPos.z));
+    vec4 fragInLightSpace = uCsmMatrices[layer] * vec4(fragWorldPos, 1.0);
+    projCoords = fragInLightSpace.xyz / fragInLightSpace.w;
+    projCoords = projCoords * 0.5 + 0.5;
+    return true;
+}
+
+bool csmUvInBounds(vec3 projCoords) {
+    return projCoords.x > 0.0 && projCoords.x < 1.0
+        && projCoords.y > 0.0 && projCoords.y < 1.0;
+}
+
+bool csmDepthInBounds(vec3 projCoords) {
+    return projCoords.z > 0.0 && projCoords.z < 1.0;
+}
+
+vec3 cascadeDebugColor(int layer) {
+    if (layer == 0) return vec3(1.0, 0.25, 0.25);
+    if (layer == 1) return vec3(0.25, 1.0, 0.35);
+    if (layer == 2) return vec3(0.25, 0.55, 1.0);
+    return vec3(1.0);
+}
+
 float sampleCsmShadow(vec3 fragWorldPos, vec3 fragViewPos, vec3 N, vec3 L) {
     if (uCsmEnabled == 0) return 1.0;
-    int layer = selectCascade(abs(fragViewPos.z));
-    vec4 fragInLightSpace = uCsmMatrices[layer] * vec4(fragWorldPos, 1.0);
-    vec3 projCoords = fragInLightSpace.xyz / fragInLightSpace.w;
-    projCoords = projCoords * 0.5 + 0.5;
+    int layer = 0;
+    vec3 projCoords = vec3(0.0);
+    if (!computeCsmProjection(fragWorldPos, fragViewPos, layer, projCoords)) {
+        return 1.0;
+    }
+    if (!csmUvInBounds(projCoords)) return 1.0;
     if (projCoords.z >= 1.0) return 1.0;
 
-    // Per-cascade bias — scale inversely with cascade distance to prevent Peter-Panning and acne
-    float baseBias = max(0.005 * (1.0 - dot(N, L)), 0.0005);
+    // Directional shadow bias works in cascade depth space, so it needs to stay much
+    // smaller than the spot-light bias values exposed in the editor. Scale the shared
+    // controls down and use the geometric receiver normal to reduce contact light leaks.
+    float receiverSlope = 1.0 - max(dot(N, L), 0.0);
+    float constantBias = 0.0;
+    float normalBias = 0.0 * receiverSlope;
+    float baseBias = max(constantBias, normalBias);
     float bias = baseBias / max(uCsmSplitDistances[layer], 0.01);
 
     // 16-tap Poisson PCF matching spot shadow quality
@@ -846,8 +884,10 @@ float sampleCsmShadow(vec3 fragWorldPos, vec3 fragViewPos, vec3 N, vec3 L) {
     float s = sin(angle), c = cos(angle);
     mat2 rot = mat2(c, s, -s, c);
     float texelSize = 1.0 / float(textureSize(uCsmShadowMap, 0).x);
-    float spread = 3.0;
+    float spread = 1.0;
 
+    float centerVisibility = texture(uCsmShadowMap,
+        vec4(projCoords.xy, float(layer), projCoords.z - bias));
     float visibility = 0.0;
     for (int i = 0; i < 16; ++i) {
         vec2 offset = (rot * poissonDisk[i]) * texelSize * spread;
@@ -855,6 +895,7 @@ float sampleCsmShadow(vec3 fragWorldPos, vec3 fragViewPos, vec3 N, vec3 L) {
             vec4(projCoords.xy + offset, float(layer), projCoords.z - bias));
     }
     visibility /= 16.0;
+    visibility = min(centerVisibility, visibility);
 
     // Blend between cascades in a 10% overlap zone to prevent visible seams
     if (layer < uCsmCascadeCount - 1) {
@@ -867,6 +908,8 @@ float sampleCsmShadow(vec3 fragWorldPos, vec3 fragViewPos, vec3 N, vec3 L) {
             vec4 nextLightSpace = uCsmMatrices[nextLayer] * vec4(fragWorldPos, 1.0);
             vec3 nextProj = nextLightSpace.xyz / nextLightSpace.w * 0.5 + 0.5;
             float nextBias = baseBias / max(uCsmSplitDistances[nextLayer], 0.01);
+            float nextCenterVisibility = texture(uCsmShadowMap,
+                vec4(nextProj.xy, float(nextLayer), nextProj.z - nextBias));
             float nextVisibility = 0.0;
             for (int i = 0; i < 16; ++i) {
                 vec2 offset = (rot * poissonDisk[i]) * texelSize * spread;
@@ -874,6 +917,7 @@ float sampleCsmShadow(vec3 fragWorldPos, vec3 fragViewPos, vec3 N, vec3 L) {
                     vec4(nextProj.xy + offset, float(nextLayer), nextProj.z - nextBias));
             }
             nextVisibility /= 16.0;
+            nextVisibility = min(nextCenterVisibility, nextVisibility);
             visibility = mix(visibility, nextVisibility, blendFactor);
         }
     }
@@ -1047,6 +1091,14 @@ void main() {
 
     vec3 ambient = mix(uHemisphereGroundColor, uHemisphereSkyColor, clamp(N.y * 0.5 + 0.5, 0.0, 1.0));
     vec3 totalLight = albedo * ambient * uHemisphereStrength * materialAo;
+    vec3 sunDirectDebug = vec3(0.0);
+    float sunShadowVisibilityDebug = 0.0;
+    bool sunShadowValidDebug = false;
+    bool csmPrimaryUvOutOfBoundsDebug = false;
+    bool csmPrimaryDepthOutOfBoundsDebug = false;
+    bool csmNextUvOutOfBoundsDebug = false;
+    bool csmNextDepthOutOfBoundsDebug = false;
+    int csmCascadeDebug = -1;
 
     float NdotV = max(dot(N, V), 0.0);
     vec3 dielectricF0 = vec3(0.02 + specularLevel * 0.10);
@@ -1134,12 +1186,75 @@ void main() {
         vec3 specularRadiance = mix(vec3(neutralEnergy), radiance, specularTintResponse);
         float visibility = 1.0;
         if (light.type == LIGHT_DIRECTIONAL) {
-            visibility = sampleCsmShadow(vWorldPos, fragViewPos, N, L);
+            int csmLayer = 0;
+            vec3 csmProj = vec3(0.0);
+            if (computeCsmProjection(vWorldPos, fragViewPos, csmLayer, csmProj)) {
+                csmCascadeDebug = csmLayer;
+                csmPrimaryUvOutOfBoundsDebug = !csmUvInBounds(csmProj);
+                csmPrimaryDepthOutOfBoundsDebug = !csmDepthInBounds(csmProj);
+
+                if (csmLayer < uCsmCascadeCount - 1) {
+                    float splitDist = uCsmSplitDistances[csmLayer];
+                    float blendZone = splitDist * 0.1;
+                    float distFromSplit = splitDist - abs(fragViewPos.z);
+                    if (distFromSplit < blendZone && distFromSplit > 0.0) {
+                        int nextLayer = csmLayer + 1;
+                        vec4 nextLightSpace = uCsmMatrices[nextLayer] * vec4(vWorldPos, 1.0);
+                        vec3 nextProj = nextLightSpace.xyz / nextLightSpace.w * 0.5 + 0.5;
+                        csmNextUvOutOfBoundsDebug = !csmUvInBounds(nextProj);
+                        csmNextDepthOutOfBoundsDebug = !csmDepthInBounds(nextProj);
+                    }
+                }
+            }
+            visibility = sampleCsmShadow(vWorldPos, fragViewPos, geometricNormal, L);
+            sunShadowVisibilityDebug = visibility;
+            sunShadowValidDebug = true;
         } else if (light.castsShadows != 0 && light.shadowIndex >= 0) {
-            visibility = sampleShadow(light.shadowIndex, N, L);
+            visibility = sampleShadow(light.shadowIndex, geometricNormal, L);
         }
 
-        totalLight += visibility * ((kD * albedo * diffuseRadiance) + (specular * specularRadiance)) * NdotL * materialAo;
+        vec3 lightContribution = visibility * ((kD * albedo * diffuseRadiance) + (specular * specularRadiance)) * NdotL * materialAo;
+        totalLight += lightContribution;
+        if (light.type == LIGHT_DIRECTIONAL) {
+            sunDirectDebug += lightContribution;
+        }
+    }
+
+    if (uDebugViewMode == 5) {
+        fragColor = vec4(max(sunDirectDebug, vec3(0.0)), 1.0);
+        float marker = csmCascadeDebug >= 0 ? (float(csmCascadeDebug) + 1.0) / 8.0 : 0.0;
+        fragNormal = vec4(N * 0.5 + 0.5, marker);
+        return;
+    }
+    if (uDebugViewMode == 6) {
+        float value = sunShadowValidDebug ? sunShadowVisibilityDebug : 0.0;
+        fragColor = vec4(vec3(value), 1.0);
+        float marker = csmCascadeDebug >= 0 ? (float(csmCascadeDebug) + 1.0) / 8.0 : 0.0;
+        fragNormal = vec4(N * 0.5 + 0.5, marker);
+        return;
+    }
+    if (uDebugViewMode == 7) {
+        vec3 debugColor = vec3(0.06);
+        if (csmPrimaryDepthOutOfBoundsDebug || csmNextDepthOutOfBoundsDebug) {
+            debugColor = vec3(0.20, 0.45, 1.0);
+        } else if (csmPrimaryUvOutOfBoundsDebug) {
+            debugColor = vec3(1.0, 0.18, 0.18);
+        } else if (csmNextUvOutOfBoundsDebug) {
+            debugColor = vec3(1.0, 0.72, 0.18);
+        } else if (sunShadowValidDebug) {
+            debugColor = vec3(0.16, 0.82, 0.26);
+        }
+        fragColor = vec4(debugColor, 1.0);
+        float marker = csmCascadeDebug >= 0 ? (float(csmCascadeDebug) + 1.0) / 8.0 : 0.0;
+        fragNormal = vec4(N * 0.5 + 0.5, marker);
+        return;
+    }
+    if (uDebugViewMode == 8) {
+        vec3 debugColor = csmCascadeDebug >= 0 ? cascadeDebugColor(csmCascadeDebug) : vec3(0.0);
+        fragColor = vec4(debugColor, 1.0);
+        float marker = csmCascadeDebug >= 0 ? (float(csmCascadeDebug) + 1.0) / 8.0 : 0.0;
+        fragNormal = vec4(N * 0.5 + 0.5, marker);
+        return;
     }
 
     // Emissive self-illumination (combined with bloom this produces perceived light bleeding)

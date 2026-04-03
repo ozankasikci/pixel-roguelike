@@ -23,6 +23,10 @@ public:
     void clear();
     void tick(float deltaTime, float aspect);
     void prewarmRenderer(ContentRegistry& content);
+    bool setPrimaryCameraView(const glm::vec3& position,
+                              float yaw,
+                              float pitch,
+                              const std::optional<float>& fov = std::nullopt);
     RuntimeSceneRenderOutput render(float deltaTime,
                                     int internalWidth,
                                     int internalHeight,

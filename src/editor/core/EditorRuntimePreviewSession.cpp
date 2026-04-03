@@ -67,6 +67,13 @@ void EditorRuntimePreviewSession::prewarmRenderer(ContentRegistry& content) {
     session_.prewarmRenderer(content);
 }
 
+bool EditorRuntimePreviewSession::setPrimaryCameraView(const glm::vec3& position,
+                                                       float yaw,
+                                                       float pitch,
+                                                       const std::optional<float>& fov) {
+    return session_.setPrimaryCameraView(position, yaw, pitch, fov);
+}
+
 RuntimeSceneRenderOutput EditorRuntimePreviewSession::render(float deltaTime,
                                                             int internalWidth,
                                                             int internalHeight,

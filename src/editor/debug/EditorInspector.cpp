@@ -1,6 +1,10 @@
 #include "editor/debug/EditorInspector.h"
 
+#include "editor/core/EditorRuntimePreviewSession.h"
 #include "editor/viewport/EditorViewportController.h"
+#include "game/components/CameraComponent.h"
+#include "game/components/PrimaryCameraTag.h"
+#include "game/components/TransformComponent.h"
 
 #include <ImGuizmo.h>
 #include <glm/glm.hpp>
@@ -13,14 +17,16 @@ EditorInspector::EditorInspector(const EditorSceneDocument& doc,
                                  const EditorCommandStack& cmdStack,
                                  const EditorCamera& camera,
                                  const EditorViewportState& viewport,
-                                 const EditorPreviewWorld& previewWorld)
+                                 const EditorPreviewWorld* previewWorld,
+                                 const EditorRuntimePreviewSession* runtimePreviewSession)
     : doc_(doc)
     , selectedIds_(selectedIds)
     , ui_(ui)
     , cmdStack_(cmdStack)
     , camera_(camera)
     , viewport_(viewport)
-    , previewWorld_(previewWorld) {
+    , previewWorld_(previewWorld)
+    , runtimePreviewSession_(runtimePreviewSession) {
 }
 
 nlohmann::json EditorInspector::selection() const {
@@ -121,6 +127,17 @@ nlohmann::json EditorInspector::panels() const {
             {"environment",   ui_.showEnvironment},
             {"viewport",      ui_.showViewport},
             {"build_output",  ui_.showBuildOutput}
+        }}
+    };
+}
+
+nlohmann::json EditorInspector::playPreviewState() const {
+    return {
+        {"ok", true},
+        {"data", {
+            {"active", ui_.playPreview},
+            {"toggle_requested", ui_.playPreviewToggleRequested},
+            {"captured", runtimePreviewSession_ != nullptr ? runtimePreviewSession_->captured() : false}
         }}
     };
 }
@@ -235,4 +252,26 @@ nlohmann::json EditorInspector::camera() const {
         {"orbit_pivot",      {{"x", camera_.orbitPivot.x}, {"y", camera_.orbitPivot.y}, {"z", camera_.orbitPivot.z}}},
         {"orbit_pivot_valid", camera_.orbitPivotValid}
     }}};
+}
+
+nlohmann::json EditorInspector::runtimeCamera() const {
+    if (runtimePreviewSession_ == nullptr) {
+        return {{"ok", false}, {"error", "Runtime preview session is not available"}};
+    }
+
+    auto view = runtimePreviewSession_->registry().view<TransformComponent, CameraComponent, PrimaryCameraTag>();
+    for (auto [entity, transform, camera] : view.each()) {
+        return {{"ok", true}, {"data", {
+            {"entity", static_cast<std::uint32_t>(entity)},
+            {"position", {{"x", transform.position.x}, {"y", transform.position.y}, {"z", transform.position.z}}},
+            {"yaw", camera.yaw},
+            {"pitch", camera.pitch},
+            {"fov", camera.fov},
+            {"near_plane", camera.nearPlane},
+            {"far_plane", camera.farPlane},
+            {"forward", {{"x", camera.forward.x}, {"y", camera.forward.y}, {"z", camera.forward.z}}}
+        }}};
+    }
+
+    return {{"ok", false}, {"error", "Primary runtime camera not found"}};
 }

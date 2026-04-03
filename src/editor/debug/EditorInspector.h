@@ -11,6 +11,8 @@
 
 #include <nlohmann/json.hpp>
 
+class EditorRuntimePreviewSession;
+
 class EditorInspector {
 public:
     EditorInspector(const EditorSceneDocument& doc,
@@ -19,7 +21,8 @@ public:
                     const EditorCommandStack& cmdStack,
                     const EditorCamera& camera,
                     const EditorViewportState& viewport,
-                    const EditorPreviewWorld& previewWorld);
+                    const EditorPreviewWorld* previewWorld = nullptr,
+                    const EditorRuntimePreviewSession* runtimePreviewSession = nullptr);
 
     EditorInspector(const EditorInspector&) = delete;
     EditorInspector& operator=(const EditorInspector&) = delete;
@@ -30,6 +33,7 @@ public:
     nlohmann::json frameStats() const;
     nlohmann::json undoStack() const;
     nlohmann::json panels() const;
+    nlohmann::json playPreviewState() const;
 
     // Diagnostic inspect commands
     nlohmann::json imguiCapture() const;
@@ -40,6 +44,7 @@ public:
     nlohmann::json entities() const;
     nlohmann::json worldToScreen(const nlohmann::json& args) const;
     nlohmann::json camera() const;
+    nlohmann::json runtimeCamera() const;
 
 private:
     const EditorSceneDocument& doc_;
@@ -48,5 +53,6 @@ private:
     const EditorCommandStack& cmdStack_;
     const EditorCamera& camera_;
     const EditorViewportState& viewport_;
-    const EditorPreviewWorld& previewWorld_;
+    const EditorPreviewWorld* previewWorld_ = nullptr;
+    const EditorRuntimePreviewSession* runtimePreviewSession_ = nullptr;
 };

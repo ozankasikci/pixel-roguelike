@@ -14,9 +14,11 @@
 
 #include <cstdint>
 #include <memory>
+#include <string>
 #include <vector>
 
 struct GLFWwindow;
+class EditorRuntimePreviewSession;
 
 class DebugHarness {
 public:
@@ -28,7 +30,8 @@ public:
                  EditorCamera& camera,
                  EditorCameraAnimation& cameraAnim,
                  const EditorViewportState& viewport,
-                 const EditorPreviewWorld& previewWorld);
+                 const EditorPreviewWorld& previewWorld,
+                 EditorRuntimePreviewSession* runtimePreviewSession = nullptr);
     ~DebugHarness() = default;
 
     DebugHarness(const DebugHarness&) = delete;
@@ -37,6 +40,9 @@ public:
     void init();
     void poll();
     void shutdown();
+
+    bool hasPendingScreenshot() const { return !pendingScreenshotPath_.empty(); }
+    std::string consumePendingScreenshotPath();
 
 private:
     EditorSceneDocument& doc_;
@@ -48,6 +54,7 @@ private:
     EditorCameraAnimation& cameraAnim_;
     const EditorViewportState& viewport_;
     const EditorPreviewWorld& previewWorld_;
+    EditorRuntimePreviewSession* runtimePreviewSession_ = nullptr;
 
     CommandRegistry registry_;
     DebugServer server_;
@@ -55,4 +62,5 @@ private:
     std::unique_ptr<EditorCommander> commander_;
     SessionRecorder recorder_;
     SessionPlayer player_;
+    std::string pendingScreenshotPath_;
 };

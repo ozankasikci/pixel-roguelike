@@ -72,7 +72,15 @@ constexpr const char* kInspectorWindowName = "Inspector";
 constexpr const char* kAssetBrowserWindowName = "Asset Browser";
 constexpr const char* kEnvironmentWindowName = "Environment";
 constexpr float kRuntimeViewportAspect = 1280.0f / 720.0f;
-constexpr const char* kPreviewModes[] = {"Final", "Lighting", "Sky"};
+constexpr const char* kPreviewModes[] = {
+    "Final",
+    "Lighting",
+    "Sky",
+    "Sun Direct",
+    "Sun Shadow",
+    "CSM UV",
+    "Cascade",
+};
 constexpr const char* kPreviewQualityLabels[] = {"Fast", "Balanced", "High"};
 constexpr const char* kWindowGeometryFile = "editor_window.ini";
 constexpr const char* kBuildOutputWindowName = "Build Output";
@@ -171,8 +179,28 @@ const char* runtimePreviewDirtyStateLabel(RuntimePreviewDirtyState state) {
 }
 
 const char* previewModeLabel(EditorPreviewMode mode) {
-    const int index = std::clamp(static_cast<int>(mode), 0, 2);
+    const int index = std::clamp(static_cast<int>(mode), 0, 6);
     return kPreviewModes[index];
+}
+
+int previewModeDebugView(EditorPreviewMode mode) {
+    switch (mode) {
+    case EditorPreviewMode::Final:
+        return 0;
+    case EditorPreviewMode::LightingOnly:
+        return 1;
+    case EditorPreviewMode::SkyOnly:
+        return 4;
+    case EditorPreviewMode::SunDirect:
+        return 5;
+    case EditorPreviewMode::SunShadowVisibility:
+        return 6;
+    case EditorPreviewMode::CsmUvBounds:
+        return 7;
+    case EditorPreviewMode::CascadeIndex:
+        return 8;
+    }
+    return 0;
 }
 
 glm::vec3 safeNormalize(const glm::vec3& value, const glm::vec3& fallback) {
@@ -418,7 +446,7 @@ int main(int argc, char* argv[]) {
     EditorViewportState viewportState;
 
     DebugHarness debugHarness(document, selectedIds, ui, commandStack, window.handle(),
-                              editCamera, cameraAnim, viewportState, previewWorld);
+                              editCamera, cameraAnim, viewportState, previewWorld, &runtimePreviewSession);
     debugHarness.init();
 
     // Full-frame render lambda — called from the main loop and from
@@ -451,6 +479,10 @@ int main(int argc, char* argv[]) {
 
         if (!io.WantTextInput && (io.KeyCtrl || io.KeySuper) && ImGui::IsKeyPressed(ImGuiKey_P)) {
             playTogglePressed = true;
+        }
+        if (ui.playPreviewToggleRequested) {
+            playTogglePressed = true;
+            ui.playPreviewToggleRequested = false;
         }
 
         if (!gameplayPreviewCaptured) {
@@ -597,7 +629,7 @@ int main(int argc, char* argv[]) {
 
             if (ImGui::BeginMenu("View")) {
                 if (ImGui::BeginMenu("Preview Mode")) {
-                    for (int index = 0; index < 3; ++index) {
+                    for (int index = 0; index < 7; ++index) {
                         const auto mode = static_cast<EditorPreviewMode>(index);
                         if (ImGui::MenuItem(kPreviewModes[index], nullptr, ui.previewMode == mode)) {
                             ui.previewMode = mode;
@@ -1269,7 +1301,7 @@ int main(int argc, char* argv[]) {
                     ImGui::SameLine();
                     int previewModeIndex = static_cast<int>(ui.previewMode);
                     ImGui::SetNextItemWidth(110.0f);
-                    if (ImGui::Combo("##viewport_previewmode", &previewModeIndex, kPreviewModes, 3)) {
+                    if (ImGui::Combo("##viewport_previewmode", &previewModeIndex, kPreviewModes, 7)) {
                         ui.previewMode = static_cast<EditorPreviewMode>(previewModeIndex);
                     }
                     ImGui::SameLine();
@@ -1475,17 +1507,7 @@ int main(int argc, char* argv[]) {
             previewEnvironment.post.sky = previewEnvironment.sky;
             previewEnvironment.post.sky.sunDirection = safeNormalize(previewEnvironment.lighting.sun.direction, previewEnvironment.post.sky.sunDirection);
             previewEnvironment.post.sky.sunColor = previewEnvironment.lighting.sun.color;
-            switch (ui.previewMode) {
-            case EditorPreviewMode::Final:
-                previewEnvironment.post.debugViewMode = 0;
-                break;
-            case EditorPreviewMode::LightingOnly:
-                previewEnvironment.post.debugViewMode = 1;
-                break;
-            case EditorPreviewMode::SkyOnly:
-                previewEnvironment.post.debugViewMode = 4;
-                break;
-            }
+            previewEnvironment.post.debugViewMode = previewModeDebugView(ui.previewMode);
 
             std::vector<RenderLight> lights = collectLights(previewWorld.registry(), previewEnvironment);
 
@@ -1504,6 +1526,7 @@ int main(int argc, char* argv[]) {
             editorViewportRenderer.render(renderParams, targetW, targetH, targetW, targetH, finalFbo.framebuffer());
         } else if (!ui.pendingScenePath.empty() && !startupViewportHandoffActive) {
             runtimePreviewSession.debugParams().lighting.shadowMapResolutionIndex = ui.shadowResolutionIndex;
+            runtimePreviewSession.debugParams().post.debugViewMode = previewModeDebugView(ui.previewMode);
             runtimePreviewSession.updateInput(window.handle(), io);
             runtimePreviewSession.tick(deltaTime, kRuntimeViewportAspect);
             runtimePreviewSession.syncCursor(window.handle());
@@ -2145,11 +2168,20 @@ int main(int argc, char* argv[]) {
         }
 
         imgui.endFrame();
-        if (g_editorScreenshotRequested) {
+        std::string requestedScreenshotPath = debugHarness.consumePendingScreenshotPath();
+        if (requestedScreenshotPath.empty() && g_editorScreenshotRequested) {
             g_editorScreenshotRequested = 0;
+            requestedScreenshotPath = "/tmp/editor_screenshot.png";
+        }
+        if (!requestedScreenshotPath.empty()) {
+            const std::filesystem::path outputPath(requestedScreenshotPath);
+            if (outputPath.has_parent_path()) {
+                std::error_code ec;
+                std::filesystem::create_directories(outputPath.parent_path(), ec);
+            }
             // Read from viewport FBO, not window framebuffer
             glBindFramebuffer(GL_FRAMEBUFFER, finalFbo.framebuffer());
-            saveScreenshot(finalFbo.width(), finalFbo.height(), "/tmp/editor_screenshot.png");
+            saveScreenshot(finalFbo.width(), finalFbo.height(), requestedScreenshotPath);
             glBindFramebuffer(GL_FRAMEBUFFER, 0);
         }
         window.swapBuffers();

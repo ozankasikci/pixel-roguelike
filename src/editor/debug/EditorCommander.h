@@ -7,11 +7,13 @@
 #include "editor/viewport/EditorViewportController.h"
 
 #include <cstdint>
+#include <string>
 #include <vector>
 
 #include <nlohmann/json.hpp>
 
 struct GLFWwindow;
+class EditorRuntimePreviewSession;
 
 class EditorCommander {
 public:
@@ -23,7 +25,9 @@ public:
                     EditorCamera& camera,
                     EditorCameraAnimation& cameraAnim,
                     const EditorViewportState& viewport,
-                    const EditorPreviewWorld& previewWorld);
+                    const EditorPreviewWorld* previewWorld = nullptr,
+                    EditorRuntimePreviewSession* runtimePreviewSession = nullptr,
+                    std::string* screenshotRequestPath = nullptr);
 
     EditorCommander(const EditorCommander&) = delete;
     EditorCommander& operator=(const EditorCommander&) = delete;
@@ -34,6 +38,9 @@ public:
     nlohmann::json undo(const nlohmann::json& args);
     nlohmann::json redo(const nlohmann::json& args);
     nlohmann::json togglePanel(const nlohmann::json& args);
+    nlohmann::json togglePlayPreview(const nlohmann::json& args);
+    nlohmann::json setPreviewMode(const nlohmann::json& args);
+    nlohmann::json setRuntimeCamera(const nlohmann::json& args);
 
     nlohmann::json keyPress(const nlohmann::json& args);
     nlohmann::json mouseClick(const nlohmann::json& args);
@@ -43,6 +50,7 @@ public:
     nlohmann::json focusEntity(const nlohmann::json& args);
     nlohmann::json gizmoDrag(const nlohmann::json& args);
     nlohmann::json waitEvents(const nlohmann::json& args);
+    nlohmann::json captureScreenshot(const nlohmann::json& args);
 
     int pendingEventCount() const;
 
@@ -55,5 +63,7 @@ private:
     EditorCamera& camera_;
     EditorCameraAnimation& cameraAnim_;
     const EditorViewportState& viewport_;
-    const EditorPreviewWorld& previewWorld_;
+    const EditorPreviewWorld* previewWorld_ = nullptr;
+    EditorRuntimePreviewSession* runtimePreviewSession_ = nullptr;
+    std::string* screenshotRequestPath_ = nullptr;
 };

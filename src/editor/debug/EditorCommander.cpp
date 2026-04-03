@@ -1,6 +1,10 @@
 #include "editor/debug/EditorCommander.h"
 
+#include "editor/core/EditorRuntimePreviewSession.h"
 #include "editor/viewport/EditorViewportController.h"
+#include "game/components/CameraComponent.h"
+#include "game/components/PrimaryCameraTag.h"
+#include "game/components/TransformComponent.h"
 
 #include <GLFW/glfw3.h>
 #include <ImGuizmo.h>
@@ -8,6 +12,7 @@
 #include <imgui_internal.h>
 
 #include <cmath>
+#include <optional>
 
 EditorCommander::EditorCommander(EditorSceneDocument& doc,
                                  std::vector<std::uint64_t>& selectedIds,
@@ -17,7 +22,9 @@ EditorCommander::EditorCommander(EditorSceneDocument& doc,
                                  EditorCamera& camera,
                                  EditorCameraAnimation& cameraAnim,
                                  const EditorViewportState& viewport,
-                                 const EditorPreviewWorld& previewWorld)
+                                 const EditorPreviewWorld* previewWorld,
+                                 EditorRuntimePreviewSession* runtimePreviewSession,
+                                 std::string* screenshotRequestPath)
     : doc_(doc)
     , selectedIds_(selectedIds)
     , ui_(ui)
@@ -26,7 +33,40 @@ EditorCommander::EditorCommander(EditorSceneDocument& doc,
     , camera_(camera)
     , cameraAnim_(cameraAnim)
     , viewport_(viewport)
-    , previewWorld_(previewWorld) {
+    , previewWorld_(previewWorld)
+    , runtimePreviewSession_(runtimePreviewSession)
+    , screenshotRequestPath_(screenshotRequestPath) {
+}
+
+static const char* previewModeName(EditorPreviewMode mode) {
+    switch (mode) {
+    case EditorPreviewMode::Final:
+        return "final";
+    case EditorPreviewMode::LightingOnly:
+        return "lighting";
+    case EditorPreviewMode::SkyOnly:
+        return "sky";
+    case EditorPreviewMode::SunDirect:
+        return "sun_direct";
+    case EditorPreviewMode::SunShadowVisibility:
+        return "sun_shadow";
+    case EditorPreviewMode::CsmUvBounds:
+        return "csm_uv";
+    case EditorPreviewMode::CascadeIndex:
+        return "cascade";
+    }
+    return "final";
+}
+
+static std::optional<EditorPreviewMode> parsePreviewModeName(const std::string& value) {
+    if (value == "final") return EditorPreviewMode::Final;
+    if (value == "lighting" || value == "lighting_only" || value == "scene_color") return EditorPreviewMode::LightingOnly;
+    if (value == "sky") return EditorPreviewMode::SkyOnly;
+    if (value == "sun_direct" || value == "sun-direct") return EditorPreviewMode::SunDirect;
+    if (value == "sun_shadow" || value == "sun-shadow" || value == "sun_shadow_visibility") return EditorPreviewMode::SunShadowVisibility;
+    if (value == "csm_uv" || value == "csm-uv" || value == "csm_uv_bounds") return EditorPreviewMode::CsmUvBounds;
+    if (value == "cascade" || value == "cascade_index" || value == "cascade-index") return EditorPreviewMode::CascadeIndex;
+    return std::nullopt;
 }
 
 nlohmann::json EditorCommander::selectEntity(const nlohmann::json& args) {
@@ -98,6 +138,111 @@ nlohmann::json EditorCommander::togglePanel(const nlohmann::json& args) {
         return {{"ok", false}, {"error", "Unknown panel: " + panel}};
     }
     return {{"ok", true}};
+}
+
+nlohmann::json EditorCommander::togglePlayPreview(const nlohmann::json& /*args*/) {
+    ui_.playPreviewToggleRequested = true;
+    if (window_) {
+        glfwPostEmptyEvent();
+    }
+    return {
+        {"ok", true},
+        {"requested", true},
+        {"currently_active", ui_.playPreview}
+    };
+}
+
+nlohmann::json EditorCommander::setPreviewMode(const nlohmann::json& args) {
+    std::string mode = args.value("mode", "");
+    if (mode.empty()) {
+        return {{"ok", false}, {"error", "Missing required arg: mode"}};
+    }
+
+    std::optional<EditorPreviewMode> parsedMode = parsePreviewModeName(mode);
+    if (!parsedMode.has_value()) {
+        return {
+            {"ok", false},
+            {"error", "Unknown preview mode: " + mode + " (expected final, lighting, sky, sun_direct, sun_shadow, csm_uv, or cascade)"}
+        };
+    }
+
+    ui_.previewMode = *parsedMode;
+    if (window_) {
+        glfwPostEmptyEvent();
+    }
+    return {
+        {"ok", true},
+        {"mode", previewModeName(ui_.previewMode)}
+    };
+}
+
+nlohmann::json EditorCommander::setRuntimeCamera(const nlohmann::json& args) {
+    if (runtimePreviewSession_ == nullptr) {
+        return {{"ok", false}, {"error", "Runtime preview session is not available"}};
+    }
+
+    auto view = runtimePreviewSession_->registry().view<TransformComponent, CameraComponent, PrimaryCameraTag>();
+    for (auto [entity, transform, camera] : view.each()) {
+        const glm::vec3 requestedPosition(
+            args.value("x", transform.position.x),
+            args.value("y", transform.position.y),
+            args.value("z", transform.position.z));
+        const float requestedYaw = args.value("yaw", camera.yaw);
+        const float requestedPitch = args.value("pitch", camera.pitch);
+        const bool hasFov = args.contains("fov");
+        const std::optional<float> requestedFov = hasFov
+            ? std::optional<float>(args["fov"].get<float>())
+            : std::nullopt;
+
+        if (!args.contains("x") && !args.contains("y") && !args.contains("z")
+            && !args.contains("yaw") && !args.contains("pitch") && !args.contains("fov")) {
+            return {{"ok", false}, {"error", "No runtime camera fields provided"}};
+        }
+
+        runtimePreviewSession_->setPrimaryCameraView(requestedPosition,
+                                                     requestedYaw,
+                                                     requestedPitch,
+                                                     requestedFov);
+
+        const auto& updatedTransform = runtimePreviewSession_->registry().get<TransformComponent>(entity);
+        const auto& updatedCamera = runtimePreviewSession_->registry().get<CameraComponent>(entity);
+
+        if (window_) {
+            glfwPostEmptyEvent();
+        }
+
+        return {{"ok", true}, {"data", {
+            {"entity", static_cast<std::uint32_t>(entity)},
+            {"position", {{"x", updatedTransform.position.x}, {"y", updatedTransform.position.y}, {"z", updatedTransform.position.z}}},
+            {"yaw", updatedCamera.yaw},
+            {"pitch", updatedCamera.pitch},
+            {"fov", updatedCamera.fov}
+        }}};
+    }
+
+    return {{"ok", false}, {"error", "Primary runtime camera not found"}};
+}
+
+nlohmann::json EditorCommander::captureScreenshot(const nlohmann::json& args) {
+    if (!screenshotRequestPath_) {
+        return {{"ok", false}, {"error", "Screenshot capture is not configured for this commander"}};
+    }
+
+    std::string path = args.value("path", "");
+    if (path.empty()) {
+        path = "/tmp/editor_screenshot.png";
+    }
+
+    *screenshotRequestPath_ = path;
+    if (window_) {
+        glfwPostEmptyEvent();
+    }
+
+    return {
+        {"ok", true},
+        {"queued", true},
+        {"path", path}
+    };
 }
 
 // Map a key name string to the corresponding ImGuiKey value.
@@ -332,7 +477,7 @@ nlohmann::json EditorCommander::focusEntity(const nlohmann::json& args) {
     }
 
     // Compute bounds for the focus animation — same logic as main.cpp focusPressed
-    const EditorObjectBounds* bounds = previewWorld_.findObjectBounds(targetObj->id);
+    const EditorObjectBounds* bounds = previewWorld_ ? previewWorld_->findObjectBounds(targetObj->id) : nullptr;
     if (bounds && bounds->valid) {
         beginFocusAnimation(camera_, cameraAnim_, bounds->min, bounds->max);
     } else {

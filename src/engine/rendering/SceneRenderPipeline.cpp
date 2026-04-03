@@ -213,6 +213,8 @@ void SceneRenderPipeline::renderShadowPass(const std::vector<RenderObject>& obje
 
         csmShadowMap_.bind();
         csmShader_->use();
+        csmShader_->setVec3("uLightDirection", lighting.sun.direction);
+        csmShader_->setFloat("uShadowCasterOffset", 0.18f);
 
         const auto& csmMatrices = csmShadowMap_.lightSpaceMatrices();
         for (int i = 0; i < CascadedShadowMap::kCascadeCount; ++i) {
@@ -241,6 +243,9 @@ void SceneRenderPipeline::renderShadowPass(const std::vector<RenderObject>& obje
                 }
             }
             csmShader_->setMat4("uModel", object.modelMatrix);
+            csmShader_->setFloat("uShadowNormalOffset", 0.03f);
+            object.mesh->draw();
+            csmShader_->setFloat("uShadowNormalOffset", -0.03f);
             object.mesh->draw();
         }
 
@@ -271,6 +276,7 @@ void SceneRenderPipeline::renderScenePass(const SceneRenderInput& input,
     sceneShader_->use();
     sceneShader_->setFloat("uTimeSeconds", timeSeconds);
     sceneShader_->setMat4("uViewMatrix", input.viewMatrix);
+    sceneShader_->setInt("uDebugViewMode", input.postParams ? input.postParams->debugViewMode : 0);
     sceneShader_->setInt("uCsmShadowMap", TextureUnits::kCsmShadowMap);
     sceneShader_->setInt("uCsmEnabled", csmEnabled ? 1 : 0);
     sceneShader_->setInt("uCsmCascadeCount", CascadedShadowMap::kCascadeCount);

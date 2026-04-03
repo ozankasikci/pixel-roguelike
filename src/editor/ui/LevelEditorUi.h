@@ -20,6 +20,10 @@ enum class EditorPreviewMode {
     Final,
     LightingOnly,
     SkyOnly,
+    SunDirect,
+    SunShadowVisibility,
+    CsmUvBounds,
+    CascadeIndex,
 };
 
 enum class EditorPreviewQuality {
@@ -89,6 +93,7 @@ struct EditorUiState {
     EditorPreviewMode previewMode = EditorPreviewMode::Final;
     EditorPreviewQuality previewQuality = EditorPreviewQuality::Balanced;
     bool playPreview = false;
+    bool playPreviewToggleRequested = false;
     bool showOutliner = true;
     bool showInspector = true;
     bool showAssetBrowser = true;

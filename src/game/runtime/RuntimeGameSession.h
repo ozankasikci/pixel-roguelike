@@ -43,6 +43,10 @@ public:
     void resetForPlay();
     void tick(float deltaTime, float aspect);
     void prewarmRenderer(ContentRegistry& content);
+    bool setPrimaryCameraView(const glm::vec3& position,
+                              float yaw,
+                              float pitch,
+                              const std::optional<float>& fov = std::nullopt);
     void setEnvironmentOverride(const EnvironmentDefinition& definition);
     void clearEnvironmentOverride();
     RuntimeSceneRenderOutput render(float deltaTime,

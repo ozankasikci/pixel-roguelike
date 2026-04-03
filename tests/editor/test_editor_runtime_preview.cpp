@@ -77,6 +77,19 @@ int main() {
         baselineCheckpoint = checkpointView.get<CheckpointComponent>(checkpointEntity);
     }
 
+    const glm::vec3 debugViewPosition = baselineTransform.position + glm::vec3(0.75f, 0.0f, -1.25f);
+    const float debugViewYaw = baselineCamera.yaw + 18.0f;
+    const float debugViewPitch = baselineCamera.pitch - 7.0f;
+    const float debugViewFov = baselineCamera.fov - 5.0f;
+    assert(preview.setPrimaryCameraView(debugViewPosition, debugViewYaw, debugViewPitch, debugViewFov));
+
+    const auto& movedTransform = preview.registry().get<TransformComponent>(player);
+    const auto& movedCamera = preview.registry().get<CameraComponent>(player);
+    assert(glm::length(movedTransform.position - debugViewPosition) <= kEpsilon);
+    assert(nearlyEqual(movedCamera.yaw, debugViewYaw));
+    assert(nearlyEqual(movedCamera.pitch, debugViewPitch));
+    assert(nearlyEqual(movedCamera.fov, debugViewFov));
+
     document.environment().post.fogDensity += 0.013f;
     document.environment().sky.sunGlow = 0.27f;
     document.markEnvironmentDirty();

@@ -229,9 +229,19 @@ void ImGuiLayer::renderOverlay(DebugParams& params, std::vector<RenderLight>& li
     ImGui::Begin("Debug Overlay");
 
     if (ImGui::CollapsingHeader("Render", ImGuiTreeNodeFlags_DefaultOpen)) {
-        const char* viewModes[] = {"Final", "Scene Color", "Normals", "Depth", "Sky"};
+        const char* viewModes[] = {
+            "Final",
+            "Scene Color",
+            "Normals",
+            "Depth",
+            "Sky",
+            "Sun Direct",
+            "Sun Shadow",
+            "CSM UV Bounds",
+            "Cascade Index",
+        };
         const char* toneMapModes[] = {"Linear", "ACES Fitted"};
-        ImGui::Combo("View Mode", &params.post.debugViewMode, viewModes, 5);
+        ImGui::Combo("View Mode", &params.post.debugViewMode, viewModes, 9);
         ImGui::Checkbox("Enable Sky", &params.post.enableSky);
         ImGui::Checkbox("Enable Edges", &params.post.enableEdges);
         ImGui::Checkbox("Enable Fog", &params.post.enableFog);

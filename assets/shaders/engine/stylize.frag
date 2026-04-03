@@ -60,7 +60,7 @@ void main() {
     float linDepth = linearizeDepth(rawDepth);
     bool isSkyPixel = rawDepth >= 0.9999;
 
-    if (uDebugViewMode == 1) {
+    if (uDebugViewMode == 1 || uDebugViewMode >= 5) {
         fragColor = vec4(texture(sceneColor, vTexCoord).rgb, 1.0);
         return;
     }
