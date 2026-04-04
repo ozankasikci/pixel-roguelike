@@ -6,7 +6,7 @@
 #include "game/behavior/ActionTypes.h"
 #include "game/behavior/BehaviorComponent.h"
 #include "game/behavior/NodeIndex.h"
-#include "game/behavior/TriggerComponent.h"
+#include "game/components/ColliderComponent.h"
 #include "game/components/DoorComponent.h"
 #include "game/components/InteractableComponent.h"
 #include "game/components/LightComponent.h"
@@ -59,15 +59,16 @@ void BehaviorSystem::processNewActivations(Application& app, float currentTime) 
 void BehaviorSystem::processTriggerFlags(Application& app, float currentTime) {
     auto& registry = app.registry();
 
-    auto view = registry.view<TriggerComponent, BehaviorComponent>();
-    for (auto [entity, trigger, behavior] : view.each()) {
-        if (trigger.pendingEnter) {
+    auto view = registry.view<ColliderComponent, BehaviorComponent>();
+    for (auto [entity, collider, behavior] : view.each()) {
+        if (collider.mode == ColliderMode::Solid) continue;
+        if (collider.pendingEnter) {
             executeActionList(app, entity, behavior.onEnter, "enter", currentTime);
-            trigger.pendingEnter = false;
+            collider.pendingEnter = false;
         }
-        if (trigger.pendingExit) {
+        if (collider.pendingExit) {
             executeActionList(app, entity, behavior.onExit, "exit", currentTime);
-            trigger.pendingExit = false;
+            collider.pendingExit = false;
         }
     }
 }

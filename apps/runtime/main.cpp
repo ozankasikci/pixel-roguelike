@@ -8,7 +8,6 @@
 #include "engine/ui/ImGuiLayer.h"
 #include "game/behavior/BehaviorSystem.h"
 #include "game/behavior/DoorAnimationSystem.h"
-#include "game/behavior/TriggerSystem.h"
 #include "game/systems/AudioListenerSystem.h"
 #include "game/systems/InventorySystem.h"
 #include "game/systems/PlayerMovementSystem.h"
@@ -78,7 +77,6 @@ int main(int argc, char* argv[]) {
     app.emplaceService<AudioSystem*>(&audio);
     auto& audioListener = app.addSystem<AudioListenerSystem>(Application::UpdatePhase::Gameplay, audio);
     (void)audioListener;
-    auto& triggers = app.addSystem<TriggerSystem>(Application::UpdatePhase::Gameplay);
     auto& behaviors = app.addSystem<BehaviorSystem>(Application::UpdatePhase::Gameplay);
     auto& doorAnim = app.addSystem<DoorAnimationSystem>(Application::UpdatePhase::Gameplay);
     auto& inventory = app.addSystem<InventorySystem>(Application::UpdatePhase::Gameplay, input);
@@ -86,7 +84,6 @@ int main(int argc, char* argv[]) {
     auto& camera = app.addSystem<CameraSystem>(Application::UpdatePhase::Camera, input);
     auto& render = app.addSystem<RenderSystem>(Application::UpdatePhase::Render, input);
     (void)checkpoints;
-    (void)triggers;
     (void)behaviors;
     (void)doorAnim;
     (void)interaction;

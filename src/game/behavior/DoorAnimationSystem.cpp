@@ -6,7 +6,7 @@
 #include "game/components/InteractableComponent.h"
 #include "game/components/MeshComponent.h"
 #include "game/components/PlayerInteractionLockComponent.h"
-#include "game/components/StaticColliderComponent.h"
+#include "game/components/ColliderComponent.h"
 #include "game/components/TransformComponent.h"
 
 #include <algorithm>
@@ -33,7 +33,7 @@ glm::mat4 makeDoorLeafModel(const DoorLeafComponent& leaf, float progress) {
 
 void updateDoorLeaf(entt::registry& registry, entt::entity entity, float progress) {
     auto* mesh = registry.try_get<MeshComponent>(entity);
-    auto* collider = registry.try_get<StaticColliderComponent>(entity);
+    auto* collider = registry.try_get<ColliderComponent>(entity);
     auto* leaf = registry.try_get<DoorLeafComponent>(entity);
     if (!mesh || !collider || !leaf) {
         return;
@@ -71,7 +71,7 @@ void DoorAnimationSystem::init(Application& app) {
         if (registry.try_get<DoorLeafComponent>(door.leftLeaf) != nullptr) {
             // updateDoorLeaf at progress 0 initializes the leaf mesh/collider position
             auto* mesh = registry.try_get<MeshComponent>(door.leftLeaf);
-            auto* collider = registry.try_get<StaticColliderComponent>(door.leftLeaf);
+            auto* collider = registry.try_get<ColliderComponent>(door.leftLeaf);
             auto* leaf = registry.try_get<DoorLeafComponent>(door.leftLeaf);
             if (mesh && collider && leaf) {
                 const float yaw = leaf->closedYaw;
@@ -89,7 +89,7 @@ void DoorAnimationSystem::init(Application& app) {
         }
         if (registry.try_get<DoorLeafComponent>(door.rightLeaf) != nullptr) {
             auto* mesh = registry.try_get<MeshComponent>(door.rightLeaf);
-            auto* collider = registry.try_get<StaticColliderComponent>(door.rightLeaf);
+            auto* collider = registry.try_get<ColliderComponent>(door.rightLeaf);
             auto* leaf = registry.try_get<DoorLeafComponent>(door.rightLeaf);
             if (mesh && collider && leaf) {
                 const float yaw = leaf->closedYaw;

@@ -6,7 +6,7 @@
 #include "game/components/DoorLeafComponent.h"
 #include "game/components/InteractableComponent.h"
 #include "game/rendering/RetroPalette.h"
-#include "game/components/StaticColliderComponent.h"
+#include "game/components/ColliderComponent.h"
 
 #include <glm/gtc/matrix_transform.hpp>
 
@@ -37,12 +37,13 @@ entt::entity spawnDoorLeaf(LevelBuilder& builder,
 
     auto& registry = builder.registry();
 
-    StaticColliderComponent collider;
-    collider.shape = StaticColliderShape::Box;
+    ColliderComponent collider;
+    collider.shape = ColliderShape::Box;
+    collider.mode = ColliderMode::Solid;
     collider.position = closedCenter;
     collider.rotation = glm::vec3(0.0f, closedYaw, 0.0f);
     collider.halfExtents = leafScale * 0.5f;
-    registry.emplace<StaticColliderComponent>(leaf, collider);
+    registry.emplace<ColliderComponent>(leaf, collider);
 
     DoorLeafComponent doorLeaf;
     doorLeaf.hingePosition = hingePosition;
@@ -214,13 +215,14 @@ entt::entity spawnSingleDoor(LevelBuilder& builder, const SingleDoorSpawnSpec& s
     doorLeaf.openYaw = spec.doorYawDegrees - spec.openAngle;
     registry.emplace<DoorLeafComponent>(leaf, doorLeaf);
 
-    // Attach StaticColliderComponent for physics blocking
-    StaticColliderComponent collider;
-    collider.shape = StaticColliderShape::Box;
+    // Attach ColliderComponent for physics blocking
+    ColliderComponent collider;
+    collider.shape = ColliderShape::Box;
+    collider.mode = ColliderMode::Solid;
     collider.position = leafWorldCenter;
     collider.rotation = glm::vec3(0.0f, spec.doorYawDegrees, 0.0f);
     collider.halfExtents = glm::vec3(0.42f, 0.96f, 0.05f);
-    registry.emplace<StaticColliderComponent>(leaf, collider);
+    registry.emplace<ColliderComponent>(leaf, collider);
 
     // Create the door root entity (interaction trigger point at handle height)
     const glm::vec3 rootPos = spec.rootPosition + glm::vec3(0.0f, 1.0f, 0.0f);
