@@ -363,6 +363,7 @@ bool applyGizmoToSelectedObject(EditorSceneDocument& document,
                                                     glm::vec3(0.0f, -1.0f, 0.0f));
                 }
             }
+            document.markSceneDirty();
             break;
         }
         case EditorSceneObjectKind::PlayerSpawn: {
