@@ -1,10 +1,13 @@
 #include "editor/viewport/EditorViewportInteraction.h"
 
+#include "editor/core/EditorCommand.h"
 #include "editor/scene/EditorPreviewWorld.h"
 #include "editor/viewport/EditorViewportController.h"
 #include "engine/core/MathUtils.h"
 #include "engine/rendering/geometry/MeshLibrary.h"
+#include "game/behavior/TriggerComponent.h"
 #include "game/content/ContentRegistry.h"
+#include "game/level/LevelDef.h"
 #include "game/rendering/MaterialDefinition.h"
 #include "game/rendering/MaterialTextureLibrary.h"
 
@@ -657,4 +660,107 @@ void appendPlacementGhost(std::vector<RenderObject>& objects,
     case EditorPlacementKind::None:
         break;
     }
+}
+
+// Trigger handle drag-to-resize implementation (per D-02)
+
+bool tryBeginTriggerHandleDrag(TriggerHandleDragState& dragState,
+                               const EditorSceneDocument& document,
+                               const std::vector<std::uint64_t>& selectedIds,
+                               const glm::mat4& viewProj,
+                               const glm::vec2& viewportSize,
+                               const glm::vec2& mousePos) {
+    static const glm::vec3 kAxes[] = {
+        {1, 0, 0}, {-1, 0, 0},
+        {0, 1, 0}, {0, -1, 0},
+        {0, 0, 1}, {0, 0, -1},
+    };
+    static const TriggerHandleAxis kHandleAxes[] = {
+        TriggerHandleAxis::PosX, TriggerHandleAxis::NegX,
+        TriggerHandleAxis::PosY, TriggerHandleAxis::NegY,
+        TriggerHandleAxis::PosZ, TriggerHandleAxis::NegZ,
+    };
+
+    for (const auto id : selectedIds) {
+        const EditorSceneObject* obj = document.findObject(id);
+        if (obj == nullptr || obj->kind != EditorSceneObjectKind::Trigger) continue;
+        const auto& trigger = std::get<TriggerPlacement>(obj->payload);
+
+        for (int i = 0; i < 6; ++i) {
+            const float extent = (trigger.shape == TriggerShape::Box)
+                ? glm::dot(kAxes[i], trigger.halfExtents * glm::abs(kAxes[i]))
+                : trigger.radius;
+            const glm::vec3 handleWorld = trigger.position + kAxes[i] * extent;
+
+            // Project to screen space
+            glm::vec4 clip = viewProj * glm::vec4(handleWorld, 1.0f);
+            if (clip.w <= 0.0f) continue;
+            glm::vec2 ndc = glm::vec2(clip.x, clip.y) / clip.w;
+            glm::vec2 screen = (ndc * 0.5f + 0.5f) * viewportSize;
+            screen.y = viewportSize.y - screen.y; // flip Y for ImGui coordinate system
+
+            if (glm::distance(screen, mousePos) < 8.0f) {
+                dragState.activeAxis = kHandleAxes[i];
+                dragState.objectId = id;
+                dragState.beforeState = document.captureState();
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
+void updateTriggerHandleDrag(TriggerHandleDragState& dragState,
+                             EditorSceneDocument& document,
+                             const glm::vec3& cameraPos,
+                             const glm::vec3& rayDir) {
+    if (!dragState.active()) return;
+    EditorSceneObject* obj = document.findObject(dragState.objectId);
+    if (obj == nullptr || obj->kind != EditorSceneObjectKind::Trigger) return;
+    auto& trigger = std::get<TriggerPlacement>(obj->payload);
+
+    // Determine signed axis direction
+    glm::vec3 axis(0.0f);
+    switch (dragState.activeAxis) {
+    case TriggerHandleAxis::PosX: axis = {1, 0, 0}; break;
+    case TriggerHandleAxis::NegX: axis = {-1, 0, 0}; break;
+    case TriggerHandleAxis::PosY: axis = {0, 1, 0}; break;
+    case TriggerHandleAxis::NegY: axis = {0, -1, 0}; break;
+    case TriggerHandleAxis::PosZ: axis = {0, 0, 1}; break;
+    case TriggerHandleAxis::NegZ: axis = {0, 0, -1}; break;
+    default: return;
+    }
+
+    // Project ray onto axis through trigger center to find new extent
+    const glm::vec3 toCenter = trigger.position - cameraPos;
+    const float axisRayDot = glm::dot(axis, rayDir);
+    if (std::fabs(axisRayDot) < 0.001f) return; // degenerate: axis nearly perpendicular to ray
+    const float t = glm::dot(toCenter, axis) / axisRayDot;
+    if (t < 0.0f) return;
+    const glm::vec3 projected = cameraPos + rayDir * t;
+    const float dist = glm::dot(projected - trigger.position, axis);
+
+    if (trigger.shape == TriggerShape::Box) {
+        // Update the specific halfExtent axis (use absolute axis index)
+        const int axisIndex =
+            (dragState.activeAxis == TriggerHandleAxis::PosX || dragState.activeAxis == TriggerHandleAxis::NegX) ? 0
+          : (dragState.activeAxis == TriggerHandleAxis::PosY || dragState.activeAxis == TriggerHandleAxis::NegY) ? 1
+          : 2;
+        trigger.halfExtents[axisIndex] = std::max(std::fabs(dist), 0.05f);
+    } else {
+        trigger.radius = std::max(std::fabs(dist), 0.05f);
+    }
+    document.markSceneDirty();
+}
+
+void endTriggerHandleDrag(TriggerHandleDragState& dragState,
+                          EditorSceneDocument& document,
+                          EditorCommandStack& commandStack) {
+    if (!dragState.active()) return;
+    commandStack.pushDocumentStateCommand(
+        "Resize Trigger",
+        dragState.beforeState,
+        document.captureState(),
+        document);
+    dragState.clear();
 }

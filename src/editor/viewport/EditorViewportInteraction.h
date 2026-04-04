@@ -2,6 +2,7 @@
 
 #include "editor/scene/EditorSelectionSystem.h"
 #include "editor/ui/LevelEditorUi.h"
+#include "editor/scene/EditorSceneDocument.h"
 
 #include <glm/glm.hpp>
 #include <imgui.h>
@@ -14,7 +15,46 @@
 class ContentRegistry;
 class EditorPreviewWorld;
 class MaterialTextureLibrary;
+class EditorCommandStack;
 struct RenderObject;
+
+// Axis enum for trigger resize handle drag (per D-02)
+enum class TriggerHandleAxis {
+    None,
+    PosX, NegX,
+    PosY, NegY,
+    PosZ, NegZ,
+};
+
+// State for an active trigger handle drag
+struct TriggerHandleDragState {
+    TriggerHandleAxis activeAxis = TriggerHandleAxis::None;
+    std::uint64_t objectId = 0;
+    EditorSceneDocumentState beforeState;
+
+    bool active() const { return activeAxis != TriggerHandleAxis::None; }
+    void clear() {
+        activeAxis = TriggerHandleAxis::None;
+        objectId = 0;
+        beforeState = EditorSceneDocumentState{};
+    }
+};
+
+bool tryBeginTriggerHandleDrag(TriggerHandleDragState& dragState,
+                               const EditorSceneDocument& document,
+                               const std::vector<std::uint64_t>& selectedIds,
+                               const glm::mat4& viewProj,
+                               const glm::vec2& viewportSize,
+                               const glm::vec2& mousePos);
+
+void updateTriggerHandleDrag(TriggerHandleDragState& dragState,
+                             EditorSceneDocument& document,
+                             const glm::vec3& cameraPos,
+                             const glm::vec3& rayDir);
+
+void endTriggerHandleDrag(TriggerHandleDragState& dragState,
+                          EditorSceneDocument& document,
+                          EditorCommandStack& commandStack);
 
 struct EditorSelectionPickerState {
     std::vector<EditorHitResult> hits;
