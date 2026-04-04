@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: Editor UX
 status: Ready to execute
-stopped_at: Completed 17-unified-collider-system-with-trigger-capabilities-and-scripting-support/17-01-PLAN.md
-last_updated: "2026-04-04T23:27:36.573Z"
+stopped_at: Completed 17-unified-collider-system-with-trigger-capabilities-and-scripting-support/17-02-PLAN.md
+last_updated: "2026-04-04T23:34:44.852Z"
 last_activity: 2026-04-04
 progress:
   total_phases: 19
   completed_phases: 14
   total_plans: 49
-  completed_plans: 42
+  completed_plans: 43
 ---
 
 # Project State
@@ -25,7 +25,7 @@ See: .planning/PROJECT.md (updated 2026-03-23)
 ## Current Position
 
 Phase: 17 (unified-collider-system-with-trigger-capabilities-and-scripting-support) — EXECUTING
-Plan: 2 of 3
+Plan: 3 of 3
 
 ## Performance Metrics
 
@@ -75,6 +75,7 @@ Plan: 2 of 3
 | Phase 15 P01 | 8 | 2 tasks | 3 files |
 | Phase 16 P02 | 8 | 2 tasks | 1 files |
 | Phase 17-unified-collider-system-with-trigger-capabilities-and-scripting-support P01 | 180 | 2 tasks | 30 files |
+| Phase 17-unified-collider-system-with-trigger-capabilities-and-scripting-support P02 | 30 | 2 tasks | 8 files |
 
 ## Accumulated Context
 
@@ -179,6 +180,9 @@ Recent decisions affecting current work:
 - [Phase 17-unified-collider-system-with-trigger-capabilities-and-scripting-support]: Renamed StaticColliderComponent.h enum to StaticColliderShape to avoid redeclaration conflict with new ColliderShape:uint8_t enum
 - [Phase 17-unified-collider-system-with-trigger-capabilities-and-scripting-support]: Editor consolidated BoxCollider/CylinderCollider/Trigger EditorSceneObjectKind to single Collider kind
 - [Phase 17-unified-collider-system-with-trigger-capabilities-and-scripting-support]: Parser reads old collider_box/collider_cylinder/trigger_box/trigger_sphere and new collider <shape> <mode> format; serializer emits only new format
+- [Phase 17]: CharacterVirtual sensor detection requires CharacterContactListener (not global ContactListener) — registered via SetListener on CharacterVirtual
+- [Phase 17]: SolidAndTrigger mode creates two separate Jolt bodies (solid + sensor) sharing same shape/position
+- [Phase 17]: TriggerSystem deleted — sensor overlap detection now done by PhysicsSystem via Jolt mIsSensor bodies
 
 ### Pending Todos
 
@@ -252,6 +256,6 @@ None yet.
 ## Session Continuity
 
 Last activity: 2026-04-04
-Last session: 2026-04-04T23:27:36.568Z
-Stopped at: Completed 17-unified-collider-system-with-trigger-capabilities-and-scripting-support/17-01-PLAN.md
+Last session: 2026-04-04T23:34:44.847Z
+Stopped at: Completed 17-unified-collider-system-with-trigger-capabilities-and-scripting-support/17-02-PLAN.md
 Resume file: None
