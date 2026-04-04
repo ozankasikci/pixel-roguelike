@@ -20,6 +20,12 @@ pixel_roguelike_add_test(test_editor_layout_presets
     LABELS editor
 )
 
+pixel_roguelike_add_test(test_editor_ui_preferences
+    SOURCES test_editor_ui_preferences.cpp
+    LIBRARIES editor
+    LABELS editor
+)
+
 pixel_roguelike_add_test(test_editor_hierarchy
     SOURCES test_editor_hierarchy.cpp
     LIBRARIES editor

@@ -9,6 +9,7 @@
 #include "game/ui/GameOverlays.h"
 #include "editor/build/EditorBuildSystem.h"
 #include "editor/core/EditorCommand.h"
+#include "editor/core/EditorUiPreferences.h"
 #include "editor/debug/DebugHarness.h"
 #include "editor/scene/EditorPreviewWorld.h"
 #include "editor/scene/EditorSceneDocument.h"
@@ -83,6 +84,7 @@ constexpr const char* kPreviewModes[] = {
 };
 constexpr const char* kPreviewQualityLabels[] = {"Fast", "Balanced", "High"};
 constexpr const char* kWindowGeometryFile = "editor_window.ini";
+constexpr const char* kEditorUiConfigFile = "editor_ui.ini";
 constexpr const char* kBuildOutputWindowName = "Build Output";
 constexpr const char* kBuildConfigFile = "editor_build.ini";
 constexpr double kIdleTimeoutSeconds = 1.0 / 15.0;      // ~15 FPS when idle
@@ -308,6 +310,9 @@ int main(int argc, char* argv[]) {
 
     ImGuiLayer imgui;
     imgui.init(window.handle());
+    const EditorUiPreferences uiPrefs = loadEditorUiPreferences(kEditorUiConfigFile);
+    imgui.requestThemePreset(uiPrefs.themePreset);
+    imgui.requestFontPreset(uiPrefs.fontPreset);
     ImGui::GetIO().ConfigWindowsMoveFromTitleBarOnly = true;
 
     ContentRegistry content;
@@ -441,8 +446,15 @@ int main(int argc, char* argv[]) {
     EditorPendingCommand gizmoCommand;
     MultiGizmoState multiGizmoState;
     std::vector<std::filesystem::path> pendingDroppedAssetPaths;
-    ImGuiThemePreset editorThemePreset = imgui.themePreset();
-    ImGuiFontPreset editorFontPreset = imgui.fontPreset();
+    ImGuiThemePreset editorThemePreset = uiPrefs.themePreset;
+    ImGuiFontPreset editorFontPreset = uiPrefs.fontPreset;
+    auto saveCurrentUiPreferences = [&]() {
+        saveEditorUiPreferences(EditorUiPreferences{
+                                    .fontPreset = editorFontPreset,
+                                    .themePreset = editorThemePreset,
+                                },
+                                kEditorUiConfigFile);
+    };
     // Declared here (rather than inside renderFrame) so DebugHarness can hold a reference
     // to it. The struct has default-initialized members and is populated each frame.
     EditorViewportState viewportState;
@@ -663,6 +675,7 @@ int main(int argc, char* argv[]) {
                         if (ImGui::MenuItem(imguiThemePresetLabel(preset), nullptr, selected)) {
                             editorThemePreset = preset;
                             imgui.requestThemePreset(preset);
+                            saveCurrentUiPreferences();
                         }
                     }
                     ImGui::EndMenu();
@@ -683,6 +696,7 @@ int main(int argc, char* argv[]) {
                         if (ImGui::MenuItem(imguiFontPresetLabel(preset), nullptr, selected)) {
                             editorFontPreset = preset;
                             imgui.requestFontPreset(preset);
+                            saveCurrentUiPreferences();
                         }
                     }
                     ImGui::EndMenu();
@@ -2237,6 +2251,7 @@ int main(int argc, char* argv[]) {
 
     g_editorRenderFrame = nullptr;
     saveWindowGeometry(window.handle());
+    saveCurrentUiPreferences();
     saveBuildConfig(buildConfig, kBuildConfigFile);
     // Explicitly save ImGui state before shutdown so panel sizes are always
     // persisted, even if the user closes within the periodic auto-save window.
