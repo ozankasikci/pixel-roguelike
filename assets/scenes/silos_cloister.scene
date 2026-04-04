@@ -93,33 +93,33 @@ dir_light -0.28 -1.0 -0.18 0.98 0.95 0.88 1.55
 light 0.0 5.8 0.0 0.46 0.48 0.42 24.0 0.5
 light 0.0 3.0 10.0 0.94 0.82 0.6 10.5 0.6
 light 0.0 3.0 -10.0 0.94 0.82 0.6 10.5 0.5
-collider_box 0.0 -0.1 0.0 10.45 0.1 10.45
-collider_box 0.0 2.7 11.2 11.2 2.7 0.65
-collider_box 0.0 2.7 -11.2 11.2 2.7 0.65
-collider_box -11.2 2.7 0.0 0.65 2.7 11.2
-collider_box 11.2 2.7 0.0 0.65 2.7 11.2
-collider_box 0.0 6.45 11.2 11.2 1.05 0.65
-collider_box 0.0 6.45 -11.2 11.2 1.05 0.65
-collider_box -11.2 6.45 0.0 0.65 1.05 11.2
-collider_box 11.2 6.45 0.0 0.65 1.05 11.2
-collider_box 0.0 0.12 0.0 1.45 0.12 1.45
-collider_cylinder 0.0 0.4 0.0 0.52 0.2
-collider_cylinder 0.0 0.74 0.0 0.18 0.16
-collider_cylinder -7.76 1.8 6.8 0.4 1.8
-collider_cylinder -2.59 1.8 6.8 0.4 1.8
-collider_cylinder 2.59 1.8 6.8 0.4 1.8
-collider_cylinder 7.76 1.8 6.8 0.4 1.8
-collider_cylinder -7.76 1.8 -6.8 0.4 1.8
-collider_cylinder -2.59 1.8 -6.8 0.4 1.8
-collider_cylinder 2.59 1.8 -6.8 0.4 1.8
-collider_cylinder 7.76 1.8 -6.8 0.4 1.8
-collider_cylinder -6.8 1.8 -7.76 0.4 1.8
-collider_cylinder -6.8 1.8 -2.59 0.4 1.8
-collider_cylinder -6.8 1.8 2.59 0.4 1.8
-collider_cylinder -6.8 1.8 7.76 0.4 1.8
-collider_cylinder 6.8 1.8 -7.76 0.4 1.8
-collider_cylinder 6.8 1.8 -2.59 0.4 1.8
-collider_cylinder 6.8 1.8 2.59 0.4 1.8
-collider_cylinder 6.8 1.8 7.76 0.4 1.8
+collider box solid 0.0 -0.1 0.0 10.45 0.1 10.45
+collider box solid 0.0 2.7 11.2 11.2 2.7 0.65
+collider box solid 0.0 2.7 -11.2 11.2 2.7 0.65
+collider box solid -11.2 2.7 0.0 0.65 2.7 11.2
+collider box solid 11.2 2.7 0.0 0.65 2.7 11.2
+collider box solid 0.0 6.45 11.2 11.2 1.05 0.65
+collider box solid 0.0 6.45 -11.2 11.2 1.05 0.65
+collider box solid -11.2 6.45 0.0 0.65 1.05 11.2
+collider box solid 11.2 6.45 0.0 0.65 1.05 11.2
+collider box solid 0.0 0.12 0.0 1.45 0.12 1.45
+collider cylinder solid 0.0 0.4 0.0 0.52 0.2
+collider cylinder solid 0.0 0.74 0.0 0.18 0.16
+collider cylinder solid -7.76 1.8 6.8 0.4 1.8
+collider cylinder solid -2.59 1.8 6.8 0.4 1.8
+collider cylinder solid 2.59 1.8 6.8 0.4 1.8
+collider cylinder solid 7.76 1.8 6.8 0.4 1.8
+collider cylinder solid -7.76 1.8 -6.8 0.4 1.8
+collider cylinder solid -2.59 1.8 -6.8 0.4 1.8
+collider cylinder solid 2.59 1.8 -6.8 0.4 1.8
+collider cylinder solid 7.76 1.8 -6.8 0.4 1.8
+collider cylinder solid -6.8 1.8 -7.76 0.4 1.8
+collider cylinder solid -6.8 1.8 -2.59 0.4 1.8
+collider cylinder solid -6.8 1.8 2.59 0.4 1.8
+collider cylinder solid -6.8 1.8 7.76 0.4 1.8
+collider cylinder solid 6.8 1.8 -7.76 0.4 1.8
+collider cylinder solid 6.8 1.8 -2.59 0.4 1.8
+collider cylinder solid 6.8 1.8 2.59 0.4 1.8
+collider cylinder solid 6.8 1.8 7.76 0.4 1.8
 player_spawn 0.0 1.6 10.1 -6.0
 archetype_instance checkpoint_shrine 9.0 0.0 0.0 -90.0

@@ -154,46 +154,46 @@ spot_light 0.0 6.2 -37.0 0.0 -0.28 0.96 0.66 0.72 0.78 16.5 1.5 12.0 22.0 0
 spot_light -6.8 4.6 -4.5 0.88 -0.16 0.44 0.46 0.48 0.44 9.0 0.5 20.0 34.0 0
 spot_light 6.8 4.6 -4.5 -0.88 -0.16 0.44 0.46 0.48 0.44 9.0 0.5 20.0 34.0 0
 
-collider_box 0 -0.05 -22.3 2.275 0.07 0.55
-collider_box 0 -0.17 -23.35 2.275 0.07 0.55
-collider_box 0 -0.29 -24.4 2.275 0.07 0.55
-collider_box 0 0.12 -16.5 3.4 0.12 0.6
-collider_box 0 0.3 -17.7 3.1 0.09 0.55
-collider_box 0 0.47 -18.8 2.8 0.08 0.5
-collider_box 0 0.67 -20.1 2.5 0.12 0.7
-collider_box 0.0 -0.05 -6.5 9.0 0.05 14.0
-collider_box 0.0 9.05 -6.5 9.0 0.05 14.0
-collider_box -9.0 4.5 -6.5 0.35 4.5 14.0
-collider_box 9.0 4.5 -6.5 0.35 4.5 14.0
-collider_box 0.0 4.5 8.2 9.0 4.5 0.15
-collider_box -5.175 4.5 -20.5 3.825 4.5 0.35
-collider_box 5.175 4.5 -20.5 3.825 4.5 0.35
-collider_box 0.0 7.65 -20.5 2.35 1.35 0.35
-collider_box 0.0 -0.44 -24.5 2.4 0.08 4.8
-collider_box 0.0 8.71 -24.5 2.4 0.08 4.8
-collider_box -2.4 4.05 -24.5 0.18 4.25 4.6
-collider_box 2.4 4.05 -24.5 0.18 4.25 4.6
-collider_box 0.0 -0.64 -36.0 6.5 0.08 7.5
-collider_box 0.0 8.51 -36.0 6.5 0.08 7.5
-collider_box -6.5 3.78 -36.0 0.26 4.1 7.5
-collider_box 6.5 3.78 -36.0 0.26 4.1 7.5
-collider_box 0.0 3.78 -43.5 6.5 4.1 0.26
-collider_box 0.0 0.16 -43.7 6.5 1.2 0.26
+collider box solid 0 -0.05 -22.3 2.275 0.07 0.55
+collider box solid 0 -0.17 -23.35 2.275 0.07 0.55
+collider box solid 0 -0.29 -24.4 2.275 0.07 0.55
+collider box solid 0 0.12 -16.5 3.4 0.12 0.6
+collider box solid 0 0.3 -17.7 3.1 0.09 0.55
+collider box solid 0 0.47 -18.8 2.8 0.08 0.5
+collider box solid 0 0.67 -20.1 2.5 0.12 0.7
+collider box solid 0.0 -0.05 -6.5 9.0 0.05 14.0
+collider box solid 0.0 9.05 -6.5 9.0 0.05 14.0
+collider box solid -9.0 4.5 -6.5 0.35 4.5 14.0
+collider box solid 9.0 4.5 -6.5 0.35 4.5 14.0
+collider box solid 0.0 4.5 8.2 9.0 4.5 0.15
+collider box solid -5.175 4.5 -20.5 3.825 4.5 0.35
+collider box solid 5.175 4.5 -20.5 3.825 4.5 0.35
+collider box solid 0.0 7.65 -20.5 2.35 1.35 0.35
+collider box solid 0.0 -0.44 -24.5 2.4 0.08 4.8
+collider box solid 0.0 8.71 -24.5 2.4 0.08 4.8
+collider box solid -2.4 4.05 -24.5 0.18 4.25 4.6
+collider box solid 2.4 4.05 -24.5 0.18 4.25 4.6
+collider box solid 0.0 -0.64 -36.0 6.5 0.08 7.5
+collider box solid 0.0 8.51 -36.0 6.5 0.08 7.5
+collider box solid -6.5 3.78 -36.0 0.26 4.1 7.5
+collider box solid 6.5 3.78 -36.0 0.26 4.1 7.5
+collider box solid 0.0 3.78 -43.5 6.5 4.1 0.26
+collider box solid 0.0 0.16 -43.7 6.5 1.2 0.26
 
-collider_cylinder -3.45 4.5 4.4 0.42 4.5
-collider_cylinder 3.45 4.5 4.4 0.42 4.5
-collider_cylinder -3.45 4.5 -2.9 0.42 4.5
-collider_cylinder 3.45 4.5 -2.9 0.42 4.5
-collider_cylinder -3.45 4.5 -10.2 0.42 4.5
-collider_cylinder 3.45 4.5 -10.2 0.42 4.5
-collider_cylinder -3.45 4.5 -16.8 0.42 4.5
-collider_cylinder 3.45 4.5 -16.8 0.42 4.5
-collider_cylinder -6.6 4.5 3.4 0.441 4.5
-collider_cylinder 6.6 4.5 3.4 0.441 4.5
-collider_cylinder -6.6 4.5 -13.9 0.441 4.5
-collider_cylinder 6.6 4.5 -13.9 0.441 4.5
-collider_cylinder -2.95 4.5 -19.7 0.42 4.5
-collider_cylinder 2.95 4.5 -19.7 0.42 4.5
+collider cylinder solid -3.45 4.5 4.4 0.42 4.5
+collider cylinder solid 3.45 4.5 4.4 0.42 4.5
+collider cylinder solid -3.45 4.5 -2.9 0.42 4.5
+collider cylinder solid 3.45 4.5 -2.9 0.42 4.5
+collider cylinder solid -3.45 4.5 -10.2 0.42 4.5
+collider cylinder solid 3.45 4.5 -10.2 0.42 4.5
+collider cylinder solid -3.45 4.5 -16.8 0.42 4.5
+collider cylinder solid 3.45 4.5 -16.8 0.42 4.5
+collider cylinder solid -6.6 4.5 3.4 0.441 4.5
+collider cylinder solid 6.6 4.5 3.4 0.441 4.5
+collider cylinder solid -6.6 4.5 -13.9 0.441 4.5
+collider cylinder solid 6.6 4.5 -13.9 0.441 4.5
+collider cylinder solid -2.95 4.5 -19.7 0.42 4.5
+collider cylinder solid 2.95 4.5 -19.7 0.42 4.5
 
 player_spawn 0.0 1.6 5.4 -8.0
 archetype_instance checkpoint_shrine 0.0 0.0 -35.3 0.0

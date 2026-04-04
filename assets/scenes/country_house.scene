@@ -33,17 +33,17 @@ light 0.0 10.0 10.0 1.0 0.98 0.92 30.0 6.0 node node_light_ext_back
 light 0.0 14.0 0.0 1.0 0.99 0.95 40.0 5.0 node node_light_ext_sky
 
 # Floor collider — extended to cover around the house
-collider_box 0.0 -0.05 0.0 12.0 0.05 12.0 node node_col_floor
+collider box solid 0.0 -0.05 0.0 12.0 0.05 12.0 node node_col_floor
 
 # Perimeter wall colliders — approximate the house exterior walls
 # North wall (Z = +6.85)
-collider_box 0.0 4.0 7.0 7.5 4.0 0.15 node node_col_wall_n
+collider box solid 0.0 4.0 7.0 7.5 4.0 0.15 node node_col_wall_n
 # South wall (Z = -5.06)
-collider_box 0.0 4.0 -5.2 7.5 4.0 0.15 node node_col_wall_s
+collider box solid 0.0 4.0 -5.2 7.5 4.0 0.15 node node_col_wall_s
 # East wall (X = +7.41)
-collider_box 7.6 4.0 0.9 0.15 4.0 6.1 node node_col_wall_e
+collider box solid 7.6 4.0 0.9 0.15 4.0 6.1 node node_col_wall_e
 # West wall (X = -7.41)
-collider_box -7.6 4.0 0.9 0.15 4.0 6.1 node node_col_wall_w
+collider box solid -7.6 4.0 0.9 0.15 4.0 6.1 node node_col_wall_w
 
 # Player spawn — inside the house
 player_spawn 0.0 1.6 2.0 -5.0 node node_spawn

@@ -140,12 +140,12 @@ light -2.5 1.5 6.5 1.0 0.90 0.65 8.0 5.0 node node_l_door
 light 0.0 3.85 3.0 1.0 0.05 0.02 0.5 0.3 node node_led_red
 
 # Colliders
-collider_box  0.0 -0.05 3.0 4.0 0.05 3.0 node node_col_floor
-collider_box  0.0  4.05 3.0 4.0 0.05 3.0 node node_col_ceil
-collider_box  0.0  2.0  0.0 4.0 2.0 0.1 node node_col_south
-collider_box  0.0  2.0  6.0 4.0 2.0 0.1 node node_col_north
-collider_box  4.0  2.0  3.0 0.1 2.0 3.0 node node_col_east
-collider_box -4.0  2.0  3.0 0.1 2.0 3.0 node node_col_west
+collider box solid  0.0 -0.05 3.0 4.0 0.05 3.0 node node_col_floor
+collider box solid  0.0  4.05 3.0 4.0 0.05 3.0 node node_col_ceil
+collider box solid  0.0  2.0  0.0 4.0 2.0 0.1 node node_col_south
+collider box solid  0.0  2.0  6.0 4.0 2.0 0.1 node node_col_north
+collider box solid  4.0  2.0  3.0 0.1 2.0 3.0 node node_col_east
+collider box solid -4.0  2.0  3.0 0.1 2.0 3.0 node node_col_west
 
 # Player spawn near south wall, facing north (+Z)
 player_spawn 0.0 1.0 1.5 0.0 node node_spawn
