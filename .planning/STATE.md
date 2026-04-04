@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: Editor UX
-status: Ready to execute
-stopped_at: Completed 16-01-PLAN.md
-last_updated: "2026-04-04T19:29:18.876Z"
+status: Executing Phase 16
+stopped_at: Phase 16 UI-SPEC approved
+last_updated: "2026-04-04T18:49:37.816Z"
 last_activity: 2026-04-04
 progress:
-  total_phases: 16
+  total_phases: 18
   completed_phases: 13
-  total_plans: 41
-  completed_plans: 37
+  total_plans: 46
+  completed_plans: 38
 ---
 
 # Project State
@@ -20,12 +20,12 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-23)
 
 **Core value:** The Stanley Parable-inspired art style — clean, minimalist environments with warm soft lighting, muted color palette, and stylized realism
-**Current focus:** Phase 14 — improve-lighting-reflections-occlusion-and-shadow-quality
+**Current focus:** Phase 16 — editor-trigger-and-behavior-authoring-with-save-load-fidelity
 
 ## Current Position
 
-Phase: 14 (improve-lighting-reflections-occlusion-and-shadow-quality) — EXECUTING
-Plan: 2 of 3
+Phase: 16 (editor-trigger-and-behavior-authoring-with-save-load-fidelity) — EXECUTING
+Plan: 1 of 3
 
 ## Performance Metrics
 
@@ -72,7 +72,7 @@ Plan: 2 of 3
 | Phase 07 P04 | 525609 | 2 tasks | 6 files |
 | Phase 07 P03 | 10 | 2 tasks | 4 files |
 | Phase 13-data-driven-behavior-system P01 | 15 | 3 tasks | 10 files |
-| Phase 16-editor-trigger-and-behavior-authoring-with-save-load-fidelity P01 | 60 | 3 tasks | 11 files |
+| Phase 15 P01 | 8 | 2 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -80,8 +80,6 @@ Plan: 2 of 3
 
 Decisions are logged in PROJECT.md Key Decisions table.
 Recent decisions affecting current work:
-
-<<<<<<< Updated upstream
 
 - Graphics API: OpenGL 4.1 Core Profile (macOS caps at 4.1; research recommended 4.6 but 4.1 is the ceiling on this platform)
 - Dithering approach: Post-process fullscreen quad with Bayer matrix; world-space pattern anchoring is non-negotiable from Phase 1
@@ -99,9 +97,6 @@ Recent decisions affecting current work:
 - [Phase 01.1-project-restructure-ecs-application-class-modular-engine-game-split]: CameraSystem uses identical yaw/pitch/forward math as main.cpp: cos(radians(yaw))*cos(radians(pitch)) for x, sin(radians(pitch)) for y, sin(radians(yaw))*cos(radians(pitch)) for z
 - [Phase 01.1-project-restructure-ecs-application-class-modular-engine-game-split]: RenderSystem builds render and light lists from ECS each frame; orchestrates full FBO scene pass + dither post-process + ImGui overlay identical to main.cpp
 - [Phase 01.1-project-restructure-ecs-application-class-modular-engine-game-split]: CameraSystem receives InputSystem& by constructor injection -- avoids application-level coupling, makes dependency explicit
-- [Phase 01.1-project-restructure-ecs-application-class-modular-engine-game-split]: CathedralScene uses useModelOverride=true for all mesh entities -- geometry is pre-computed with arbitrary transforms that cannot be decomposed to euler angles
-- [Phase 01.1-project-restructure-ecs-application-class-modular-engine-game-split]: GLM vec3 scalar constructor is explicit -- must use glm::vec3(0.0f) not brace-init {} in aggregate TransformComponent initialization
-- [Phase 01.1-project-restructure-ecs-application-class-modular-engine-game-split]: SceneManager instantiated in main() rather than owned by Application -- keeps Application minimal for this restructure phase
 - [Phase 01.1-project-restructure-ecs-application-class-modular-engine-game-split]: CathedralScene uses useModelOverride=true for all mesh entities -- geometry is pre-computed with arbitrary transforms that cannot be decomposed to euler angles
 - [Phase 01.1-project-restructure-ecs-application-class-modular-engine-game-split]: GLM vec3 scalar constructor is explicit -- must use glm::vec3(0.0f) not brace-init {} in aggregate TransformComponent initialization
 - [Phase 01.1-project-restructure-ecs-application-class-modular-engine-game-split]: SceneManager instantiated in main() rather than owned by Application -- keeps Application minimal for this restructure phase
@@ -145,9 +140,6 @@ Recent decisions affecting current work:
 - [Phase 07]: test_content_registry links game_rendering (not just game_content) because ContentRegistry.cpp now calls MaterialTextureLibrary methods
 - [Phase 07]: Material CRUD popups inline in asset browser panel; file I/O in panel, ContentRegistry mutations delegated to main.cpp via AssetBrowserActionResult
 - [Phase 07]: content.addMaterial() replaces content.loadDefaults() for targeted in-memory update on material inspector save
-
-=======
-
 - [Phase 08]: Metal and chained doors from buildScriptedGeometry (not .scene file) so InteractableComponent can be attached
 - [Phase 08]: Chain padlock links constructed from cylinder segments; 4 cylinders per link in rectangular loop
 - [v1.1 research]: All document mutation APIs complete — `eraseObjects`, `duplicateObject`, `addMesh`, `applyWorldTransform` need no changes
@@ -178,16 +170,8 @@ Recent decisions affecting current work:
 - [Phase quick]: AI_CONFIG_FBX_CONVERT_TO_M set via SetPropertyBool on both AssimpLoader import paths — converts FBX cm vertices to meters at import, eliminates 0.01 scale workarounds in scene files and scripted geometry
 - [Phase 13-data-driven-behavior-system]: NodeIndex built via registry.view<NodeIdComponent>() after all entity placement, not from parallel vectors — ensures scripted geometry entities are also indexed
 - [Phase 13-data-driven-behavior-system]: LevelDef.cpp parser refactored to buffer all lines and detect indented sub-lines for behavior/interactable declarations
-- [Phase 16]: Triggers promoted from read-only side-channel (readOnlyTriggers_) to first-class EditorSceneObject entries with full CRUD, undo/redo, and serialization
-- [Phase 16]: appendHelperObjects showTriggers parameter uses default=true to avoid breaking existing callers
-- [Phase 16]: Trigger inspector deferred to geometric fields only; behavior authoring panel planned for 16-02
-
-### Roadmap Evolution
-
-- Phase 12 added: Engine quality — frustum culling, texture unit enum, generic asset system, EventBus RAII tokens
-- Phase 13 added: Data-driven behavior system — native Action Component system with BehaviorSystem dispatcher, TriggerComponent, node ID targeting, scene file behavior declarations
-
->>>>>>> Stashed changes
+- [Phase 15]: Theme presets stay repo-local in ImGuiLayer and start from Dear ImGui Dark/Light baselines instead of introducing a skinning framework.
+- [Phase 15]: The editor exposes theme comparison only through View -> Interface Theme, matching the existing Interface Font workflow.
 
 ### Pending Todos
 
@@ -202,6 +186,8 @@ None yet.
 - Phase 5 added: Unify editor/runtime/build rendering parity — shared render path so all three modes produce identical visual output
 - Phase 6 added: Data-driven scene management — New/Delete Scene in editor, configurable runtime default, remove legacy hardcoded scene classes
 - Phase 7 added: Data-driven material system — replace hardcoded materials with a proper material pipeline
+- Phase 15 added: prototype editor ImGui themes and choose a final skin direction
+- Phase 16 added: Editor trigger and behavior authoring with save-load fidelity
 
 ### Blockers/Concerns
 
@@ -249,10 +235,15 @@ None yet.
 | 260402-tpl | Document the EditorCommander debugging harness for future debugging use | 2026-04-02 | — | [260402-tpl-document-the-editorcommander-debugging-h](./quick/260402-tpl-document-the-editorcommander-debugging-h/) |
 | 260402-uc1 | Use QuestDoorsPack walls/floor in initial scene, fix door gap/size, remove trim | 2026-04-02 | 86fa32e | [260402-uc1-use-questdoorspack-walls-and-floor-in-in](./quick/260402-uc1-use-questdoorspack-walls-and-floor-in-in/) |
 | 260402-uz2 | Fix walls/floors to use QuestDoorsPack textured materials with mesh UVs | 2026-04-02 | f7d1abe | [260402-uz2-fix-walls-and-floors-to-use-questdoorspa](./quick/260402-uz2-fix-walls-and-floors-to-use-questdoorspa/) |
+| 260403-udy | Fix play preview texture corruption after moving a scene mesh with the gizmo | 2026-04-03 | 9d1ee2b | [260403-udy-fix-play-preview-texture-corruption-afte](./quick/260403-udy-fix-play-preview-texture-corruption-afte/) |
+| 260403-v4x | Fix editor freezing after gizmo or inspector scene changes trigger runtime preview rebuild | 2026-04-03 | ff7ce59 | [260403-v4x-fix-editor-freezing-after-gizmo-or-inspe](./quick/260403-v4x-fix-editor-freezing-after-gizmo-or-inspe/) |
+| 260403-wsw | Enable arrow-key navigation in the hierarchy panel | 2026-04-03 | 534ed10 | [260403-wsw-enable-arrow-key-navigation-in-the-hiera](./quick/260403-wsw-enable-arrow-key-navigation-in-the-hiera/) |
+| 260404-omb | Fix editor light gizmo moving helper but not preview light | 2026-04-04 | 1464a2a | [260404-omb-fix-editor-light-gizmo-moving-helper-but](./quick/260404-omb-fix-editor-light-gizmo-moving-helper-but/) |
+| 260404-p8q | Safe cleanup of environment shader properties: remove redundant sky sun fields, unify sky enable toggle, stop persisting depth preview scale | 2026-04-04 | 5bad39e | [260404-p8q-safe-cleanup-of-environment-shader-prope](./quick/260404-p8q-safe-cleanup-of-environment-shader-prope/) |
 
 ## Session Continuity
 
 Last activity: 2026-04-04
-Last session: 2026-04-04T19:29:18.870Z
-Stopped at: Completed 16-01-PLAN.md
-Resume file: None
+Last session: 2026-04-04T17:03:07.818Z
+Stopped at: Phase 16 UI-SPEC approved
+Resume file: .planning/phases/16-editor-trigger-and-behavior-authoring-with-save-load-fidelity/16-UI-SPEC.md
