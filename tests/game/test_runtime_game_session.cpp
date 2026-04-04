@@ -7,7 +7,7 @@
 #include "game/components/PlayerSpawnComponent.h"
 #include "game/components/PlayerTag.h"
 #include "game/components/PrimaryCameraTag.h"
-#include "game/components/StaticColliderComponent.h"
+#include "game/components/ColliderComponent.h"
 #include "game/components/TransformComponent.h"
 #include "game/content/ContentRegistry.h"
 #include "game/runtime/RuntimeGameplay.h"
@@ -24,11 +24,12 @@ int main() {
     entt::registry registry;
 
     auto ground = registry.create();
-    StaticColliderComponent groundCollider;
-    groundCollider.shape = StaticColliderShape::Box;
+    ColliderComponent groundCollider;
+    groundCollider.shape = ColliderShape::Box;
+    groundCollider.mode = ColliderMode::Solid;
     groundCollider.position = glm::vec3(0.0f, -0.5f, 0.0f);
     groundCollider.halfExtents = glm::vec3(20.0f, 0.5f, 20.0f);
-    registry.emplace<StaticColliderComponent>(ground, groundCollider);
+    registry.emplace<ColliderComponent>(ground, groundCollider);
 
     auto player = registry.create();
     registry.emplace<TransformComponent>(player, TransformComponent{glm::vec3(0.0f, 1.6f, 0.0f)});
