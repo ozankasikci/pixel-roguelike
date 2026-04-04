@@ -2,14 +2,14 @@
 
 namespace {
 
+constexpr glm::vec3 kDefaultSunDirection = glm::vec3(0.28f, 0.91f, 0.18f);
+constexpr glm::vec3 kDefaultSunColor = glm::vec3(1.00f, 0.95f, 0.88f);
+
 SkySettings makeDefaultSky() {
     SkySettings sky;
-    sky.enabled = true;
     sky.zenithColor = glm::vec3(0.20f, 0.32f, 0.54f);
     sky.horizonColor = glm::vec3(0.78f, 0.82f, 0.82f);
     sky.groundHazeColor = glm::vec3(0.68f, 0.66f, 0.60f);
-    sky.sunDirection = glm::normalize(glm::vec3(0.28f, 0.91f, 0.18f));
-    sky.sunColor = glm::vec3(1.00f, 0.95f, 0.88f);
     sky.sunSize = 0.014f;
     sky.sunGlow = 0.10f;
     sky.cloudLayerAPath = "assets/skies/clouds_soft.tga";
@@ -21,13 +21,16 @@ SkySettings makeDefaultSky() {
     return sky;
 }
 
-DirectionalLightSlot makeSunSlot(const SkySettings& sky, float intensity, bool enabled = true) {
+DirectionalLightSlot makeSunSlot(const glm::vec3& direction,
+                                 const glm::vec3& color,
+                                 float intensity,
+                                 bool enabled = true) {
     DirectionalLightSlot slot;
     slot.enabled = enabled && intensity > 0.001f;
-    if (glm::dot(sky.sunDirection, sky.sunDirection) > 0.0001f) {
-        slot.direction = glm::normalize(sky.sunDirection);
+    if (glm::dot(direction, direction) > 0.0001f) {
+        slot.direction = glm::normalize(direction);
     }
-    slot.color = sky.sunColor;
+    slot.color = color;
     slot.intensity = intensity;
     return slot;
 }
@@ -110,7 +113,7 @@ EnvironmentRenderSettings makeDefaultEnvironmentRenderSettings() {
     settings.lighting.hemisphereStrength = 0.38f;
     settings.lighting.enableDirectionalLights = true;
     settings.lighting.enableShadows = true;
-    settings.lighting.sun = makeSunSlot(settings.sky, 1.00f);
+    settings.lighting.sun = makeSunSlot(kDefaultSunDirection, kDefaultSunColor, 1.00f);
     settings.lighting.fill = makeFillSlot(glm::vec3(-0.18f, 0.78f, -0.42f),
                                           glm::vec3(0.74f, 0.80f, 0.90f),
                                           0.10f);

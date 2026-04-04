@@ -58,8 +58,8 @@ void storeApplied(RuntimeEnvironmentSyncState* syncState,
 } // namespace
 
 void syncSkySunFromDirectional(DebugParams& params) {
-    params.post.sky.sunDirection = safeNormalize(params.lighting.sunDirectional.direction, params.post.sky.sunDirection);
-    params.post.sky.sunColor = glm::max(params.lighting.sunDirectional.color, glm::vec3(0.0f));
+    params.post.sunDirection = safeNormalize(params.lighting.sunDirectional.direction, params.post.sunDirection);
+    params.post.sunColor = glm::max(params.lighting.sunDirectional.color, glm::vec3(0.0f));
 }
 
 void applyEnvironmentSettings(DebugParams& params,

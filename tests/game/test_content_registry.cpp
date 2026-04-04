@@ -123,7 +123,7 @@ int main() {
     const auto* defaultEnvironment = registry.findEnvironment("default");
     assert(defaultEnvironment != nullptr);
     assert(defaultEnvironment->id == "default");
-    assert(defaultEnvironment->sky.enabled);
+    assert(defaultEnvironment->post.enableSky);
     assert(defaultEnvironment->lighting.sun.enabled);
 
     const auto* outdoorBright = registry.findEnvironment("outdoor_bright");
@@ -136,12 +136,10 @@ int main() {
     EnvironmentDefinition roundtrip;
     roundtrip.id = "editor_roundtrip_test";
     roundtrip.post.toneMapMode = 0;
-    roundtrip.post.depthViewScale = 0.133f;
     roundtrip.post.edgeThreshold = 0.27f;
     roundtrip.post.ssaoHalfResolution = false;
     roundtrip.post.ssaoFadeStart = 12.0f;
     roundtrip.post.ssaoFadeEnd = 36.0f;
-    roundtrip.sky.enabled = true;
     roundtrip.sky.panoramaPath = "assets/skies/test_panorama.jpg";
     roundtrip.sky.panoramaTint = glm::vec3(0.91f, 0.87f, 0.79f);
     roundtrip.sky.panoramaStrength = 0.72f;
@@ -169,7 +167,6 @@ int main() {
 
     assert(loadedRoundtrip.id == roundtrip.id);
     assert(loadedRoundtrip.post.toneMapMode == 0);
-    assert(test_support::nearlyEqual(loadedRoundtrip.post.depthViewScale, 0.133f));
     assert(test_support::nearlyEqual(loadedRoundtrip.post.edgeThreshold, 0.27f));
     assert(!loadedRoundtrip.post.ssaoHalfResolution);
     assert(test_support::nearlyEqual(loadedRoundtrip.post.ssaoFadeStart, 12.0f));

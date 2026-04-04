@@ -320,7 +320,6 @@ bool renderEnvironmentDraftFields(EnvironmentDefinition& environment) {
         dirty |= renderInspectorPropertyRow("Edge Threshold", [&]() { return ImGui::DragFloat("##value", &environment.post.edgeThreshold, 0.005f, 0.0f, 1.0f, "%.3f"); });
         dirty |= renderInspectorPropertyRow("Fog Density", [&]() { return ImGui::DragFloat("##value", &environment.post.fogDensity, 0.001f, 0.0f, 0.5f, "%.3f"); });
         dirty |= renderInspectorPropertyRow("Fog Start", [&]() { return ImGui::DragFloat("##value", &environment.post.fogStart, 0.1f, 0.0f, 80.0f, "%.1f"); });
-        dirty |= renderInspectorPropertyRow("Depth View Scale", [&]() { return ImGui::DragFloat("##value", &environment.post.depthViewScale, 0.001f, 0.01f, 0.30f, "%.3f"); });
         dirty |= renderInspectorPropertyRow("Exposure", [&]() { return ImGui::DragFloat("##value", &environment.post.exposure, 0.01f, 0.2f, 2.5f, "%.2f"); });
         dirty |= renderInspectorPropertyRow("Gamma", [&]() { return ImGui::DragFloat("##value", &environment.post.gamma, 0.01f, 0.5f, 2.0f, "%.2f"); });
         dirty |= renderInspectorPropertyRow("Contrast", [&]() { return ImGui::DragFloat("##value", &environment.post.contrast, 0.01f, 0.4f, 2.0f, "%.2f"); });
@@ -347,12 +346,9 @@ bool renderEnvironmentDraftFields(EnvironmentDefinition& environment) {
         if (!beginInspectorPropertyTable("EnvironmentDraftSky")) {
             return dirty;
         }
-        dirty |= renderInspectorPropertyRow("Sky Enabled", [&]() { return ImGui::Checkbox("##value", &environment.sky.enabled); });
         dirty |= renderInspectorPropertyRow("Zenith", [&]() { return editColor("##value", environment.sky.zenithColor); });
         dirty |= renderInspectorPropertyRow("Horizon", [&]() { return editColor("##value", environment.sky.horizonColor); });
         dirty |= renderInspectorPropertyRow("Ground Haze", [&]() { return editColor("##value", environment.sky.groundHazeColor); });
-        dirty |= renderInspectorPropertyRow("Sun Direction", [&]() { return editVec3("##value", environment.sky.sunDirection, 0.01f); });
-        dirty |= renderInspectorPropertyRow("Sun Color", [&]() { return editColor("##value", environment.sky.sunColor); });
         dirty |= renderInspectorPropertyRow("Sun Size", [&]() { return ImGui::DragFloat("##value", &environment.sky.sunSize, 0.001f, 0.001f, 0.10f, "%.3f"); });
         dirty |= renderInspectorPropertyRow("Sun Glow", [&]() { return ImGui::DragFloat("##value", &environment.sky.sunGlow, 0.01f, 0.0f, 2.0f, "%.2f"); });
         dirty |= renderInspectorPropertyRow("Panorama Path", [&]() { return editString("##value", environment.sky.panoramaPath, "assets/skies/sky.jpg"); });

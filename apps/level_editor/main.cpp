@@ -1546,8 +1546,8 @@ int main(int argc, char* argv[]) {
             previewEnvironment.post.farPlane = editCamera.farPlane;
             previewEnvironment.post.inverseViewProjection = inverseViewProjection;
             previewEnvironment.post.sky = previewEnvironment.sky;
-            previewEnvironment.post.sky.sunDirection = safeNormalize(previewEnvironment.lighting.sun.direction, previewEnvironment.post.sky.sunDirection);
-            previewEnvironment.post.sky.sunColor = previewEnvironment.lighting.sun.color;
+            previewEnvironment.post.sunDirection = safeNormalize(previewEnvironment.lighting.sun.direction, previewEnvironment.post.sunDirection);
+            previewEnvironment.post.sunColor = previewEnvironment.lighting.sun.color;
             previewEnvironment.post.debugViewMode = previewModeDebugView(ui.previewMode);
 
             std::vector<RenderLight> lights = collectLights(previewWorld.registry(), previewEnvironment);

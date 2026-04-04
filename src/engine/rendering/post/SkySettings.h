@@ -6,14 +6,9 @@
 #include <string>
 
 struct SkySettings {
-    bool enabled = false;
-
     glm::vec3 zenithColor{0.10f, 0.16f, 0.24f};
     glm::vec3 horizonColor{0.52f, 0.60f, 0.70f};
     glm::vec3 groundHazeColor{0.70f, 0.68f, 0.62f};
-
-    glm::vec3 sunDirection{0.25f, 0.92f, 0.28f};
-    glm::vec3 sunColor{1.0f, 0.94f, 0.82f};
     float sunSize = 0.020f;
     float sunGlow = 0.24f;
 

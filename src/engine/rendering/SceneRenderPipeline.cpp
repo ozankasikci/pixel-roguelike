@@ -374,12 +374,12 @@ void SceneRenderPipeline::renderPostProcess(const SceneRenderInput& input,
     post.timeSeconds = static_cast<float>(glfwGetTime());
     post.inverseViewProjection = glm::inverse(input.projectionMatrix * input.viewMatrix);
 
-    // Sync sky sun direction from the lighting environment (equivalent to syncSkySunFromDirectional)
+    // Sync sky sun inputs from the lighting environment so the sky disk follows the actual sun light.
     const glm::vec3& sunDir = input.lightingEnvironment.sun.direction;
     if (glm::dot(sunDir, sunDir) > 0.0001f) {
-        post.sky.sunDirection = glm::normalize(sunDir);
+        post.sunDirection = glm::normalize(sunDir);
     }
-    post.sky.sunColor = glm::max(input.lightingEnvironment.sun.color, glm::vec3(0.0f));
+    post.sunColor = glm::max(input.lightingEnvironment.sun.color, glm::vec3(0.0f));
 
     const double tBloomStart = glfwGetTime();
     if (post.enableBloom) {

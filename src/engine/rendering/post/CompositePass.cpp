@@ -100,7 +100,7 @@ void CompositePass::apply(GLuint sceneColorTex,
     glBindTexture(GL_TEXTURE_2D, ssaoTex);
     shader_->setInt("uSsaoTex", 9);
 
-    shader_->setInt("uEnableSky", (params.enableSky && params.sky.enabled) ? 1 : 0);
+    shader_->setInt("uEnableSky", params.enableSky ? 1 : 0);
     shader_->setInt("uEnableFog", params.enableFog ? 1 : 0);
     shader_->setInt("uEnableToneMap", params.enableToneMap ? 1 : 0);
     shader_->setInt("uEnableBloom", params.enableBloom ? 1 : 0);
@@ -141,8 +141,8 @@ void CompositePass::apply(GLuint sceneColorTex,
     shader_->setVec3("uSkyZenithColor", params.sky.zenithColor);
     shader_->setVec3("uSkyHorizonColor", params.sky.horizonColor);
     shader_->setVec3("uSkyGroundHazeColor", params.sky.groundHazeColor);
-    shader_->setVec3("uSunDirection", params.sky.sunDirection);
-    shader_->setVec3("uSunColor", params.sky.sunColor);
+    shader_->setVec3("uSunDirection", params.sunDirection);
+    shader_->setVec3("uSunColor", params.sunColor);
     shader_->setFloat("uSunSize", params.sky.sunSize);
     shader_->setFloat("uSunGlow", params.sky.sunGlow);
     shader_->setVec3("uSkyPanoramaTint", params.sky.panoramaTint);

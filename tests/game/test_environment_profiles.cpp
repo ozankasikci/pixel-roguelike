@@ -7,7 +7,7 @@
 int main() {
     // Default profile settings
     const auto settings = makeEnvironmentRenderSettings(EnvironmentProfile::Default);
-    assert(settings.sky.enabled);
+    assert(settings.post.enableSky);
     assert(!settings.sky.cloudLayerAPath.empty());
     assert(settings.lighting.enableDirectionalLights);
     assert(settings.lighting.sun.enabled);
@@ -18,10 +18,10 @@ int main() {
     assert(!settings.post.enableGrain);
     assert(settings.post.ssaoHalfResolution);
     assert(settings.post.ssaoFadeEnd > settings.post.ssaoFadeStart);
-    assert(test_support::nearlyEqualVec3(settings.lighting.sun.direction, settings.sky.sunDirection));
+    assert(settings.sky.sunSize > 0.0f);
 
     const auto defaultSettings = makeDefaultEnvironmentRenderSettings();
-    assert(defaultSettings.sky.enabled);
+    assert(defaultSettings.post.enableSky);
     assert(test_support::nearlyEqual(defaultSettings.post.exposure, settings.post.exposure));
 
     // environmentProfileName round-trip

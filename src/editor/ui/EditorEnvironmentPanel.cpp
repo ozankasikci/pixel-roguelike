@@ -219,8 +219,6 @@ bool renderEnvironmentPanel(EditorSceneDocument& document,
             beforeState = document.captureState();
             trackEnvItem(beforeState, "Adjust Fog Start", renderInspectorPropertyRow("Fog Start", [&]() { return ImGui::DragFloat("##value", &environment.post.fogStart, 0.1f, 0.0f, 80.0f, "%.1f"); }));
             beforeState = document.captureState();
-            trackEnvItem(beforeState, "Adjust Depth View Scale", renderInspectorPropertyRow("Depth View Scale", [&]() { return ImGui::DragFloat("##value", &environment.post.depthViewScale, 0.001f, 0.01f, 0.30f, "%.3f"); }));
-            beforeState = document.captureState();
             trackEnvItem(beforeState, "Change Fog Near Color", renderInspectorPropertyRow("Fog Near", [&]() { return editColor("##value", environment.post.fogNearColor); }));
             beforeState = document.captureState();
             trackEnvItem(beforeState, "Change Fog Far Color", renderInspectorPropertyRow("Fog Far", [&]() { return editColor("##value", environment.post.fogFarColor); }));
@@ -304,9 +302,7 @@ bool renderEnvironmentPanel(EditorSceneDocument& document,
         }
 
         auto beforeState = document.captureState();
-        trackEnvItem(beforeState, "Toggle Sky System", renderInspectorPropertyRow("Sky Enabled", [&]() { return ImGui::Checkbox("##value", &environment.sky.enabled); }));
-        beforeState = document.captureState();
-        trackEnvItem(beforeState, "Toggle Sky In Post", renderInspectorPropertyRow("Show Sky", [&]() { return ImGui::Checkbox("##value", &environment.post.enableSky); }));
+        trackEnvItem(beforeState, "Toggle Sky", renderInspectorPropertyRow("Enable Sky", [&]() { return ImGui::Checkbox("##value", &environment.post.enableSky); }));
 
         // --- Sky Colors ---
         ImGui::SeparatorText("Sky Colors");
@@ -319,11 +315,6 @@ bool renderEnvironmentPanel(EditorSceneDocument& document,
 
         // --- Sun ---
         ImGui::SeparatorText("Sun");
-        beforeState = document.captureState();
-        trackEnvItem(beforeState, "Adjust Sky Sun Direction", renderInspectorPropertyRow("Sun Direction", [&]() { return editVec3("##value", environment.sky.sunDirection, 0.01f); }));
-        beforeState = document.captureState();
-        trackEnvItem(beforeState, "Change Sky Sun Color", renderInspectorPropertyRow("Sun Color", [&]() { return editColor("##value", environment.sky.sunColor); }));
-        beforeState = document.captureState();
         trackEnvItem(beforeState, "Adjust Sky Sun Size", renderInspectorPropertyRow("Sun Size", [&]() { return ImGui::DragFloat("##value", &environment.sky.sunSize, 0.001f, 0.001f, 0.10f, "%.3f"); }));
         beforeState = document.captureState();
         trackEnvItem(beforeState, "Adjust Sky Sun Glow", renderInspectorPropertyRow("Sun Glow", [&]() { return ImGui::DragFloat("##value", &environment.sky.sunGlow, 0.01f, 0.0f, 2.0f, "%.2f"); }));

@@ -304,8 +304,9 @@ EnvironmentDefinition loadEnvironmentDefinitionAsset(const std::string& path) {
             continue;
         }
 
+        // Legacy alias: sky visibility now uses only post.enableSky.
         if (key == "sky_enabled") {
-            definition.sky.enabled = parseBoolRecord(tokens, path, lineNumber, key);
+            definition.post.enableSky = parseBoolRecord(tokens, path, lineNumber, key);
             continue;
         }
         if (key == "sky_zenith_color") {
@@ -320,12 +321,13 @@ EnvironmentDefinition loadEnvironmentDefinitionAsset(const std::string& path) {
             definition.sky.groundHazeColor = parseVec3Record(tokens, path, lineNumber, key);
             continue;
         }
+        // Legacy alias: sky sun direction/color now come from lighting.sun.
         if (key == "sky_sun_direction") {
-            definition.sky.sunDirection = parseVec3Record(tokens, path, lineNumber, key);
+            definition.lighting.sun.direction = parseVec3Record(tokens, path, lineNumber, key);
             continue;
         }
         if (key == "sky_sun_color") {
-            definition.sky.sunColor = parseVec3Record(tokens, path, lineNumber, key);
+            definition.lighting.sun.color = parseVec3Record(tokens, path, lineNumber, key);
             continue;
         }
         if (key == "sky_sun_size") {
@@ -617,7 +619,6 @@ std::string serializeEnvironmentDefinitionAsset(const EnvironmentDefinition& def
     writeFloat(out, "edge_threshold", definition.post.edgeThreshold);
     writeFloat(out, "fog_density", definition.post.fogDensity);
     writeFloat(out, "fog_start", definition.post.fogStart);
-    writeFloat(out, "depth_view_scale", definition.post.depthViewScale);
     writeFloat(out, "exposure", definition.post.exposure);
     writeFloat(out, "gamma", definition.post.gamma);
     writeFloat(out, "contrast", definition.post.contrast);
@@ -646,12 +647,9 @@ std::string serializeEnvironmentDefinitionAsset(const EnvironmentDefinition& def
     writeVec3(out, "shadow_tint", definition.post.shadowTint);
     writeVec3(out, "highlight_tint", definition.post.highlightTint);
 
-    writeBool(out, "sky_enabled", definition.sky.enabled);
     writeVec3(out, "sky_zenith_color", definition.sky.zenithColor);
     writeVec3(out, "sky_horizon_color", definition.sky.horizonColor);
     writeVec3(out, "sky_ground_haze_color", definition.sky.groundHazeColor);
-    writeVec3(out, "sky_sun_direction", definition.sky.sunDirection);
-    writeVec3(out, "sky_sun_color", definition.sky.sunColor);
     writeFloat(out, "sky_sun_size", definition.sky.sunSize);
     writeFloat(out, "sky_sun_glow", definition.sky.sunGlow);
     writeOptionalString(out, "sky_panorama_path", definition.sky.panoramaPath);

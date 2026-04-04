@@ -12,7 +12,6 @@ tone_map_mode 1
 edge_threshold 0.17
 fog_density 0.003
 fog_start 40.0
-depth_view_scale 0.08
 exposure 1.0
 gamma 1.0
 contrast 1.02
@@ -36,12 +35,9 @@ fog_near_color 0.42 0.44 0.46
 fog_far_color 0.62 0.66 0.68
 shadow_tint 0.88 0.86 0.82
 highlight_tint 0.98 0.96 0.9
-sky_enabled true
 sky_zenith_color 0.24 0.38 0.62
 sky_horizon_color 0.84 0.82 0.74
 sky_ground_haze_color 0.78 0.74 0.66
-sky_sun_direction 0.274125 0.927808 0.253038
-sky_sun_color 0.98 0.93 0.82
 sky_sun_size 0.012
 sky_sun_glow 0.06
 sky_panorama_tint 1.0 1.0 1.0

@@ -44,6 +44,8 @@ struct PostProcessParams {
     float splitToneStrength = 0.12f;
     float splitToneBalance  = 0.50f;
     float timeSeconds       = 0.0f;
+    glm::vec3 sunDirection  = glm::vec3(0.25f, 0.92f, 0.28f); // runtime-only, synced from lighting
+    glm::vec3 sunColor      = glm::vec3(1.0f, 0.94f, 0.82f);  // runtime-only, synced from lighting
     glm::vec3 fogNearColor  = glm::vec3(0.06f, 0.055f, 0.05f);
     glm::vec3 fogFarColor   = glm::vec3(0.13f, 0.12f, 0.11f);
     glm::vec3 shadowTint    = glm::vec3(0.86f, 0.88f, 0.92f);
