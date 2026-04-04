@@ -330,3 +330,23 @@ Plans:
 - [x] 16-01-PLAN.md — Promote triggers to first-class EditorSceneObject entries, remove readOnlyTriggers_, update all switch sites, outliner context menu, round-trip test
 - [x] 16-02-PLAN.md — Inspector UI for trigger properties, behavior editing sections with categorized action dropdown, interactable editing
 - [ ] 16-03-PLAN.md — Trigger resize gizmo handles, interaction distance ring, showTriggers toggle, visual verification
+
+### Phase 17: Unified collider system with trigger capabilities and scripting support
+
+**Goal:** Replace the two separate collision systems (StaticColliderComponent with Jolt physics bodies and TriggerComponent with manual AABB/sphere overlap) with a single unified ColliderComponent supporting Solid, Trigger, and SolidAndTrigger modes, all backed by Jolt Physics sensor bodies for trigger detection
+**Requirements**: None (architecture unification phase; not mapped to REQUIREMENTS.md IDs)
+**Depends on:** Phase 16
+**Success Criteria** (what must be TRUE):
+  1. A single ColliderComponent with ColliderMode (Solid/Trigger/SolidAndTrigger) replaces both StaticColliderComponent and TriggerComponent
+  2. All four shape types (Box, Sphere, Cylinder, Capsule) work in all three modes
+  3. Trigger detection uses Jolt sensor bodies via CharacterContactListener, not manual AABB/sphere overlap
+  4. Scene files use unified `collider <shape> <mode>` syntax with backward-compatible parsing of old format
+  5. Editor has a single Collider kind with shape and mode dropdowns, replacing three separate object kinds
+  6. TriggerSystem is deleted; BehaviorSystem reads flags from ColliderComponent
+  7. All scene files migrated, all tests pass, all executables build
+**Plans:** 3 plans
+
+Plans:
+- [ ] 17-01-PLAN.md — Core types (ColliderComponent), unified LevelDef placement, parser/serializer update, scene file migration
+- [ ] 17-02-PLAN.md — PhysicsSystem sensor bodies via CharacterContactListener, BehaviorSystem update, TriggerSystem deletion, runtime wiring
+- [ ] 17-03-PLAN.md — Editor unification: single Collider kind, inspector shape/mode dropdowns, preview renderer, all panel updates
