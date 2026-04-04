@@ -23,6 +23,14 @@ enum class ImGuiFontPreset {
 
 const char* imguiFontPresetLabel(ImGuiFontPreset preset);
 
+enum class ImGuiThemePreset {
+    WarmStudioDark,
+    SpectrumInspiredDark,
+    SoftLightTooling,
+};
+
+const char* imguiThemePresetLabel(ImGuiThemePreset preset);
+
 struct DebugParams {
     // Post-processing parameters
     PostProcessParams post;
@@ -50,6 +58,8 @@ public:
     void init(GLFWwindow* window);
     void shutdown();
 
+    void requestThemePreset(ImGuiThemePreset preset);
+    ImGuiThemePreset themePreset() const { return themePreset_; }
     void requestFontPreset(ImGuiFontPreset preset);
     ImGuiFontPreset fontPreset() const { return fontPreset_; }
 
@@ -59,9 +69,12 @@ public:
     static void renderOverlay(DebugParams& params, std::vector<RenderLight>& lights);
 
 private:
+    void applyPendingThemePreset();
     void applyPendingFontPreset();
 
     bool initialized_ = false;
+    ImGuiThemePreset themePreset_ = ImGuiThemePreset::WarmStudioDark;
+    std::optional<ImGuiThemePreset> pendingThemePreset_ = ImGuiThemePreset::WarmStudioDark;
     ImGuiFontPreset fontPreset_ = ImGuiFontPreset::SystemSans;
     std::optional<ImGuiFontPreset> pendingFontPreset_ = ImGuiFontPreset::SystemSans;
     std::string activeFontPath_;

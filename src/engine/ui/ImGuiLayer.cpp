@@ -8,6 +8,7 @@
 #include <GLFW/glfw3.h>
 #include <spdlog/spdlog.h>
 
+#include <algorithm>
 #include <array>
 #include <filesystem>
 #include <string_view>
@@ -19,6 +20,40 @@ struct FontPresetDefinition {
     std::array<const char*, 3> candidates;
     float size = 17.0f;
     float rasterizerMultiply = 1.05f;
+};
+
+struct ThemePresetDefinition {
+    std::string_view label;
+    float windowRounding = 0.0f;
+    float frameRounding = 0.0f;
+    float grabRounding = 0.0f;
+    float tabRounding = 0.0f;
+    float scrollbarRounding = 0.0f;
+    float windowBorderSize = 1.0f;
+    float popupBorderSize = 1.0f;
+    float frameBorderSize = 1.0f;
+    ImVec2 windowPadding;
+    ImVec2 framePadding;
+    ImVec2 itemSpacing;
+    ImVec2 cellPadding;
+    ImVec4 text;
+    ImVec4 windowBg;
+    ImVec4 childBg;
+    ImVec4 popupBg;
+    ImVec4 menuBarBg;
+    ImVec4 border;
+    ImVec4 frameBg;
+    ImVec4 frameBgHovered;
+    ImVec4 frameBgActive;
+    ImVec4 button;
+    ImVec4 buttonHovered;
+    ImVec4 buttonActive;
+    ImVec4 header;
+    ImVec4 headerHovered;
+    ImVec4 headerActive;
+    ImVec4 tab;
+    ImVec4 tabHovered;
+    ImVec4 tabSelected;
 };
 
 const FontPresetDefinition& fontPresetDefinition(ImGuiFontPreset preset) {
@@ -125,6 +160,239 @@ const FontPresetDefinition& fontPresetDefinition(ImGuiFontPreset preset) {
     return kSystemSans;
 }
 
+const ThemePresetDefinition& themePresetDefinition(ImGuiThemePreset preset) {
+    static const ThemePresetDefinition kWarmStudioDark{
+        "Warm Studio Dark",
+        6.0f,
+        5.0f,
+        5.0f,
+        5.0f,
+        6.0f,
+        1.0f,
+        1.0f,
+        1.0f,
+        ImVec2(10.0f, 8.0f),
+        ImVec2(8.0f, 6.0f),
+        ImVec2(8.0f, 6.0f),
+        ImVec2(8.0f, 6.0f),
+        ImVec4(0.90f, 0.87f, 0.81f, 1.00f),
+        ImVec4(0.12f, 0.11f, 0.10f, 0.98f),
+        ImVec4(0.14f, 0.13f, 0.12f, 0.98f),
+        ImVec4(0.15f, 0.13f, 0.11f, 0.98f),
+        ImVec4(0.16f, 0.14f, 0.12f, 1.00f),
+        ImVec4(0.34f, 0.29f, 0.22f, 0.65f),
+        ImVec4(0.19f, 0.17f, 0.15f, 1.00f),
+        ImVec4(0.27f, 0.23f, 0.18f, 1.00f),
+        ImVec4(0.31f, 0.26f, 0.20f, 1.00f),
+        ImVec4(0.30f, 0.25f, 0.19f, 1.00f),
+        ImVec4(0.63f, 0.52f, 0.31f, 1.00f),
+        ImVec4(0.54f, 0.44f, 0.24f, 1.00f),
+        ImVec4(0.29f, 0.24f, 0.18f, 0.85f),
+        ImVec4(0.38f, 0.31f, 0.21f, 0.92f),
+        ImVec4(0.54f, 0.44f, 0.24f, 1.00f),
+        ImVec4(0.20f, 0.17f, 0.14f, 1.00f),
+        ImVec4(0.38f, 0.31f, 0.21f, 0.92f),
+        ImVec4(0.28f, 0.24f, 0.18f, 1.00f),
+    };
+    static const ThemePresetDefinition kSpectrumInspiredDark{
+        "Spectrum-Inspired Dark",
+        4.0f,
+        4.0f,
+        4.0f,
+        4.0f,
+        5.0f,
+        1.0f,
+        1.0f,
+        1.0f,
+        ImVec2(9.0f, 8.0f),
+        ImVec2(7.0f, 5.0f),
+        ImVec2(8.0f, 5.0f),
+        ImVec2(7.0f, 5.0f),
+        ImVec4(0.92f, 0.94f, 0.96f, 1.00f),
+        ImVec4(0.10f, 0.11f, 0.12f, 0.98f),
+        ImVec4(0.12f, 0.13f, 0.15f, 0.98f),
+        ImVec4(0.13f, 0.14f, 0.16f, 0.98f),
+        ImVec4(0.14f, 0.15f, 0.17f, 1.00f),
+        ImVec4(0.28f, 0.31f, 0.35f, 0.75f),
+        ImVec4(0.16f, 0.17f, 0.19f, 1.00f),
+        ImVec4(0.21f, 0.24f, 0.29f, 1.00f),
+        ImVec4(0.24f, 0.29f, 0.35f, 1.00f),
+        ImVec4(0.18f, 0.20f, 0.23f, 1.00f),
+        ImVec4(0.28f, 0.47f, 0.74f, 0.85f),
+        ImVec4(0.22f, 0.43f, 0.68f, 1.00f),
+        ImVec4(0.18f, 0.22f, 0.27f, 0.88f),
+        ImVec4(0.28f, 0.47f, 0.74f, 0.85f),
+        ImVec4(0.22f, 0.43f, 0.68f, 1.00f),
+        ImVec4(0.16f, 0.18f, 0.21f, 1.00f),
+        ImVec4(0.28f, 0.47f, 0.74f, 0.85f),
+        ImVec4(0.20f, 0.26f, 0.33f, 1.00f),
+    };
+    static const ThemePresetDefinition kSoftLightTooling{
+        "Soft Light Tooling",
+        6.0f,
+        5.0f,
+        5.0f,
+        5.0f,
+        6.0f,
+        1.0f,
+        1.0f,
+        1.0f,
+        ImVec2(10.0f, 8.0f),
+        ImVec2(8.0f, 6.0f),
+        ImVec2(8.0f, 6.0f),
+        ImVec2(8.0f, 6.0f),
+        ImVec4(0.18f, 0.16f, 0.14f, 1.00f),
+        ImVec4(0.92f, 0.90f, 0.86f, 1.00f),
+        ImVec4(0.95f, 0.93f, 0.89f, 1.00f),
+        ImVec4(0.98f, 0.96f, 0.93f, 0.99f),
+        ImVec4(0.88f, 0.85f, 0.80f, 1.00f),
+        ImVec4(0.50f, 0.46f, 0.40f, 0.70f),
+        ImVec4(0.88f, 0.85f, 0.80f, 1.00f),
+        ImVec4(0.82f, 0.78f, 0.72f, 1.00f),
+        ImVec4(0.77f, 0.72f, 0.66f, 1.00f),
+        ImVec4(0.84f, 0.80f, 0.74f, 1.00f),
+        ImVec4(0.69f, 0.60f, 0.44f, 1.00f),
+        ImVec4(0.56f, 0.48f, 0.34f, 1.00f),
+        ImVec4(0.80f, 0.75f, 0.69f, 0.92f),
+        ImVec4(0.69f, 0.60f, 0.44f, 1.00f),
+        ImVec4(0.56f, 0.48f, 0.34f, 1.00f),
+        ImVec4(0.86f, 0.82f, 0.76f, 1.00f),
+        ImVec4(0.69f, 0.60f, 0.44f, 1.00f),
+        ImVec4(0.78f, 0.73f, 0.67f, 1.00f),
+    };
+
+    switch (preset) {
+    case ImGuiThemePreset::WarmStudioDark:
+        return kWarmStudioDark;
+    case ImGuiThemePreset::SpectrumInspiredDark:
+        return kSpectrumInspiredDark;
+    case ImGuiThemePreset::SoftLightTooling:
+        return kSoftLightTooling;
+    }
+
+    return kWarmStudioDark;
+}
+
+ImVec4 withAlpha(const ImVec4& color, float alpha) {
+    return ImVec4(color.x, color.y, color.z, alpha);
+}
+
+ImVec4 lerpColor(const ImVec4& a, const ImVec4& b, float t) {
+    return ImVec4(a.x + (b.x - a.x) * t,
+                  a.y + (b.y - a.y) * t,
+                  a.z + (b.z - a.z) * t,
+                  a.w + (b.w - a.w) * t);
+}
+
+void applyThemeChrome(ImGuiStyle& style, const ThemePresetDefinition& preset) {
+    style.WindowRounding = preset.windowRounding;
+    style.ChildRounding = preset.windowRounding;
+    style.PopupRounding = preset.windowRounding;
+    style.FrameRounding = preset.frameRounding;
+    style.GrabRounding = preset.grabRounding;
+    style.TabRounding = preset.tabRounding;
+    style.ScrollbarRounding = preset.scrollbarRounding;
+    style.WindowBorderSize = preset.windowBorderSize;
+    style.ChildBorderSize = preset.windowBorderSize;
+    style.PopupBorderSize = preset.popupBorderSize;
+    style.FrameBorderSize = preset.frameBorderSize;
+    style.TabBorderSize = 1.0f;
+    style.TabBarBorderSize = 1.0f;
+    style.TabBarOverlineSize = 0.0f;
+    style.WindowPadding = preset.windowPadding;
+    style.FramePadding = preset.framePadding;
+    style.ItemSpacing = preset.itemSpacing;
+    style.ItemInnerSpacing = ImVec2(std::max(4.0f, preset.framePadding.x - 2.0f),
+                                    std::max(4.0f, preset.framePadding.y - 1.0f));
+    style.CellPadding = preset.cellPadding;
+    style.IndentSpacing = 20.0f;
+    style.ScrollbarSize = 14.0f;
+    style.GrabMinSize = 11.0f;
+    style.WindowTitleAlign = ImVec2(0.0f, 0.5f);
+
+    ImVec4* colors = style.Colors;
+    const ImVec4 titleBg = lerpColor(preset.menuBarBg, preset.tab, 0.35f);
+    const ImVec4 titleBgActive = lerpColor(preset.tabSelected, preset.headerActive, 0.40f);
+    const ImVec4 titleBgCollapsed = lerpColor(titleBg, preset.windowBg, 0.55f);
+    const ImVec4 textDisabled = lerpColor(preset.text, preset.windowBg, 0.48f);
+    const ImVec4 separatorHovered = lerpColor(preset.border, preset.headerHovered, 0.72f);
+    const ImVec4 separatorActive = lerpColor(preset.border, preset.headerActive, 0.82f);
+    const ImVec4 scrollbarGrab = lerpColor(preset.frameBg, preset.button, 0.55f);
+    const ImVec4 tableHeaderBg = lerpColor(preset.header, preset.menuBarBg, 0.55f);
+    const ImVec4 tableRowBgAlt = lerpColor(preset.childBg, preset.windowBg, 0.55f);
+    const ImVec4 accentStrong = preset.headerActive;
+    const ImVec4 accentSoft = preset.headerHovered;
+
+    colors[ImGuiCol_Text] = preset.text;
+    colors[ImGuiCol_TextDisabled] = textDisabled;
+    colors[ImGuiCol_WindowBg] = preset.windowBg;
+    colors[ImGuiCol_ChildBg] = preset.childBg;
+    colors[ImGuiCol_PopupBg] = preset.popupBg;
+    colors[ImGuiCol_Border] = preset.border;
+    colors[ImGuiCol_BorderShadow] = ImVec4(0.0f, 0.0f, 0.0f, 0.0f);
+    colors[ImGuiCol_FrameBg] = preset.frameBg;
+    colors[ImGuiCol_FrameBgHovered] = preset.frameBgHovered;
+    colors[ImGuiCol_FrameBgActive] = preset.frameBgActive;
+    colors[ImGuiCol_TitleBg] = titleBg;
+    colors[ImGuiCol_TitleBgActive] = titleBgActive;
+    colors[ImGuiCol_TitleBgCollapsed] = titleBgCollapsed;
+    colors[ImGuiCol_MenuBarBg] = preset.menuBarBg;
+    colors[ImGuiCol_ScrollbarBg] = preset.childBg;
+    colors[ImGuiCol_ScrollbarGrab] = scrollbarGrab;
+    colors[ImGuiCol_ScrollbarGrabHovered] = preset.buttonHovered;
+    colors[ImGuiCol_ScrollbarGrabActive] = preset.buttonActive;
+    colors[ImGuiCol_CheckMark] = accentStrong;
+    colors[ImGuiCol_SliderGrab] = accentSoft;
+    colors[ImGuiCol_SliderGrabActive] = accentStrong;
+    colors[ImGuiCol_Button] = preset.button;
+    colors[ImGuiCol_ButtonHovered] = preset.buttonHovered;
+    colors[ImGuiCol_ButtonActive] = preset.buttonActive;
+    colors[ImGuiCol_Header] = preset.header;
+    colors[ImGuiCol_HeaderHovered] = preset.headerHovered;
+    colors[ImGuiCol_HeaderActive] = preset.headerActive;
+    colors[ImGuiCol_Separator] = preset.border;
+    colors[ImGuiCol_SeparatorHovered] = separatorHovered;
+    colors[ImGuiCol_SeparatorActive] = separatorActive;
+    colors[ImGuiCol_ResizeGrip] = withAlpha(accentSoft, 0.28f);
+    colors[ImGuiCol_ResizeGripHovered] = withAlpha(accentSoft, 0.72f);
+    colors[ImGuiCol_ResizeGripActive] = withAlpha(accentStrong, 0.92f);
+    colors[ImGuiCol_Tab] = preset.tab;
+    colors[ImGuiCol_TabHovered] = preset.tabHovered;
+    colors[ImGuiCol_TabSelected] = preset.tabSelected;
+    colors[ImGuiCol_TabSelectedOverline] = accentStrong;
+    colors[ImGuiCol_TabDimmed] = lerpColor(preset.tab, titleBg, 0.55f);
+    colors[ImGuiCol_TabDimmedSelected] = lerpColor(preset.tabSelected, titleBg, 0.40f);
+    colors[ImGuiCol_TabDimmedSelectedOverline] = withAlpha(accentSoft, 0.75f);
+    colors[ImGuiCol_DockingPreview] = withAlpha(accentSoft, 0.60f);
+    colors[ImGuiCol_DockingEmptyBg] = preset.childBg;
+    colors[ImGuiCol_TableHeaderBg] = tableHeaderBg;
+    colors[ImGuiCol_TableBorderStrong] = preset.border;
+    colors[ImGuiCol_TableBorderLight] = withAlpha(preset.border, preset.border.w * 0.72f);
+    colors[ImGuiCol_TableRowBg] = withAlpha(preset.windowBg, 0.0f);
+    colors[ImGuiCol_TableRowBgAlt] = tableRowBgAlt;
+    colors[ImGuiCol_TextSelectedBg] = withAlpha(accentSoft, 0.35f);
+    colors[ImGuiCol_DragDropTarget] = withAlpha(accentStrong, 0.90f);
+    colors[ImGuiCol_NavCursor] = accentStrong;
+    colors[ImGuiCol_NavWindowingHighlight] = withAlpha(preset.text, 0.35f);
+    colors[ImGuiCol_NavWindowingDimBg] = ImVec4(0.02f, 0.02f, 0.02f, 0.20f);
+    colors[ImGuiCol_ModalWindowDimBg] = ImVec4(0.02f, 0.02f, 0.02f, 0.28f);
+}
+
+void applyWarmStudioDark(ImGuiStyle& style) {
+    ImGui::StyleColorsDark(&style);
+    applyThemeChrome(style, themePresetDefinition(ImGuiThemePreset::WarmStudioDark));
+}
+
+void applySpectrumInspiredDark(ImGuiStyle& style) {
+    ImGui::StyleColorsDark(&style);
+    applyThemeChrome(style, themePresetDefinition(ImGuiThemePreset::SpectrumInspiredDark));
+}
+
+void applySoftLightTooling(ImGuiStyle& style) {
+    ImGui::StyleColorsLight(&style);
+    applyThemeChrome(style, themePresetDefinition(ImGuiThemePreset::SoftLightTooling));
+}
+
 bool configureFontPreset(ImGuiIO& io, ImGuiFontPreset preset, std::string& loadedFontPath) {
     const auto& definition = fontPresetDefinition(preset);
 
@@ -159,13 +427,17 @@ const char* imguiFontPresetLabel(ImGuiFontPreset preset) {
     return fontPresetDefinition(preset).label.data();
 }
 
+const char* imguiThemePresetLabel(ImGuiThemePreset preset) {
+    return themePresetDefinition(preset).label.data();
+}
+
 void ImGuiLayer::init(GLFWwindow* window) {
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
     ImGuiIO& io = ImGui::GetIO();
     io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
 
-    ImGui::StyleColorsDark();
+    applyPendingThemePreset();
 
     ImGui_ImplGlfw_InitForOpenGL(window, true);
     ImGui_ImplOpenGL3_Init("#version 410 core");
@@ -182,11 +454,44 @@ void ImGuiLayer::shutdown() {
     spdlog::info("ImGuiLayer shutdown");
 }
 
+void ImGuiLayer::requestThemePreset(ImGuiThemePreset preset) {
+    if (preset == themePreset_) {
+        return;
+    }
+    pendingThemePreset_ = preset;
+}
+
 void ImGuiLayer::requestFontPreset(ImGuiFontPreset preset) {
     if (preset == fontPreset_) {
         return;
     }
     pendingFontPreset_ = preset;
+}
+
+void ImGuiLayer::applyPendingThemePreset() {
+    if (!pendingThemePreset_.has_value() && initialized_) {
+        return;
+    }
+
+    ImGuiStyle& style = ImGui::GetStyle();
+    const ImGuiThemePreset targetPreset = pendingThemePreset_.value_or(themePreset_);
+
+    switch (targetPreset) {
+    case ImGuiThemePreset::WarmStudioDark:
+        applyWarmStudioDark(style);
+        break;
+    case ImGuiThemePreset::SpectrumInspiredDark:
+        applySpectrumInspiredDark(style);
+        break;
+    case ImGuiThemePreset::SoftLightTooling:
+        applySoftLightTooling(style);
+        break;
+    }
+
+    themePreset_ = targetPreset;
+    pendingThemePreset_.reset();
+
+    spdlog::info("Applied ImGui theme preset '{}'", imguiThemePresetLabel(themePreset_));
 }
 
 void ImGuiLayer::applyPendingFontPreset() {
@@ -216,6 +521,7 @@ void ImGuiLayer::applyPendingFontPreset() {
 void ImGuiLayer::beginFrame() {
     ImGui_ImplOpenGL3_NewFrame();
     ImGui_ImplGlfw_NewFrame();
+    applyPendingThemePreset();
     applyPendingFontPreset();
     ImGui::NewFrame();
 }
