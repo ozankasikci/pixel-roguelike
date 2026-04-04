@@ -76,6 +76,12 @@ pixel_roguelike_add_test(test_level_roundtrip
     LABELS game
 )
 
+pixel_roguelike_add_test(test_behavior_trigger_roundtrip
+    SOURCES test_behavior_trigger_roundtrip.cpp
+    LIBRARIES game_content
+    LABELS game
+)
+
 pixel_roguelike_add_test(test_environment_profiles
     SOURCES test_environment_profiles.cpp
     LIBRARIES game_content

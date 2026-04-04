@@ -42,7 +42,6 @@ bool decomposeTransformMatrix(const glm::mat4& matrix,
 void EditorSceneDocument::clear() {
     scenePath_.clear();
     objects_.clear();
-    readOnlyTriggers_.clear();
     environment_ = makeEnvironmentDefinition(EnvironmentProfile::Default);
     legacyEnvironmentProfile_ = EnvironmentProfile::Default;
     nextObjectId_ = 1;
@@ -84,8 +83,9 @@ void EditorSceneDocument::loadFromSceneFile(const std::string& scenePath, const 
         addArchetype(archetype);
     }
 
-    // Store trigger placements as read-only (not editable in editor yet, but visualized)
-    readOnlyTriggers_ = level.triggers;
+    for (const auto& trigger : level.triggers) {
+        addTrigger(trigger);
+    }
 
     sceneDirty_ = false;
     environmentDirty_ = false;
@@ -225,6 +225,10 @@ std::uint64_t EditorSceneDocument::addGroup(const LevelGroupNode& placement) {
     return addObject(EditorSceneObjectKind::Group, placement);
 }
 
+std::uint64_t EditorSceneDocument::addTrigger(const TriggerPlacement& placement) {
+    return addObject(EditorSceneObjectKind::Trigger, placement);
+}
+
 std::uint64_t EditorSceneDocument::parentObjectId(std::uint64_t id) const {
     const EditorSceneObject* object = findObject(id);
     if (object == nullptr) {
@@ -275,7 +279,8 @@ bool EditorSceneDocument::supportsParenting(std::uint64_t id) const {
         || object->kind == EditorSceneObjectKind::BoxCollider
         || object->kind == EditorSceneObjectKind::CylinderCollider
         || object->kind == EditorSceneObjectKind::Archetype
-        || object->kind == EditorSceneObjectKind::Group;
+        || object->kind == EditorSceneObjectKind::Group
+        || object->kind == EditorSceneObjectKind::Trigger;
 }
 
 bool EditorSceneDocument::canSetParent(std::uint64_t childId, std::uint64_t parentId) const {
@@ -623,6 +628,11 @@ bool EditorSceneDocument::applyWorldTransform(std::uint64_t id, const glm::mat4&
         group.scale = glm::max(scale, glm::vec3(0.01f));
         break;
     }
+    case EditorSceneObjectKind::Trigger: {
+        auto& trigger = std::get<TriggerPlacement>(object->payload);
+        trigger.position = glm::vec3(localMatrix[3]);
+        break;
+    }
     }
 
     markSceneDirty();
@@ -691,6 +701,9 @@ LevelDef EditorSceneDocument::toLevelDef() const {
             break;
         case EditorSceneObjectKind::Group:
             level.groups.push_back(std::get<LevelGroupNode>(object.payload));
+            break;
+        case EditorSceneObjectKind::Trigger:
+            level.triggers.push_back(std::get<TriggerPlacement>(object.payload));
             break;
         }
     }
@@ -841,6 +854,10 @@ glm::mat4 EditorSceneDocument::localTransformMatrix(const EditorSceneObject& obj
         const auto& group = std::get<LevelGroupNode>(object.payload);
         return makeTransformMatrix(group.position, group.rotation, group.scale);
     }
+    case EditorSceneObjectKind::Trigger: {
+        const auto& trigger = std::get<TriggerPlacement>(object.payload);
+        return makeTransformMatrix(trigger.position, glm::vec3(0.0f), glm::vec3(1.0f));
+    }
     }
     return glm::mat4(1.0f);
 }
@@ -879,6 +896,8 @@ const char* editorSceneObjectKindName(EditorSceneObjectKind kind) {
         return "Archetype";
     case EditorSceneObjectKind::Group:
         return "Group";
+    case EditorSceneObjectKind::Trigger:
+        return "Trigger";
     }
     return "Object";
 }
@@ -910,6 +929,11 @@ std::string editorSceneObjectLabel(const EditorSceneObject& object) {
     case EditorSceneObjectKind::Group:
         label << " [" << std::get<LevelGroupNode>(object.payload).name << "]";
         break;
+    case EditorSceneObjectKind::Trigger: {
+        const auto& trigger = std::get<TriggerPlacement>(object.payload);
+        label << " [" << (trigger.shape == TriggerShape::Box ? "box" : "sphere") << "]";
+        break;
+    }
     default:
         break;
     }
@@ -934,6 +958,8 @@ glm::vec3 editorSceneObjectAnchor(const EditorSceneObject& object) {
         return std::get<LevelArchetypePlacement>(object.payload).position;
     case EditorSceneObjectKind::Group:
         return std::get<LevelGroupNode>(object.payload).position;
+    case EditorSceneObjectKind::Trigger:
+        return std::get<TriggerPlacement>(object.payload).position;
     }
     return glm::vec3(0.0f);
 }

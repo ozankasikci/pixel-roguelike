@@ -1055,6 +1055,37 @@ void renderSceneSelectionInspector(EditorSceneDocument& document,
         trackSceneItem(beforeState, "Rotate Group", renderInspectorPropertyRow("Rotation", [&]() { return editVec3("##value", group.rotation, 0.5f); }));
         break;
     }
+    case EditorSceneObjectKind::Trigger: {
+        auto& trigger = std::get<TriggerPlacement>(object->payload);
+        auto beforeState = document.captureState();
+        trackSceneItem(beforeState, "Move Trigger", editVec3("Position", trigger.position));
+        const char* shapeOptions[] = {"Box", "Sphere"};
+        int shapeIndex = (trigger.shape == TriggerShape::Box) ? 0 : 1;
+        beforeState = document.captureState();
+        if (ImGui::Combo("Shape", &shapeIndex, shapeOptions, 2)) {
+            trigger.shape = (shapeIndex == 0) ? TriggerShape::Box : TriggerShape::Sphere;
+            document.markSceneDirty();
+            commandStack.pushDocumentStateCommand("Change Trigger Shape", beforeState, document.captureState(), document);
+        }
+        if (trigger.shape == TriggerShape::Box) {
+            beforeState = document.captureState();
+            trackSceneItem(beforeState, "Resize Trigger", editVec3("Half Extents", trigger.halfExtents, 0.05f));
+        } else {
+            beforeState = document.captureState();
+            if (ImGui::DragFloat("Radius", &trigger.radius, 0.05f, 0.1f, 100.0f)) {
+                document.markSceneDirty();
+                commandStack.pushDocumentStateCommand("Resize Trigger", beforeState, document.captureState(), document);
+            }
+        }
+        beforeState = document.captureState();
+        bool fireOnce = trigger.fireOnce;
+        if (ImGui::Checkbox("Fire Once", &fireOnce)) {
+            trigger.fireOnce = fireOnce;
+            document.markSceneDirty();
+            commandStack.pushDocumentStateCommand("Toggle Fire Once", beforeState, document.captureState(), document);
+        }
+        break;
+    }
     }
 
     endInspectorPropertyTable();

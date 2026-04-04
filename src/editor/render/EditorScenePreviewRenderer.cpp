@@ -132,7 +132,8 @@ void appendHelperObjects(std::vector<RenderObject>& objects,
                          const std::vector<std::uint64_t>& selectedIds,
                          bool showColliders,
                          bool showLights,
-                         bool showSpawn) {
+                         bool showSpawn,
+                         bool showTriggers) {
     Mesh* cube = world.meshLibrary().get("cube");
     Mesh* cylinder = world.meshLibrary().get("cylinder");
     if (showColliders) {
@@ -200,14 +201,19 @@ void appendHelperObjects(std::vector<RenderObject>& objects,
 
     // Trigger volume visualization (D-14): semi-transparent wireframe in the editor viewport
     // Box triggers: green wireframe; Sphere triggers: blue wireframe (approximated as scaled cube)
-    if (cube != nullptr) {
-        for (const auto& trigger : document.triggers()) {
+    if (showTriggers && cube != nullptr) {
+        for (const auto& object : document.objects()) {
+            if (object.kind != EditorSceneObjectKind::Trigger) continue;
+            const auto& trigger = std::get<TriggerPlacement>(object.payload);
+            const bool selected = isSelected(selectedIds, object.id);
             if (trigger.shape == TriggerShape::Box) {
-                // Green wireframe box scaled to trigger half-extents
+                const glm::vec3 tint = selected
+                    ? glm::vec3(0.40f, 1.00f, 0.40f)
+                    : glm::vec3(0.20f, 0.80f, 0.20f);
                 objects.push_back(RenderObject{
                     cube,
                     makeModelMatrix(trigger.position, trigger.halfExtents * 2.0f),
-                    glm::vec3(0.20f, 0.80f, 0.20f),
+                    tint,
                     materials.resolve("metal_default"),
                     true,   // wireframe
                     true,   // ignoreDepth — draws as overlay so designers can see trigger bounds through walls
@@ -215,11 +221,13 @@ void appendHelperObjects(std::vector<RenderObject>& objects,
                     1.5f    // lineWidth
                 });
             } else {
-                // Blue wireframe cube approximating a sphere trigger (radius-based scale)
+                const glm::vec3 tint = selected
+                    ? glm::vec3(0.40f, 0.60f, 1.00f)
+                    : glm::vec3(0.20f, 0.40f, 0.80f);
                 objects.push_back(RenderObject{
                     cube,
                     makeModelMatrix(trigger.position, glm::vec3(trigger.radius * 2.0f)),
-                    glm::vec3(0.20f, 0.40f, 0.80f),
+                    tint,
                     materials.resolve("metal_default"),
                     true,   // wireframe
                     true,   // ignoreDepth
