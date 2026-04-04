@@ -3,6 +3,7 @@ add_library(editor STATIC
     build/EditorBuildSystem.cpp
     core/EditorCommand.cpp
     core/EditorLayoutPreset.cpp
+    core/EditorUiPreferences.cpp
     core/EditorRuntimePreviewSession.cpp
     core/LevelEditorCore.cpp
     debug/CommandRegistry.cpp

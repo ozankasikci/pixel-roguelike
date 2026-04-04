@@ -14,6 +14,8 @@
 #include <unordered_set>
 #include <vector>
 
+#include <imgui.h>
+
 class ContentRegistry;
 
 enum class EditorPreviewMode {
@@ -193,6 +195,34 @@ struct InspectorActionResult {
     bool materialDirty = false;
     bool contentReloaded = false;
 };
+
+enum class EditorInspectorFieldKind {
+    Toggle,
+    Scalar,
+    Enum,
+    Text,
+    Vector,
+    Color,
+};
+
+bool beginInspectorPropertyTable(const char* id,
+                                 float labelColumnFraction = 0.28f,
+                                 float minLabelWidth = 88.0f,
+                                 float maxLabelWidth = 180.0f);
+void endInspectorPropertyTable();
+void beginInspectorPropertyLabel(const char* label,
+                                 EditorInspectorFieldKind kind = EditorInspectorFieldKind::Scalar);
+void applyInspectorFieldWidth(EditorInspectorFieldKind kind);
+
+template <typename Func>
+auto renderInspectorPropertyRow(const char* label,
+                                Func&& func,
+                                EditorInspectorFieldKind kind = EditorInspectorFieldKind::Scalar) -> decltype(func()) {
+    beginInspectorPropertyLabel(label, kind);
+    auto result = func();
+    ImGui::PopID();
+    return result;
+}
 
 void beginPlacement(EditorPlacementState& state,
                     EditorPlacementKind kind,

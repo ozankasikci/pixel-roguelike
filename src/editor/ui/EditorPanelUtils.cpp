@@ -3,16 +3,89 @@
 #include "game/content/ContentRegistry.h"
 
 #include <algorithm>
+#include <cfloat>
 #include <cstdio>
 #include <imgui.h>
 
 namespace {
 
+struct InspectorLayoutMetrics {
+    float labelWidth = 108.0f;
+};
+
+thread_local std::vector<InspectorLayoutMetrics> gInspectorLayoutStack;
+
 void copyPayloadString(char (&dst)[64], const std::string& src) {
     std::snprintf(dst, sizeof(dst), "%s", src.c_str());
 }
 
+InspectorLayoutMetrics currentInspectorLayout() {
+    if (!gInspectorLayoutStack.empty()) {
+        return gInspectorLayoutStack.back();
+    }
+    return {};
+}
+
+float inspectorFieldWidth(EditorInspectorFieldKind kind, bool wideMode) {
+    (void)wideMode;
+    switch (kind) {
+    case EditorInspectorFieldKind::Toggle:
+        return 0.0f;
+    case EditorInspectorFieldKind::Scalar:
+    case EditorInspectorFieldKind::Enum:
+    case EditorInspectorFieldKind::Text:
+    case EditorInspectorFieldKind::Vector:
+    case EditorInspectorFieldKind::Color:
+        return FLT_MAX;
+    }
+    return FLT_MAX;
+}
+
 } // namespace
+
+bool beginInspectorPropertyTable(const char* id,
+                                 float labelColumnFraction,
+                                 float minLabelWidth,
+                                 float maxLabelWidth) {
+    const float availableWidth = ImGui::GetContentRegionAvail().x;
+    const float labelWidth = std::clamp(availableWidth * labelColumnFraction,
+                                        minLabelWidth,
+                                        maxLabelWidth);
+    if (!ImGui::BeginTable(id, 2, ImGuiTableFlags_SizingStretchProp | ImGuiTableFlags_NoPadInnerX)) {
+        return false;
+    }
+    gInspectorLayoutStack.push_back(InspectorLayoutMetrics{labelWidth});
+    ImGui::TableSetupColumn("Label", ImGuiTableColumnFlags_WidthFixed | ImGuiTableColumnFlags_NoResize, labelWidth);
+    ImGui::TableSetupColumn("Value", ImGuiTableColumnFlags_WidthStretch, 1.0f);
+    return true;
+}
+
+void endInspectorPropertyTable() {
+    if (!gInspectorLayoutStack.empty()) {
+        gInspectorLayoutStack.pop_back();
+    }
+    ImGui::EndTable();
+}
+
+void applyInspectorFieldWidth(EditorInspectorFieldKind kind) {
+    if (kind == EditorInspectorFieldKind::Toggle) {
+        return;
+    }
+    const InspectorLayoutMetrics metrics = currentInspectorLayout();
+    const float availableWidth = ImGui::GetContentRegionAvail().x;
+    const float clampedWidth = std::min(availableWidth, inspectorFieldWidth(kind, false));
+    ImGui::SetNextItemWidth(clampedWidth > 0.0f ? clampedWidth : availableWidth);
+}
+
+void beginInspectorPropertyLabel(const char* label, EditorInspectorFieldKind kind) {
+    ImGui::TableNextRow();
+    ImGui::TableSetColumnIndex(0);
+    ImGui::AlignTextToFramePadding();
+    ImGui::TextUnformatted(label);
+    ImGui::TableSetColumnIndex(1);
+    applyInspectorFieldWidth(kind);
+    ImGui::PushID(label);
+}
 
 void beginPendingCommand(EditorPendingCommand& pending,
                          const EditorSceneDocumentState& beforeState,
@@ -134,14 +207,17 @@ void trackLastItemCommand(const EditorSceneDocumentState& beforeState,
 }
 
 bool editVec3(const char* label, glm::vec3& value, float speed) {
+    applyInspectorFieldWidth(EditorInspectorFieldKind::Vector);
     return ImGui::DragFloat3(label, &value.x, speed, -1000.0f, 1000.0f, "%.2f");
 }
 
 bool editColor(const char* label, glm::vec3& value) {
+    applyInspectorFieldWidth(EditorInspectorFieldKind::Color);
     return ImGui::ColorEdit3(label, &value.x, ImGuiColorEditFlags_Float | ImGuiColorEditFlags_NoInputs);
 }
 
 bool editString(const char* label, std::string& value, const char* hint) {
+    applyInspectorFieldWidth(EditorInspectorFieldKind::Text);
     char buffer[512]{};
     std::snprintf(buffer, sizeof(buffer), "%s", value.c_str());
     bool changed = false;

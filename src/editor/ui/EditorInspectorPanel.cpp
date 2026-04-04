@@ -187,16 +187,20 @@ RenderMaterialData buildDraftMaterialPreview(const MaterialDefinition& draft,
 }
 
 void renderMaterialDraftFields(MaterialDefinition& draft, bool& dirty) {
-    dirty |= editString("Id", draft.id);
+    if (!beginInspectorPropertyTable("MaterialDraftFields")) {
+        return;
+    }
+
+    dirty |= renderInspectorPropertyRow("Id", [&]() { return editString("##value", draft.id); });
     std::string parent = draft.parent.value_or("");
-    if (editString("Parent", parent, "optional")) {
+    if (renderInspectorPropertyRow("Parent", [&]() { return editString("##value", parent, "optional"); })) {
         draft.parent = parent.empty() ? std::optional<std::string>{} : std::optional<std::string>{parent};
         dirty = true;
     }
 
     auto editOptionalPath = [&](const char* label, std::optional<std::string>& value, const char* hint) {
         std::string working = value.value_or("");
-        if (editString(label, working, hint)) {
+        if (renderInspectorPropertyRow(label, [&]() { return editString("##value", working, hint); })) {
             value = working.empty() ? std::optional<std::string>{} : std::optional<std::string>{working};
             dirty = true;
         }
@@ -209,31 +213,32 @@ void renderMaterialDraftFields(MaterialDefinition& draft, bool& dirty) {
 
     glm::vec3 baseColor = draft.baseColor.value_or(glm::vec3(1.0f));
     bool useBaseColor = draft.baseColor.has_value();
-    if (ImGui::Checkbox("Use Base Color", &useBaseColor)) {
+    if (renderInspectorPropertyRow("Use Base Color", [&]() { return ImGui::Checkbox("##value", &useBaseColor); })) {
         draft.baseColor = useBaseColor ? std::optional<glm::vec3>{baseColor} : std::nullopt;
         dirty = true;
     }
-    if (useBaseColor && editColor("Base Color", baseColor)) {
+    if (useBaseColor && renderInspectorPropertyRow("Base Color", [&]() { return editColor("##value", baseColor); })) {
         draft.baseColor = baseColor;
         dirty = true;
     }
 
     static constexpr const char* kUvModes[] = {"mesh", "world_projected"};
     int uvMode = draft.uvMode.has_value() && *draft.uvMode == MaterialUvMode::WorldProjected ? 1 : 0;
-    if (ImGui::Combo("UV Mode", &uvMode, kUvModes, 2)) {
+    if (renderInspectorPropertyRow("UV Mode", [&]() { return ImGui::Combo("##value", &uvMode, kUvModes, 2); },
+                                  EditorInspectorFieldKind::Enum)) {
         draft.uvMode = uvMode == 0 ? MaterialUvMode::Mesh : MaterialUvMode::WorldProjected;
         dirty = true;
     }
 
     glm::vec2 uvScale = draft.uvScale.value_or(glm::vec2(1.0f));
-    if (ImGui::DragFloat2("UV Scale", &uvScale.x, 0.01f, 0.01f, 16.0f, "%.2f")) {
+    if (renderInspectorPropertyRow("UV Scale", [&]() { return ImGui::DragFloat2("##value", &uvScale.x, 0.01f, 0.01f, 16.0f, "%.2f"); })) {
         draft.uvScale = glm::max(uvScale, glm::vec2(0.01f));
         dirty = true;
     }
 
     auto dragOptionalFloat = [&](const char* label, std::optional<float>& value, float defaultValue, float speed, float min, float max, const char* format) {
         float working = value.value_or(defaultValue);
-        if (ImGui::DragFloat(label, &working, speed, min, max, format)) {
+        if (renderInspectorPropertyRow(label, [&]() { return ImGui::DragFloat("##value", &working, speed, min, max, format); })) {
             value = working;
             dirty = true;
         }
@@ -262,16 +267,22 @@ void renderMaterialDraftFields(MaterialDefinition& draft, bool& dirty) {
         case MaterialProceduralSource::GeneratedCeiling: proceduralIndex = 5; break;
         }
     }
-    if (ImGui::Combo("Procedural Source", &proceduralIndex, kProceduralSources, 6)) {
+    if (renderInspectorPropertyRow("Procedural Source", [&]() { return ImGui::Combo("##value", &proceduralIndex, kProceduralSources, 6); },
+                                  EditorInspectorFieldKind::Enum)) {
         draft.proceduralSource = static_cast<MaterialProceduralSource>(proceduralIndex);
         dirty = true;
     }
 
+    endInspectorPropertyTable();
+
     // Feature Flags
     if (ImGui::CollapsingHeader("Feature Flags", ImGuiTreeNodeFlags_DefaultOpen)) {
+        if (!beginInspectorPropertyTable("MaterialFeatureFlags")) {
+            return;
+        }
         auto editOptionalBool = [&](const char* label, std::optional<bool>& value) {
             bool working = value.value_or(false);
-            if (ImGui::Checkbox(label, &working)) {
+            if (renderInspectorPropertyRow(label, [&]() { return ImGui::Checkbox("##value", &working); })) {
                 value = working;
                 dirty = true;
             }
@@ -282,6 +293,7 @@ void renderMaterialDraftFields(MaterialDefinition& draft, bool& dirty) {
         editOptionalBool("Detail: Wood", draft.detailWood);
         editOptionalBool("Detail: Stone", draft.detailStone);
         editOptionalBool("Detail: Floor", draft.detailFloor);
+        endInspectorPropertyTable();
     }
 }
 
@@ -289,106 +301,143 @@ bool renderEnvironmentDraftFields(EnvironmentDefinition& environment) {
     bool dirty = false;
 
     if (ImGui::CollapsingHeader("Post", ImGuiTreeNodeFlags_DefaultOpen)) {
+        if (!beginInspectorPropertyTable("EnvironmentDraftPost")) {
+            return dirty;
+        }
         static constexpr const char* kToneMapModes[] = {"Linear", "ACES Fitted"};
-        dirty |= editString("Id", environment.id);
-        dirty |= ImGui::Checkbox("Enable Sky", &environment.post.enableSky);
-        dirty |= ImGui::Checkbox("Enable Edges", &environment.post.enableEdges);
-        dirty |= ImGui::Checkbox("Enable Fog", &environment.post.enableFog);
-        dirty |= ImGui::Checkbox("Enable Tone Map", &environment.post.enableToneMap);
-        dirty |= ImGui::Checkbox("Enable Bloom", &environment.post.enableBloom);
-        dirty |= ImGui::Checkbox("Enable Vignette", &environment.post.enableVignette);
-        dirty |= ImGui::Checkbox("Enable Grain", &environment.post.enableGrain);
-        dirty |= ImGui::Checkbox("Enable Scanlines", &environment.post.enableScanlines);
-        dirty |= ImGui::Checkbox("Enable Sharpen", &environment.post.enableSharpen);
-        dirty |= ImGui::Combo("Tone Mapper", &environment.post.toneMapMode, kToneMapModes, 2);
-        dirty |= ImGui::DragFloat("Edge Threshold", &environment.post.edgeThreshold, 0.005f, 0.0f, 1.0f, "%.3f");
-        dirty |= ImGui::DragFloat("Fog Density", &environment.post.fogDensity, 0.001f, 0.0f, 0.5f, "%.3f");
-        dirty |= ImGui::DragFloat("Fog Start", &environment.post.fogStart, 0.1f, 0.0f, 80.0f, "%.1f");
-        dirty |= ImGui::DragFloat("Depth View Scale", &environment.post.depthViewScale, 0.001f, 0.01f, 0.30f, "%.3f");
-        dirty |= ImGui::DragFloat("Exposure", &environment.post.exposure, 0.01f, 0.2f, 2.5f, "%.2f");
-        dirty |= ImGui::DragFloat("Gamma", &environment.post.gamma, 0.01f, 0.5f, 2.0f, "%.2f");
-        dirty |= ImGui::DragFloat("Contrast", &environment.post.contrast, 0.01f, 0.4f, 2.0f, "%.2f");
-        dirty |= ImGui::DragFloat("Saturation", &environment.post.saturation, 0.01f, 0.0f, 1.5f, "%.2f");
-        dirty |= ImGui::DragFloat("Bloom Threshold", &environment.post.bloomThreshold, 0.01f, 0.0f, 1.5f, "%.2f");
-        dirty |= ImGui::DragFloat("Bloom Intensity", &environment.post.bloomIntensity, 0.01f, 0.0f, 1.0f, "%.2f");
-        dirty |= ImGui::DragFloat("Bloom Radius", &environment.post.bloomRadius, 0.01f, 0.5f, 5.0f, "%.2f");
-        dirty |= ImGui::DragFloat("Vignette Strength", &environment.post.vignetteStrength, 0.01f, 0.0f, 1.0f, "%.2f");
-        dirty |= ImGui::DragFloat("Vignette Softness", &environment.post.vignetteSoftness, 0.01f, 0.1f, 1.2f, "%.2f");
-        dirty |= ImGui::DragFloat("Grain Amount", &environment.post.grainAmount, 0.001f, 0.0f, 0.2f, "%.3f");
-        dirty |= ImGui::DragFloat("Scanline Amount", &environment.post.scanlineAmount, 0.01f, 0.0f, 0.35f, "%.2f");
-        dirty |= ImGui::DragFloat("Scanline Density", &environment.post.scanlineDensity, 0.01f, 0.5f, 3.0f, "%.2f");
-        dirty |= ImGui::DragFloat("Sharpen Amount", &environment.post.sharpenAmount, 0.01f, 0.0f, 1.0f, "%.2f");
-        dirty |= ImGui::DragFloat("Split Strength", &environment.post.splitToneStrength, 0.01f, 0.0f, 0.6f, "%.2f");
-        dirty |= ImGui::DragFloat("Split Balance", &environment.post.splitToneBalance, 0.01f, 0.15f, 0.85f, "%.2f");
-        dirty |= editColor("Fog Near", environment.post.fogNearColor);
-        dirty |= editColor("Fog Far", environment.post.fogFarColor);
-        dirty |= editColor("Shadow Tint", environment.post.shadowTint);
-        dirty |= editColor("Highlight Tint", environment.post.highlightTint);
+        dirty |= renderInspectorPropertyRow("Id", [&]() { return editString("##value", environment.id); });
+        dirty |= renderInspectorPropertyRow("Enable Sky", [&]() { return ImGui::Checkbox("##value", &environment.post.enableSky); });
+        dirty |= renderInspectorPropertyRow("Enable Edges", [&]() { return ImGui::Checkbox("##value", &environment.post.enableEdges); });
+        dirty |= renderInspectorPropertyRow("Enable Fog", [&]() { return ImGui::Checkbox("##value", &environment.post.enableFog); });
+        dirty |= renderInspectorPropertyRow("Enable Tone Map", [&]() { return ImGui::Checkbox("##value", &environment.post.enableToneMap); });
+        dirty |= renderInspectorPropertyRow("Enable Bloom", [&]() { return ImGui::Checkbox("##value", &environment.post.enableBloom); });
+        dirty |= renderInspectorPropertyRow("Enable Vignette", [&]() { return ImGui::Checkbox("##value", &environment.post.enableVignette); });
+        dirty |= renderInspectorPropertyRow("Enable Grain", [&]() { return ImGui::Checkbox("##value", &environment.post.enableGrain); });
+        dirty |= renderInspectorPropertyRow("Enable Scanlines", [&]() { return ImGui::Checkbox("##value", &environment.post.enableScanlines); });
+        dirty |= renderInspectorPropertyRow("Enable Sharpen", [&]() { return ImGui::Checkbox("##value", &environment.post.enableSharpen); });
+        dirty |= renderInspectorPropertyRow("Tone Mapper", [&]() { return ImGui::Combo("##value", &environment.post.toneMapMode, kToneMapModes, 2); },
+                                            EditorInspectorFieldKind::Enum);
+        dirty |= renderInspectorPropertyRow("Edge Threshold", [&]() { return ImGui::DragFloat("##value", &environment.post.edgeThreshold, 0.005f, 0.0f, 1.0f, "%.3f"); });
+        dirty |= renderInspectorPropertyRow("Fog Density", [&]() { return ImGui::DragFloat("##value", &environment.post.fogDensity, 0.001f, 0.0f, 0.5f, "%.3f"); });
+        dirty |= renderInspectorPropertyRow("Fog Start", [&]() { return ImGui::DragFloat("##value", &environment.post.fogStart, 0.1f, 0.0f, 80.0f, "%.1f"); });
+        dirty |= renderInspectorPropertyRow("Depth View Scale", [&]() { return ImGui::DragFloat("##value", &environment.post.depthViewScale, 0.001f, 0.01f, 0.30f, "%.3f"); });
+        dirty |= renderInspectorPropertyRow("Exposure", [&]() { return ImGui::DragFloat("##value", &environment.post.exposure, 0.01f, 0.2f, 2.5f, "%.2f"); });
+        dirty |= renderInspectorPropertyRow("Gamma", [&]() { return ImGui::DragFloat("##value", &environment.post.gamma, 0.01f, 0.5f, 2.0f, "%.2f"); });
+        dirty |= renderInspectorPropertyRow("Contrast", [&]() { return ImGui::DragFloat("##value", &environment.post.contrast, 0.01f, 0.4f, 2.0f, "%.2f"); });
+        dirty |= renderInspectorPropertyRow("Saturation", [&]() { return ImGui::DragFloat("##value", &environment.post.saturation, 0.01f, 0.0f, 1.5f, "%.2f"); });
+        dirty |= renderInspectorPropertyRow("Bloom Threshold", [&]() { return ImGui::DragFloat("##value", &environment.post.bloomThreshold, 0.01f, 0.0f, 1.5f, "%.2f"); });
+        dirty |= renderInspectorPropertyRow("Bloom Intensity", [&]() { return ImGui::DragFloat("##value", &environment.post.bloomIntensity, 0.01f, 0.0f, 1.0f, "%.2f"); });
+        dirty |= renderInspectorPropertyRow("Bloom Radius", [&]() { return ImGui::DragFloat("##value", &environment.post.bloomRadius, 0.01f, 0.5f, 5.0f, "%.2f"); });
+        dirty |= renderInspectorPropertyRow("Vignette Strength", [&]() { return ImGui::DragFloat("##value", &environment.post.vignetteStrength, 0.01f, 0.0f, 1.0f, "%.2f"); });
+        dirty |= renderInspectorPropertyRow("Vignette Softness", [&]() { return ImGui::DragFloat("##value", &environment.post.vignetteSoftness, 0.01f, 0.1f, 1.2f, "%.2f"); });
+        dirty |= renderInspectorPropertyRow("Grain Amount", [&]() { return ImGui::DragFloat("##value", &environment.post.grainAmount, 0.001f, 0.0f, 0.2f, "%.3f"); });
+        dirty |= renderInspectorPropertyRow("Scanline Amount", [&]() { return ImGui::DragFloat("##value", &environment.post.scanlineAmount, 0.01f, 0.0f, 0.35f, "%.2f"); });
+        dirty |= renderInspectorPropertyRow("Scanline Density", [&]() { return ImGui::DragFloat("##value", &environment.post.scanlineDensity, 0.01f, 0.5f, 3.0f, "%.2f"); });
+        dirty |= renderInspectorPropertyRow("Sharpen Amount", [&]() { return ImGui::DragFloat("##value", &environment.post.sharpenAmount, 0.01f, 0.0f, 1.0f, "%.2f"); });
+        dirty |= renderInspectorPropertyRow("Split Strength", [&]() { return ImGui::DragFloat("##value", &environment.post.splitToneStrength, 0.01f, 0.0f, 0.6f, "%.2f"); });
+        dirty |= renderInspectorPropertyRow("Split Balance", [&]() { return ImGui::DragFloat("##value", &environment.post.splitToneBalance, 0.01f, 0.15f, 0.85f, "%.2f"); });
+        dirty |= renderInspectorPropertyRow("Fog Near", [&]() { return editColor("##value", environment.post.fogNearColor); });
+        dirty |= renderInspectorPropertyRow("Fog Far", [&]() { return editColor("##value", environment.post.fogFarColor); });
+        dirty |= renderInspectorPropertyRow("Shadow Tint", [&]() { return editColor("##value", environment.post.shadowTint); });
+        dirty |= renderInspectorPropertyRow("Highlight Tint", [&]() { return editColor("##value", environment.post.highlightTint); });
+        endInspectorPropertyTable();
     }
 
     if (ImGui::CollapsingHeader("Sky", ImGuiTreeNodeFlags_DefaultOpen)) {
-        dirty |= ImGui::Checkbox("Sky Enabled", &environment.sky.enabled);
-        dirty |= editColor("Zenith", environment.sky.zenithColor);
-        dirty |= editColor("Horizon", environment.sky.horizonColor);
-        dirty |= editColor("Ground Haze", environment.sky.groundHazeColor);
-        dirty |= editVec3("Sun Direction", environment.sky.sunDirection, 0.01f);
-        dirty |= editColor("Sun Color", environment.sky.sunColor);
-        dirty |= ImGui::DragFloat("Sun Size", &environment.sky.sunSize, 0.001f, 0.001f, 0.10f, "%.3f");
-        dirty |= ImGui::DragFloat("Sun Glow", &environment.sky.sunGlow, 0.01f, 0.0f, 2.0f, "%.2f");
-        dirty |= editString("Panorama Path", environment.sky.panoramaPath, "assets/skies/sky.jpg");
-        dirty |= editColor("Panorama Tint", environment.sky.panoramaTint);
-        dirty |= ImGui::DragFloat("Panorama Strength", &environment.sky.panoramaStrength, 0.01f, 0.0f, 2.0f, "%.2f");
-        dirty |= ImGui::DragFloat("Panorama Yaw", &environment.sky.panoramaYawOffset, 0.5f, -360.0f, 360.0f, "%.1f");
+        if (!beginInspectorPropertyTable("EnvironmentDraftSky")) {
+            return dirty;
+        }
+        dirty |= renderInspectorPropertyRow("Sky Enabled", [&]() { return ImGui::Checkbox("##value", &environment.sky.enabled); });
+        dirty |= renderInspectorPropertyRow("Zenith", [&]() { return editColor("##value", environment.sky.zenithColor); });
+        dirty |= renderInspectorPropertyRow("Horizon", [&]() { return editColor("##value", environment.sky.horizonColor); });
+        dirty |= renderInspectorPropertyRow("Ground Haze", [&]() { return editColor("##value", environment.sky.groundHazeColor); });
+        dirty |= renderInspectorPropertyRow("Sun Direction", [&]() { return editVec3("##value", environment.sky.sunDirection, 0.01f); });
+        dirty |= renderInspectorPropertyRow("Sun Color", [&]() { return editColor("##value", environment.sky.sunColor); });
+        dirty |= renderInspectorPropertyRow("Sun Size", [&]() { return ImGui::DragFloat("##value", &environment.sky.sunSize, 0.001f, 0.001f, 0.10f, "%.3f"); });
+        dirty |= renderInspectorPropertyRow("Sun Glow", [&]() { return ImGui::DragFloat("##value", &environment.sky.sunGlow, 0.01f, 0.0f, 2.0f, "%.2f"); });
+        dirty |= renderInspectorPropertyRow("Panorama Path", [&]() { return editString("##value", environment.sky.panoramaPath, "assets/skies/sky.jpg"); });
+        dirty |= renderInspectorPropertyRow("Panorama Tint", [&]() { return editColor("##value", environment.sky.panoramaTint); });
+        dirty |= renderInspectorPropertyRow("Panorama Strength", [&]() { return ImGui::DragFloat("##value", &environment.sky.panoramaStrength, 0.01f, 0.0f, 2.0f, "%.2f"); });
+        dirty |= renderInspectorPropertyRow("Panorama Yaw", [&]() { return ImGui::DragFloat("##value", &environment.sky.panoramaYawOffset, 0.5f, -360.0f, 360.0f, "%.1f"); });
+        endInspectorPropertyTable();
         if (ImGui::TreeNodeEx("Cubemap", ImGuiTreeNodeFlags_DefaultOpen)) {
+            if (!beginInspectorPropertyTable("EnvironmentDraftCubemap")) {
+                return dirty;
+            }
             static constexpr const char* kCubemapLabels[6] = {"Face +X", "Face -X", "Face +Y", "Face -Y", "Face +Z", "Face -Z"};
             for (std::size_t i = 0; i < 6; ++i) {
-                dirty |= editString(kCubemapLabels[i], environment.sky.cubemapFacePaths[i], "assets/skies/cubemap_face.png");
+                dirty |= renderInspectorPropertyRow(kCubemapLabels[i], [&]() { return editString("##value", environment.sky.cubemapFacePaths[i], "assets/skies/cubemap_face.png"); });
             }
-            dirty |= editColor("Cubemap Tint", environment.sky.cubemapTint);
-            dirty |= ImGui::DragFloat("Cubemap Strength", &environment.sky.cubemapStrength, 0.01f, 0.0f, 2.0f, "%.2f");
+            dirty |= renderInspectorPropertyRow("Cubemap Tint", [&]() { return editColor("##value", environment.sky.cubemapTint); });
+            dirty |= renderInspectorPropertyRow("Cubemap Strength", [&]() { return ImGui::DragFloat("##value", &environment.sky.cubemapStrength, 0.01f, 0.0f, 2.0f, "%.2f"); });
+            endInspectorPropertyTable();
             ImGui::TreePop();
         }
-        dirty |= ImGui::Checkbox("Moon Enabled", &environment.sky.moonEnabled);
-        dirty |= editVec3("Moon Direction", environment.sky.moonDirection, 0.01f);
-        dirty |= editColor("Moon Color", environment.sky.moonColor);
-        dirty |= ImGui::DragFloat("Moon Size", &environment.sky.moonSize, 0.001f, 0.001f, 0.10f, "%.3f");
-        dirty |= ImGui::DragFloat("Moon Glow", &environment.sky.moonGlow, 0.01f, 0.0f, 1.0f, "%.2f");
+        if (!beginInspectorPropertyTable("EnvironmentDraftMoon")) {
+            return dirty;
+        }
+        dirty |= renderInspectorPropertyRow("Moon Enabled", [&]() { return ImGui::Checkbox("##value", &environment.sky.moonEnabled); });
+        dirty |= renderInspectorPropertyRow("Moon Direction", [&]() { return editVec3("##value", environment.sky.moonDirection, 0.01f); });
+        dirty |= renderInspectorPropertyRow("Moon Color", [&]() { return editColor("##value", environment.sky.moonColor); });
+        dirty |= renderInspectorPropertyRow("Moon Size", [&]() { return ImGui::DragFloat("##value", &environment.sky.moonSize, 0.001f, 0.001f, 0.10f, "%.3f"); });
+        dirty |= renderInspectorPropertyRow("Moon Glow", [&]() { return ImGui::DragFloat("##value", &environment.sky.moonGlow, 0.01f, 0.0f, 1.0f, "%.2f"); });
+        endInspectorPropertyTable();
         if (ImGui::TreeNodeEx("Sky Layers", ImGuiTreeNodeFlags_DefaultOpen)) {
-            dirty |= editString("Cloud Layer A", environment.sky.cloudLayerAPath, "assets/skies/clouds_a.png");
-            dirty |= editString("Cloud Layer B", environment.sky.cloudLayerBPath, "assets/skies/clouds_b.png");
-            dirty |= editString("Horizon Layer", environment.sky.horizonLayerPath, "assets/skies/horizon.png");
+            if (!beginInspectorPropertyTable("EnvironmentDraftSkyLayers")) {
+                return dirty;
+            }
+            dirty |= renderInspectorPropertyRow("Cloud Layer A", [&]() { return editString("##value", environment.sky.cloudLayerAPath, "assets/skies/clouds_a.png"); });
+            dirty |= renderInspectorPropertyRow("Cloud Layer B", [&]() { return editString("##value", environment.sky.cloudLayerBPath, "assets/skies/clouds_b.png"); });
+            dirty |= renderInspectorPropertyRow("Horizon Layer", [&]() { return editString("##value", environment.sky.horizonLayerPath, "assets/skies/horizon.png"); });
+            endInspectorPropertyTable();
             ImGui::TreePop();
         }
-        dirty |= editColor("Cloud Tint", environment.sky.cloudTint);
-        dirty |= ImGui::DragFloat("Cloud Scale", &environment.sky.cloudScale, 0.01f, 0.1f, 4.0f, "%.2f");
-        dirty |= ImGui::DragFloat("Cloud Speed", &environment.sky.cloudSpeed, 0.0002f, 0.0f, 0.05f, "%.3f");
-        dirty |= ImGui::DragFloat("Cloud Coverage", &environment.sky.cloudCoverage, 0.01f, 0.0f, 1.0f, "%.2f");
-        dirty |= ImGui::DragFloat("Cloud Parallax", &environment.sky.cloudParallax, 0.001f, 0.0f, 0.20f, "%.3f");
-        dirty |= editColor("Horizon Tint", environment.sky.horizonTint);
-        dirty |= ImGui::DragFloat("Horizon Height", &environment.sky.horizonHeight, 0.01f, 0.0f, 1.0f, "%.2f");
-        dirty |= ImGui::DragFloat("Horizon Fade", &environment.sky.horizonFade, 0.01f, 0.0f, 1.0f, "%.2f");
+        if (!beginInspectorPropertyTable("EnvironmentDraftCloudsHorizon")) {
+            return dirty;
+        }
+        dirty |= renderInspectorPropertyRow("Cloud Tint", [&]() { return editColor("##value", environment.sky.cloudTint); });
+        dirty |= renderInspectorPropertyRow("Cloud Scale", [&]() { return ImGui::DragFloat("##value", &environment.sky.cloudScale, 0.01f, 0.1f, 4.0f, "%.2f"); });
+        dirty |= renderInspectorPropertyRow("Cloud Speed", [&]() { return ImGui::DragFloat("##value", &environment.sky.cloudSpeed, 0.0002f, 0.0f, 0.05f, "%.3f"); });
+        dirty |= renderInspectorPropertyRow("Cloud Coverage", [&]() { return ImGui::DragFloat("##value", &environment.sky.cloudCoverage, 0.01f, 0.0f, 1.0f, "%.2f"); });
+        dirty |= renderInspectorPropertyRow("Cloud Parallax", [&]() { return ImGui::DragFloat("##value", &environment.sky.cloudParallax, 0.001f, 0.0f, 0.20f, "%.3f"); });
+        dirty |= renderInspectorPropertyRow("Horizon Tint", [&]() { return editColor("##value", environment.sky.horizonTint); });
+        dirty |= renderInspectorPropertyRow("Horizon Height", [&]() { return ImGui::DragFloat("##value", &environment.sky.horizonHeight, 0.01f, 0.0f, 1.0f, "%.2f"); });
+        dirty |= renderInspectorPropertyRow("Horizon Fade", [&]() { return ImGui::DragFloat("##value", &environment.sky.horizonFade, 0.01f, 0.0f, 1.0f, "%.2f"); });
+        endInspectorPropertyTable();
     }
 
     if (ImGui::CollapsingHeader("Lighting", ImGuiTreeNodeFlags_DefaultOpen)) {
-        dirty |= editColor("Hemi Sky", environment.lighting.hemisphereSkyColor);
-        dirty |= editColor("Hemi Ground", environment.lighting.hemisphereGroundColor);
-        dirty |= ImGui::DragFloat("Hemi Strength", &environment.lighting.hemisphereStrength, 0.01f, 0.0f, 2.0f, "%.2f");
-        dirty |= ImGui::Checkbox("Enable Directional", &environment.lighting.enableDirectionalLights);
-        dirty |= ImGui::Checkbox("Enable Shadows", &environment.lighting.enableShadows);
-        dirty |= ImGui::DragFloat("Shadow Bias", &environment.lighting.shadowBias, 0.0001f, 0.0001f, 0.02f, "%.4f");
-        dirty |= ImGui::DragFloat("Shadow Normal Bias", &environment.lighting.shadowNormalBias, 0.001f, 0.0f, 0.20f, "%.3f");
+        if (!beginInspectorPropertyTable("EnvironmentDraftLighting")) {
+            return dirty;
+        }
+        dirty |= renderInspectorPropertyRow("Hemi Sky", [&]() { return editColor("##value", environment.lighting.hemisphereSkyColor); });
+        dirty |= renderInspectorPropertyRow("Hemi Ground", [&]() { return editColor("##value", environment.lighting.hemisphereGroundColor); });
+        dirty |= renderInspectorPropertyRow("Hemi Strength", [&]() { return ImGui::DragFloat("##value", &environment.lighting.hemisphereStrength, 0.01f, 0.0f, 2.0f, "%.2f"); });
+        dirty |= renderInspectorPropertyRow("Enable Directional", [&]() { return ImGui::Checkbox("##value", &environment.lighting.enableDirectionalLights); });
+        dirty |= renderInspectorPropertyRow("Enable Shadows", [&]() { return ImGui::Checkbox("##value", &environment.lighting.enableShadows); });
+        dirty |= renderInspectorPropertyRow("Shadow Bias", [&]() { return ImGui::DragFloat("##value", &environment.lighting.shadowBias, 0.0001f, 0.0001f, 0.02f, "%.4f"); });
+        dirty |= renderInspectorPropertyRow("Shadow Normal Bias", [&]() { return ImGui::DragFloat("##value", &environment.lighting.shadowNormalBias, 0.001f, 0.0f, 0.20f, "%.3f"); });
+        endInspectorPropertyTable();
         if (ImGui::TreeNodeEx("Sun", ImGuiTreeNodeFlags_DefaultOpen)) {
-            dirty |= ImGui::Checkbox("Sun Enabled", &environment.lighting.sun.enabled);
-            dirty |= editVec3("Sun Dir", environment.lighting.sun.direction, 0.01f);
-            dirty |= editColor("Sun Color", environment.lighting.sun.color);
-            dirty |= ImGui::DragFloat("Sun Intensity", &environment.lighting.sun.intensity, 0.01f, 0.0f, 4.0f, "%.2f");
+            if (!beginInspectorPropertyTable("EnvironmentDraftSun")) {
+                return dirty;
+            }
+            dirty |= renderInspectorPropertyRow("Sun Enabled", [&]() { return ImGui::Checkbox("##value", &environment.lighting.sun.enabled); });
+            dirty |= renderInspectorPropertyRow("Sun Dir", [&]() { return editVec3("##value", environment.lighting.sun.direction, 0.01f); });
+            dirty |= renderInspectorPropertyRow("Sun Color", [&]() { return editColor("##value", environment.lighting.sun.color); });
+            dirty |= renderInspectorPropertyRow("Sun Intensity", [&]() { return ImGui::DragFloat("##value", &environment.lighting.sun.intensity, 0.01f, 0.0f, 4.0f, "%.2f"); });
+            endInspectorPropertyTable();
             ImGui::TreePop();
         }
         if (ImGui::TreeNodeEx("Fill", ImGuiTreeNodeFlags_DefaultOpen)) {
-            dirty |= ImGui::Checkbox("Fill Enabled", &environment.lighting.fill.enabled);
-            dirty |= editVec3("Fill Dir", environment.lighting.fill.direction, 0.01f);
-            dirty |= editColor("Fill Color", environment.lighting.fill.color);
-            dirty |= ImGui::DragFloat("Fill Intensity", &environment.lighting.fill.intensity, 0.01f, 0.0f, 4.0f, "%.2f");
+            if (!beginInspectorPropertyTable("EnvironmentDraftFill")) {
+                return dirty;
+            }
+            dirty |= renderInspectorPropertyRow("Fill Enabled", [&]() { return ImGui::Checkbox("##value", &environment.lighting.fill.enabled); });
+            dirty |= renderInspectorPropertyRow("Fill Dir", [&]() { return editVec3("##value", environment.lighting.fill.direction, 0.01f); });
+            dirty |= renderInspectorPropertyRow("Fill Color", [&]() { return editColor("##value", environment.lighting.fill.color); });
+            dirty |= renderInspectorPropertyRow("Fill Intensity", [&]() { return ImGui::DragFloat("##value", &environment.lighting.fill.intensity, 0.01f, 0.0f, 4.0f, "%.2f"); });
+            endInspectorPropertyTable();
             ImGui::TreePop();
         }
     }
@@ -398,39 +447,44 @@ bool renderEnvironmentDraftFields(EnvironmentDefinition& environment) {
 
 bool renderPrefabDraftFields(GameplayArchetypeDefinition& prefab) {
     bool dirty = false;
-    dirty |= editString("Id", prefab.id);
+    if (!beginInspectorPropertyTable("PrefabDraftFields")) {
+        return false;
+    }
+    dirty |= renderInspectorPropertyRow("Id", [&]() { return editString("##value", prefab.id); });
     static constexpr const char* kKinds[] = {"checkpoint", "double_door"};
     int kindIndex = prefab.kind == GameplayArchetypeKind::Checkpoint ? 0 : 1;
-    if (ImGui::Combo("Type", &kindIndex, kKinds, 2)) {
+    if (renderInspectorPropertyRow("Type", [&]() { return ImGui::Combo("##value", &kindIndex, kKinds, 2); },
+                                  EditorInspectorFieldKind::Enum)) {
         prefab.kind = kindIndex == 0 ? GameplayArchetypeKind::Checkpoint : GameplayArchetypeKind::DoubleDoor;
         dirty = true;
     }
 
     switch (prefab.kind) {
     case GameplayArchetypeKind::Checkpoint:
-        dirty |= editVec3("Position", prefab.checkpoint.position);
-        dirty |= editVec3("Respawn Position", prefab.checkpoint.respawnPosition);
-        dirty |= ImGui::DragFloat("Interact Distance", &prefab.checkpoint.interactDistance, 0.05f, 0.1f, 20.0f, "%.2f");
-        dirty |= ImGui::DragFloat("Interact Dot", &prefab.checkpoint.interactDotThreshold, 0.01f, 0.0f, 1.0f, "%.2f");
-        dirty |= editVec3("Light Position", prefab.checkpoint.lightPosition);
-        dirty |= editColor("Light Color", prefab.checkpoint.lightColor);
-        dirty |= ImGui::DragFloat("Light Radius", &prefab.checkpoint.lightRadius, 0.05f, 0.1f, 30.0f, "%.2f");
-        dirty |= ImGui::DragFloat("Light Intensity", &prefab.checkpoint.lightIntensity, 0.01f, 0.0f, 10.0f, "%.2f");
+        dirty |= renderInspectorPropertyRow("Position", [&]() { return editVec3("##value", prefab.checkpoint.position); });
+        dirty |= renderInspectorPropertyRow("Respawn Position", [&]() { return editVec3("##value", prefab.checkpoint.respawnPosition); });
+        dirty |= renderInspectorPropertyRow("Interact Distance", [&]() { return ImGui::DragFloat("##value", &prefab.checkpoint.interactDistance, 0.05f, 0.1f, 20.0f, "%.2f"); });
+        dirty |= renderInspectorPropertyRow("Interact Dot", [&]() { return ImGui::DragFloat("##value", &prefab.checkpoint.interactDotThreshold, 0.01f, 0.0f, 1.0f, "%.2f"); });
+        dirty |= renderInspectorPropertyRow("Light Position", [&]() { return editVec3("##value", prefab.checkpoint.lightPosition); });
+        dirty |= renderInspectorPropertyRow("Light Color", [&]() { return editColor("##value", prefab.checkpoint.lightColor); });
+        dirty |= renderInspectorPropertyRow("Light Radius", [&]() { return ImGui::DragFloat("##value", &prefab.checkpoint.lightRadius, 0.05f, 0.1f, 30.0f, "%.2f"); });
+        dirty |= renderInspectorPropertyRow("Light Intensity", [&]() { return ImGui::DragFloat("##value", &prefab.checkpoint.lightIntensity, 0.01f, 0.0f, 10.0f, "%.2f"); });
         break;
     case GameplayArchetypeKind::DoubleDoor:
-        dirty |= editString("Left Leaf Mesh", prefab.doubleDoor.leftLeafMeshName);
-        dirty |= editString("Right Leaf Mesh", prefab.doubleDoor.rightLeafMeshName);
-        dirty |= editVec3("Root Position", prefab.doubleDoor.rootPosition);
-        dirty |= editVec3("Left Hinge", prefab.doubleDoor.leftHingePosition);
-        dirty |= editVec3("Right Hinge", prefab.doubleDoor.rightHingePosition);
-        dirty |= editVec3("Leaf Scale", prefab.doubleDoor.leafScale, 0.02f);
-        dirty |= ImGui::DragFloat("Closed Yaw", &prefab.doubleDoor.closedYaw, 0.5f, -360.0f, 360.0f, "%.1f");
-        dirty |= ImGui::DragFloat("Open Angle", &prefab.doubleDoor.openAngle, 0.5f, 1.0f, 180.0f, "%.1f");
-        dirty |= ImGui::DragFloat("Interact Distance", &prefab.doubleDoor.interactDistance, 0.05f, 0.1f, 20.0f, "%.2f");
-        dirty |= ImGui::DragFloat("Interact Dot", &prefab.doubleDoor.interactDotThreshold, 0.01f, 0.0f, 1.0f, "%.2f");
-        dirty |= ImGui::DragFloat("Open Duration", &prefab.doubleDoor.openDuration, 0.01f, 0.1f, 10.0f, "%.2f");
+        dirty |= renderInspectorPropertyRow("Left Leaf Mesh", [&]() { return editString("##value", prefab.doubleDoor.leftLeafMeshName); });
+        dirty |= renderInspectorPropertyRow("Right Leaf Mesh", [&]() { return editString("##value", prefab.doubleDoor.rightLeafMeshName); });
+        dirty |= renderInspectorPropertyRow("Root Position", [&]() { return editVec3("##value", prefab.doubleDoor.rootPosition); });
+        dirty |= renderInspectorPropertyRow("Left Hinge", [&]() { return editVec3("##value", prefab.doubleDoor.leftHingePosition); });
+        dirty |= renderInspectorPropertyRow("Right Hinge", [&]() { return editVec3("##value", prefab.doubleDoor.rightHingePosition); });
+        dirty |= renderInspectorPropertyRow("Leaf Scale", [&]() { return editVec3("##value", prefab.doubleDoor.leafScale, 0.02f); });
+        dirty |= renderInspectorPropertyRow("Closed Yaw", [&]() { return ImGui::DragFloat("##value", &prefab.doubleDoor.closedYaw, 0.5f, -360.0f, 360.0f, "%.1f"); });
+        dirty |= renderInspectorPropertyRow("Open Angle", [&]() { return ImGui::DragFloat("##value", &prefab.doubleDoor.openAngle, 0.5f, 1.0f, 180.0f, "%.1f"); });
+        dirty |= renderInspectorPropertyRow("Interact Distance", [&]() { return ImGui::DragFloat("##value", &prefab.doubleDoor.interactDistance, 0.05f, 0.1f, 20.0f, "%.2f"); });
+        dirty |= renderInspectorPropertyRow("Interact Dot", [&]() { return ImGui::DragFloat("##value", &prefab.doubleDoor.interactDotThreshold, 0.01f, 0.0f, 1.0f, "%.2f"); });
+        dirty |= renderInspectorPropertyRow("Open Duration", [&]() { return ImGui::DragFloat("##value", &prefab.doubleDoor.openDuration, 0.01f, 0.1f, 10.0f, "%.2f"); });
         break;
     }
+    endInspectorPropertyTable();
     return dirty;
 }
 
@@ -754,8 +808,16 @@ void renderSceneSelectionInspector(EditorSceneDocument& document,
     ImGui::TextDisabled("Id: %llu", static_cast<unsigned long long>(object->id));
     ImGui::Separator();
 
-    const std::uint64_t currentParentId = document.parentObjectId(object->id);
-    if (document.supportsParenting(object->id) || currentParentId != 0) {
+    if (!beginInspectorPropertyTable("SceneSelectionProperties")) {
+        return;
+    }
+
+    const auto renderParentPicker = [&]() {
+        const std::uint64_t currentParentId = document.parentObjectId(object->id);
+        if (!(document.supportsParenting(object->id) || currentParentId != 0)) {
+            return;
+        }
+
         std::string parentLabel = "<None>";
         if (currentParentId != 0) {
             if (const EditorSceneObject* parentObject = document.findObject(currentParentId)) {
@@ -763,94 +825,105 @@ void renderSceneSelectionInspector(EditorSceneDocument& document,
             }
         }
 
-        if (ImGui::BeginCombo("Parent", parentLabel.c_str())) {
-            const bool noParentSelected = (currentParentId == 0);
-            if (ImGui::Selectable("<None>", noParentSelected)) {
-                const EditorSceneDocumentState beforeState = document.captureState();
-                if (document.clearParent(object->id)) {
-                    commandStack.pushDocumentStateCommand("Clear Parent", beforeState, document.captureState(), document);
-                }
-            }
-            if (noParentSelected) {
-                ImGui::SetItemDefaultFocus();
-            }
-
-            for (const auto& candidate : document.objects()) {
-                if (candidate.id == object->id) {
-                    continue;
-                }
-                if (!document.canSetParent(object->id, candidate.id) && candidate.id != currentParentId) {
-                    continue;
-                }
-                const bool selected = (candidate.id == currentParentId);
-                if (ImGui::Selectable(editorSceneObjectLabel(candidate).c_str(), selected)) {
+        renderInspectorPropertyRow("Parent", [&]() {
+            if (ImGui::BeginCombo("##value", parentLabel.c_str())) {
+                const bool noParentSelected = (currentParentId == 0);
+                if (ImGui::Selectable("<None>", noParentSelected)) {
                     const EditorSceneDocumentState beforeState = document.captureState();
-                    if (document.setParent(object->id, candidate.id)) {
-                        commandStack.pushDocumentStateCommand("Set Parent", beforeState, document.captureState(), document);
+                    if (document.clearParent(object->id)) {
+                        commandStack.pushDocumentStateCommand("Clear Parent", beforeState, document.captureState(), document);
                     }
                 }
-                if (selected) {
+                if (noParentSelected) {
                     ImGui::SetItemDefaultFocus();
                 }
+
+                for (const auto& candidate : document.objects()) {
+                    if (candidate.id == object->id) {
+                        continue;
+                    }
+                    if (!document.canSetParent(object->id, candidate.id) && candidate.id != currentParentId) {
+                        continue;
+                    }
+                    const bool selected = (candidate.id == currentParentId);
+                    if (ImGui::Selectable(editorSceneObjectLabel(candidate).c_str(), selected)) {
+                        const EditorSceneDocumentState beforeState = document.captureState();
+                        if (document.setParent(object->id, candidate.id)) {
+                            commandStack.pushDocumentStateCommand("Set Parent", beforeState, document.captureState(), document);
+                        }
+                    }
+                    if (selected) {
+                        ImGui::SetItemDefaultFocus();
+                    }
+                }
+                ImGui::EndCombo();
             }
-            ImGui::EndCombo();
-        }
-    }
+            return false;
+        });
+    };
+
+    renderParentPicker();
 
     switch (object->kind) {
     case EditorSceneObjectKind::Mesh: {
         auto& mesh = std::get<LevelMeshPlacement>(object->payload);
         const std::string currentMaterialLabel = mesh.materialId.empty() ? "stone_default" : mesh.materialId;
-        if (ImGui::BeginCombo("Mesh Id", mesh.meshId.c_str())) {
-            for (const auto& meshId : meshIds) {
-                const bool selected = meshId == mesh.meshId;
-                if (ImGui::Selectable(meshId.c_str(), selected)) {
-                    const EditorSceneDocumentState beforeState = document.captureState();
-                    mesh.meshId = meshId;
-                    document.markSceneDirty();
-                    commandStack.pushDocumentStateCommand("Change Mesh Asset", beforeState, document.captureState(), document);
-                }
-                if (selected) {
-                    ImGui::SetItemDefaultFocus();
-                }
-            }
-            ImGui::EndCombo();
-        }
-        if (ImGui::BeginCombo("Material Id", currentMaterialLabel.c_str())) {
-            for (const auto& materialId : materialIds) {
-                const bool selected = materialId == currentMaterialLabel;
-                if (ImGui::Selectable(materialId.c_str(), selected)) {
-                    const EditorSceneDocumentState beforeState = document.captureState();
-                    if (applyMaterialToMeshes({object}, materialId, content, document)) {
-                        commandStack.pushDocumentStateCommand("Change Mesh Material", beforeState, document.captureState(), document);
+        renderInspectorPropertyRow("Mesh Id", [&]() {
+            if (ImGui::BeginCombo("##value", mesh.meshId.c_str())) {
+                for (const auto& meshId : meshIds) {
+                    const bool selected = meshId == mesh.meshId;
+                    if (ImGui::Selectable(meshId.c_str(), selected)) {
+                        const EditorSceneDocumentState beforeState = document.captureState();
+                        mesh.meshId = meshId;
+                        document.markSceneDirty();
+                        commandStack.pushDocumentStateCommand("Change Mesh Asset", beforeState, document.captureState(), document);
+                    }
+                    if (selected) {
+                        ImGui::SetItemDefaultFocus();
                     }
                 }
-                if (selected) {
-                    ImGui::SetItemDefaultFocus();
-                }
+                ImGui::EndCombo();
             }
-            ImGui::EndCombo();
-        }
+            return false;
+        });
+        renderInspectorPropertyRow("Material Id", [&]() {
+            if (ImGui::BeginCombo("##value", currentMaterialLabel.c_str())) {
+                for (const auto& materialId : materialIds) {
+                    const bool selected = materialId == currentMaterialLabel;
+                    if (ImGui::Selectable(materialId.c_str(), selected)) {
+                        const EditorSceneDocumentState beforeState = document.captureState();
+                        if (applyMaterialToMeshes({object}, materialId, content, document)) {
+                            commandStack.pushDocumentStateCommand("Change Mesh Material", beforeState, document.captureState(), document);
+                        }
+                    }
+                    if (selected) {
+                        ImGui::SetItemDefaultFocus();
+                    }
+                }
+                ImGui::EndCombo();
+            }
+            return false;
+        });
         auto beforeState = document.captureState();
-        trackSceneItem(beforeState, "Move Mesh", editVec3("Position", mesh.position));
+        trackSceneItem(beforeState, "Move Mesh", renderInspectorPropertyRow("Position", [&]() { return editVec3("##value", mesh.position); }));
         beforeState = document.captureState();
-        const bool scaleChanged = editVec3("Scale", mesh.scale, 0.02f);
+        const bool scaleChanged = renderInspectorPropertyRow("Scale", [&]() { return editVec3("##value", mesh.scale, 0.02f); });
         if (scaleChanged) {
             mesh.scale = glm::max(mesh.scale, glm::vec3(0.01f));
         }
         trackSceneItem(beforeState, "Scale Mesh", scaleChanged);
         beforeState = document.captureState();
-        trackSceneItem(beforeState, "Rotate Mesh", editVec3("Rotation", mesh.rotation, 0.5f));
+        trackSceneItem(beforeState, "Rotate Mesh", renderInspectorPropertyRow("Rotation", [&]() { return editVec3("##value", mesh.rotation, 0.5f); }));
         bool hasTint = mesh.tint.has_value();
         beforeState = document.captureState();
-        const bool tintToggleChanged = ImGui::Checkbox("Use Tint", &hasTint);
+        const bool tintToggleChanged = renderInspectorPropertyRow("Use Tint", [&]() { return ImGui::Checkbox("##value", &hasTint); });
         if (tintToggleChanged) {
             mesh.tint = hasTint ? std::optional<glm::vec3>{mesh.tint.value_or(glm::vec3(1.0f))} : std::nullopt;
         }
         trackSceneItem(beforeState, "Toggle Mesh Tint", tintToggleChanged);
         if (mesh.tint.has_value()) {
             beforeState = document.captureState();
-            trackSceneItem(beforeState, "Change Mesh Tint", editColor("Tint", *mesh.tint));
+            trackSceneItem(beforeState, "Change Mesh Tint", renderInspectorPropertyRow("Tint", [&]() { return editColor("##value", *mesh.tint); }));
         }
         break;
     }
@@ -858,7 +931,8 @@ void renderSceneSelectionInspector(EditorSceneDocument& document,
         auto& light = std::get<LevelLightPlacement>(object->payload);
         int typeIndex = static_cast<int>(light.type);
         const char* lightTypes[] = {"Point", "Spot", "Directional"};
-        if (ImGui::Combo("Light Type", &typeIndex, lightTypes, 3)) {
+        if (renderInspectorPropertyRow("Light Type", [&]() { return ImGui::Combo("##value", &typeIndex, lightTypes, 3); },
+                                      EditorInspectorFieldKind::Enum)) {
             const EditorSceneDocumentState beforeState = document.captureState();
             light.type = static_cast<LightType>(typeIndex);
             document.markSceneDirty();
@@ -866,34 +940,34 @@ void renderSceneSelectionInspector(EditorSceneDocument& document,
         }
         if (light.type != LightType::Directional) {
             const auto beforeState = document.captureState();
-            trackSceneItem(beforeState, "Move Light", editVec3("Position", light.position));
+            trackSceneItem(beforeState, "Move Light", renderInspectorPropertyRow("Position", [&]() { return editVec3("##value", light.position); }));
         }
         auto beforeState = document.captureState();
-        trackSceneItem(beforeState, "Adjust Light Direction", editVec3("Direction", light.direction, 0.01f));
+        trackSceneItem(beforeState, "Adjust Light Direction", renderInspectorPropertyRow("Direction", [&]() { return editVec3("##value", light.direction, 0.01f); }));
         beforeState = document.captureState();
-        trackSceneItem(beforeState, "Change Light Color", editColor("Color", light.color));
+        trackSceneItem(beforeState, "Change Light Color", renderInspectorPropertyRow("Color", [&]() { return editColor("##value", light.color); }));
         beforeState = document.captureState();
-        trackSceneItem(beforeState, "Adjust Light Intensity", ImGui::DragFloat("Intensity", &light.intensity, 0.01f, 0.0f, 10.0f, "%.2f"));
+        trackSceneItem(beforeState, "Adjust Light Intensity", renderInspectorPropertyRow("Intensity", [&]() { return ImGui::DragFloat("##value", &light.intensity, 0.01f, 0.0f, 10.0f, "%.2f"); }));
         if (light.type != LightType::Directional) {
             beforeState = document.captureState();
-            trackSceneItem(beforeState, "Adjust Light Radius", ImGui::DragFloat("Radius", &light.radius, 0.05f, 0.1f, 40.0f, "%.2f"));
+            trackSceneItem(beforeState, "Adjust Light Radius", renderInspectorPropertyRow("Radius", [&]() { return ImGui::DragFloat("##value", &light.radius, 0.05f, 0.1f, 40.0f, "%.2f"); }));
         }
         if (light.type == LightType::Spot) {
             beforeState = document.captureState();
-            trackSceneItem(beforeState, "Adjust Spot Inner Cone", ImGui::DragFloat("Inner Cone", &light.innerConeDegrees, 0.5f, 1.0f, 85.0f, "%.1f"));
+            trackSceneItem(beforeState, "Adjust Spot Inner Cone", renderInspectorPropertyRow("Inner Cone", [&]() { return ImGui::DragFloat("##value", &light.innerConeDegrees, 0.5f, 1.0f, 85.0f, "%.1f"); }));
             beforeState = document.captureState();
-            trackSceneItem(beforeState, "Adjust Spot Outer Cone", ImGui::DragFloat("Outer Cone", &light.outerConeDegrees, 0.5f, 1.0f, 89.0f, "%.1f"));
+            trackSceneItem(beforeState, "Adjust Spot Outer Cone", renderInspectorPropertyRow("Outer Cone", [&]() { return ImGui::DragFloat("##value", &light.outerConeDegrees, 0.5f, 1.0f, 89.0f, "%.1f"); }));
             beforeState = document.captureState();
-            trackSceneItem(beforeState, "Toggle Spot Shadows", ImGui::Checkbox("Casts Shadows", &light.castsShadows));
+            trackSceneItem(beforeState, "Toggle Spot Shadows", renderInspectorPropertyRow("Casts Shadows", [&]() { return ImGui::Checkbox("##value", &light.castsShadows); }));
         }
         break;
     }
     case EditorSceneObjectKind::BoxCollider: {
         auto& box = std::get<LevelBoxColliderPlacement>(object->payload);
         auto beforeState = document.captureState();
-        trackSceneItem(beforeState, "Move Box Collider", editVec3("Position", box.position));
+        trackSceneItem(beforeState, "Move Box Collider", renderInspectorPropertyRow("Position", [&]() { return editVec3("##value", box.position); }));
         beforeState = document.captureState();
-        const bool extentsChanged = editVec3("Half Extents", box.halfExtents, 0.02f);
+        const bool extentsChanged = renderInspectorPropertyRow("Half Extents", [&]() { return editVec3("##value", box.halfExtents, 0.02f); });
         if (extentsChanged) {
             box.halfExtents = glm::max(box.halfExtents, glm::vec3(0.01f));
         }
@@ -903,60 +977,63 @@ void renderSceneSelectionInspector(EditorSceneDocument& document,
     case EditorSceneObjectKind::CylinderCollider: {
         auto& cylinder = std::get<LevelCylinderColliderPlacement>(object->payload);
         auto beforeState = document.captureState();
-        trackSceneItem(beforeState, "Move Cylinder Collider", editVec3("Position", cylinder.position));
+        trackSceneItem(beforeState, "Move Cylinder Collider", renderInspectorPropertyRow("Position", [&]() { return editVec3("##value", cylinder.position); }));
         beforeState = document.captureState();
-        trackSceneItem(beforeState, "Adjust Cylinder Radius", ImGui::DragFloat("Radius", &cylinder.radius, 0.02f, 0.05f, 20.0f, "%.2f"));
+        trackSceneItem(beforeState, "Adjust Cylinder Radius", renderInspectorPropertyRow("Radius", [&]() { return ImGui::DragFloat("##value", &cylinder.radius, 0.02f, 0.05f, 20.0f, "%.2f"); }));
         beforeState = document.captureState();
-        trackSceneItem(beforeState, "Adjust Cylinder Height", ImGui::DragFloat("Half Height", &cylinder.halfHeight, 0.02f, 0.05f, 20.0f, "%.2f"));
+        trackSceneItem(beforeState, "Adjust Cylinder Height", renderInspectorPropertyRow("Half Height", [&]() { return ImGui::DragFloat("##value", &cylinder.halfHeight, 0.02f, 0.05f, 20.0f, "%.2f"); }));
         break;
     }
     case EditorSceneObjectKind::ReflectionProbe: {
         auto& probe = std::get<LevelReflectionProbePlacement>(object->payload);
         auto beforeState = document.captureState();
-        trackSceneItem(beforeState, "Move Reflection Probe", editVec3("Position", probe.position));
+        trackSceneItem(beforeState, "Move Reflection Probe", renderInspectorPropertyRow("Position", [&]() { return editVec3("##value", probe.position); }));
         beforeState = document.captureState();
-        const bool extentsChanged = editVec3("Extents", probe.extents, 0.02f);
+        const bool extentsChanged = renderInspectorPropertyRow("Extents", [&]() { return editVec3("##value", probe.extents, 0.02f); });
         if (extentsChanged) {
             probe.extents = glm::max(probe.extents, glm::vec3(0.05f));
         }
         trackSceneItem(beforeState, "Resize Reflection Probe", extentsChanged);
         beforeState = document.captureState();
-        trackSceneItem(beforeState, "Adjust Probe Blend Distance", ImGui::DragFloat("Blend Distance", &probe.blendDistance, 0.02f, 0.0f, 20.0f, "%.2f"));
+        trackSceneItem(beforeState, "Adjust Probe Blend Distance", renderInspectorPropertyRow("Blend Distance", [&]() { return ImGui::DragFloat("##value", &probe.blendDistance, 0.02f, 0.0f, 20.0f, "%.2f"); }));
         beforeState = document.captureState();
-        trackSceneItem(beforeState, "Adjust Probe Intensity", ImGui::DragFloat("Intensity", &probe.intensity, 0.02f, 0.0f, 4.0f, "%.2f"));
+        trackSceneItem(beforeState, "Adjust Probe Intensity", renderInspectorPropertyRow("Intensity", [&]() { return ImGui::DragFloat("##value", &probe.intensity, 0.02f, 0.0f, 4.0f, "%.2f"); }));
         beforeState = document.captureState();
-        trackSceneItem(beforeState, "Toggle Box Projection", ImGui::Checkbox("Box Projection", &probe.boxProjection));
+        trackSceneItem(beforeState, "Toggle Box Projection", renderInspectorPropertyRow("Box Projection", [&]() { return ImGui::Checkbox("##value", &probe.boxProjection); }));
         break;
     }
     case EditorSceneObjectKind::PlayerSpawn: {
         auto& spawn = std::get<LevelPlayerSpawn>(object->payload);
         auto beforeState = document.captureState();
-        trackSceneItem(beforeState, "Move Player Spawn", editVec3("Position", spawn.position));
+        trackSceneItem(beforeState, "Move Player Spawn", renderInspectorPropertyRow("Position", [&]() { return editVec3("##value", spawn.position); }));
         beforeState = document.captureState();
-        trackSceneItem(beforeState, "Adjust Fall Respawn Height", ImGui::DragFloat("Fall Respawn Y", &spawn.fallRespawnY, 0.1f, -100.0f, 100.0f, "%.2f"));
+        trackSceneItem(beforeState, "Adjust Fall Respawn Height", renderInspectorPropertyRow("Fall Respawn Y", [&]() { return ImGui::DragFloat("##value", &spawn.fallRespawnY, 0.1f, -100.0f, 100.0f, "%.2f"); }));
         break;
     }
     case EditorSceneObjectKind::Archetype: {
         auto& archetype = std::get<LevelArchetypePlacement>(object->payload);
-        if (ImGui::BeginCombo("Archetype Id", archetype.archetypeId.c_str())) {
-            for (const auto& archetypeId : archetypeIds) {
-                const bool selected = archetypeId == archetype.archetypeId;
-                if (ImGui::Selectable(archetypeId.c_str(), selected)) {
-                    const EditorSceneDocumentState beforeState = document.captureState();
-                    archetype.archetypeId = archetypeId;
-                    document.markSceneDirty();
-                    commandStack.pushDocumentStateCommand("Change Archetype", beforeState, document.captureState(), document);
+        renderInspectorPropertyRow("Archetype Id", [&]() {
+            if (ImGui::BeginCombo("##value", archetype.archetypeId.c_str())) {
+                for (const auto& archetypeId : archetypeIds) {
+                    const bool selected = archetypeId == archetype.archetypeId;
+                    if (ImGui::Selectable(archetypeId.c_str(), selected)) {
+                        const EditorSceneDocumentState beforeState = document.captureState();
+                        archetype.archetypeId = archetypeId;
+                        document.markSceneDirty();
+                        commandStack.pushDocumentStateCommand("Change Archetype", beforeState, document.captureState(), document);
+                    }
+                    if (selected) {
+                        ImGui::SetItemDefaultFocus();
+                    }
                 }
-                if (selected) {
-                    ImGui::SetItemDefaultFocus();
-                }
+                ImGui::EndCombo();
             }
-            ImGui::EndCombo();
-        }
+            return false;
+        });
         auto beforeState = document.captureState();
-        trackSceneItem(beforeState, "Move Archetype", editVec3("Position", archetype.position));
+        trackSceneItem(beforeState, "Move Archetype", renderInspectorPropertyRow("Position", [&]() { return editVec3("##value", archetype.position); }));
         beforeState = document.captureState();
-        trackSceneItem(beforeState, "Rotate Archetype", ImGui::DragFloat("Yaw", &archetype.yawDegrees, 0.5f, -360.0f, 360.0f, "%.1f"));
+        trackSceneItem(beforeState, "Rotate Archetype", renderInspectorPropertyRow("Yaw", [&]() { return ImGui::DragFloat("##value", &archetype.yawDegrees, 0.5f, -360.0f, 360.0f, "%.1f"); }));
         break;
     }
     case EditorSceneObjectKind::Group: {
@@ -964,24 +1041,27 @@ void renderSceneSelectionInspector(EditorSceneDocument& document,
         char nameBuf[256];
         std::snprintf(nameBuf, sizeof(nameBuf), "%s", group.name.c_str());
         auto beforeState = document.captureState();
-        if (ImGui::InputText("Name", nameBuf, sizeof(nameBuf))) {
+        const bool nameChanged = renderInspectorPropertyRow("Name", [&]() { return ImGui::InputText("##value", nameBuf, sizeof(nameBuf)); });
+        if (nameChanged) {
             group.name = nameBuf;
             document.markSceneDirty();
             commandStack.pushDocumentStateCommand("Rename Group", beforeState, document.captureState(), document);
         }
         beforeState = document.captureState();
-        trackSceneItem(beforeState, "Move Group", editVec3("Position", group.position));
+        trackSceneItem(beforeState, "Move Group", renderInspectorPropertyRow("Position", [&]() { return editVec3("##value", group.position); }));
         beforeState = document.captureState();
-        const bool scaleChanged = editVec3("Scale", group.scale, 0.02f);
+        const bool scaleChanged = renderInspectorPropertyRow("Scale", [&]() { return editVec3("##value", group.scale, 0.02f); });
         if (scaleChanged) {
             group.scale = glm::max(group.scale, glm::vec3(0.01f));
         }
         trackSceneItem(beforeState, "Scale Group", scaleChanged);
         beforeState = document.captureState();
-        trackSceneItem(beforeState, "Rotate Group", editVec3("Rotation", group.rotation, 0.5f));
+        trackSceneItem(beforeState, "Rotate Group", renderInspectorPropertyRow("Rotation", [&]() { return editVec3("##value", group.rotation, 0.5f); }));
         break;
     }
     }
+
+    endInspectorPropertyTable();
 }
 
 } // namespace

@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: Editor UX
-status: Executing Phase 14
-stopped_at: "Completed quick task 260403-wsw: Enable arrow-key navigation in the hierarchy panel"
-last_updated: "2026-04-03T20:45:00Z"
-last_activity: 2026-04-03
+status: Ready to execute
+stopped_at: Completed 15-01-PLAN.md
+last_updated: "2026-04-04T12:19:10.703Z"
+last_activity: 2026-04-04
 progress:
-  total_phases: 16
+  total_phases: 17
   completed_phases: 13
-  total_plans: 41
-  completed_plans: 37
+  total_plans: 43
+  completed_plans: 38
 ---
 
 # Project State
@@ -20,12 +20,12 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-23)
 
 **Core value:** The Stanley Parable-inspired art style — clean, minimalist environments with warm soft lighting, muted color palette, and stylized realism
-**Current focus:** Phase 14 — improve-lighting-reflections-occlusion-and-shadow-quality
+**Current focus:** Phase 15 — prototype-editor-imgui-themes-and-choose-a-final-skin-direction
 
 ## Current Position
 
-Phase: 14 (improve-lighting-reflections-occlusion-and-shadow-quality) — EXECUTING
-Plan: 1 of 3
+Phase: 15 (prototype-editor-imgui-themes-and-choose-a-final-skin-direction) — EXECUTING
+Plan: 2 of 2
 
 ## Performance Metrics
 
@@ -72,6 +72,7 @@ Plan: 1 of 3
 | Phase 07 P04 | 525609 | 2 tasks | 6 files |
 | Phase 07 P03 | 10 | 2 tasks | 4 files |
 | Phase 13-data-driven-behavior-system P01 | 15 | 3 tasks | 10 files |
+| Phase 15 P01 | 8 | 2 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -79,8 +80,6 @@ Plan: 1 of 3
 
 Decisions are logged in PROJECT.md Key Decisions table.
 Recent decisions affecting current work:
-
-<<<<<<< Updated upstream
 
 - Graphics API: OpenGL 4.1 Core Profile (macOS caps at 4.1; research recommended 4.6 but 4.1 is the ceiling on this platform)
 - Dithering approach: Post-process fullscreen quad with Bayer matrix; world-space pattern anchoring is non-negotiable from Phase 1
@@ -98,9 +97,6 @@ Recent decisions affecting current work:
 - [Phase 01.1-project-restructure-ecs-application-class-modular-engine-game-split]: CameraSystem uses identical yaw/pitch/forward math as main.cpp: cos(radians(yaw))*cos(radians(pitch)) for x, sin(radians(pitch)) for y, sin(radians(yaw))*cos(radians(pitch)) for z
 - [Phase 01.1-project-restructure-ecs-application-class-modular-engine-game-split]: RenderSystem builds render and light lists from ECS each frame; orchestrates full FBO scene pass + dither post-process + ImGui overlay identical to main.cpp
 - [Phase 01.1-project-restructure-ecs-application-class-modular-engine-game-split]: CameraSystem receives InputSystem& by constructor injection -- avoids application-level coupling, makes dependency explicit
-- [Phase 01.1-project-restructure-ecs-application-class-modular-engine-game-split]: CathedralScene uses useModelOverride=true for all mesh entities -- geometry is pre-computed with arbitrary transforms that cannot be decomposed to euler angles
-- [Phase 01.1-project-restructure-ecs-application-class-modular-engine-game-split]: GLM vec3 scalar constructor is explicit -- must use glm::vec3(0.0f) not brace-init {} in aggregate TransformComponent initialization
-- [Phase 01.1-project-restructure-ecs-application-class-modular-engine-game-split]: SceneManager instantiated in main() rather than owned by Application -- keeps Application minimal for this restructure phase
 - [Phase 01.1-project-restructure-ecs-application-class-modular-engine-game-split]: CathedralScene uses useModelOverride=true for all mesh entities -- geometry is pre-computed with arbitrary transforms that cannot be decomposed to euler angles
 - [Phase 01.1-project-restructure-ecs-application-class-modular-engine-game-split]: GLM vec3 scalar constructor is explicit -- must use glm::vec3(0.0f) not brace-init {} in aggregate TransformComponent initialization
 - [Phase 01.1-project-restructure-ecs-application-class-modular-engine-game-split]: SceneManager instantiated in main() rather than owned by Application -- keeps Application minimal for this restructure phase
@@ -144,9 +140,6 @@ Recent decisions affecting current work:
 - [Phase 07]: test_content_registry links game_rendering (not just game_content) because ContentRegistry.cpp now calls MaterialTextureLibrary methods
 - [Phase 07]: Material CRUD popups inline in asset browser panel; file I/O in panel, ContentRegistry mutations delegated to main.cpp via AssetBrowserActionResult
 - [Phase 07]: content.addMaterial() replaces content.loadDefaults() for targeted in-memory update on material inspector save
-
-=======
-
 - [Phase 08]: Metal and chained doors from buildScriptedGeometry (not .scene file) so InteractableComponent can be attached
 - [Phase 08]: Chain padlock links constructed from cylinder segments; 4 cylinders per link in rectangular loop
 - [v1.1 research]: All document mutation APIs complete — `eraseObjects`, `duplicateObject`, `addMesh`, `applyWorldTransform` need no changes
@@ -177,13 +170,8 @@ Recent decisions affecting current work:
 - [Phase quick]: AI_CONFIG_FBX_CONVERT_TO_M set via SetPropertyBool on both AssimpLoader import paths — converts FBX cm vertices to meters at import, eliminates 0.01 scale workarounds in scene files and scripted geometry
 - [Phase 13-data-driven-behavior-system]: NodeIndex built via registry.view<NodeIdComponent>() after all entity placement, not from parallel vectors — ensures scripted geometry entities are also indexed
 - [Phase 13-data-driven-behavior-system]: LevelDef.cpp parser refactored to buffer all lines and detect indented sub-lines for behavior/interactable declarations
-
-### Roadmap Evolution
-
-- Phase 12 added: Engine quality — frustum culling, texture unit enum, generic asset system, EventBus RAII tokens
-- Phase 13 added: Data-driven behavior system — native Action Component system with BehaviorSystem dispatcher, TriggerComponent, node ID targeting, scene file behavior declarations
-
->>>>>>> Stashed changes
+- [Phase 15]: Theme presets stay repo-local in ImGuiLayer and start from Dear ImGui Dark/Light baselines instead of introducing a skinning framework.
+- [Phase 15]: The editor exposes theme comparison only through View -> Interface Theme, matching the existing Interface Font workflow.
 
 ### Pending Todos
 
@@ -198,6 +186,7 @@ None yet.
 - Phase 5 added: Unify editor/runtime/build rendering parity — shared render path so all three modes produce identical visual output
 - Phase 6 added: Data-driven scene management — New/Delete Scene in editor, configurable runtime default, remove legacy hardcoded scene classes
 - Phase 7 added: Data-driven material system — replace hardcoded materials with a proper material pipeline
+- Phase 15 added: prototype editor ImGui themes and choose a final skin direction
 
 ### Blockers/Concerns
 
@@ -251,7 +240,7 @@ None yet.
 
 ## Session Continuity
 
-Last activity: 2026-04-03 - Completed quick task 260403-wsw: Enable arrow-key navigation in the hierarchy panel
-Last session: 2026-04-02T19:24:45Z
-Stopped at: Completed quick task 260403-wsw: Enable arrow-key navigation in the hierarchy panel
+Last activity: 2026-04-04
+Last session: 2026-04-04T12:19:10.699Z
+Stopped at: Completed 15-01-PLAN.md
 Resume file: None

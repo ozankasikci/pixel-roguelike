@@ -42,23 +42,29 @@ bool renderEnvironmentPanel(EditorSceneDocument& document,
     }
 
     ImGui::SetNextItemWidth(180.0f);
-    if (ImGui::BeginCombo("Environment", environment.id.c_str())) {
-        for (const auto& id : environmentIds) {
-            const bool selected = (id == environment.id);
-            if (ImGui::Selectable(id.c_str(), selected)) {
-                const EditorSceneDocumentState beforeState = document.captureState();
-                document.setEnvironmentId(id, content);
-                commandStack.pushDocumentStateCommand(
-                    "Change Environment",
-                    beforeState,
-                    document.captureState(),
-                    document);
+    if (beginInspectorPropertyTable("EnvironmentPanelHeader")) {
+        renderInspectorPropertyRow("Environment", [&]() {
+            if (ImGui::BeginCombo("##value", environment.id.c_str())) {
+                for (const auto& id : environmentIds) {
+                    const bool selected = (id == environment.id);
+                    if (ImGui::Selectable(id.c_str(), selected)) {
+                        const EditorSceneDocumentState beforeState = document.captureState();
+                        document.setEnvironmentId(id, content);
+                        commandStack.pushDocumentStateCommand(
+                            "Change Environment",
+                            beforeState,
+                            document.captureState(),
+                            document);
+                    }
+                    if (selected) {
+                        ImGui::SetItemDefaultFocus();
+                    }
+                }
+                ImGui::EndCombo();
             }
-            if (selected) {
-                ImGui::SetItemDefaultFocus();
-            }
-        }
-        ImGui::EndCombo();
+            return false;
+        }, EditorInspectorFieldKind::Enum);
+        endInspectorPropertyTable();
     }
 
     if (ImGui::Button("Save")) {
@@ -98,7 +104,10 @@ bool renderEnvironmentPanel(EditorSceneDocument& document,
     }
 
     if (showSaveAsProfile && ImGui::BeginPopupModal("Save Environment As", &showSaveAsProfile, ImGuiWindowFlags_AlwaysAutoResize)) {
-        ImGui::InputText("Profile Id", saveAsProfileBuffer, sizeof(saveAsProfileBuffer));
+        if (beginInspectorPropertyTable("EnvironmentSaveAsPopup")) {
+            renderInspectorPropertyRow("Profile Id", [&]() { return ImGui::InputText("##value", saveAsProfileBuffer, sizeof(saveAsProfileBuffer)); });
+            endInspectorPropertyTable();
+        }
         if (ImGui::Button("Create Profile")) {
             try {
                 const EditorSceneDocumentState beforeState = document.captureState();
@@ -140,82 +149,88 @@ bool renderEnvironmentPanel(EditorSceneDocument& document,
             "ACES Fitted",
         };
 
+        if (!beginInspectorPropertyTable("EnvironmentPanelPost")) {
+            ImGui::End();
+            return contentReloaded;
+        }
+
         // --- Tone Mapping ---
         ImGui::SeparatorText("Tone Mapping");
         auto beforeState = document.captureState();
-        trackEnvItem(beforeState, "Toggle Tone Map", ImGui::Checkbox("Enable Tone Map", &environment.post.enableToneMap));
+        trackEnvItem(beforeState, "Toggle Tone Map", renderInspectorPropertyRow("Enable Tone Map", [&]() { return ImGui::Checkbox("##value", &environment.post.enableToneMap); }));
         if (environment.post.enableToneMap) {
             beforeState = document.captureState();
             int toneMapMode = environment.post.toneMapMode;
-            const bool toneMapChanged = ImGui::Combo("Tone Mapper", &toneMapMode, kToneMapModes, 2);
+            const bool toneMapChanged = renderInspectorPropertyRow("Tone Mapper", [&]() { return ImGui::Combo("##value", &toneMapMode, kToneMapModes, 2); },
+                                                                   EditorInspectorFieldKind::Enum);
             if (toneMapChanged) {
                 environment.post.toneMapMode = toneMapMode;
             }
             trackEnvItem(beforeState, "Change Tone Mapper", toneMapChanged);
             beforeState = document.captureState();
-            trackEnvItem(beforeState, "Adjust Exposure", ImGui::DragFloat("Exposure", &environment.post.exposure, 0.01f, 0.2f, 2.5f, "%.2f"));
+            trackEnvItem(beforeState, "Adjust Exposure", renderInspectorPropertyRow("Exposure", [&]() { return ImGui::DragFloat("##value", &environment.post.exposure, 0.01f, 0.2f, 2.5f, "%.2f"); }));
             beforeState = document.captureState();
-            trackEnvItem(beforeState, "Adjust Gamma", ImGui::DragFloat("Gamma", &environment.post.gamma, 0.01f, 0.5f, 2.0f, "%.2f"));
+            trackEnvItem(beforeState, "Adjust Gamma", renderInspectorPropertyRow("Gamma", [&]() { return ImGui::DragFloat("##value", &environment.post.gamma, 0.01f, 0.5f, 2.0f, "%.2f"); }));
             beforeState = document.captureState();
-            trackEnvItem(beforeState, "Adjust Contrast", ImGui::DragFloat("Contrast", &environment.post.contrast, 0.01f, 0.4f, 2.0f, "%.2f"));
+            trackEnvItem(beforeState, "Adjust Contrast", renderInspectorPropertyRow("Contrast", [&]() { return ImGui::DragFloat("##value", &environment.post.contrast, 0.01f, 0.4f, 2.0f, "%.2f"); }));
             beforeState = document.captureState();
-            trackEnvItem(beforeState, "Adjust Saturation", ImGui::DragFloat("Saturation", &environment.post.saturation, 0.01f, 0.0f, 1.5f, "%.2f"));
+            trackEnvItem(beforeState, "Adjust Saturation", renderInspectorPropertyRow("Saturation", [&]() { return ImGui::DragFloat("##value", &environment.post.saturation, 0.01f, 0.0f, 1.5f, "%.2f"); }));
         }
 
         // --- Bloom ---
         ImGui::SeparatorText("Bloom");
         beforeState = document.captureState();
-        trackEnvItem(beforeState, "Toggle Bloom", ImGui::Checkbox("Enable Bloom", &environment.post.enableBloom));
+        trackEnvItem(beforeState, "Toggle Bloom", renderInspectorPropertyRow("Enable Bloom", [&]() { return ImGui::Checkbox("##value", &environment.post.enableBloom); }));
         if (environment.post.enableBloom) {
             beforeState = document.captureState();
-            trackEnvItem(beforeState, "Adjust Bloom Threshold", ImGui::DragFloat("Bloom Threshold", &environment.post.bloomThreshold, 0.01f, 0.0f, 1.5f, "%.2f"));
+            trackEnvItem(beforeState, "Adjust Bloom Threshold", renderInspectorPropertyRow("Bloom Threshold", [&]() { return ImGui::DragFloat("##value", &environment.post.bloomThreshold, 0.01f, 0.0f, 1.5f, "%.2f"); }));
             beforeState = document.captureState();
-            trackEnvItem(beforeState, "Adjust Bloom Intensity", ImGui::DragFloat("Bloom Intensity", &environment.post.bloomIntensity, 0.01f, 0.0f, 1.0f, "%.2f"));
+            trackEnvItem(beforeState, "Adjust Bloom Intensity", renderInspectorPropertyRow("Bloom Intensity", [&]() { return ImGui::DragFloat("##value", &environment.post.bloomIntensity, 0.01f, 0.0f, 1.0f, "%.2f"); }));
             beforeState = document.captureState();
-            trackEnvItem(beforeState, "Adjust Bloom Radius", ImGui::DragFloat("Bloom Radius", &environment.post.bloomRadius, 0.01f, 0.5f, 5.0f, "%.2f"));
+            trackEnvItem(beforeState, "Adjust Bloom Radius", renderInspectorPropertyRow("Bloom Radius", [&]() { return ImGui::DragFloat("##value", &environment.post.bloomRadius, 0.01f, 0.5f, 5.0f, "%.2f"); }));
         }
 
         // --- SSAO ---
         ImGui::SeparatorText("SSAO");
         beforeState = document.captureState();
-        trackEnvItem(beforeState, "Toggle SSAO", ImGui::Checkbox("Enable SSAO", &environment.post.enableSsao));
+        trackEnvItem(beforeState, "Toggle SSAO", renderInspectorPropertyRow("Enable SSAO", [&]() { return ImGui::Checkbox("##value", &environment.post.enableSsao); }));
         if (environment.post.enableSsao) {
             beforeState = document.captureState();
-            trackEnvItem(beforeState, "Toggle SSAO Half Resolution", ImGui::Checkbox("AO Half Resolution", &environment.post.ssaoHalfResolution));
+            trackEnvItem(beforeState, "Toggle SSAO Half Resolution", renderInspectorPropertyRow("AO Half Resolution", [&]() { return ImGui::Checkbox("##value", &environment.post.ssaoHalfResolution); }));
             beforeState = document.captureState();
-            trackEnvItem(beforeState, "Adjust SSAO Radius", ImGui::DragFloat("AO Radius", &environment.post.ssaoRadius, 0.01f, 0.1f, 2.0f, "%.2f"));
+            trackEnvItem(beforeState, "Adjust SSAO Radius", renderInspectorPropertyRow("AO Radius", [&]() { return ImGui::DragFloat("##value", &environment.post.ssaoRadius, 0.01f, 0.1f, 2.0f, "%.2f"); }));
             beforeState = document.captureState();
-            trackEnvItem(beforeState, "Adjust SSAO Bias", ImGui::DragFloat("AO Bias", &environment.post.ssaoBias, 0.001f, 0.001f, 0.1f, "%.3f"));
+            trackEnvItem(beforeState, "Adjust SSAO Bias", renderInspectorPropertyRow("AO Bias", [&]() { return ImGui::DragFloat("##value", &environment.post.ssaoBias, 0.001f, 0.001f, 0.1f, "%.3f"); }));
             beforeState = document.captureState();
-            trackEnvItem(beforeState, "Adjust SSAO Strength", ImGui::DragFloat("AO Strength", &environment.post.ssaoStrength, 0.01f, 0.0f, 2.0f, "%.2f"));
+            trackEnvItem(beforeState, "Adjust SSAO Strength", renderInspectorPropertyRow("AO Strength", [&]() { return ImGui::DragFloat("##value", &environment.post.ssaoStrength, 0.01f, 0.0f, 2.0f, "%.2f"); }));
             beforeState = document.captureState();
-            trackEnvItem(beforeState, "Adjust SSAO Fade Start", ImGui::DragFloat("AO Fade Start", &environment.post.ssaoFadeStart, 0.1f, 0.0f, 120.0f, "%.1f"));
+            trackEnvItem(beforeState, "Adjust SSAO Fade Start", renderInspectorPropertyRow("AO Fade Start", [&]() { return ImGui::DragFloat("##value", &environment.post.ssaoFadeStart, 0.1f, 0.0f, 120.0f, "%.1f"); }));
             beforeState = document.captureState();
-            trackEnvItem(beforeState, "Adjust SSAO Fade End", ImGui::DragFloat("AO Fade End", &environment.post.ssaoFadeEnd, 0.1f, 0.0f, 160.0f, "%.1f"));
+            trackEnvItem(beforeState, "Adjust SSAO Fade End", renderInspectorPropertyRow("AO Fade End", [&]() { return ImGui::DragFloat("##value", &environment.post.ssaoFadeEnd, 0.1f, 0.0f, 160.0f, "%.1f"); }));
         }
 
         // --- Fog ---
         ImGui::SeparatorText("Fog");
         beforeState = document.captureState();
-        trackEnvItem(beforeState, "Toggle Fog", ImGui::Checkbox("Enable Fog", &environment.post.enableFog));
+        trackEnvItem(beforeState, "Toggle Fog", renderInspectorPropertyRow("Enable Fog", [&]() { return ImGui::Checkbox("##value", &environment.post.enableFog); }));
         if (environment.post.enableFog) {
             beforeState = document.captureState();
-            trackEnvItem(beforeState, "Adjust Fog Density", ImGui::DragFloat("Fog Density", &environment.post.fogDensity, 0.001f, 0.0f, 0.5f, "%.3f"));
+            trackEnvItem(beforeState, "Adjust Fog Density", renderInspectorPropertyRow("Fog Density", [&]() { return ImGui::DragFloat("##value", &environment.post.fogDensity, 0.001f, 0.0f, 0.5f, "%.3f"); }));
             beforeState = document.captureState();
-            trackEnvItem(beforeState, "Adjust Fog Start", ImGui::DragFloat("Fog Start", &environment.post.fogStart, 0.1f, 0.0f, 80.0f, "%.1f"));
+            trackEnvItem(beforeState, "Adjust Fog Start", renderInspectorPropertyRow("Fog Start", [&]() { return ImGui::DragFloat("##value", &environment.post.fogStart, 0.1f, 0.0f, 80.0f, "%.1f"); }));
             beforeState = document.captureState();
-            trackEnvItem(beforeState, "Adjust Depth View Scale", ImGui::DragFloat("Depth View Scale", &environment.post.depthViewScale, 0.001f, 0.01f, 0.30f, "%.3f"));
+            trackEnvItem(beforeState, "Adjust Depth View Scale", renderInspectorPropertyRow("Depth View Scale", [&]() { return ImGui::DragFloat("##value", &environment.post.depthViewScale, 0.001f, 0.01f, 0.30f, "%.3f"); }));
             beforeState = document.captureState();
-            trackEnvItem(beforeState, "Change Fog Near Color", editColor("Fog Near", environment.post.fogNearColor));
+            trackEnvItem(beforeState, "Change Fog Near Color", renderInspectorPropertyRow("Fog Near", [&]() { return editColor("##value", environment.post.fogNearColor); }));
             beforeState = document.captureState();
-            trackEnvItem(beforeState, "Change Fog Far Color", editColor("Fog Far", environment.post.fogFarColor));
+            trackEnvItem(beforeState, "Change Fog Far Color", renderInspectorPropertyRow("Fog Far", [&]() { return editColor("##value", environment.post.fogFarColor); }));
         }
 
         // --- Shadows ---
         ImGui::SeparatorText("Shadows");
         beforeState = document.captureState();
-        trackEnvItem(beforeState, "Adjust CSM Split Blend", ImGui::DragFloat("CSM Split Blend", &environment.post.csmLambda, 0.01f, 0.0f, 1.0f, "%.2f"));
-        ImGui::SameLine();
+        trackEnvItem(beforeState, "Adjust CSM Split Blend", renderInspectorPropertyRow("CSM Split Blend", [&]() { return ImGui::DragFloat("##value", &environment.post.csmLambda, 0.01f, 0.0f, 1.0f, "%.2f"); }));
+        ImGui::SameLine(0.0f, 6.0f);
         ImGui::TextDisabled("(?)");
         if (ImGui::IsItemHovered()) {
             ImGui::SetTooltip("0 = uniform linear splits\n1 = fully logarithmic splits (more detail near camera)");
@@ -224,53 +239,55 @@ bool renderEnvironmentPanel(EditorSceneDocument& document,
         // --- Edges ---
         ImGui::SeparatorText("Edges");
         beforeState = document.captureState();
-        trackEnvItem(beforeState, "Toggle Edges", ImGui::Checkbox("Enable Edges", &environment.post.enableEdges));
+        trackEnvItem(beforeState, "Toggle Edges", renderInspectorPropertyRow("Enable Edges", [&]() { return ImGui::Checkbox("##value", &environment.post.enableEdges); }));
         if (environment.post.enableEdges) {
             beforeState = document.captureState();
-            trackEnvItem(beforeState, "Adjust Edge Threshold", ImGui::DragFloat("Edge Threshold", &environment.post.edgeThreshold, 0.005f, 0.0f, 1.0f, "%.3f"));
+            trackEnvItem(beforeState, "Adjust Edge Threshold", renderInspectorPropertyRow("Edge Threshold", [&]() { return ImGui::DragFloat("##value", &environment.post.edgeThreshold, 0.005f, 0.0f, 1.0f, "%.3f"); }));
         }
 
         // --- Color Grading ---
         ImGui::SeparatorText("Color Grading");
         beforeState = document.captureState();
-        trackEnvItem(beforeState, "Adjust Split Tone Strength", ImGui::DragFloat("Split Strength", &environment.post.splitToneStrength, 0.01f, 0.0f, 0.6f, "%.2f"));
+        trackEnvItem(beforeState, "Adjust Split Tone Strength", renderInspectorPropertyRow("Split Strength", [&]() { return ImGui::DragFloat("##value", &environment.post.splitToneStrength, 0.01f, 0.0f, 0.6f, "%.2f"); }));
         beforeState = document.captureState();
-        trackEnvItem(beforeState, "Adjust Split Tone Balance", ImGui::DragFloat("Split Balance", &environment.post.splitToneBalance, 0.01f, 0.15f, 0.85f, "%.2f"));
+        trackEnvItem(beforeState, "Adjust Split Tone Balance", renderInspectorPropertyRow("Split Balance", [&]() { return ImGui::DragFloat("##value", &environment.post.splitToneBalance, 0.01f, 0.15f, 0.85f, "%.2f"); }));
         beforeState = document.captureState();
-        trackEnvItem(beforeState, "Change Shadow Tint", editColor("Shadow Tint", environment.post.shadowTint));
+        trackEnvItem(beforeState, "Change Shadow Tint", renderInspectorPropertyRow("Shadow Tint", [&]() { return editColor("##value", environment.post.shadowTint); }));
         beforeState = document.captureState();
-        trackEnvItem(beforeState, "Change Highlight Tint", editColor("Highlight Tint", environment.post.highlightTint));
+        trackEnvItem(beforeState, "Change Highlight Tint", renderInspectorPropertyRow("Highlight Tint", [&]() { return editColor("##value", environment.post.highlightTint); }));
 
         // --- Effects ---
         ImGui::SeparatorText("Effects");
         beforeState = document.captureState();
-        trackEnvItem(beforeState, "Toggle Vignette", ImGui::Checkbox("Enable Vignette", &environment.post.enableVignette));
+        trackEnvItem(beforeState, "Toggle Vignette", renderInspectorPropertyRow("Enable Vignette", [&]() { return ImGui::Checkbox("##value", &environment.post.enableVignette); }));
         if (environment.post.enableVignette) {
             beforeState = document.captureState();
-            trackEnvItem(beforeState, "Adjust Vignette Strength", ImGui::DragFloat("Vignette Strength", &environment.post.vignetteStrength, 0.01f, 0.0f, 1.0f, "%.2f"));
+            trackEnvItem(beforeState, "Adjust Vignette Strength", renderInspectorPropertyRow("Vignette Strength", [&]() { return ImGui::DragFloat("##value", &environment.post.vignetteStrength, 0.01f, 0.0f, 1.0f, "%.2f"); }));
             beforeState = document.captureState();
-            trackEnvItem(beforeState, "Adjust Vignette Softness", ImGui::DragFloat("Vignette Softness", &environment.post.vignetteSoftness, 0.01f, 0.1f, 1.2f, "%.2f"));
+            trackEnvItem(beforeState, "Adjust Vignette Softness", renderInspectorPropertyRow("Vignette Softness", [&]() { return ImGui::DragFloat("##value", &environment.post.vignetteSoftness, 0.01f, 0.1f, 1.2f, "%.2f"); }));
         }
         beforeState = document.captureState();
-        trackEnvItem(beforeState, "Toggle Grain", ImGui::Checkbox("Enable Grain", &environment.post.enableGrain));
+        trackEnvItem(beforeState, "Toggle Grain", renderInspectorPropertyRow("Enable Grain", [&]() { return ImGui::Checkbox("##value", &environment.post.enableGrain); }));
         if (environment.post.enableGrain) {
             beforeState = document.captureState();
-            trackEnvItem(beforeState, "Adjust Grain Amount", ImGui::DragFloat("Grain Amount", &environment.post.grainAmount, 0.001f, 0.0f, 0.2f, "%.3f"));
+            trackEnvItem(beforeState, "Adjust Grain Amount", renderInspectorPropertyRow("Grain Amount", [&]() { return ImGui::DragFloat("##value", &environment.post.grainAmount, 0.001f, 0.0f, 0.2f, "%.3f"); }));
         }
         beforeState = document.captureState();
-        trackEnvItem(beforeState, "Toggle Scanlines", ImGui::Checkbox("Enable Scanlines", &environment.post.enableScanlines));
+        trackEnvItem(beforeState, "Toggle Scanlines", renderInspectorPropertyRow("Enable Scanlines", [&]() { return ImGui::Checkbox("##value", &environment.post.enableScanlines); }));
         if (environment.post.enableScanlines) {
             beforeState = document.captureState();
-            trackEnvItem(beforeState, "Adjust Scanline Amount", ImGui::DragFloat("Scanline Amount", &environment.post.scanlineAmount, 0.01f, 0.0f, 0.35f, "%.2f"));
+            trackEnvItem(beforeState, "Adjust Scanline Amount", renderInspectorPropertyRow("Scanline Amount", [&]() { return ImGui::DragFloat("##value", &environment.post.scanlineAmount, 0.01f, 0.0f, 0.35f, "%.2f"); }));
             beforeState = document.captureState();
-            trackEnvItem(beforeState, "Adjust Scanline Density", ImGui::DragFloat("Scanline Density", &environment.post.scanlineDensity, 0.01f, 0.5f, 3.0f, "%.2f"));
+            trackEnvItem(beforeState, "Adjust Scanline Density", renderInspectorPropertyRow("Scanline Density", [&]() { return ImGui::DragFloat("##value", &environment.post.scanlineDensity, 0.01f, 0.5f, 3.0f, "%.2f"); }));
         }
         beforeState = document.captureState();
-        trackEnvItem(beforeState, "Toggle Sharpen", ImGui::Checkbox("Enable Sharpen", &environment.post.enableSharpen));
+        trackEnvItem(beforeState, "Toggle Sharpen", renderInspectorPropertyRow("Enable Sharpen", [&]() { return ImGui::Checkbox("##value", &environment.post.enableSharpen); }));
         if (environment.post.enableSharpen) {
             beforeState = document.captureState();
-            trackEnvItem(beforeState, "Adjust Sharpen Amount", ImGui::DragFloat("Sharpen Amount", &environment.post.sharpenAmount, 0.01f, 0.0f, 1.0f, "%.2f"));
+            trackEnvItem(beforeState, "Adjust Sharpen Amount", renderInspectorPropertyRow("Sharpen Amount", [&]() { return ImGui::DragFloat("##value", &environment.post.sharpenAmount, 0.01f, 0.0f, 1.0f, "%.2f"); }));
         }
+
+        endInspectorPropertyTable();
     }
 
     if (ImGui::CollapsingHeader("Sky", ImGuiTreeNodeFlags_DefaultOpen)) {
@@ -281,58 +298,78 @@ bool renderEnvironmentPanel(EditorSceneDocument& document,
             trackLastItemCommand(beforeState, label, pendingCommand, commandStack, document);
         };
 
+        if (!beginInspectorPropertyTable("EnvironmentPanelSkyBase")) {
+            ImGui::End();
+            return contentReloaded;
+        }
+
         auto beforeState = document.captureState();
-        trackEnvItem(beforeState, "Toggle Sky System", ImGui::Checkbox("Sky Enabled", &environment.sky.enabled));
+        trackEnvItem(beforeState, "Toggle Sky System", renderInspectorPropertyRow("Sky Enabled", [&]() { return ImGui::Checkbox("##value", &environment.sky.enabled); }));
         beforeState = document.captureState();
-        trackEnvItem(beforeState, "Toggle Sky In Post", ImGui::Checkbox("Show Sky", &environment.post.enableSky));
+        trackEnvItem(beforeState, "Toggle Sky In Post", renderInspectorPropertyRow("Show Sky", [&]() { return ImGui::Checkbox("##value", &environment.post.enableSky); }));
 
         // --- Sky Colors ---
         ImGui::SeparatorText("Sky Colors");
         beforeState = document.captureState();
-        trackEnvItem(beforeState, "Change Zenith Color", editColor("Zenith", environment.sky.zenithColor));
+        trackEnvItem(beforeState, "Change Zenith Color", renderInspectorPropertyRow("Zenith", [&]() { return editColor("##value", environment.sky.zenithColor); }));
         beforeState = document.captureState();
-        trackEnvItem(beforeState, "Change Horizon Color", editColor("Horizon", environment.sky.horizonColor));
+        trackEnvItem(beforeState, "Change Horizon Color", renderInspectorPropertyRow("Horizon", [&]() { return editColor("##value", environment.sky.horizonColor); }));
         beforeState = document.captureState();
-        trackEnvItem(beforeState, "Change Ground Haze Color", editColor("Ground Haze", environment.sky.groundHazeColor));
+        trackEnvItem(beforeState, "Change Ground Haze Color", renderInspectorPropertyRow("Ground Haze", [&]() { return editColor("##value", environment.sky.groundHazeColor); }));
 
         // --- Sun ---
         ImGui::SeparatorText("Sun");
         beforeState = document.captureState();
-        trackEnvItem(beforeState, "Adjust Sky Sun Direction", editVec3("Sun Direction", environment.sky.sunDirection, 0.01f));
+        trackEnvItem(beforeState, "Adjust Sky Sun Direction", renderInspectorPropertyRow("Sun Direction", [&]() { return editVec3("##value", environment.sky.sunDirection, 0.01f); }));
         beforeState = document.captureState();
-        trackEnvItem(beforeState, "Change Sky Sun Color", editColor("Sun Color", environment.sky.sunColor));
+        trackEnvItem(beforeState, "Change Sky Sun Color", renderInspectorPropertyRow("Sun Color", [&]() { return editColor("##value", environment.sky.sunColor); }));
         beforeState = document.captureState();
-        trackEnvItem(beforeState, "Adjust Sky Sun Size", ImGui::DragFloat("Sun Size", &environment.sky.sunSize, 0.001f, 0.001f, 0.10f, "%.3f"));
+        trackEnvItem(beforeState, "Adjust Sky Sun Size", renderInspectorPropertyRow("Sun Size", [&]() { return ImGui::DragFloat("##value", &environment.sky.sunSize, 0.001f, 0.001f, 0.10f, "%.3f"); }));
         beforeState = document.captureState();
-        trackEnvItem(beforeState, "Adjust Sky Sun Glow", ImGui::DragFloat("Sun Glow", &environment.sky.sunGlow, 0.01f, 0.0f, 2.0f, "%.2f"));
+        trackEnvItem(beforeState, "Adjust Sky Sun Glow", renderInspectorPropertyRow("Sun Glow", [&]() { return ImGui::DragFloat("##value", &environment.sky.sunGlow, 0.01f, 0.0f, 2.0f, "%.2f"); }));
+        endInspectorPropertyTable();
 
         // --- Moon ---
         ImGui::SeparatorText("Moon");
+        if (!beginInspectorPropertyTable("EnvironmentPanelSkyMoon")) {
+            ImGui::End();
+            return contentReloaded;
+        }
         beforeState = document.captureState();
-        trackEnvItem(beforeState, "Toggle Moon", ImGui::Checkbox("Moon Enabled", &environment.sky.moonEnabled));
+        trackEnvItem(beforeState, "Toggle Moon", renderInspectorPropertyRow("Moon Enabled", [&]() { return ImGui::Checkbox("##value", &environment.sky.moonEnabled); }));
         if (environment.sky.moonEnabled) {
             beforeState = document.captureState();
-            trackEnvItem(beforeState, "Adjust Moon Direction", editVec3("Moon Direction", environment.sky.moonDirection, 0.01f));
+            trackEnvItem(beforeState, "Adjust Moon Direction", renderInspectorPropertyRow("Moon Direction", [&]() { return editVec3("##value", environment.sky.moonDirection, 0.01f); }));
             beforeState = document.captureState();
-            trackEnvItem(beforeState, "Change Moon Color", editColor("Moon Color", environment.sky.moonColor));
+            trackEnvItem(beforeState, "Change Moon Color", renderInspectorPropertyRow("Moon Color", [&]() { return editColor("##value", environment.sky.moonColor); }));
             beforeState = document.captureState();
-            trackEnvItem(beforeState, "Adjust Moon Size", ImGui::DragFloat("Moon Size", &environment.sky.moonSize, 0.001f, 0.001f, 0.10f, "%.3f"));
+            trackEnvItem(beforeState, "Adjust Moon Size", renderInspectorPropertyRow("Moon Size", [&]() { return ImGui::DragFloat("##value", &environment.sky.moonSize, 0.001f, 0.001f, 0.10f, "%.3f"); }));
             beforeState = document.captureState();
-            trackEnvItem(beforeState, "Adjust Moon Glow", ImGui::DragFloat("Moon Glow", &environment.sky.moonGlow, 0.01f, 0.0f, 1.0f, "%.2f"));
+            trackEnvItem(beforeState, "Adjust Moon Glow", renderInspectorPropertyRow("Moon Glow", [&]() { return ImGui::DragFloat("##value", &environment.sky.moonGlow, 0.01f, 0.0f, 1.0f, "%.2f"); }));
         }
+        endInspectorPropertyTable();
 
         // --- Panorama ---
         ImGui::SeparatorText("Panorama");
+        if (!beginInspectorPropertyTable("EnvironmentPanelSkyPanorama")) {
+            ImGui::End();
+            return contentReloaded;
+        }
         beforeState = document.captureState();
-        trackEnvItem(beforeState, "Set Panorama Path", editString("Panorama Path", environment.sky.panoramaPath, "assets/skies/sky.jpg"));
+        trackEnvItem(beforeState, "Set Panorama Path", renderInspectorPropertyRow("Panorama Path", [&]() { return editString("##value", environment.sky.panoramaPath, "assets/skies/sky.jpg"); }));
         beforeState = document.captureState();
-        trackEnvItem(beforeState, "Change Panorama Tint", editColor("Panorama Tint", environment.sky.panoramaTint));
+        trackEnvItem(beforeState, "Change Panorama Tint", renderInspectorPropertyRow("Panorama Tint", [&]() { return editColor("##value", environment.sky.panoramaTint); }));
         beforeState = document.captureState();
-        trackEnvItem(beforeState, "Adjust Panorama Strength", ImGui::DragFloat("Panorama Strength", &environment.sky.panoramaStrength, 0.01f, 0.0f, 2.0f, "%.2f"));
+        trackEnvItem(beforeState, "Adjust Panorama Strength", renderInspectorPropertyRow("Panorama Strength", [&]() { return ImGui::DragFloat("##value", &environment.sky.panoramaStrength, 0.01f, 0.0f, 2.0f, "%.2f"); }));
         beforeState = document.captureState();
-        trackEnvItem(beforeState, "Adjust Panorama Yaw", ImGui::DragFloat("Panorama Yaw", &environment.sky.panoramaYawOffset, 0.5f, -360.0f, 360.0f, "%.1f"));
+        trackEnvItem(beforeState, "Adjust Panorama Yaw", renderInspectorPropertyRow("Panorama Yaw", [&]() { return ImGui::DragFloat("##value", &environment.sky.panoramaYawOffset, 0.5f, -360.0f, 360.0f, "%.1f"); }));
+        endInspectorPropertyTable();
 
         if (ImGui::TreeNodeEx("Cubemap", ImGuiTreeNodeFlags_DefaultOpen)) {
+            if (!beginInspectorPropertyTable("EnvironmentPanelSkyCubemap")) {
+                ImGui::End();
+                return contentReloaded;
+            }
             static constexpr std::array<const char*, 6> kCubemapLabels{
                 "Face +X",
                 "Face -X",
@@ -353,44 +390,57 @@ bool renderEnvironmentPanel(EditorSceneDocument& document,
                 beforeState = document.captureState();
                 trackEnvItem(beforeState,
                              kCubemapCommandLabels[i],
-                             editString(kCubemapLabels[i],
-                                        environment.sky.cubemapFacePaths[i],
-                                        "assets/skies/cubemap_face.png"));
+                             renderInspectorPropertyRow(kCubemapLabels[i], [&]() {
+                                 return editString("##value",
+                                                   environment.sky.cubemapFacePaths[i],
+                                                   "assets/skies/cubemap_face.png");
+                             }));
             }
             beforeState = document.captureState();
-            trackEnvItem(beforeState, "Change Cubemap Tint", editColor("Cubemap Tint", environment.sky.cubemapTint));
+            trackEnvItem(beforeState, "Change Cubemap Tint", renderInspectorPropertyRow("Cubemap Tint", [&]() { return editColor("##value", environment.sky.cubemapTint); }));
             beforeState = document.captureState();
-            trackEnvItem(beforeState, "Adjust Cubemap Strength", ImGui::DragFloat("Cubemap Strength", &environment.sky.cubemapStrength, 0.01f, 0.0f, 2.0f, "%.2f"));
+            trackEnvItem(beforeState, "Adjust Cubemap Strength", renderInspectorPropertyRow("Cubemap Strength", [&]() { return ImGui::DragFloat("##value", &environment.sky.cubemapStrength, 0.01f, 0.0f, 2.0f, "%.2f"); }));
+            endInspectorPropertyTable();
             ImGui::TreePop();
         }
 
         // --- Clouds ---
         ImGui::SeparatorText("Clouds");
+        if (!beginInspectorPropertyTable("EnvironmentPanelSkyClouds")) {
+            ImGui::End();
+            return contentReloaded;
+        }
         beforeState = document.captureState();
-        trackEnvItem(beforeState, "Set Cloud Layer A", editString("Cloud Layer A", environment.sky.cloudLayerAPath, "assets/skies/clouds_a.png"));
+        trackEnvItem(beforeState, "Set Cloud Layer A", renderInspectorPropertyRow("Cloud Layer A", [&]() { return editString("##value", environment.sky.cloudLayerAPath, "assets/skies/clouds_a.png"); }));
         beforeState = document.captureState();
-        trackEnvItem(beforeState, "Set Cloud Layer B", editString("Cloud Layer B", environment.sky.cloudLayerBPath, "assets/skies/clouds_b.png"));
+        trackEnvItem(beforeState, "Set Cloud Layer B", renderInspectorPropertyRow("Cloud Layer B", [&]() { return editString("##value", environment.sky.cloudLayerBPath, "assets/skies/clouds_b.png"); }));
         beforeState = document.captureState();
-        trackEnvItem(beforeState, "Change Cloud Tint", editColor("Cloud Tint", environment.sky.cloudTint));
+        trackEnvItem(beforeState, "Change Cloud Tint", renderInspectorPropertyRow("Cloud Tint", [&]() { return editColor("##value", environment.sky.cloudTint); }));
         beforeState = document.captureState();
-        trackEnvItem(beforeState, "Adjust Cloud Scale", ImGui::DragFloat("Cloud Scale", &environment.sky.cloudScale, 0.01f, 0.1f, 4.0f, "%.2f"));
+        trackEnvItem(beforeState, "Adjust Cloud Scale", renderInspectorPropertyRow("Cloud Scale", [&]() { return ImGui::DragFloat("##value", &environment.sky.cloudScale, 0.01f, 0.1f, 4.0f, "%.2f"); }));
         beforeState = document.captureState();
-        trackEnvItem(beforeState, "Adjust Cloud Speed", ImGui::DragFloat("Cloud Speed", &environment.sky.cloudSpeed, 0.0002f, 0.0f, 0.05f, "%.3f"));
+        trackEnvItem(beforeState, "Adjust Cloud Speed", renderInspectorPropertyRow("Cloud Speed", [&]() { return ImGui::DragFloat("##value", &environment.sky.cloudSpeed, 0.0002f, 0.0f, 0.05f, "%.3f"); }));
         beforeState = document.captureState();
-        trackEnvItem(beforeState, "Adjust Cloud Coverage", ImGui::DragFloat("Cloud Coverage", &environment.sky.cloudCoverage, 0.01f, 0.0f, 1.0f, "%.2f"));
+        trackEnvItem(beforeState, "Adjust Cloud Coverage", renderInspectorPropertyRow("Cloud Coverage", [&]() { return ImGui::DragFloat("##value", &environment.sky.cloudCoverage, 0.01f, 0.0f, 1.0f, "%.2f"); }));
         beforeState = document.captureState();
-        trackEnvItem(beforeState, "Adjust Cloud Parallax", ImGui::DragFloat("Cloud Parallax", &environment.sky.cloudParallax, 0.001f, 0.0f, 0.20f, "%.3f"));
+        trackEnvItem(beforeState, "Adjust Cloud Parallax", renderInspectorPropertyRow("Cloud Parallax", [&]() { return ImGui::DragFloat("##value", &environment.sky.cloudParallax, 0.001f, 0.0f, 0.20f, "%.3f"); }));
+        endInspectorPropertyTable();
 
         // --- Horizon ---
         ImGui::SeparatorText("Horizon");
+        if (!beginInspectorPropertyTable("EnvironmentPanelSkyHorizon")) {
+            ImGui::End();
+            return contentReloaded;
+        }
         beforeState = document.captureState();
-        trackEnvItem(beforeState, "Set Horizon Layer", editString("Horizon Layer", environment.sky.horizonLayerPath, "assets/skies/horizon.png"));
+        trackEnvItem(beforeState, "Set Horizon Layer", renderInspectorPropertyRow("Horizon Layer", [&]() { return editString("##value", environment.sky.horizonLayerPath, "assets/skies/horizon.png"); }));
         beforeState = document.captureState();
-        trackEnvItem(beforeState, "Change Horizon Tint", editColor("Horizon Tint", environment.sky.horizonTint));
+        trackEnvItem(beforeState, "Change Horizon Tint", renderInspectorPropertyRow("Horizon Tint", [&]() { return editColor("##value", environment.sky.horizonTint); }));
         beforeState = document.captureState();
-        trackEnvItem(beforeState, "Adjust Horizon Height", ImGui::DragFloat("Horizon Height", &environment.sky.horizonHeight, 0.01f, 0.0f, 1.0f, "%.2f"));
+        trackEnvItem(beforeState, "Adjust Horizon Height", renderInspectorPropertyRow("Horizon Height", [&]() { return ImGui::DragFloat("##value", &environment.sky.horizonHeight, 0.01f, 0.0f, 1.0f, "%.2f"); }));
         beforeState = document.captureState();
-        trackEnvItem(beforeState, "Adjust Horizon Fade", ImGui::DragFloat("Horizon Fade", &environment.sky.horizonFade, 0.01f, 0.0f, 1.0f, "%.2f"));
+        trackEnvItem(beforeState, "Adjust Horizon Fade", renderInspectorPropertyRow("Horizon Fade", [&]() { return ImGui::DragFloat("##value", &environment.sky.horizonFade, 0.01f, 0.0f, 1.0f, "%.2f"); }));
+        endInspectorPropertyTable();
     }
 
     if (ImGui::CollapsingHeader("Lighting", ImGuiTreeNodeFlags_DefaultOpen)) {
@@ -401,89 +451,110 @@ bool renderEnvironmentPanel(EditorSceneDocument& document,
             trackLastItemCommand(beforeState, label, pendingCommand, commandStack, document);
         };
 
+        if (!beginInspectorPropertyTable("EnvironmentPanelLightingBase")) {
+            ImGui::End();
+            return contentReloaded;
+        }
+
         auto beforeState = document.captureState();
-        trackEnvItem(beforeState, "Change Hemisphere Sky Color", editColor("Hemi Sky", environment.lighting.hemisphereSkyColor));
+        trackEnvItem(beforeState, "Change Hemisphere Sky Color", renderInspectorPropertyRow("Hemi Sky", [&]() { return editColor("##value", environment.lighting.hemisphereSkyColor); }));
         beforeState = document.captureState();
-        trackEnvItem(beforeState, "Change Hemisphere Ground Color", editColor("Hemi Ground", environment.lighting.hemisphereGroundColor));
+        trackEnvItem(beforeState, "Change Hemisphere Ground Color", renderInspectorPropertyRow("Hemi Ground", [&]() { return editColor("##value", environment.lighting.hemisphereGroundColor); }));
         beforeState = document.captureState();
-        trackEnvItem(beforeState, "Adjust Hemisphere Strength", ImGui::DragFloat("Hemi Strength", &environment.lighting.hemisphereStrength, 0.01f, 0.0f, 2.0f, "%.2f"));
+        trackEnvItem(beforeState, "Adjust Hemisphere Strength", renderInspectorPropertyRow("Hemi Strength", [&]() { return ImGui::DragFloat("##value", &environment.lighting.hemisphereStrength, 0.01f, 0.0f, 2.0f, "%.2f"); }));
         beforeState = document.captureState();
-        trackEnvItem(beforeState, "Toggle Directional Lighting", ImGui::Checkbox("Enable Directional", &environment.lighting.enableDirectionalLights));
+        trackEnvItem(beforeState, "Toggle Directional Lighting", renderInspectorPropertyRow("Enable Directional", [&]() { return ImGui::Checkbox("##value", &environment.lighting.enableDirectionalLights); }));
         beforeState = document.captureState();
-        trackEnvItem(beforeState, "Toggle Environment Shadows", ImGui::Checkbox("Enable Shadows", &environment.lighting.enableShadows));
+        trackEnvItem(beforeState, "Toggle Environment Shadows", renderInspectorPropertyRow("Enable Shadows", [&]() { return ImGui::Checkbox("##value", &environment.lighting.enableShadows); }));
         beforeState = document.captureState();
-        trackEnvItem(beforeState, "Adjust Shadow Bias", ImGui::DragFloat("Shadow Bias", &environment.lighting.shadowBias, 0.0001f, 0.0001f, 0.02f, "%.4f"));
+        trackEnvItem(beforeState, "Adjust Shadow Bias", renderInspectorPropertyRow("Shadow Bias", [&]() { return ImGui::DragFloat("##value", &environment.lighting.shadowBias, 0.0001f, 0.0001f, 0.02f, "%.4f"); }));
         beforeState = document.captureState();
-        trackEnvItem(beforeState, "Adjust Shadow Normal Bias", ImGui::DragFloat("Shadow Normal Bias", &environment.lighting.shadowNormalBias, 0.001f, 0.0f, 0.20f, "%.3f"));
+        trackEnvItem(beforeState, "Adjust Shadow Normal Bias", renderInspectorPropertyRow("Shadow Normal Bias", [&]() { return ImGui::DragFloat("##value", &environment.lighting.shadowNormalBias, 0.001f, 0.0f, 0.20f, "%.3f"); }));
+        endInspectorPropertyTable();
         if (ImGui::TreeNodeEx("Sun", ImGuiTreeNodeFlags_DefaultOpen)) {
+            if (!beginInspectorPropertyTable("EnvironmentPanelLightingSun")) {
+                ImGui::End();
+                return contentReloaded;
+            }
             beforeState = document.captureState();
-            trackEnvItem(beforeState, "Toggle Sun Light", ImGui::Checkbox("Sun Enabled", &environment.lighting.sun.enabled));
+            trackEnvItem(beforeState, "Toggle Sun Light", renderInspectorPropertyRow("Sun Enabled", [&]() { return ImGui::Checkbox("##value", &environment.lighting.sun.enabled); }));
             beforeState = document.captureState();
-            trackEnvItem(beforeState, "Adjust Sun Direction", editVec3("Sun Dir##slot", environment.lighting.sun.direction, 0.01f));
+            trackEnvItem(beforeState, "Adjust Sun Direction", renderInspectorPropertyRow("Sun Dir", [&]() { return editVec3("##value", environment.lighting.sun.direction, 0.01f); }));
             beforeState = document.captureState();
-            trackEnvItem(beforeState, "Change Sun Color", editColor("Sun Color##slot", environment.lighting.sun.color));
+            trackEnvItem(beforeState, "Change Sun Color", renderInspectorPropertyRow("Sun Color", [&]() { return editColor("##value", environment.lighting.sun.color); }));
             beforeState = document.captureState();
-            trackEnvItem(beforeState, "Adjust Sun Intensity", ImGui::DragFloat("Sun Intensity##slot", &environment.lighting.sun.intensity, 0.01f, 0.0f, 4.0f, "%.2f"));
+            trackEnvItem(beforeState, "Adjust Sun Intensity", renderInspectorPropertyRow("Sun Intensity", [&]() { return ImGui::DragFloat("##value", &environment.lighting.sun.intensity, 0.01f, 0.0f, 4.0f, "%.2f"); }));
+            endInspectorPropertyTable();
             ImGui::TreePop();
         }
         if (ImGui::TreeNodeEx("Fill", ImGuiTreeNodeFlags_DefaultOpen)) {
+            if (!beginInspectorPropertyTable("EnvironmentPanelLightingFill")) {
+                ImGui::End();
+                return contentReloaded;
+            }
             beforeState = document.captureState();
-            trackEnvItem(beforeState, "Toggle Fill Light", ImGui::Checkbox("Fill Enabled", &environment.lighting.fill.enabled));
+            trackEnvItem(beforeState, "Toggle Fill Light", renderInspectorPropertyRow("Fill Enabled", [&]() { return ImGui::Checkbox("##value", &environment.lighting.fill.enabled); }));
             beforeState = document.captureState();
-            trackEnvItem(beforeState, "Adjust Fill Direction", editVec3("Fill Dir##slot", environment.lighting.fill.direction, 0.01f));
+            trackEnvItem(beforeState, "Adjust Fill Direction", renderInspectorPropertyRow("Fill Dir", [&]() { return editVec3("##value", environment.lighting.fill.direction, 0.01f); }));
             beforeState = document.captureState();
-            trackEnvItem(beforeState, "Change Fill Color", editColor("Fill Color##slot", environment.lighting.fill.color));
+            trackEnvItem(beforeState, "Change Fill Color", renderInspectorPropertyRow("Fill Color", [&]() { return editColor("##value", environment.lighting.fill.color); }));
             beforeState = document.captureState();
-            trackEnvItem(beforeState, "Adjust Fill Intensity", ImGui::DragFloat("Fill Intensity##slot", &environment.lighting.fill.intensity, 0.01f, 0.0f, 4.0f, "%.2f"));
+            trackEnvItem(beforeState, "Adjust Fill Intensity", renderInspectorPropertyRow("Fill Intensity", [&]() { return ImGui::DragFloat("##value", &environment.lighting.fill.intensity, 0.01f, 0.0f, 4.0f, "%.2f"); }));
+            endInspectorPropertyTable();
             ImGui::TreePop();
         }
         if (ImGui::TreeNodeEx("Player Torch", ImGuiTreeNodeFlags_DefaultOpen)) {
+            if (!beginInspectorPropertyTable("EnvironmentPanelLightingTorch")) {
+                ImGui::End();
+                return contentReloaded;
+            }
             // Enable + master
             beforeState = document.captureState();
-            trackEnvItem(beforeState, "Toggle Torch", ImGui::Checkbox("Torch Enabled", &environment.lighting.torch.enabled));
+            trackEnvItem(beforeState, "Toggle Torch", renderInspectorPropertyRow("Torch Enabled", [&]() { return ImGui::Checkbox("##value", &environment.lighting.torch.enabled); }));
             beforeState = document.captureState();
-            trackEnvItem(beforeState, "Adjust Torch Master Intensity", ImGui::DragFloat("Master Intensity##torch", &environment.lighting.torch.masterIntensity, 0.01f, 0.0f, 3.0f, "%.2f"));
+            trackEnvItem(beforeState, "Adjust Torch Master Intensity", renderInspectorPropertyRow("Master Intensity", [&]() { return ImGui::DragFloat("##value", &environment.lighting.torch.masterIntensity, 0.01f, 0.0f, 3.0f, "%.2f"); }));
 
             // Main spotlight
             ImGui::SeparatorText("Spotlight");
             beforeState = document.captureState();
-            trackEnvItem(beforeState, "Change Torch Color", editColor("Torch Color##torch", environment.lighting.torch.torchColor));
+            trackEnvItem(beforeState, "Change Torch Color", renderInspectorPropertyRow("Torch Color", [&]() { return editColor("##value", environment.lighting.torch.torchColor); }));
             beforeState = document.captureState();
-            trackEnvItem(beforeState, "Adjust Torch Intensity", ImGui::DragFloat("Torch Intensity##torch", &environment.lighting.torch.torchIntensity, 0.01f, 0.0f, 2.0f, "%.2f"));
+            trackEnvItem(beforeState, "Adjust Torch Intensity", renderInspectorPropertyRow("Torch Intensity", [&]() { return ImGui::DragFloat("##value", &environment.lighting.torch.torchIntensity, 0.01f, 0.0f, 2.0f, "%.2f"); }));
             beforeState = document.captureState();
-            trackEnvItem(beforeState, "Adjust Torch Radius", ImGui::DragFloat("Torch Radius##torch", &environment.lighting.torch.torchRadius, 0.1f, 0.5f, 20.0f, "%.1f"));
+            trackEnvItem(beforeState, "Adjust Torch Radius", renderInspectorPropertyRow("Torch Radius", [&]() { return ImGui::DragFloat("##value", &environment.lighting.torch.torchRadius, 0.1f, 0.5f, 20.0f, "%.1f"); }));
             beforeState = document.captureState();
-            trackEnvItem(beforeState, "Adjust Torch Inner Cone", ImGui::DragFloat("Inner Cone##torch", &environment.lighting.torch.torchInnerConeDegrees, 0.5f, 5.0f, 90.0f, "%.1f"));
+            trackEnvItem(beforeState, "Adjust Torch Inner Cone", renderInspectorPropertyRow("Inner Cone", [&]() { return ImGui::DragFloat("##value", &environment.lighting.torch.torchInnerConeDegrees, 0.5f, 5.0f, 90.0f, "%.1f"); }));
             beforeState = document.captureState();
-            trackEnvItem(beforeState, "Adjust Torch Outer Cone", ImGui::DragFloat("Outer Cone##torch", &environment.lighting.torch.torchOuterConeDegrees, 0.5f, 10.0f, 120.0f, "%.1f"));
+            trackEnvItem(beforeState, "Adjust Torch Outer Cone", renderInspectorPropertyRow("Outer Cone", [&]() { return ImGui::DragFloat("##value", &environment.lighting.torch.torchOuterConeDegrees, 0.5f, 10.0f, 120.0f, "%.1f"); }));
 
             // Spill
             ImGui::SeparatorText("Spill");
             beforeState = document.captureState();
-            trackEnvItem(beforeState, "Change Spill Color", editColor("Spill Color##torch", environment.lighting.torch.spillColor));
+            trackEnvItem(beforeState, "Change Spill Color", renderInspectorPropertyRow("Spill Color", [&]() { return editColor("##value", environment.lighting.torch.spillColor); }));
             beforeState = document.captureState();
-            trackEnvItem(beforeState, "Adjust Spill Intensity", ImGui::DragFloat("Spill Intensity##torch", &environment.lighting.torch.spillIntensity, 0.01f, 0.0f, 5.0f, "%.2f"));
+            trackEnvItem(beforeState, "Adjust Spill Intensity", renderInspectorPropertyRow("Spill Intensity", [&]() { return ImGui::DragFloat("##value", &environment.lighting.torch.spillIntensity, 0.01f, 0.0f, 5.0f, "%.2f"); }));
             beforeState = document.captureState();
-            trackEnvItem(beforeState, "Adjust Spill Radius", ImGui::DragFloat("Spill Radius##torch", &environment.lighting.torch.spillRadius, 0.1f, 0.5f, 20.0f, "%.1f"));
+            trackEnvItem(beforeState, "Adjust Spill Radius", renderInspectorPropertyRow("Spill Radius", [&]() { return ImGui::DragFloat("##value", &environment.lighting.torch.spillRadius, 0.1f, 0.5f, 20.0f, "%.1f"); }));
 
             // Halo
             ImGui::SeparatorText("Halo");
             beforeState = document.captureState();
-            trackEnvItem(beforeState, "Change Halo Color", editColor("Halo Color##torch", environment.lighting.torch.haloColor));
+            trackEnvItem(beforeState, "Change Halo Color", renderInspectorPropertyRow("Halo Color", [&]() { return editColor("##value", environment.lighting.torch.haloColor); }));
             beforeState = document.captureState();
-            trackEnvItem(beforeState, "Adjust Halo Intensity", ImGui::DragFloat("Halo Intensity##torch", &environment.lighting.torch.haloIntensity, 0.01f, 0.0f, 5.0f, "%.2f"));
+            trackEnvItem(beforeState, "Adjust Halo Intensity", renderInspectorPropertyRow("Halo Intensity", [&]() { return ImGui::DragFloat("##value", &environment.lighting.torch.haloIntensity, 0.01f, 0.0f, 5.0f, "%.2f"); }));
             beforeState = document.captureState();
-            trackEnvItem(beforeState, "Adjust Halo Radius", ImGui::DragFloat("Halo Radius##torch", &environment.lighting.torch.haloRadius, 0.1f, 0.5f, 20.0f, "%.1f"));
+            trackEnvItem(beforeState, "Adjust Halo Radius", renderInspectorPropertyRow("Halo Radius", [&]() { return ImGui::DragFloat("##value", &environment.lighting.torch.haloRadius, 0.1f, 0.5f, 20.0f, "%.1f"); }));
 
             // Hand glow
             ImGui::SeparatorText("Hand Glow");
             beforeState = document.captureState();
-            trackEnvItem(beforeState, "Change Hand Glow Color", editColor("Glow Color##torch", environment.lighting.torch.handGlowColor));
+            trackEnvItem(beforeState, "Change Hand Glow Color", renderInspectorPropertyRow("Glow Color", [&]() { return editColor("##value", environment.lighting.torch.handGlowColor); }));
             beforeState = document.captureState();
-            trackEnvItem(beforeState, "Adjust Hand Glow Intensity", ImGui::DragFloat("Glow Intensity##torch", &environment.lighting.torch.handGlowIntensity, 0.01f, 0.0f, 1.0f, "%.2f"));
+            trackEnvItem(beforeState, "Adjust Hand Glow Intensity", renderInspectorPropertyRow("Glow Intensity", [&]() { return ImGui::DragFloat("##value", &environment.lighting.torch.handGlowIntensity, 0.01f, 0.0f, 1.0f, "%.2f"); }));
             beforeState = document.captureState();
-            trackEnvItem(beforeState, "Adjust Hand Glow Radius", ImGui::DragFloat("Glow Radius##torch", &environment.lighting.torch.handGlowRadius, 0.01f, 0.1f, 5.0f, "%.2f"));
+            trackEnvItem(beforeState, "Adjust Hand Glow Radius", renderInspectorPropertyRow("Glow Radius", [&]() { return ImGui::DragFloat("##value", &environment.lighting.torch.handGlowRadius, 0.01f, 0.1f, 5.0f, "%.2f"); }));
 
+            endInspectorPropertyTable();
             ImGui::TreePop();
         }
     }
