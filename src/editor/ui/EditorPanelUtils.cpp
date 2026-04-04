@@ -258,6 +258,10 @@ void beginPlacement(EditorPlacementState& state,
     case EditorPlacementKind::Archetype:
         state.archetypeId = primaryId;
         break;
+    case EditorPlacementKind::Collider:
+        // primaryId encodes collider shape: "box", "cylinder", "sphere", "capsule"
+        state.meshId = primaryId.empty() ? "box" : primaryId;
+        break;
     default:
         break;
     }

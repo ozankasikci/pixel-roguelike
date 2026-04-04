@@ -484,6 +484,49 @@ std::vector<std::uint64_t> renderOutliner(EditorSceneDocument& document,
                 selectedIds = {groupId};
                 ui.inspectorContext = EditorInspectorContext::SceneSelection;
             }
+            if (ImGui::BeginMenu("Add Collider")) {
+                auto addColliderShape = [&](ColliderShape shape, const char* cmdLabel) {
+                    const EditorSceneDocumentState beforeState = document.captureState();
+                    LevelColliderPlacement collider;
+                    collider.shape = shape;
+                    collider.mode = ColliderMode::Solid;
+                    collider.halfExtents = glm::vec3(1.0f);
+                    collider.radius = 0.5f;
+                    collider.halfHeight = 0.9f;
+                    const EditorSceneObject* target = document.findObject(objectId);
+                    if (target != nullptr) {
+                        collider.position = editorSceneObjectAnchor(*target);
+                        std::visit([&](const auto& payload) { collider.parentNodeId = payload.nodeId; }, target->payload);
+                    }
+                    const std::uint64_t colliderId = document.addCollider(collider);
+                    commandStack.pushDocumentStateCommand(cmdLabel, beforeState, document.captureState(), document);
+                    selectedIds = {colliderId};
+                    ui.inspectorContext = EditorInspectorContext::SceneSelection;
+                };
+                if (ImGui::MenuItem("Box")) { addColliderShape(ColliderShape::Box, "Add Box Collider"); }
+                if (ImGui::MenuItem("Sphere")) { addColliderShape(ColliderShape::Sphere, "Add Sphere Collider"); }
+                if (ImGui::MenuItem("Cylinder")) { addColliderShape(ColliderShape::Cylinder, "Add Cylinder Collider"); }
+                if (ImGui::MenuItem("Capsule")) { addColliderShape(ColliderShape::Capsule, "Add Capsule Collider"); }
+                ImGui::Separator();
+                if (ImGui::MenuItem("Box Trigger Zone")) {
+                    const EditorSceneDocumentState beforeState = document.captureState();
+                    LevelColliderPlacement trigger;
+                    trigger.shape = ColliderShape::Box;
+                    trigger.mode = ColliderMode::Trigger;
+                    trigger.halfExtents = glm::vec3(1.0f, 1.0f, 1.0f);
+                    const EditorSceneObject* target = document.findObject(objectId);
+                    if (target != nullptr) {
+                        trigger.position = editorSceneObjectAnchor(*target);
+                        std::visit([&](const auto& payload) { trigger.parentNodeId = payload.nodeId; }, target->payload);
+                    }
+                    const std::uint64_t triggerId = document.addCollider(trigger);
+                    commandStack.pushDocumentStateCommand("Add Trigger Zone", beforeState, document.captureState(), document);
+                    selectedIds = {triggerId};
+                    ui.inspectorContext = EditorInspectorContext::SceneSelection;
+                }
+                ImGui::EndMenu();
+            }
+            // Keep legacy "Add Trigger Zone" at top level for quick access
             if (ImGui::MenuItem("Add Trigger Zone")) {
                 const EditorSceneDocumentState beforeState = document.captureState();
                 LevelColliderPlacement trigger;

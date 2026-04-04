@@ -5,7 +5,6 @@
 #include "editor/viewport/EditorViewportController.h"
 #include "engine/core/MathUtils.h"
 #include "engine/rendering/geometry/MeshLibrary.h"
-#include "game/behavior/TriggerComponent.h"
 #include "game/content/ContentRegistry.h"
 #include "game/level/LevelDef.h"
 #include "game/rendering/MaterialDefinition.h"
@@ -134,11 +133,14 @@ EditorPlacementState makePlacementState(const EditorDragPayload& payload) {
     case EditorPlacementKind::PointLight:
     case EditorPlacementKind::SpotLight:
     case EditorPlacementKind::DirectionalLight:
-    case EditorPlacementKind::BoxCollider:
-    case EditorPlacementKind::CylinderCollider:
     case EditorPlacementKind::PlayerSpawn:
     case EditorPlacementKind::None:
         state.meshId.clear();
+        state.materialId.clear();
+        state.archetypeId.clear();
+        break;
+    case EditorPlacementKind::Collider:
+        // meshId encodes collider shape ("box", "cylinder", etc.)
         state.materialId.clear();
         state.archetypeId.clear();
         break;
@@ -541,23 +543,29 @@ std::optional<std::uint64_t> commitPlacement(EditorSceneDocument& document,
         document.addLight(light);
         break;
     }
-    case EditorPlacementKind::BoxCollider:
-        document.addCollider(LevelColliderPlacement{
-            .shape = ColliderShape::Box,
-            .mode = ColliderMode::Solid,
-            .position = position,
-            .halfExtents = glm::vec3(0.5f),
-        });
+    case EditorPlacementKind::Collider: {
+        LevelColliderPlacement collider;
+        collider.mode = ColliderMode::Solid;
+        collider.position = position;
+        if (state.meshId == "cylinder") {
+            collider.shape = ColliderShape::Cylinder;
+            collider.radius = 0.5f;
+            collider.halfHeight = 0.9f;
+        } else if (state.meshId == "sphere") {
+            collider.shape = ColliderShape::Sphere;
+            collider.radius = 0.5f;
+        } else if (state.meshId == "capsule") {
+            collider.shape = ColliderShape::Capsule;
+            collider.radius = 0.35f;
+            collider.halfHeight = 0.65f;
+        } else {
+            // Default: box
+            collider.shape = ColliderShape::Box;
+            collider.halfExtents = glm::vec3(0.5f);
+        }
+        document.addCollider(collider);
         break;
-    case EditorPlacementKind::CylinderCollider:
-        document.addCollider(LevelColliderPlacement{
-            .shape = ColliderShape::Cylinder,
-            .mode = ColliderMode::Solid,
-            .position = position,
-            .radius = 0.5f,
-            .halfHeight = 0.9f,
-        });
-        break;
+    }
     case EditorPlacementKind::PlayerSpawn:
         document.setPlayerSpawn(LevelPlayerSpawn{
             .position = position,
@@ -613,24 +621,25 @@ void appendPlacementGhost(std::vector<RenderObject>& objects,
             });
         }
         break;
-    case EditorPlacementKind::BoxCollider:
-        if (cube != nullptr) {
-            objects.push_back(RenderObject{
-                cube,
-                makeModelMatrix(position, glm::vec3(1.0f)),
-                tint,
-                materials.resolve("metal_default")
-            });
-        }
-        break;
-    case EditorPlacementKind::CylinderCollider:
-        if (cylinder != nullptr) {
-            objects.push_back(RenderObject{
-                cylinder,
-                makeModelMatrix(position, glm::vec3(1.0f)),
-                tint,
-                materials.resolve("metal_default")
-            });
+    case EditorPlacementKind::Collider:
+        if (state.meshId == "cylinder" || state.meshId == "capsule") {
+            if (cylinder != nullptr) {
+                objects.push_back(RenderObject{
+                    cylinder,
+                    makeModelMatrix(position, glm::vec3(1.0f)),
+                    tint,
+                    materials.resolve("metal_default")
+                });
+            }
+        } else {
+            if (cube != nullptr) {
+                objects.push_back(RenderObject{
+                    cube,
+                    makeModelMatrix(position, glm::vec3(1.0f)),
+                    tint,
+                    materials.resolve("metal_default")
+                });
+            }
         }
         break;
     case EditorPlacementKind::PlayerSpawn:

@@ -2,7 +2,7 @@
 
 #include "editor/render/EditorAssetPreviewRenderer.h"
 #include "game/behavior/ActionTypes.h"
-#include "game/behavior/TriggerComponent.h"
+#include "game/components/ColliderComponent.h"
 #include "game/content/ContentRegistry.h"
 #include "game/level/LevelDef.h"
 #include "game/rendering/EnvironmentDefinition.h"
@@ -1304,8 +1304,36 @@ void renderSceneSelectionInspector(EditorSceneDocument& document,
     }
     case EditorSceneObjectKind::Collider: {
         auto& collider = std::get<LevelColliderPlacement>(object->payload);
+
+        // Shape dropdown
+        static constexpr const char* kShapeNames[] = {"Box", "Sphere", "Cylinder", "Capsule"};
+        int shapeIndex = static_cast<int>(collider.shape);
+        if (renderInspectorPropertyRow("Shape", [&]() { return ImGui::Combo("##value", &shapeIndex, kShapeNames, 4); },
+                                      EditorInspectorFieldKind::Enum)) {
+            const EditorSceneDocumentState beforeState = document.captureState();
+            collider.shape = static_cast<ColliderShape>(shapeIndex);
+            document.markSceneDirty();
+            commandStack.pushDocumentStateCommand("Change Collider Shape", beforeState, document.captureState(), document);
+        }
+
+        // Mode dropdown
+        static constexpr const char* kModeNames[] = {"Solid", "Trigger", "Solid+Trigger"};
+        int modeIndex = static_cast<int>(collider.mode);
+        if (renderInspectorPropertyRow("Mode", [&]() { return ImGui::Combo("##value", &modeIndex, kModeNames, 3); },
+                                      EditorInspectorFieldKind::Enum)) {
+            const EditorSceneDocumentState beforeState = document.captureState();
+            collider.mode = static_cast<ColliderMode>(modeIndex);
+            document.markSceneDirty();
+            commandStack.pushDocumentStateCommand("Change Collider Mode", beforeState, document.captureState(), document);
+        }
+
+        // Position + Rotation
         auto beforeState = document.captureState();
         trackSceneItem(beforeState, "Move Collider", renderInspectorPropertyRow("Position", [&]() { return editVec3("##value", collider.position); }));
+        beforeState = document.captureState();
+        trackSceneItem(beforeState, "Rotate Collider", renderInspectorPropertyRow("Rotation", [&]() { return editVec3("##value", collider.rotation, 0.5f); }));
+
+        // Shape-specific params
         if (collider.shape == ColliderShape::Box) {
             beforeState = document.captureState();
             const bool extentsChanged = renderInspectorPropertyRow("Half Extents", [&]() { return editVec3("##value", collider.halfExtents, 0.02f); });
@@ -1313,13 +1341,32 @@ void renderSceneSelectionInspector(EditorSceneDocument& document,
                 collider.halfExtents = glm::max(collider.halfExtents, glm::vec3(0.01f));
             }
             trackSceneItem(beforeState, "Resize Collider", extentsChanged);
+        } else if (collider.shape == ColliderShape::Sphere) {
+            beforeState = document.captureState();
+            trackSceneItem(beforeState, "Adjust Collider Radius", renderInspectorPropertyRow("Radius", [&]() { return ImGui::DragFloat("##value", &collider.radius, 0.02f, 0.05f, 20.0f, "%.2f"); }));
         } else {
+            // Cylinder or Capsule
             beforeState = document.captureState();
             trackSceneItem(beforeState, "Adjust Collider Radius", renderInspectorPropertyRow("Radius", [&]() { return ImGui::DragFloat("##value", &collider.radius, 0.02f, 0.05f, 20.0f, "%.2f"); }));
             beforeState = document.captureState();
             trackSceneItem(beforeState, "Adjust Collider Height", renderInspectorPropertyRow("Half Height", [&]() { return ImGui::DragFloat("##value", &collider.halfHeight, 0.02f, 0.05f, 20.0f, "%.2f"); }));
         }
-        break;
+        endInspectorPropertyTable();
+
+        // Trigger-specific options (shown when mode != Solid)
+        if (collider.mode != ColliderMode::Solid) {
+            ImGui::Separator();
+            {
+                auto fireBefore = document.captureState();
+                if (ImGui::Checkbox("Fire Once", &collider.fireOnce)) {
+                    document.markSceneDirty();
+                    commandStack.pushDocumentStateCommand("Toggle Fire Once", fireBefore, document.captureState(), document);
+                }
+            }
+            ImGui::Separator();
+            renderBehaviorSections(collider.behaviors, document, commandStack);
+        }
+        return;  // table already ended above
     }
     case EditorSceneObjectKind::ReflectionProbe: {
         auto& probe = std::get<LevelReflectionProbePlacement>(object->payload);

@@ -5,7 +5,7 @@
 #include "game/components/InteractableComponent.h"
 #include "game/components/LightComponent.h"
 #include "game/components/MeshComponent.h"
-#include "game/components/StaticColliderComponent.h"
+#include "game/components/ColliderComponent.h"
 #include "game/components/TransformComponent.h"
 #include "game/level/LevelBuildContext.h"
 #include "game/level/LevelBuilder.h"
@@ -83,7 +83,7 @@ int main() {
     assert(doorInteractable.promptText == "E  OPEN HEAVY DOOR");
 
     const auto& leftLeaf = registry.get<DoorLeafComponent>(door.leftLeaf);
-    const auto& leftCollider = registry.get<StaticColliderComponent>(door.leftLeaf);
+    const auto& leftCollider = registry.get<ColliderComponent>(door.leftLeaf);
     const auto& leftMesh = registry.get<MeshComponent>(door.leftLeaf);
     assert(leftLeaf.hingePosition == doorPlacement.leftHingePosition);
     assert(leftLeaf.closedScale == doorPlacement.leafScale);
@@ -94,7 +94,7 @@ int main() {
     assert(leftMesh.mesh == leftDoorMesh);
 
     const auto& rightLeaf = registry.get<DoorLeafComponent>(door.rightLeaf);
-    const auto& rightCollider = registry.get<StaticColliderComponent>(door.rightLeaf);
+    const auto& rightCollider = registry.get<ColliderComponent>(door.rightLeaf);
     const auto& rightMesh = registry.get<MeshComponent>(door.rightLeaf);
     assert(rightLeaf.hingePosition == doorPlacement.rightHingePosition);
     assert(rightLeaf.openYaw == doorPlacement.closedYaw + doorPlacement.openAngle);

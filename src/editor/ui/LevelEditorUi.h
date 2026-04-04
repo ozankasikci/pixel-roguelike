@@ -69,8 +69,7 @@ enum class EditorPlacementKind {
     PointLight,
     SpotLight,
     DirectionalLight,
-    BoxCollider,
-    CylinderCollider,
+    Collider,
     PlayerSpawn,
     Archetype,
 };

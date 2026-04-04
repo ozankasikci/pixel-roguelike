@@ -576,11 +576,20 @@ int main(int argc, char* argv[]) {
                 beginPlacement(placementState, EditorPlacementKind::DirectionalLight);
             }
             ImGui::Separator();
-            if (ImGui::MenuItem("Place Box Collider")) {
-                beginPlacement(placementState, EditorPlacementKind::BoxCollider);
-            }
-            if (ImGui::MenuItem("Place Cylinder Collider")) {
-                beginPlacement(placementState, EditorPlacementKind::CylinderCollider);
+            if (ImGui::BeginMenu("Place Collider")) {
+                if (ImGui::MenuItem("Box")) {
+                    beginPlacement(placementState, EditorPlacementKind::Collider, "box");
+                }
+                if (ImGui::MenuItem("Cylinder")) {
+                    beginPlacement(placementState, EditorPlacementKind::Collider, "cylinder");
+                }
+                if (ImGui::MenuItem("Sphere")) {
+                    beginPlacement(placementState, EditorPlacementKind::Collider, "sphere");
+                }
+                if (ImGui::MenuItem("Capsule")) {
+                    beginPlacement(placementState, EditorPlacementKind::Collider, "capsule");
+                }
+                ImGui::EndMenu();
             }
             if (ImGui::MenuItem("Place Player Spawn")) {
                 beginPlacement(placementState, EditorPlacementKind::PlayerSpawn);
