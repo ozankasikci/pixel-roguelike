@@ -3,7 +3,7 @@
 
 #include "engine/physics/PhysicsSystem.h"
 #include "engine/core/Application.h"
-#include "game/components/StaticColliderComponent.h"
+#include "game/components/ColliderComponent.h"
 #include "game/components/CharacterControllerComponent.h"
 #include "game/components/TransformComponent.h"
 
@@ -16,6 +16,7 @@
 #include <Jolt/Physics/Collision/Shape/BoxShape.h>
 #include <Jolt/Physics/Collision/Shape/CapsuleShape.h>
 #include <Jolt/Physics/Collision/Shape/CylinderShape.h>
+#include <Jolt/Physics/Collision/Shape/SphereShape.h>
 #include <Jolt/Physics/Collision/Shape/RotatedTranslatedShape.h>
 #include <Jolt/Physics/Body/BodyCreationSettings.h>
 #include <Jolt/Physics/Body/BodyActivationListener.h>
@@ -111,6 +112,13 @@ public:
     }
 };
 
+// --- BodyID hash for unordered_map ---
+struct BodyIDHash {
+    std::size_t operator()(const JPH::BodyID& id) const {
+        return std::hash<uint32_t>{}(id.GetIndexAndSequenceNumber());
+    }
+};
+
 // --- PhysicsSystem::Impl ---
 struct PhysicsSystem::Impl {
     std::unique_ptr<JPH::TempAllocatorImpl> tempAllocator;
@@ -122,7 +130,7 @@ struct PhysicsSystem::Impl {
 
     std::unique_ptr<JPH::PhysicsSystem> physicsSystem;
 
-    // Character controller
+    // Entity hash helper
     struct EntityHash {
         std::size_t operator()(entt::entity entity) const noexcept {
             return static_cast<std::size_t>(static_cast<std::uint32_t>(entity));
@@ -133,13 +141,61 @@ struct PhysicsSystem::Impl {
         JPH::BodyID bodyId;
     };
 
+    struct SensorBodyBinding {
+        JPH::BodyID bodyId;
+    };
+
+    struct DualBodyBinding {
+        JPH::BodyID solidBodyId;
+        JPH::BodyID sensorBodyId;
+    };
+
     struct CharacterBinding {
         JPH::Ref<JPH::CharacterVirtual> character;
         float eyeOffset = 0.7f;
     };
 
+    // SensorContactListener — handles player entering/exiting sensor bodies via CharacterVirtual
+    class SensorContactListener : public JPH::CharacterContactListener {
+    public:
+        struct PendingContact {
+            entt::entity sensorEntity;
+            bool isEnter; // true=enter, false=exit
+        };
+
+        void OnContactAdded(const JPH::CharacterVirtual* /*inCharacter*/,
+                            const JPH::BodyID& inBodyID2,
+                            const JPH::SubShapeID& /*inSubShapeID2*/,
+                            JPH::RVec3Arg /*inContactPosition*/,
+                            JPH::Vec3Arg /*inContactNormal*/,
+                            JPH::CharacterContactSettings& /*ioSettings*/) override
+        {
+            auto it = sensorBodyToEntity.find(inBodyID2);
+            if (it != sensorBodyToEntity.end()) {
+                pending.push_back({it->second, true});
+            }
+        }
+
+        void OnContactRemoved(const JPH::CharacterVirtual* /*inCharacter*/,
+                              const JPH::BodyID& inBodyID2,
+                              const JPH::SubShapeID& /*inSubShapeID2*/) override
+        {
+            auto it = sensorBodyToEntity.find(inBodyID2);
+            if (it != sensorBodyToEntity.end()) {
+                pending.push_back({it->second, false});
+            }
+        }
+
+        std::unordered_map<JPH::BodyID, entt::entity, BodyIDHash> sensorBodyToEntity;
+        std::vector<PendingContact> pending;
+    };
+
     std::unordered_map<entt::entity, StaticBodyBinding, EntityHash> staticBodies;
+    std::unordered_map<entt::entity, SensorBodyBinding, EntityHash> sensorBodies;    // Trigger-only
+    std::unordered_map<entt::entity, DualBodyBinding, EntityHash> dualBodies;        // SolidAndTrigger
     std::unordered_map<entt::entity, CharacterBinding, EntityHash> characters;
+
+    SensorContactListener sensorListener;
 
     // Fixed timestep accumulator
     float accumulator = 0.0f;
@@ -153,12 +209,16 @@ PhysicsSystem::~PhysicsSystem() = default;
 
 namespace {
 
-JPH::ShapeRefC makeColliderShape(const StaticColliderComponent& collider) {
-    if (collider.shape == StaticColliderShape::Box) {
+JPH::ShapeRefC makeColliderShape(const ColliderComponent& collider) {
+    switch (collider.shape) {
+    case ColliderShape::Box:
         return new JPH::BoxShape(toJolt(collider.halfExtents));
-    }
-    if (collider.shape == StaticColliderShape::Cylinder) {
+    case ColliderShape::Cylinder:
         return new JPH::CylinderShape(collider.halfHeight, collider.radius);
+    case ColliderShape::Sphere:
+        return new JPH::SphereShape(collider.radius);
+    case ColliderShape::Capsule:
+        return new JPH::CapsuleShape(collider.halfHeight, collider.radius);
     }
     return nullptr;
 }
@@ -210,9 +270,10 @@ void PhysicsSystem::update(entt::registry& registry, float deltaTime) {
 
     auto& bodyInterface = impl_->physicsSystem->GetBodyInterface();
 
+    // Clean up stale solid-only (Solid mode) entries
     auto staticIt = impl_->staticBodies.begin();
     while (staticIt != impl_->staticBodies.end()) {
-        if (!registry.valid(staticIt->first) || !registry.all_of<StaticColliderComponent>(staticIt->first)) {
+        if (!registry.valid(staticIt->first) || !registry.all_of<ColliderComponent>(staticIt->first)) {
             bodyInterface.RemoveBody(staticIt->second.bodyId);
             bodyInterface.DestroyBody(staticIt->second.bodyId);
             staticIt = impl_->staticBodies.erase(staticIt);
@@ -221,37 +282,151 @@ void PhysicsSystem::update(entt::registry& registry, float deltaTime) {
         ++staticIt;
     }
 
-    auto colliderView = registry.view<StaticColliderComponent>();
-    for (auto [entity, collider] : colliderView.each()) {
-        auto found = impl_->staticBodies.find(entity);
-        if (found == impl_->staticBodies.end()) {
-            JPH::ShapeRefC shape = makeColliderShape(collider);
-            if (!shape) {
-                continue;
-            }
-            JPH::BodyCreationSettings bodySettings(
-                shape,
-                toJoltR(collider.position),
-                toJoltQuat(collider.rotation),
-                JPH::EMotionType::Static,
-                Layers::NON_MOVING
-            );
-            JPH::BodyID bodyId = bodyInterface.CreateAndAddBody(bodySettings, JPH::EActivation::DontActivate);
-            if (bodyId.IsInvalid()) {
-                spdlog::warn("PhysicsSystem: CreateAndAddBody returned invalid BodyID for entity {}; body not registered",
-                             static_cast<uint32_t>(entity));
-                continue;
-            }
-            impl_->staticBodies.emplace(entity, Impl::StaticBodyBinding{bodyId});
-            found = impl_->staticBodies.find(entity);
+    // Clean up stale sensor-only (Trigger mode) entries
+    auto sensorIt = impl_->sensorBodies.begin();
+    while (sensorIt != impl_->sensorBodies.end()) {
+        if (!registry.valid(sensorIt->first) || !registry.all_of<ColliderComponent>(sensorIt->first)) {
+            impl_->sensorListener.sensorBodyToEntity.erase(sensorIt->second.bodyId);
+            bodyInterface.RemoveBody(sensorIt->second.bodyId);
+            bodyInterface.DestroyBody(sensorIt->second.bodyId);
+            sensorIt = impl_->sensorBodies.erase(sensorIt);
+            continue;
         }
+        ++sensorIt;
+    }
 
-        bodyInterface.SetPositionAndRotation(
-            found->second.bodyId,
-            toJoltR(collider.position),
-            toJoltQuat(collider.rotation),
-            JPH::EActivation::DontActivate
-        );
+    // Clean up stale dual (SolidAndTrigger mode) entries
+    auto dualIt = impl_->dualBodies.begin();
+    while (dualIt != impl_->dualBodies.end()) {
+        if (!registry.valid(dualIt->first) || !registry.all_of<ColliderComponent>(dualIt->first)) {
+            impl_->sensorListener.sensorBodyToEntity.erase(dualIt->second.sensorBodyId);
+            bodyInterface.RemoveBody(dualIt->second.solidBodyId);
+            bodyInterface.DestroyBody(dualIt->second.solidBodyId);
+            bodyInterface.RemoveBody(dualIt->second.sensorBodyId);
+            bodyInterface.DestroyBody(dualIt->second.sensorBodyId);
+            dualIt = impl_->dualBodies.erase(dualIt);
+            continue;
+        }
+        ++dualIt;
+    }
+
+    // Process all ColliderComponent entities — create bodies for new ones and sync transforms
+    auto colliderView = registry.view<ColliderComponent>();
+    for (auto [entity, collider] : colliderView.each()) {
+        const bool hasSolid  = impl_->staticBodies.contains(entity);
+        const bool hasSensor = impl_->sensorBodies.contains(entity);
+        const bool hasDual   = impl_->dualBodies.contains(entity);
+
+        if (collider.mode == ColliderMode::Solid) {
+            if (!hasSolid) {
+                JPH::ShapeRefC shape = makeColliderShape(collider);
+                if (!shape) continue;
+                JPH::BodyCreationSettings bodySettings(
+                    shape,
+                    toJoltR(collider.position),
+                    toJoltQuat(collider.rotation),
+                    JPH::EMotionType::Static,
+                    Layers::NON_MOVING
+                );
+                JPH::BodyID bodyId = bodyInterface.CreateAndAddBody(bodySettings, JPH::EActivation::DontActivate);
+                if (bodyId.IsInvalid()) {
+                    spdlog::warn("PhysicsSystem: CreateAndAddBody (solid) returned invalid BodyID for entity {}",
+                                 static_cast<uint32_t>(entity));
+                    continue;
+                }
+                impl_->staticBodies.emplace(entity, Impl::StaticBodyBinding{bodyId});
+            }
+            auto found = impl_->staticBodies.find(entity);
+            if (found != impl_->staticBodies.end()) {
+                bodyInterface.SetPositionAndRotation(
+                    found->second.bodyId,
+                    toJoltR(collider.position),
+                    toJoltQuat(collider.rotation),
+                    JPH::EActivation::DontActivate
+                );
+            }
+
+        } else if (collider.mode == ColliderMode::Trigger) {
+            if (!hasSensor) {
+                JPH::ShapeRefC shape = makeColliderShape(collider);
+                if (!shape) continue;
+                JPH::BodyCreationSettings bodySettings(
+                    shape,
+                    toJoltR(collider.position),
+                    toJoltQuat(collider.rotation),
+                    JPH::EMotionType::Static,
+                    Layers::NON_MOVING
+                );
+                bodySettings.mIsSensor = true;
+                bodySettings.mUserData = static_cast<JPH::uint64>(static_cast<std::uint32_t>(entity));
+                JPH::BodyID bodyId = bodyInterface.CreateAndAddBody(bodySettings, JPH::EActivation::DontActivate);
+                if (bodyId.IsInvalid()) {
+                    spdlog::warn("PhysicsSystem: CreateAndAddBody (sensor) returned invalid BodyID for entity {}",
+                                 static_cast<uint32_t>(entity));
+                    continue;
+                }
+                impl_->sensorBodies.emplace(entity, Impl::SensorBodyBinding{bodyId});
+                impl_->sensorListener.sensorBodyToEntity.emplace(bodyId, entity);
+            }
+
+        } else if (collider.mode == ColliderMode::SolidAndTrigger) {
+            if (!hasDual) {
+                JPH::ShapeRefC shape = makeColliderShape(collider);
+                if (!shape) continue;
+
+                // Solid body
+                JPH::BodyCreationSettings solidSettings(
+                    shape,
+                    toJoltR(collider.position),
+                    toJoltQuat(collider.rotation),
+                    JPH::EMotionType::Static,
+                    Layers::NON_MOVING
+                );
+                JPH::BodyID solidId = bodyInterface.CreateAndAddBody(solidSettings, JPH::EActivation::DontActivate);
+                if (solidId.IsInvalid()) {
+                    spdlog::warn("PhysicsSystem: CreateAndAddBody (dual-solid) returned invalid BodyID for entity {}",
+                                 static_cast<uint32_t>(entity));
+                    continue;
+                }
+
+                // Sensor body (same shape and position)
+                JPH::BodyCreationSettings sensorSettings(
+                    shape,
+                    toJoltR(collider.position),
+                    toJoltQuat(collider.rotation),
+                    JPH::EMotionType::Static,
+                    Layers::NON_MOVING
+                );
+                sensorSettings.mIsSensor = true;
+                sensorSettings.mUserData = static_cast<JPH::uint64>(static_cast<std::uint32_t>(entity));
+                JPH::BodyID sensorId = bodyInterface.CreateAndAddBody(sensorSettings, JPH::EActivation::DontActivate);
+                if (sensorId.IsInvalid()) {
+                    spdlog::warn("PhysicsSystem: CreateAndAddBody (dual-sensor) returned invalid BodyID for entity {}",
+                                 static_cast<uint32_t>(entity));
+                    bodyInterface.RemoveBody(solidId);
+                    bodyInterface.DestroyBody(solidId);
+                    continue;
+                }
+
+                impl_->dualBodies.emplace(entity, Impl::DualBodyBinding{solidId, sensorId});
+                impl_->sensorListener.sensorBodyToEntity.emplace(sensorId, entity);
+            }
+            auto found = impl_->dualBodies.find(entity);
+            if (found != impl_->dualBodies.end()) {
+                bodyInterface.SetPositionAndRotation(
+                    found->second.solidBodyId,
+                    toJoltR(collider.position),
+                    toJoltQuat(collider.rotation),
+                    JPH::EActivation::DontActivate
+                );
+                bodyInterface.SetPositionAndRotation(
+                    found->second.sensorBodyId,
+                    toJoltR(collider.position),
+                    toJoltQuat(collider.rotation),
+                    JPH::EActivation::DontActivate
+                );
+            }
+        }
     }
 
     auto characterIt = impl_->characters.begin();
@@ -290,6 +465,8 @@ void PhysicsSystem::update(entt::registry& registry, float deltaTime) {
             impl_->physicsSystem.get()
         );
         binding.eyeOffset = eyeOff;
+        // Register sensor contact listener so CharacterVirtual fires overlap callbacks for sensor bodies
+        binding.character->SetListener(&impl_->sensorListener);
         impl_->characters.emplace(entity, std::move(binding));
     }
 
@@ -310,6 +487,25 @@ void PhysicsSystem::update(entt::registry& registry, float deltaTime) {
         );
         impl_->accumulator -= Impl::fixedTimeStep;
     }
+
+    // Drain pending sensor contacts accumulated during ExtendedUpdate calls
+    for (const auto& contact : impl_->sensorListener.pending) {
+        auto* collider = registry.try_get<ColliderComponent>(contact.sensorEntity);
+        if (!collider || !collider->enabled) continue;
+        if (contact.isEnter) {
+            if (!collider->playerInside) {
+                collider->playerInside = true;
+                collider->pendingEnter = true;
+            }
+            if (collider->fireOnce) collider->enabled = false;
+        } else {
+            if (collider->playerInside) {
+                collider->playerInside = false;
+                collider->pendingExit = true;
+            }
+        }
+    }
+    impl_->sensorListener.pending.clear();
 }
 
 void PhysicsSystem::shutdown() {
@@ -319,15 +515,43 @@ void PhysicsSystem::shutdown() {
 void PhysicsSystem::shutdownRuntime() {
     if (!impl_) return;
 
-    // Remove static bodies
     if (impl_->physicsSystem) {
         auto& bodyInterface = impl_->physicsSystem->GetBodyInterface();
+
+        // Unregister sensor listener from all characters before destroying
+        for (const auto& [entity, binding] : impl_->characters) {
+            (void)entity;
+            binding.character->SetListener(nullptr);
+        }
+
+        // Remove static bodies
         for (const auto& [entity, binding] : impl_->staticBodies) {
             (void)entity;
             bodyInterface.RemoveBody(binding.bodyId);
             bodyInterface.DestroyBody(binding.bodyId);
         }
         impl_->staticBodies.clear();
+
+        // Remove sensor-only bodies
+        for (const auto& [entity, binding] : impl_->sensorBodies) {
+            (void)entity;
+            bodyInterface.RemoveBody(binding.bodyId);
+            bodyInterface.DestroyBody(binding.bodyId);
+        }
+        impl_->sensorBodies.clear();
+
+        // Remove dual bodies
+        for (const auto& [entity, binding] : impl_->dualBodies) {
+            (void)entity;
+            bodyInterface.RemoveBody(binding.solidBodyId);
+            bodyInterface.DestroyBody(binding.solidBodyId);
+            bodyInterface.RemoveBody(binding.sensorBodyId);
+            bodyInterface.DestroyBody(binding.sensorBodyId);
+        }
+        impl_->dualBodies.clear();
+
+        impl_->sensorListener.sensorBodyToEntity.clear();
+        impl_->sensorListener.pending.clear();
         impl_->characters.clear();
     }
 
