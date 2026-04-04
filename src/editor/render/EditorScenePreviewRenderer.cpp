@@ -132,7 +132,8 @@ void appendHelperObjects(std::vector<RenderObject>& objects,
                          const std::vector<std::uint64_t>& selectedIds,
                          bool showColliders,
                          bool showLights,
-                         bool showSpawn) {
+                         bool showSpawn,
+                         bool showTriggers) {
     Mesh* cube = world.meshLibrary().get("cube");
     Mesh* cylinder = world.meshLibrary().get("cylinder");
     if (showColliders) {
@@ -200,7 +201,7 @@ void appendHelperObjects(std::vector<RenderObject>& objects,
 
     // Trigger volume visualization (D-14): semi-transparent wireframe in the editor viewport
     // Box triggers: green wireframe; Sphere triggers: blue wireframe (approximated as scaled cube)
-    if (cube != nullptr) {
+    if (showTriggers && cube != nullptr) {
         for (const auto& object : document.objects()) {
             if (object.kind != EditorSceneObjectKind::Trigger) continue;
             const auto& trigger = std::get<TriggerPlacement>(object.payload);

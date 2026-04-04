@@ -1423,7 +1423,7 @@ int main(int argc, char* argv[]) {
 
             std::vector<RenderObject> objects = collectRenderObjects(previewWorld, materialTextures, selectedIds);
             appendHelperObjects(objects, previewWorld, document, materialTextures, selectedIds,
-                                ui.showColliders, ui.showLightHelpers, ui.showSpawnMarker);
+                                ui.showColliders, ui.showLightHelpers, ui.showSpawnMarker, ui.showTriggers);
             appendSelectionOverlays(objects, previewWorld, materialTextures, selectedIds);
 
             // Per-frame hover highlight: blue-white wireframe on unselected objects under cursor

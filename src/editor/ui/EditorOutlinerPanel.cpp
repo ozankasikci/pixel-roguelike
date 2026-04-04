@@ -308,6 +308,21 @@ std::vector<std::uint64_t> renderOutliner(EditorSceneDocument& document,
                 selectedIds = {groupId};
                 ui.inspectorContext = EditorInspectorContext::SceneSelection;
             }
+            if (ImGui::MenuItem("Add Trigger Zone")) {
+                const EditorSceneDocumentState beforeState = document.captureState();
+                TriggerPlacement trigger;
+                trigger.shape = TriggerShape::Box;
+                trigger.halfExtents = glm::vec3(1.0f, 1.0f, 1.0f);
+                const EditorSceneObject* target = document.findObject(objectId);
+                if (target != nullptr) {
+                    trigger.position = editorSceneObjectAnchor(*target);
+                    std::visit([&](const auto& payload) { trigger.parentNodeId = payload.nodeId; }, target->payload);
+                }
+                const std::uint64_t triggerId = document.addTrigger(trigger);
+                commandStack.pushDocumentStateCommand("Add Trigger Zone", beforeState, document.captureState(), document);
+                selectedIds = {triggerId};
+                ui.inspectorContext = EditorInspectorContext::SceneSelection;
+            }
             ImGui::EndPopup();
         }
 

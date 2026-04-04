@@ -32,7 +32,8 @@ void appendHelperObjects(std::vector<RenderObject>& objects,
                          const std::vector<std::uint64_t>& selectedIds,
                          bool showColliders,
                          bool showLights,
-                         bool showSpawn);
+                         bool showSpawn,
+                         bool showTriggers = true);
 
 void appendSelectionOverlays(std::vector<RenderObject>& objects,
                              const EditorPreviewWorld& world,

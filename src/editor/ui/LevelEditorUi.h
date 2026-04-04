@@ -99,6 +99,7 @@ struct EditorUiState {
     bool showColliders = false;
     bool showLightHelpers = false;
     bool showSpawnMarker = false;
+    bool showTriggers = true;
 #ifdef NDEBUG
     bool showViewportStats = false;
 #else
