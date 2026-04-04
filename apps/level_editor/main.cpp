@@ -441,6 +441,7 @@ int main(int argc, char* argv[]) {
     EditorPendingCommand gizmoCommand;
     MultiGizmoState multiGizmoState;
     std::vector<std::filesystem::path> pendingDroppedAssetPaths;
+    ImGuiThemePreset editorThemePreset = imgui.themePreset();
     ImGuiFontPreset editorFontPreset = imgui.fontPreset();
     // Declared here (rather than inside renderFrame) so DebugHarness can hold a reference
     // to it. The struct has default-initialized members and is populated each frame.
@@ -649,6 +650,21 @@ int main(int argc, char* argv[]) {
                     ImGui::Separator();
                     ImGui::TextDisabled("Play render scale: %.0f%%", ui.previewRenderScale * 100.0f);
                     ImGui::TextDisabled("Shadow resolution: %s", ui.shadowResolutionIndex == 0 ? "512" : (ui.shadowResolutionIndex == 1 ? "1024" : "2048"));
+                    ImGui::EndMenu();
+                }
+                if (ImGui::BeginMenu("Interface Theme")) {
+                    static constexpr std::array<ImGuiThemePreset, 3> kThemePresets{
+                        ImGuiThemePreset::WarmStudioDark,
+                        ImGuiThemePreset::SpectrumInspiredDark,
+                        ImGuiThemePreset::SoftLightTooling,
+                    };
+                    for (ImGuiThemePreset preset : kThemePresets) {
+                        const bool selected = (editorThemePreset == preset);
+                        if (ImGui::MenuItem(imguiThemePresetLabel(preset), nullptr, selected)) {
+                            editorThemePreset = preset;
+                            imgui.requestThemePreset(preset);
+                        }
+                    }
                     ImGui::EndMenu();
                 }
                 if (ImGui::BeginMenu("Interface Font")) {
