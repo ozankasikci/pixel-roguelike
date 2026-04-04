@@ -3,11 +3,11 @@ gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: Editor UX
 status: Ready to execute
-stopped_at: Completed 15-01-PLAN.md
-last_updated: "2026-04-04T15:15:00.000Z"
-last_activity: 2026-04-04
+stopped_at: Phase 16 context gathered
+last_updated: "2026-04-04T16:39:57.933Z"
+last_activity: "2026-04-04 - Completed quick task 260404-p8q: Safe cleanup of environment shader properties"
 progress:
-  total_phases: 17
+  total_phases: 18
   completed_phases: 13
   total_plans: 43
   completed_plans: 38
@@ -187,6 +187,7 @@ None yet.
 - Phase 6 added: Data-driven scene management — New/Delete Scene in editor, configurable runtime default, remove legacy hardcoded scene classes
 - Phase 7 added: Data-driven material system — replace hardcoded materials with a proper material pipeline
 - Phase 15 added: prototype editor ImGui themes and choose a final skin direction
+- Phase 16 added: Editor trigger and behavior authoring with save-load fidelity
 
 ### Blockers/Concerns
 
@@ -243,6 +244,6 @@ None yet.
 ## Session Continuity
 
 Last activity: 2026-04-04 - Completed quick task 260404-p8q: Safe cleanup of environment shader properties
-Last session: 2026-04-04T12:19:10.699Z
-Stopped at: Completed 15-01-PLAN.md
-Resume file: None
+Last session: 2026-04-04T16:39:57.928Z
+Stopped at: Phase 16 context gathered
+Resume file: .planning/phases/16-editor-trigger-and-behavior-authoring-with-save-load-fidelity/16-CONTEXT.md
