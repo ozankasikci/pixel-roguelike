@@ -235,6 +235,53 @@ void appendHelperObjects(std::vector<RenderObject>& objects,
                     1.5f    // lineWidth
                 });
             }
+
+            // Render resize handles for selected triggers (per D-02)
+            if (selected) {
+                const float handleSize = 0.08f; // world-space handle size
+                const glm::vec3 axes[] = {
+                    {1, 0, 0}, {-1, 0, 0},
+                    {0, 1, 0}, {0, -1, 0},
+                    {0, 0, 1}, {0, 0, -1},
+                };
+                for (const auto& axis : axes) {
+                    const float extent = (trigger.shape == TriggerShape::Box)
+                        ? glm::dot(axis, trigger.halfExtents * glm::abs(axis))
+                        : trigger.radius;
+                    const glm::vec3 handlePos = trigger.position + axis * extent;
+                    objects.push_back(RenderObject{
+                        cube,
+                        makeModelMatrix(handlePos, glm::vec3(handleSize)),
+                        glm::vec3(1.0f, 1.0f, 0.0f), // yellow handles
+                        materials.resolve("metal_default"),
+                        false, // solid, not wireframe
+                        true,  // ignoreDepth
+                        true,  // unlit
+                        1.0f
+                    });
+                }
+            }
+        }
+    }
+
+    // Interaction distance ring (per D-10): wireframe sphere (cube approximation) at interaction
+    // distance for interactable meshes — warm amber per UI-SPEC #CC9933
+    if (cube != nullptr) {
+        for (const auto& object : document.objects()) {
+            if (object.kind != EditorSceneObjectKind::Mesh) continue;
+            const auto& mesh = std::get<LevelMeshPlacement>(object.payload);
+            if (!mesh.interactable.has_value()) continue;
+            if (mesh.interactable->distance <= 0.0f) continue;
+            objects.push_back(RenderObject{
+                cube,
+                makeModelMatrix(mesh.position, glm::vec3(mesh.interactable->distance * 2.0f)),
+                glm::vec3(0.80f, 0.60f, 0.20f), // warm amber (#CC9933 approx)
+                materials.resolve("metal_default"),
+                true,   // wireframe
+                true,   // ignoreDepth
+                true,   // unlit
+                1.5f    // lineWidth
+            });
         }
     }
 }
