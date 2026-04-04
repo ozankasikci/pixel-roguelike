@@ -6,7 +6,7 @@
 
 struct EditorUiPreferences {
     ImGuiFontPreset fontPreset = ImGuiFontPreset::SystemSans;
-    ImGuiThemePreset themePreset = ImGuiThemePreset::WarmStudioDark;
+    ImGuiThemePreset themePreset = ImGuiThemePreset::GraphiteDense;
 };
 
 EditorUiPreferences loadEditorUiPreferences(const std::string& path);

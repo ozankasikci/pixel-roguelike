@@ -26,6 +26,9 @@ const char* imguiFontPresetLabel(ImGuiFontPreset preset);
 enum class ImGuiThemePreset {
     WarmStudioDark,
     SpectrumInspiredDark,
+    SpectrumCompact,
+    GraphiteDark,
+    GraphiteDense,
     SoftLightTooling,
 };
 
@@ -73,8 +76,8 @@ private:
     void applyPendingFontPreset();
 
     bool initialized_ = false;
-    ImGuiThemePreset themePreset_ = ImGuiThemePreset::WarmStudioDark;
-    std::optional<ImGuiThemePreset> pendingThemePreset_ = ImGuiThemePreset::WarmStudioDark;
+    ImGuiThemePreset themePreset_ = ImGuiThemePreset::GraphiteDense;
+    std::optional<ImGuiThemePreset> pendingThemePreset_ = ImGuiThemePreset::GraphiteDense;
     ImGuiFontPreset fontPreset_ = ImGuiFontPreset::SystemSans;
     std::optional<ImGuiFontPreset> pendingFontPreset_ = ImGuiFontPreset::SystemSans;
     std::string activeFontPath_;

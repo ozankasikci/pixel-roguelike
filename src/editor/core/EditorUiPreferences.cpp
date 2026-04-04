@@ -65,11 +65,17 @@ const char* themePresetToken(ImGuiThemePreset preset) {
         return "WarmStudioDark";
     case ImGuiThemePreset::SpectrumInspiredDark:
         return "SpectrumInspiredDark";
+    case ImGuiThemePreset::SpectrumCompact:
+        return "SpectrumCompact";
+    case ImGuiThemePreset::GraphiteDark:
+        return "GraphiteDark";
+    case ImGuiThemePreset::GraphiteDense:
+        return "GraphiteDense";
     case ImGuiThemePreset::SoftLightTooling:
         return "SoftLightTooling";
     }
 
-    return "WarmStudioDark";
+    return "GraphiteDense";
 }
 
 ImGuiThemePreset parseThemePreset(std::string_view token) {
@@ -79,10 +85,19 @@ ImGuiThemePreset parseThemePreset(std::string_view token) {
     if (token == "SpectrumInspiredDark") {
         return ImGuiThemePreset::SpectrumInspiredDark;
     }
+    if (token == "SpectrumCompact") {
+        return ImGuiThemePreset::SpectrumCompact;
+    }
+    if (token == "GraphiteDark") {
+        return ImGuiThemePreset::GraphiteDark;
+    }
+    if (token == "GraphiteDense") {
+        return ImGuiThemePreset::GraphiteDense;
+    }
     if (token == "SoftLightTooling") {
         return ImGuiThemePreset::SoftLightTooling;
     }
-    return ImGuiThemePreset::WarmStudioDark;
+    return ImGuiThemePreset::GraphiteDense;
 }
 
 void trimLineEnding(std::string& line) {

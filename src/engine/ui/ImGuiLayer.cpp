@@ -236,6 +236,114 @@ const ThemePresetDefinition& themePresetDefinition(ImGuiThemePreset preset) {
         ImVec4(0.28f, 0.47f, 0.74f, 0.85f),
         ImVec4(0.20f, 0.26f, 0.33f, 1.00f),
     };
+    static const ThemePresetDefinition kSpectrumCompact{
+        "Spectrum Compact",
+        3.0f,
+        3.0f,
+        3.0f,
+        3.0f,
+        4.0f,
+        1.0f,
+        1.0f,
+        1.0f,
+        ImVec2(6.0f, 5.0f),
+        ImVec2(5.0f, 3.0f),
+        ImVec2(5.0f, 3.0f),
+        ImVec2(5.0f, 3.0f),
+        14.0f,
+        10.0f,
+        8.0f,
+        ImVec4(0.92f, 0.94f, 0.96f, 1.00f),
+        ImVec4(0.10f, 0.11f, 0.12f, 0.98f),
+        ImVec4(0.12f, 0.13f, 0.15f, 0.98f),
+        ImVec4(0.13f, 0.14f, 0.16f, 0.98f),
+        ImVec4(0.14f, 0.15f, 0.17f, 1.00f),
+        ImVec4(0.28f, 0.31f, 0.35f, 0.72f),
+        ImVec4(0.15f, 0.16f, 0.18f, 1.00f),
+        ImVec4(0.19f, 0.22f, 0.27f, 1.00f),
+        ImVec4(0.23f, 0.27f, 0.33f, 1.00f),
+        ImVec4(0.17f, 0.19f, 0.22f, 1.00f),
+        ImVec4(0.26f, 0.45f, 0.71f, 0.84f),
+        ImVec4(0.21f, 0.41f, 0.65f, 1.00f),
+        ImVec4(0.17f, 0.21f, 0.25f, 0.88f),
+        ImVec4(0.26f, 0.45f, 0.71f, 0.84f),
+        ImVec4(0.21f, 0.41f, 0.65f, 1.00f),
+        ImVec4(0.15f, 0.17f, 0.20f, 1.00f),
+        ImVec4(0.26f, 0.45f, 0.71f, 0.84f),
+        ImVec4(0.19f, 0.24f, 0.30f, 1.00f),
+    };
+    static const ThemePresetDefinition kGraphiteDark{
+        "Graphite Dark",
+        4.0f,
+        4.0f,
+        4.0f,
+        4.0f,
+        5.0f,
+        1.0f,
+        1.0f,
+        1.0f,
+        ImVec2(7.0f, 6.0f),
+        ImVec2(6.0f, 4.0f),
+        ImVec2(6.0f, 4.0f),
+        ImVec2(6.0f, 4.0f),
+        16.0f,
+        12.0f,
+        9.0f,
+        ImVec4(0.88f, 0.89f, 0.91f, 1.00f),
+        ImVec4(0.08f, 0.09f, 0.10f, 0.98f),
+        ImVec4(0.10f, 0.11f, 0.12f, 0.98f),
+        ImVec4(0.11f, 0.12f, 0.13f, 0.98f),
+        ImVec4(0.12f, 0.13f, 0.14f, 1.00f),
+        ImVec4(0.26f, 0.28f, 0.30f, 0.72f),
+        ImVec4(0.14f, 0.15f, 0.16f, 1.00f),
+        ImVec4(0.18f, 0.20f, 0.22f, 1.00f),
+        ImVec4(0.22f, 0.24f, 0.27f, 1.00f),
+        ImVec4(0.16f, 0.17f, 0.19f, 1.00f),
+        ImVec4(0.32f, 0.35f, 0.39f, 0.90f),
+        ImVec4(0.39f, 0.43f, 0.47f, 1.00f),
+        ImVec4(0.17f, 0.19f, 0.21f, 0.90f),
+        ImVec4(0.26f, 0.29f, 0.33f, 0.95f),
+        ImVec4(0.39f, 0.43f, 0.47f, 1.00f),
+        ImVec4(0.14f, 0.15f, 0.17f, 1.00f),
+        ImVec4(0.26f, 0.29f, 0.33f, 0.95f),
+        ImVec4(0.19f, 0.22f, 0.25f, 1.00f),
+    };
+    static const ThemePresetDefinition kGraphiteDense{
+        "Graphite Dense",
+        3.0f,
+        3.0f,
+        3.0f,
+        3.0f,
+        4.0f,
+        1.0f,
+        1.0f,
+        1.0f,
+        ImVec2(6.0f, 5.0f),
+        ImVec2(5.0f, 3.0f),
+        ImVec2(5.0f, 3.0f),
+        ImVec2(5.0f, 3.0f),
+        14.0f,
+        10.0f,
+        8.0f,
+        ImVec4(0.86f, 0.87f, 0.89f, 1.00f),
+        ImVec4(0.05f, 0.06f, 0.07f, 0.98f),
+        ImVec4(0.07f, 0.08f, 0.09f, 0.98f),
+        ImVec4(0.08f, 0.09f, 0.10f, 0.98f),
+        ImVec4(0.09f, 0.10f, 0.11f, 1.00f),
+        ImVec4(0.23f, 0.24f, 0.26f, 0.72f),
+        ImVec4(0.11f, 0.12f, 0.13f, 1.00f),
+        ImVec4(0.15f, 0.16f, 0.18f, 1.00f),
+        ImVec4(0.18f, 0.20f, 0.22f, 1.00f),
+        ImVec4(0.13f, 0.14f, 0.15f, 1.00f),
+        ImVec4(0.27f, 0.29f, 0.31f, 0.92f),
+        ImVec4(0.34f, 0.36f, 0.39f, 1.00f),
+        ImVec4(0.14f, 0.15f, 0.16f, 0.92f),
+        ImVec4(0.21f, 0.23f, 0.25f, 0.96f),
+        ImVec4(0.34f, 0.36f, 0.39f, 1.00f),
+        ImVec4(0.11f, 0.12f, 0.13f, 1.00f),
+        ImVec4(0.21f, 0.23f, 0.25f, 0.96f),
+        ImVec4(0.15f, 0.17f, 0.19f, 1.00f),
+    };
     static const ThemePresetDefinition kSoftLightTooling{
         "Soft Light Tooling",
         6.0f,
@@ -278,6 +386,12 @@ const ThemePresetDefinition& themePresetDefinition(ImGuiThemePreset preset) {
         return kWarmStudioDark;
     case ImGuiThemePreset::SpectrumInspiredDark:
         return kSpectrumInspiredDark;
+    case ImGuiThemePreset::SpectrumCompact:
+        return kSpectrumCompact;
+    case ImGuiThemePreset::GraphiteDark:
+        return kGraphiteDark;
+    case ImGuiThemePreset::GraphiteDense:
+        return kGraphiteDense;
     case ImGuiThemePreset::SoftLightTooling:
         return kSoftLightTooling;
     }
@@ -400,6 +514,21 @@ void applySpectrumInspiredDark(ImGuiStyle& style) {
     applyThemeChrome(style, themePresetDefinition(ImGuiThemePreset::SpectrumInspiredDark));
 }
 
+void applyGraphiteDark(ImGuiStyle& style) {
+    ImGui::StyleColorsDark(&style);
+    applyThemeChrome(style, themePresetDefinition(ImGuiThemePreset::GraphiteDark));
+}
+
+void applySpectrumCompact(ImGuiStyle& style) {
+    ImGui::StyleColorsDark(&style);
+    applyThemeChrome(style, themePresetDefinition(ImGuiThemePreset::SpectrumCompact));
+}
+
+void applyGraphiteDense(ImGuiStyle& style) {
+    ImGui::StyleColorsDark(&style);
+    applyThemeChrome(style, themePresetDefinition(ImGuiThemePreset::GraphiteDense));
+}
+
 void applySoftLightTooling(ImGuiStyle& style) {
     ImGui::StyleColorsLight(&style);
     applyThemeChrome(style, themePresetDefinition(ImGuiThemePreset::SoftLightTooling));
@@ -494,6 +623,15 @@ void ImGuiLayer::applyPendingThemePreset() {
         break;
     case ImGuiThemePreset::SpectrumInspiredDark:
         applySpectrumInspiredDark(style);
+        break;
+    case ImGuiThemePreset::SpectrumCompact:
+        applySpectrumCompact(style);
+        break;
+    case ImGuiThemePreset::GraphiteDark:
+        applyGraphiteDark(style);
+        break;
+    case ImGuiThemePreset::GraphiteDense:
+        applyGraphiteDense(style);
         break;
     case ImGuiThemePreset::SoftLightTooling:
         applySoftLightTooling(style);

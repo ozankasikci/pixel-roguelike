@@ -665,9 +665,12 @@ int main(int argc, char* argv[]) {
                     ImGui::EndMenu();
                 }
                 if (ImGui::BeginMenu("Interface Theme")) {
-                    static constexpr std::array<ImGuiThemePreset, 3> kThemePresets{
+                    static constexpr std::array<ImGuiThemePreset, 6> kThemePresets{
                         ImGuiThemePreset::WarmStudioDark,
                         ImGuiThemePreset::SpectrumInspiredDark,
+                        ImGuiThemePreset::SpectrumCompact,
+                        ImGuiThemePreset::GraphiteDark,
+                        ImGuiThemePreset::GraphiteDense,
                         ImGuiThemePreset::SoftLightTooling,
                     };
                     for (ImGuiThemePreset preset : kThemePresets) {
