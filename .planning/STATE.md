@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: Editor UX
-status: Executing Phase 16
-stopped_at: Phase 16 UI-SPEC approved
-last_updated: "2026-04-04T18:49:37.816Z"
+status: Ready to execute
+stopped_at: Completed 16-02-PLAN.md
+last_updated: "2026-04-04T19:38:16.879Z"
 last_activity: 2026-04-04
 progress:
   total_phases: 18
   completed_phases: 13
   total_plans: 46
-  completed_plans: 38
+  completed_plans: 40
 ---
 
 # Project State
@@ -25,7 +25,7 @@ See: .planning/PROJECT.md (updated 2026-03-23)
 ## Current Position
 
 Phase: 16 (editor-trigger-and-behavior-authoring-with-save-load-fidelity) — EXECUTING
-Plan: 1 of 3
+Plan: 2 of 3
 
 ## Performance Metrics
 
@@ -73,6 +73,7 @@ Plan: 1 of 3
 | Phase 07 P03 | 10 | 2 tasks | 4 files |
 | Phase 13-data-driven-behavior-system P01 | 15 | 3 tasks | 10 files |
 | Phase 15 P01 | 8 | 2 tasks | 3 files |
+| Phase 16 P02 | 8 | 2 tasks | 1 files |
 
 ## Accumulated Context
 
@@ -172,6 +173,8 @@ Recent decisions affecting current work:
 - [Phase 13-data-driven-behavior-system]: LevelDef.cpp parser refactored to buffer all lines and detect indented sub-lines for behavior/interactable declarations
 - [Phase 15]: Theme presets stay repo-local in ImGuiLayer and start from Dear ImGui Dark/Light baselines instead of introducing a skinning framework.
 - [Phase 15]: The editor exposes theme comparison only through View -> Interface Theme, matching the existing Interface Font workflow.
+- [Phase 16]: End inspector property table early inside switch cases to allow CollapsingHeader behavior sections below for Mesh/Light/Trigger entities
+- [Phase 16]: Action categories limited to core subset (Door/Lighting/Audio/Entity/Timing) per D-08 to keep behavior authoring focused
 
 ### Pending Todos
 
@@ -244,6 +247,6 @@ None yet.
 ## Session Continuity
 
 Last activity: 2026-04-04
-Last session: 2026-04-04T17:03:07.818Z
-Stopped at: Phase 16 UI-SPEC approved
-Resume file: .planning/phases/16-editor-trigger-and-behavior-authoring-with-save-load-fidelity/16-UI-SPEC.md
+Last session: 2026-04-04T19:38:16.875Z
+Stopped at: Completed 16-02-PLAN.md
+Resume file: None

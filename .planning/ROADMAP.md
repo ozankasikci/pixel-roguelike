@@ -324,9 +324,9 @@ Plans:
 **Goal:** Make triggers first-class editor objects and add UI for authoring behaviors and interactables on scene entities, with full round-trip save-load fidelity through toLevelDef() and loadFromSceneFile()
 **Requirements**: None (editor tooling phase; not mapped to REQUIREMENTS.md IDs)
 **Depends on:** Phase 15
-**Plans:** 3 plans
+**Plans:** 2/3 plans executed
 
 Plans:
-- [ ] 16-01-PLAN.md — Promote triggers to first-class EditorSceneObject entries, remove readOnlyTriggers_, update all switch sites, outliner context menu, round-trip test
-- [ ] 16-02-PLAN.md — Inspector UI for trigger properties, behavior editing sections with categorized action dropdown, interactable editing
+- [x] 16-01-PLAN.md — Promote triggers to first-class EditorSceneObject entries, remove readOnlyTriggers_, update all switch sites, outliner context menu, round-trip test
+- [x] 16-02-PLAN.md — Inspector UI for trigger properties, behavior editing sections with categorized action dropdown, interactable editing
 - [ ] 16-03-PLAN.md — Trigger resize gizmo handles, interaction distance ring, showTriggers toggle, visual verification
