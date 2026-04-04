@@ -4,7 +4,7 @@ milestone: v1.1
 milestone_name: Editor UX
 status: Ready to execute
 stopped_at: Completed 15-01-PLAN.md
-last_updated: "2026-04-04T14:44:30.000Z"
+last_updated: "2026-04-04T15:15:00.000Z"
 last_activity: 2026-04-04
 progress:
   total_phases: 17
@@ -238,10 +238,11 @@ None yet.
 | 260403-v4x | Fix editor freezing after gizmo or inspector scene changes trigger runtime preview rebuild | 2026-04-03 | ff7ce59 | [260403-v4x-fix-editor-freezing-after-gizmo-or-inspe](./quick/260403-v4x-fix-editor-freezing-after-gizmo-or-inspe/) |
 | 260403-wsw | Enable arrow-key navigation in the hierarchy panel | 2026-04-03 | 534ed10 | [260403-wsw-enable-arrow-key-navigation-in-the-hiera](./quick/260403-wsw-enable-arrow-key-navigation-in-the-hiera/) |
 | 260404-omb | Fix editor light gizmo moving helper but not preview light | 2026-04-04 | 1464a2a | [260404-omb-fix-editor-light-gizmo-moving-helper-but](./quick/260404-omb-fix-editor-light-gizmo-moving-helper-but/) |
+| 260404-p8q | Safe cleanup of environment shader properties: remove redundant sky sun fields, unify sky enable toggle, stop persisting depth preview scale | 2026-04-04 | 5bad39e | [260404-p8q-safe-cleanup-of-environment-shader-prope](./quick/260404-p8q-safe-cleanup-of-environment-shader-prope/) |
 
 ## Session Continuity
 
-Last activity: 2026-04-04 - Completed quick task 260404-omb: Fix editor light gizmo moving helper but not preview light
+Last activity: 2026-04-04 - Completed quick task 260404-p8q: Safe cleanup of environment shader properties
 Last session: 2026-04-04T12:19:10.699Z
 Stopped at: Completed 15-01-PLAN.md
 Resume file: None
