@@ -36,6 +36,9 @@ struct ThemePresetDefinition {
     ImVec2 framePadding;
     ImVec2 itemSpacing;
     ImVec2 cellPadding;
+    float indentSpacing = 20.0f;
+    float scrollbarSize = 14.0f;
+    float grabMinSize = 11.0f;
     ImVec4 text;
     ImVec4 windowBg;
     ImVec4 childBg;
@@ -175,6 +178,9 @@ const ThemePresetDefinition& themePresetDefinition(ImGuiThemePreset preset) {
         ImVec2(8.0f, 6.0f),
         ImVec2(8.0f, 6.0f),
         ImVec2(8.0f, 6.0f),
+        20.0f,
+        14.0f,
+        11.0f,
         ImVec4(0.90f, 0.87f, 0.81f, 1.00f),
         ImVec4(0.12f, 0.11f, 0.10f, 0.98f),
         ImVec4(0.14f, 0.13f, 0.12f, 0.98f),
@@ -204,10 +210,13 @@ const ThemePresetDefinition& themePresetDefinition(ImGuiThemePreset preset) {
         1.0f,
         1.0f,
         1.0f,
-        ImVec2(9.0f, 8.0f),
-        ImVec2(7.0f, 5.0f),
-        ImVec2(8.0f, 5.0f),
-        ImVec2(7.0f, 5.0f),
+        ImVec2(7.0f, 6.0f),
+        ImVec2(6.0f, 4.0f),
+        ImVec2(6.0f, 4.0f),
+        ImVec2(6.0f, 4.0f),
+        16.0f,
+        12.0f,
+        9.0f,
         ImVec4(0.92f, 0.94f, 0.96f, 1.00f),
         ImVec4(0.10f, 0.11f, 0.12f, 0.98f),
         ImVec4(0.12f, 0.13f, 0.15f, 0.98f),
@@ -241,6 +250,9 @@ const ThemePresetDefinition& themePresetDefinition(ImGuiThemePreset preset) {
         ImVec2(8.0f, 6.0f),
         ImVec2(8.0f, 6.0f),
         ImVec2(8.0f, 6.0f),
+        20.0f,
+        14.0f,
+        11.0f,
         ImVec4(0.18f, 0.16f, 0.14f, 1.00f),
         ImVec4(0.92f, 0.90f, 0.86f, 1.00f),
         ImVec4(0.95f, 0.93f, 0.89f, 1.00f),
@@ -305,9 +317,9 @@ void applyThemeChrome(ImGuiStyle& style, const ThemePresetDefinition& preset) {
     style.ItemInnerSpacing = ImVec2(std::max(4.0f, preset.framePadding.x - 2.0f),
                                     std::max(4.0f, preset.framePadding.y - 1.0f));
     style.CellPadding = preset.cellPadding;
-    style.IndentSpacing = 20.0f;
-    style.ScrollbarSize = 14.0f;
-    style.GrabMinSize = 11.0f;
+    style.IndentSpacing = preset.indentSpacing;
+    style.ScrollbarSize = preset.scrollbarSize;
+    style.GrabMinSize = preset.grabMinSize;
     style.WindowTitleAlign = ImVec2(0.0f, 0.5f);
 
     ImVec4* colors = style.Colors;
