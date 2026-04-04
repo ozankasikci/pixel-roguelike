@@ -5,7 +5,7 @@
 #include "game/components/LightComponent.h"
 #include "game/components/MeshComponent.h"
 #include "game/components/ReflectionProbeComponent.h"
-#include "game/components/StaticColliderComponent.h"
+#include "game/components/ColliderComponent.h"
 #include "game/components/TransformComponent.h"
 #include "game/content/ContentRegistry.h"
 #include "game/level/LevelBuilder.h"
@@ -58,7 +58,7 @@ EditorObjectBounds sphereBounds(const glm::vec3& center, float radius) {
     return result;
 }
 
-EditorObjectBounds colliderBounds(const StaticColliderComponent& collider) {
+EditorObjectBounds colliderBounds(const ColliderComponent& collider) {
     glm::mat4 matrix(1.0f);
     matrix = glm::translate(matrix, collider.position);
     matrix = glm::rotate(matrix, glm::radians(collider.rotation.x), glm::vec3(1.0f, 0.0f, 0.0f));
@@ -186,27 +186,20 @@ void EditorPreviewWorld::rebuild(const EditorSceneDocument& document, const Cont
                              placement.castsShadows);
             break;
         }
-        case EditorSceneObjectKind::BoxCollider: {
-            auto placement = std::get<LevelBoxColliderPlacement>(object.payload);
+        case EditorSceneObjectKind::Collider: {
+            auto placement = std::get<LevelColliderPlacement>(object.payload);
             glm::vec3 position(0.0f), rotation(0.0f), scale(1.0f);
             if (decomposeTransformMatrix(document.worldTransformMatrix(object.id), position, rotation, scale)) {
                 placement.position = position;
                 placement.rotation = rotation;
-                placement.halfExtents = glm::max(scale * 0.5f, glm::vec3(0.001f));
+                if (placement.shape == ColliderShape::Box) {
+                    placement.halfExtents = glm::max(scale * 0.5f, glm::vec3(0.001f));
+                } else {
+                    placement.radius = std::max(0.001f, (std::abs(scale.x) + std::abs(scale.z)) * 0.25f);
+                    placement.halfHeight = std::max(0.001f, std::abs(scale.y) * 0.5f);
+                }
             }
-            builder.addBoxCollider(placement.position, placement.halfExtents, placement.rotation);
-            break;
-        }
-        case EditorSceneObjectKind::CylinderCollider: {
-            auto placement = std::get<LevelCylinderColliderPlacement>(object.payload);
-            glm::vec3 position(0.0f), rotation(0.0f), scale(1.0f);
-            if (decomposeTransformMatrix(document.worldTransformMatrix(object.id), position, rotation, scale)) {
-                placement.position = position;
-                placement.rotation = rotation;
-                placement.radius = std::max(0.001f, (std::abs(scale.x) + std::abs(scale.z)) * 0.25f);
-                placement.halfHeight = std::max(0.001f, std::abs(scale.y) * 0.5f);
-            }
-            builder.addCylinderCollider(placement.position, placement.radius, placement.halfHeight, placement.rotation);
+            builder.addCollider(placement);
             break;
         }
         case EditorSceneObjectKind::ReflectionProbe: {
@@ -325,28 +318,20 @@ void EditorPreviewWorld::syncTransforms(const EditorSceneDocument& document) {
                 }
             }
             break;
-        case EditorSceneObjectKind::BoxCollider: {
+        case EditorSceneObjectKind::Collider: {
             transform.position = position;
             transform.rotation = rotation;
             transform.scale = scale;
-            if (registry_.all_of<StaticColliderComponent>(entity)) {
-                auto& collider = registry_.get<StaticColliderComponent>(entity);
+            if (registry_.all_of<ColliderComponent>(entity)) {
+                auto& collider = registry_.get<ColliderComponent>(entity);
                 collider.position = position;
                 collider.rotation = rotation;
-                collider.halfExtents = glm::max(scale * 0.5f, glm::vec3(0.001f));
-            }
-            break;
-        }
-        case EditorSceneObjectKind::CylinderCollider: {
-            transform.position = position;
-            transform.rotation = rotation;
-            transform.scale = scale;
-            if (registry_.all_of<StaticColliderComponent>(entity)) {
-                auto& collider = registry_.get<StaticColliderComponent>(entity);
-                collider.position = position;
-                collider.rotation = rotation;
-                collider.radius = std::max(0.001f, (std::abs(scale.x) + std::abs(scale.z)) * 0.25f);
-                collider.halfHeight = std::max(0.001f, std::abs(scale.y) * 0.5f);
+                if (collider.shape == ColliderShape::Box) {
+                    collider.halfExtents = glm::max(scale * 0.5f, glm::vec3(0.001f));
+                } else {
+                    collider.radius = std::max(0.001f, (std::abs(scale.x) + std::abs(scale.z)) * 0.25f);
+                    collider.halfHeight = std::max(0.001f, std::abs(scale.y) * 0.5f);
+                }
             }
             break;
         }
@@ -410,7 +395,7 @@ void EditorPreviewWorld::rebuildBounds() {
         sceneBounds_.expand(bounds);
     }
 
-    auto colliderView = registry_.view<StaticColliderComponent>();
+    auto colliderView = registry_.view<ColliderComponent>();
     for (auto [entity, collider] : colliderView.each()) {
         auto ownerIt = ownerMap_.find(entity);
         if (ownerIt == ownerMap_.end()) {

@@ -1,4 +1,5 @@
 #include "game/level/LevelDef.h"
+#include "game/components/ColliderComponent.h"
 
 #include <algorithm>
 #include <cassert>
@@ -9,8 +10,13 @@ int main() {
     assert(data.environmentProfile == EnvironmentProfile::Default);
     assert(data.meshes.size() == 126);
     assert(data.lights.size() == 13);
-    assert(data.boxColliders.size() == 25);
-    assert(data.cylinderColliders.size() == 14);
+    // Cathedral has 25 box colliders + 14 cylinder colliders = 39 total colliders
+    assert(std::count_if(data.colliders.begin(), data.colliders.end(), [](const LevelColliderPlacement& c) {
+        return c.shape == ColliderShape::Box;
+    }) == 25);
+    assert(std::count_if(data.colliders.begin(), data.colliders.end(), [](const LevelColliderPlacement& c) {
+        return c.shape == ColliderShape::Cylinder;
+    }) == 14);
     assert(data.hasPlayerSpawn);
     assert(data.archetypes.size() == 2);
 

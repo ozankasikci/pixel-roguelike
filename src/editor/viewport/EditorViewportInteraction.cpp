@@ -26,8 +26,7 @@ namespace {
 
 bool isViewportSelectableKind(const EditorSelectionHandle& handle, const EditorUiState& ui) {
     switch (handle.objectKind) {
-    case EditorSceneObjectKind::BoxCollider:
-    case EditorSceneObjectKind::CylinderCollider:
+    case EditorSceneObjectKind::Collider:
         return ui.showColliders;
     case EditorSceneObjectKind::Light:
         return ui.showLightHelpers;
@@ -38,7 +37,6 @@ bool isViewportSelectableKind(const EditorSelectionHandle& handle, const EditorU
     case EditorSceneObjectKind::Mesh:
     case EditorSceneObjectKind::Archetype:
     case EditorSceneObjectKind::Group:
-    case EditorSceneObjectKind::Trigger:
         return true;
     }
     return true;
@@ -287,12 +285,10 @@ bool applyGizmoToSelectedObject(EditorSceneDocument& document,
         glm::mat4 model(1.0f);
         switch (object->kind) {
         case EditorSceneObjectKind::Mesh:
-        case EditorSceneObjectKind::BoxCollider:
-        case EditorSceneObjectKind::CylinderCollider:
+        case EditorSceneObjectKind::Collider:
         case EditorSceneObjectKind::ReflectionProbe:
         case EditorSceneObjectKind::Archetype:
         case EditorSceneObjectKind::Group:
-        case EditorSceneObjectKind::Trigger:
             model = document.worldTransformMatrix(object->id);
             break;
         case EditorSceneObjectKind::Light: {
@@ -341,12 +337,10 @@ bool applyGizmoToSelectedObject(EditorSceneDocument& document,
 
         switch (object->kind) {
         case EditorSceneObjectKind::Mesh:
-        case EditorSceneObjectKind::BoxCollider:
-        case EditorSceneObjectKind::CylinderCollider:
+        case EditorSceneObjectKind::Collider:
         case EditorSceneObjectKind::ReflectionProbe:
         case EditorSceneObjectKind::Archetype:
         case EditorSceneObjectKind::Group:
-        case EditorSceneObjectKind::Trigger:
             if (!document.applyWorldTransform(object->id, model)) {
                 return false;
             }
@@ -444,12 +438,10 @@ bool applyGizmoToSelectedObject(EditorSceneDocument& document,
 
         switch (obj->kind) {
         case EditorSceneObjectKind::Mesh:
-        case EditorSceneObjectKind::BoxCollider:
-        case EditorSceneObjectKind::CylinderCollider:
+        case EditorSceneObjectKind::Collider:
         case EditorSceneObjectKind::ReflectionProbe:
         case EditorSceneObjectKind::Archetype:
-        case EditorSceneObjectKind::Group:
-        case EditorSceneObjectKind::Trigger: {
+        case EditorSceneObjectKind::Group: {
             auto it = multiGizmoState.cachedTransforms.find(id);
             if (it == multiGizmoState.cachedTransforms.end()) continue;
             const glm::mat4 newWorld = before * localDelta * invBefore * it->second;
@@ -550,13 +542,17 @@ std::optional<std::uint64_t> commitPlacement(EditorSceneDocument& document,
         break;
     }
     case EditorPlacementKind::BoxCollider:
-        document.addBoxCollider(LevelBoxColliderPlacement{
+        document.addCollider(LevelColliderPlacement{
+            .shape = ColliderShape::Box,
+            .mode = ColliderMode::Solid,
             .position = position,
             .halfExtents = glm::vec3(0.5f),
         });
         break;
     case EditorPlacementKind::CylinderCollider:
-        document.addCylinderCollider(LevelCylinderColliderPlacement{
+        document.addCollider(LevelColliderPlacement{
+            .shape = ColliderShape::Cylinder,
+            .mode = ColliderMode::Solid,
             .position = position,
             .radius = 0.5f,
             .halfHeight = 0.9f,
@@ -683,11 +679,12 @@ bool tryBeginTriggerHandleDrag(TriggerHandleDragState& dragState,
 
     for (const auto id : selectedIds) {
         const EditorSceneObject* obj = document.findObject(id);
-        if (obj == nullptr || obj->kind != EditorSceneObjectKind::Trigger) continue;
-        const auto& trigger = std::get<TriggerPlacement>(obj->payload);
+        if (obj == nullptr || obj->kind != EditorSceneObjectKind::Collider) continue;
+        const auto& trigger = std::get<LevelColliderPlacement>(obj->payload);
+        if (trigger.mode != ColliderMode::Trigger && trigger.mode != ColliderMode::SolidAndTrigger) continue;
 
         for (int i = 0; i < 6; ++i) {
-            const float extent = (trigger.shape == TriggerShape::Box)
+            const float extent = (trigger.shape == ColliderShape::Box)
                 ? glm::dot(kAxes[i], trigger.halfExtents * glm::abs(kAxes[i]))
                 : trigger.radius;
             const glm::vec3 handleWorld = trigger.position + kAxes[i] * extent;
@@ -716,8 +713,9 @@ void updateTriggerHandleDrag(TriggerHandleDragState& dragState,
                              const glm::vec3& rayDir) {
     if (!dragState.active()) return;
     EditorSceneObject* obj = document.findObject(dragState.objectId);
-    if (obj == nullptr || obj->kind != EditorSceneObjectKind::Trigger) return;
-    auto& trigger = std::get<TriggerPlacement>(obj->payload);
+    if (obj == nullptr || obj->kind != EditorSceneObjectKind::Collider) return;
+    auto& trigger = std::get<LevelColliderPlacement>(obj->payload);
+    if (trigger.mode != ColliderMode::Trigger && trigger.mode != ColliderMode::SolidAndTrigger) return;
 
     // Determine signed axis direction
     glm::vec3 axis(0.0f);
@@ -740,7 +738,7 @@ void updateTriggerHandleDrag(TriggerHandleDragState& dragState,
     const glm::vec3 projected = cameraPos + rayDir * t;
     const float dist = glm::dot(projected - trigger.position, axis);
 
-    if (trigger.shape == TriggerShape::Box) {
+    if (trigger.shape == ColliderShape::Box) {
         // Update the specific halfExtent axis (use absolute axis index)
         const int axisIndex =
             (dragState.activeAxis == TriggerHandleAxis::PosX || dragState.activeAxis == TriggerHandleAxis::NegX) ? 0

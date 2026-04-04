@@ -25,11 +25,8 @@ LevelDef makeLevelDefFromState(const EditorSceneDocumentState& state) {
         case EditorSceneObjectKind::Light:
             level.lights.push_back(std::get<LevelLightPlacement>(object.payload));
             break;
-        case EditorSceneObjectKind::BoxCollider:
-            level.boxColliders.push_back(std::get<LevelBoxColliderPlacement>(object.payload));
-            break;
-        case EditorSceneObjectKind::CylinderCollider:
-            level.cylinderColliders.push_back(std::get<LevelCylinderColliderPlacement>(object.payload));
+        case EditorSceneObjectKind::Collider:
+            level.colliders.push_back(std::get<LevelColliderPlacement>(object.payload));
             break;
         case EditorSceneObjectKind::ReflectionProbe:
             level.reflectionProbes.push_back(std::get<LevelReflectionProbePlacement>(object.payload));
@@ -43,9 +40,6 @@ LevelDef makeLevelDefFromState(const EditorSceneDocumentState& state) {
             break;
         case EditorSceneObjectKind::Group:
             level.groups.push_back(std::get<LevelGroupNode>(object.payload));
-            break;
-        case EditorSceneObjectKind::Trigger:
-            level.triggers.push_back(std::get<TriggerPlacement>(object.payload));
             break;
         }
     }

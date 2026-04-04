@@ -38,7 +38,7 @@ entt::entity spawnDoorLeaf(LevelBuilder& builder,
     auto& registry = builder.registry();
 
     StaticColliderComponent collider;
-    collider.shape = ColliderShape::Box;
+    collider.shape = StaticColliderShape::Box;
     collider.position = closedCenter;
     collider.rotation = glm::vec3(0.0f, closedYaw, 0.0f);
     collider.halfExtents = leafScale * 0.5f;
@@ -216,7 +216,7 @@ entt::entity spawnSingleDoor(LevelBuilder& builder, const SingleDoorSpawnSpec& s
 
     // Attach StaticColliderComponent for physics blocking
     StaticColliderComponent collider;
-    collider.shape = ColliderShape::Box;
+    collider.shape = StaticColliderShape::Box;
     collider.position = leafWorldCenter;
     collider.rotation = glm::vec3(0.0f, spec.doorYawDegrees, 0.0f);
     collider.halfExtents = glm::vec3(0.42f, 0.96f, 0.05f);

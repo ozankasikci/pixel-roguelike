@@ -25,7 +25,7 @@ int main() {
 
     auto ground = registry.create();
     StaticColliderComponent groundCollider;
-    groundCollider.shape = ColliderShape::Box;
+    groundCollider.shape = StaticColliderShape::Box;
     groundCollider.position = glm::vec3(0.0f, -0.5f, 0.0f);
     groundCollider.halfExtents = glm::vec3(20.0f, 0.5f, 20.0f);
     registry.emplace<StaticColliderComponent>(ground, groundCollider);

@@ -2,7 +2,7 @@
 
 #include "engine/rendering/lighting/RenderLight.h"
 #include "game/behavior/ActionTypes.h"
-#include "game/behavior/TriggerComponent.h"
+#include "game/components/ColliderComponent.h"
 #include "game/rendering/EnvironmentProfile.h"
 
 #include <glm/glm.hpp>
@@ -22,14 +22,17 @@ struct InteractableDeclaration {
     float dotThreshold = 0.55f;
 };
 
-struct TriggerPlacement {
-    TriggerShape shape = TriggerShape::Box;
+struct LevelColliderPlacement {
+    ColliderShape shape  = ColliderShape::Box;
+    ColliderMode  mode   = ColliderMode::Solid;
     glm::vec3 position{0.0f};
+    glm::vec3 rotation{0.0f};
     glm::vec3 halfExtents{1.0f};
-    float radius = 1.0f;
+    float     radius     = 1.0f;
+    float     halfHeight = 1.0f;
+    bool      fireOnce   = false;
     std::string nodeId;
     std::string parentNodeId;
-    bool fireOnce = false;
     std::vector<BehaviorDeclaration> behaviors;
 };
 
@@ -59,23 +62,6 @@ struct LevelLightPlacement {
     float outerConeDegrees = 30.0f;
     bool castsShadows = false;
     std::vector<BehaviorDeclaration> behaviors;
-};
-
-struct LevelBoxColliderPlacement {
-    glm::vec3 position{0.0f};
-    glm::vec3 rotation{0.0f};
-    std::string nodeId;
-    std::string parentNodeId;
-    glm::vec3 halfExtents{0.0f};
-};
-
-struct LevelCylinderColliderPlacement {
-    glm::vec3 position{0.0f};
-    glm::vec3 rotation{0.0f};
-    std::string nodeId;
-    std::string parentNodeId;
-    float radius = 0.0f;
-    float halfHeight = 0.0f;
 };
 
 struct LevelReflectionProbePlacement {
@@ -117,14 +103,12 @@ struct LevelDef {
     EnvironmentProfile environmentProfile = EnvironmentProfile::Default;
     std::vector<LevelMeshPlacement> meshes;
     std::vector<LevelLightPlacement> lights;
-    std::vector<LevelBoxColliderPlacement> boxColliders;
-    std::vector<LevelCylinderColliderPlacement> cylinderColliders;
+    std::vector<LevelColliderPlacement> colliders;
     std::vector<LevelReflectionProbePlacement> reflectionProbes;
     LevelPlayerSpawn playerSpawn;
     bool hasPlayerSpawn = false;
     std::vector<LevelArchetypePlacement> archetypes;
     std::vector<LevelGroupNode> groups;
-    std::vector<TriggerPlacement> triggers;
 };
 
 LevelDef loadLevelDef(const std::string& path);

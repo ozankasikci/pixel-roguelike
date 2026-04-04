@@ -177,8 +177,7 @@ int selectionPriority(const EditorSelectionHandle& handle) {
         return 2;
     case EditorSceneObjectKind::PlayerSpawn:
         return 3;
-    case EditorSceneObjectKind::BoxCollider:
-    case EditorSceneObjectKind::CylinderCollider:
+    case EditorSceneObjectKind::Collider:
         return 4;
     }
     return 5;
@@ -243,19 +242,18 @@ std::vector<EditorSelectionHandle> buildEditorSelectionHandles(const EditorScene
             handle.radius = light.type == LightType::Directional ? 0.4f : std::max(0.25f, light.radius * 0.08f);
             break;
         }
-        case EditorSceneObjectKind::BoxCollider: {
-            handle.shape = EditorSelectionShape::OrientedBox;
-            handle.localToWorld = document.worldTransformMatrix(object.id);
-            handle.halfExtents = glm::vec3(0.5f);
-            handle.anchor = glm::vec3(handle.localToWorld[3]);
-            handle.placementSurface = true;
-            break;
-        }
-        case EditorSceneObjectKind::CylinderCollider: {
-            handle.shape = EditorSelectionShape::Cylinder;
-            handle.localToWorld = document.worldTransformMatrix(object.id);
-            handle.radius = 0.5f;
-            handle.halfHeight = 0.5f;
+        case EditorSceneObjectKind::Collider: {
+            const auto& collider = std::get<LevelColliderPlacement>(object.payload);
+            if (collider.shape == ColliderShape::Cylinder || collider.shape == ColliderShape::Capsule) {
+                handle.shape = EditorSelectionShape::Cylinder;
+                handle.localToWorld = document.worldTransformMatrix(object.id);
+                handle.radius = 0.5f;
+                handle.halfHeight = 0.5f;
+            } else {
+                handle.shape = EditorSelectionShape::OrientedBox;
+                handle.localToWorld = document.worldTransformMatrix(object.id);
+                handle.halfExtents = glm::vec3(0.5f);
+            }
             handle.anchor = glm::vec3(handle.localToWorld[3]);
             handle.placementSurface = true;
             break;

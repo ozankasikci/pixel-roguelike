@@ -1,10 +1,10 @@
 #pragma once
 #include <glm/glm.hpp>
 
-enum class ColliderShape { Box, Cylinder };
+enum class StaticColliderShape { Box, Cylinder };
 
 struct StaticColliderComponent {
-    ColliderShape shape = ColliderShape::Box;
+    StaticColliderShape shape = StaticColliderShape::Box;
     glm::vec3 position{0.0f};       // world-space center of the collider
     glm::vec3 rotation{0.0f};       // euler angles in degrees
     glm::vec3 halfExtents{0.0f};    // for Box: half-sizes on each axis

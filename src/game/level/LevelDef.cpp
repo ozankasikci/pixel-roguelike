@@ -130,8 +130,7 @@ struct LevelNodeRef {
     enum class Kind {
         Mesh,
         Light,
-        BoxCollider,
-        CylinderCollider,
+        Collider,
         ReflectionProbe,
         PlayerSpawn,
         Archetype,
@@ -486,7 +485,7 @@ LevelDef loadLevelDef(const std::string& path) {
     }
 
     // Track which entity type we're currently appending sub-lines to
-    enum class CurrentEntityKind { None, Mesh, Light, Trigger };
+    enum class CurrentEntityKind { None, Mesh, Light, Collider };
     CurrentEntityKind currentKind = CurrentEntityKind::None;
     std::size_t currentIndex = 0;
 
@@ -506,8 +505,8 @@ LevelDef loadLevelDef(const std::string& path) {
                 data.meshes[currentIndex].behaviors.push_back(std::move(decl));
             } else if (currentKind == CurrentEntityKind::Light) {
                 data.lights[currentIndex].behaviors.push_back(std::move(decl));
-            } else if (currentKind == CurrentEntityKind::Trigger) {
-                data.triggers[currentIndex].behaviors.push_back(std::move(decl));
+            } else if (currentKind == CurrentEntityKind::Collider) {
+                data.colliders[currentIndex].behaviors.push_back(std::move(decl));
             }
             return;
         }
@@ -726,7 +725,9 @@ LevelDef loadLevelDef(const std::string& path) {
         }
 
         if (kind == "collider_box") {
-            LevelBoxColliderPlacement placement;
+            LevelColliderPlacement placement;
+            placement.shape = ColliderShape::Box;
+            placement.mode = ColliderMode::Solid;
             if (!(stream >> placement.position.x >> placement.position.y >> placement.position.z
                          >> placement.halfExtents.x >> placement.halfExtents.y >> placement.halfExtents.z)) {
                 throwParseError(path, lineNumber, "invalid collider_box record");
@@ -759,12 +760,14 @@ LevelDef loadLevelDef(const std::string& path) {
                 throwParseError(path, lineNumber, "invalid collider_box metadata");
             }
             currentKind = CurrentEntityKind::None;
-            data.boxColliders.push_back(placement);
+            data.colliders.push_back(placement);
             continue;
         }
 
         if (kind == "collider_cylinder") {
-            LevelCylinderColliderPlacement placement;
+            LevelColliderPlacement placement;
+            placement.shape = ColliderShape::Cylinder;
+            placement.mode = ColliderMode::Solid;
             if (!(stream >> placement.position.x >> placement.position.y >> placement.position.z
                          >> placement.radius >> placement.halfHeight)) {
                 throwParseError(path, lineNumber, "invalid collider_cylinder record");
@@ -797,7 +800,85 @@ LevelDef loadLevelDef(const std::string& path) {
                 throwParseError(path, lineNumber, "invalid collider_cylinder metadata");
             }
             currentKind = CurrentEntityKind::None;
-            data.cylinderColliders.push_back(placement);
+            data.colliders.push_back(placement);
+            continue;
+        }
+
+        if (kind == "collider") {
+            // New unified format: collider <shape> <mode> <px> <py> <pz> <shape_params...> [options]
+            LevelColliderPlacement placement;
+            std::string shapeToken, modeToken;
+            if (!(stream >> shapeToken >> modeToken)) {
+                throwParseError(path, lineNumber, "invalid collider record: missing shape/mode tokens");
+            }
+            // Parse shape
+            if (shapeToken == "box")          { placement.shape = ColliderShape::Box; }
+            else if (shapeToken == "sphere")   { placement.shape = ColliderShape::Sphere; }
+            else if (shapeToken == "cylinder") { placement.shape = ColliderShape::Cylinder; }
+            else if (shapeToken == "capsule")  { placement.shape = ColliderShape::Capsule; }
+            else { throwParseError(path, lineNumber, "unknown collider shape '" + shapeToken + "'"); }
+            // Parse mode
+            if (modeToken == "solid")                 { placement.mode = ColliderMode::Solid; }
+            else if (modeToken == "trigger")           { placement.mode = ColliderMode::Trigger; }
+            else if (modeToken == "solidandtrigger")   { placement.mode = ColliderMode::SolidAndTrigger; }
+            else { throwParseError(path, lineNumber, "unknown collider mode '" + modeToken + "'"); }
+            // Parse position
+            if (!(stream >> placement.position.x >> placement.position.y >> placement.position.z)) {
+                throwParseError(path, lineNumber, "invalid collider record: missing position");
+            }
+            // Parse shape-specific params
+            if (placement.shape == ColliderShape::Box) {
+                if (!(stream >> placement.halfExtents.x >> placement.halfExtents.y >> placement.halfExtents.z)) {
+                    throwParseError(path, lineNumber, "invalid collider box: missing halfExtents");
+                }
+            } else if (placement.shape == ColliderShape::Sphere) {
+                if (!(stream >> placement.radius)) {
+                    throwParseError(path, lineNumber, "invalid collider sphere: missing radius");
+                }
+            } else {
+                // Cylinder or Capsule
+                if (!(stream >> placement.radius >> placement.halfHeight)) {
+                    throwParseError(path, lineNumber, "invalid collider cylinder/capsule: missing radius/halfHeight");
+                }
+            }
+            // Parse optional modifiers
+            const auto tokens = collectRemainingTokens(stream);
+            for (std::size_t index = 0; index < tokens.size();) {
+                if (tokens[index] == "rotation") {
+                    if (!tryParseVec3Tokens(tokens, index + 1, placement.rotation)) {
+                        throwParseError(path, lineNumber, "invalid collider rotation");
+                    }
+                    index += 4;
+                    continue;
+                }
+                if (tokens[index] == "node") {
+                    if (index + 1 >= tokens.size()) throwParseError(path, lineNumber, "missing collider node id");
+                    placement.nodeId = tokens[index + 1];
+                    index += 2;
+                    continue;
+                }
+                if (tokens[index] == "parent") {
+                    if (index + 1 >= tokens.size()) throwParseError(path, lineNumber, "missing collider parent node id");
+                    placement.parentNodeId = tokens[index + 1];
+                    index += 2;
+                    continue;
+                }
+                if (tokens[index] == "fire_once") {
+                    placement.fireOnce = true;
+                    index += 1;
+                    continue;
+                }
+                throwParseError(path, lineNumber, "invalid collider metadata '" + tokens[index] + "'");
+            }
+            const bool isTriggerLike = (placement.mode == ColliderMode::Trigger
+                                        || placement.mode == ColliderMode::SolidAndTrigger);
+            if (isTriggerLike) {
+                currentKind = CurrentEntityKind::Collider;
+                currentIndex = data.colliders.size();
+            } else {
+                currentKind = CurrentEntityKind::None;
+            }
+            data.colliders.push_back(std::move(placement));
             continue;
         }
 
@@ -936,8 +1017,10 @@ LevelDef loadLevelDef(const std::string& path) {
         }
 
         if (kind == "trigger_box") {
-            TriggerPlacement placement;
-            placement.shape = TriggerShape::Box;
+            // Legacy format — read as unified collider with Trigger mode
+            LevelColliderPlacement placement;
+            placement.shape = ColliderShape::Box;
+            placement.mode = ColliderMode::Trigger;
             if (!(stream >> placement.position.x >> placement.position.y >> placement.position.z
                          >> placement.halfExtents.x >> placement.halfExtents.y >> placement.halfExtents.z)) {
                 throwParseError(path, lineNumber, "invalid trigger_box record");
@@ -963,15 +1046,17 @@ LevelDef loadLevelDef(const std::string& path) {
                 }
                 throwParseError(path, lineNumber, "invalid trigger_box metadata");
             }
-            currentKind = CurrentEntityKind::Trigger;
-            currentIndex = data.triggers.size();
-            data.triggers.push_back(std::move(placement));
+            currentKind = CurrentEntityKind::Collider;
+            currentIndex = data.colliders.size();
+            data.colliders.push_back(std::move(placement));
             continue;
         }
 
         if (kind == "trigger_sphere") {
-            TriggerPlacement placement;
-            placement.shape = TriggerShape::Sphere;
+            // Legacy format — read as unified collider with Trigger mode
+            LevelColliderPlacement placement;
+            placement.shape = ColliderShape::Sphere;
+            placement.mode = ColliderMode::Trigger;
             if (!(stream >> placement.position.x >> placement.position.y >> placement.position.z
                          >> placement.radius)) {
                 throwParseError(path, lineNumber, "invalid trigger_sphere record");
@@ -997,9 +1082,9 @@ LevelDef loadLevelDef(const std::string& path) {
                 }
                 throwParseError(path, lineNumber, "invalid trigger_sphere metadata");
             }
-            currentKind = CurrentEntityKind::Trigger;
-            currentIndex = data.triggers.size();
-            data.triggers.push_back(std::move(placement));
+            currentKind = CurrentEntityKind::Collider;
+            currentIndex = data.colliders.size();
+            data.colliders.push_back(std::move(placement));
             continue;
         }
 
@@ -1015,8 +1100,7 @@ LevelDef resolveLevelHierarchy(const LevelDef& data) {
     std::vector<LevelNodeRef> refs;
     refs.reserve(data.meshes.size()
                  + data.lights.size()
-                 + data.boxColliders.size()
-                 + data.cylinderColliders.size()
+                 + data.colliders.size()
                  + data.reflectionProbes.size()
                  + data.archetypes.size()
                  + data.groups.size()
@@ -1028,11 +1112,8 @@ LevelDef resolveLevelHierarchy(const LevelDef& data) {
     for (std::size_t i = 0; i < data.lights.size(); ++i) {
         refs.push_back(LevelNodeRef{LevelNodeRef::Kind::Light, i, data.lights[i].nodeId, data.lights[i].parentNodeId});
     }
-    for (std::size_t i = 0; i < data.boxColliders.size(); ++i) {
-        refs.push_back(LevelNodeRef{LevelNodeRef::Kind::BoxCollider, i, data.boxColliders[i].nodeId, data.boxColliders[i].parentNodeId});
-    }
-    for (std::size_t i = 0; i < data.cylinderColliders.size(); ++i) {
-        refs.push_back(LevelNodeRef{LevelNodeRef::Kind::CylinderCollider, i, data.cylinderColliders[i].nodeId, data.cylinderColliders[i].parentNodeId});
+    for (std::size_t i = 0; i < data.colliders.size(); ++i) {
+        refs.push_back(LevelNodeRef{LevelNodeRef::Kind::Collider, i, data.colliders[i].nodeId, data.colliders[i].parentNodeId});
     }
     for (std::size_t i = 0; i < data.reflectionProbes.size(); ++i) {
         refs.push_back(LevelNodeRef{LevelNodeRef::Kind::ReflectionProbe, i, data.reflectionProbes[i].nodeId, data.reflectionProbes[i].parentNodeId});
@@ -1071,12 +1152,12 @@ LevelDef resolveLevelHierarchy(const LevelDef& data) {
             }
             return makeTransformMatrix(placement.position, glm::vec3(0.0f), glm::vec3(1.0f));
         }
-        case LevelNodeRef::Kind::BoxCollider: {
-            const auto& placement = data.boxColliders[ref.index];
-            return makeTransformMatrix(placement.position, placement.rotation, placement.halfExtents * 2.0f);
-        }
-        case LevelNodeRef::Kind::CylinderCollider: {
-            const auto& placement = data.cylinderColliders[ref.index];
+        case LevelNodeRef::Kind::Collider: {
+            const auto& placement = data.colliders[ref.index];
+            if (placement.shape == ColliderShape::Box) {
+                return makeTransformMatrix(placement.position, placement.rotation, placement.halfExtents * 2.0f);
+            }
+            // Sphere, Cylinder, Capsule — use radius-based scale
             return makeTransformMatrix(placement.position,
                                        placement.rotation,
                                        glm::vec3(placement.radius * 2.0f, placement.halfHeight * 2.0f, placement.radius * 2.0f));
@@ -1150,24 +1231,18 @@ LevelDef resolveLevelHierarchy(const LevelDef& data) {
                                                    : glm::vec3(0.0f, 0.0f, -1.0f));
             break;
         }
-        case LevelNodeRef::Kind::BoxCollider: {
-            auto& placement = resolved.boxColliders[refs[idx].index];
+        case LevelNodeRef::Kind::Collider: {
+            auto& placement = resolved.colliders[refs[idx].index];
             glm::vec3 position(0.0f), rotation(0.0f), scale(1.0f);
             if (decomposeTransformMatrix(worldMatrices[idx], position, rotation, scale)) {
                 placement.position = position;
                 placement.rotation = rotation;
-                placement.halfExtents = glm::max(scale * 0.5f, glm::vec3(0.001f));
-            }
-            break;
-        }
-        case LevelNodeRef::Kind::CylinderCollider: {
-            auto& placement = resolved.cylinderColliders[refs[idx].index];
-            glm::vec3 position(0.0f), rotation(0.0f), scale(1.0f);
-            if (decomposeTransformMatrix(worldMatrices[idx], position, rotation, scale)) {
-                placement.position = position;
-                placement.rotation = rotation;
-                placement.radius = std::max(0.001f, (std::abs(scale.x) + std::abs(scale.z)) * 0.25f);
-                placement.halfHeight = std::max(0.001f, std::abs(scale.y) * 0.5f);
+                if (placement.shape == ColliderShape::Box) {
+                    placement.halfExtents = glm::max(scale * 0.5f, glm::vec3(0.001f));
+                } else {
+                    placement.radius = std::max(0.001f, (std::abs(scale.x) + std::abs(scale.z)) * 0.25f);
+                    placement.halfHeight = std::max(0.001f, std::abs(scale.y) * 0.5f);
+                }
             }
             break;
         }
@@ -1303,39 +1378,49 @@ std::string serializeLevelDef(const LevelDef& data) {
         serializeBehaviors(out, placement.behaviors);
     }
 
-    for (const auto& placement : data.boxColliders) {
-        out << "collider_box "
-            << formatFloat(placement.position.x) << ' '
-            << formatFloat(placement.position.y) << ' '
-            << formatFloat(placement.position.z) << ' '
-            << formatFloat(placement.halfExtents.x) << ' '
-            << formatFloat(placement.halfExtents.y) << ' '
-            << formatFloat(placement.halfExtents.z);
-        if (hasNonZeroVec3(placement.rotation)) {
-            out << " rotation "
-                << formatFloat(placement.rotation.x) << ' '
-                << formatFloat(placement.rotation.y) << ' '
-                << formatFloat(placement.rotation.z);
+    for (const auto& c : data.colliders) {
+        out << "collider ";
+        // shape token
+        switch (c.shape) {
+            case ColliderShape::Box:      out << "box ";      break;
+            case ColliderShape::Sphere:   out << "sphere ";   break;
+            case ColliderShape::Cylinder: out << "cylinder "; break;
+            case ColliderShape::Capsule:  out << "capsule ";  break;
         }
-        appendNodeMetadata(out, placement.nodeId, placement.parentNodeId);
-        out << '\n';
-    }
-
-    for (const auto& placement : data.cylinderColliders) {
-        out << "collider_cylinder "
-            << formatFloat(placement.position.x) << ' '
-            << formatFloat(placement.position.y) << ' '
-            << formatFloat(placement.position.z) << ' '
-            << formatFloat(placement.radius) << ' '
-            << formatFloat(placement.halfHeight);
-        if (hasNonZeroVec3(placement.rotation)) {
-            out << " rotation "
-                << formatFloat(placement.rotation.x) << ' '
-                << formatFloat(placement.rotation.y) << ' '
-                << formatFloat(placement.rotation.z);
+        // mode token
+        switch (c.mode) {
+            case ColliderMode::Solid:          out << "solid ";          break;
+            case ColliderMode::Trigger:        out << "trigger ";        break;
+            case ColliderMode::SolidAndTrigger: out << "solidandtrigger "; break;
         }
-        appendNodeMetadata(out, placement.nodeId, placement.parentNodeId);
+        // position
+        out << formatFloat(c.position.x) << ' '
+            << formatFloat(c.position.y) << ' '
+            << formatFloat(c.position.z) << ' ';
+        // shape-specific params
+        if (c.shape == ColliderShape::Box) {
+            out << formatFloat(c.halfExtents.x) << ' '
+                << formatFloat(c.halfExtents.y) << ' '
+                << formatFloat(c.halfExtents.z);
+        } else if (c.shape == ColliderShape::Sphere) {
+            out << formatFloat(c.radius);
+        } else {
+            // Cylinder or Capsule
+            out << formatFloat(c.radius) << ' ' << formatFloat(c.halfHeight);
+        }
+        // optional modifiers
+        if (hasNonZeroVec3(c.rotation)) {
+            out << " rotation "
+                << formatFloat(c.rotation.x) << ' '
+                << formatFloat(c.rotation.y) << ' '
+                << formatFloat(c.rotation.z);
+        }
+        appendNodeMetadata(out, c.nodeId, c.parentNodeId);
+        if (c.fireOnce) {
+            out << " fire_once";
+        }
         out << '\n';
+        serializeBehaviors(out, c.behaviors);
     }
 
     for (const auto& placement : data.reflectionProbes) {
@@ -1386,30 +1471,6 @@ std::string serializeLevelDef(const LevelDef& data) {
             << formatFloat(placement.rotation.z);
         appendNodeMetadata(out, placement.nodeId, placement.parentNodeId);
         out << '\n';
-    }
-
-    for (const auto& placement : data.triggers) {
-        if (placement.shape == TriggerShape::Box) {
-            out << "trigger_box "
-                << formatFloat(placement.position.x) << ' '
-                << formatFloat(placement.position.y) << ' '
-                << formatFloat(placement.position.z) << ' '
-                << formatFloat(placement.halfExtents.x) << ' '
-                << formatFloat(placement.halfExtents.y) << ' '
-                << formatFloat(placement.halfExtents.z);
-        } else {
-            out << "trigger_sphere "
-                << formatFloat(placement.position.x) << ' '
-                << formatFloat(placement.position.y) << ' '
-                << formatFloat(placement.position.z) << ' '
-                << formatFloat(placement.radius);
-        }
-        if (placement.fireOnce) {
-            out << " fire_once";
-        }
-        appendNodeMetadata(out, placement.nodeId, placement.parentNodeId);
-        out << '\n';
-        serializeBehaviors(out, placement.behaviors);
     }
 
     return out.str();

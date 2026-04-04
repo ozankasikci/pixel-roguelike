@@ -40,7 +40,7 @@ int main() {
     {
         EditorSelectionHandle collider;
         collider.objectId = 303;
-        collider.objectKind = EditorSceneObjectKind::CylinderCollider;
+        collider.objectKind = EditorSceneObjectKind::Collider;
         collider.shape = EditorSelectionShape::Cylinder;
         collider.placementSurface = true;
         collider.localToWorld = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f));
@@ -59,7 +59,7 @@ int main() {
     {
         EditorSelectionHandle collider;
         collider.objectId = 401;
-        collider.objectKind = EditorSceneObjectKind::BoxCollider;
+        collider.objectKind = EditorSceneObjectKind::Collider;
         collider.shape = EditorSelectionShape::WorldAabb;
         collider.worldMin = glm::vec3(-1.0f, -1.0f, -1.0f);
         collider.worldMax = glm::vec3(1.0f, 1.0f, 1.0f);

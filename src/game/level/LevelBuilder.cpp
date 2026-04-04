@@ -2,13 +2,12 @@
 
 #include "game/behavior/BehaviorComponent.h"
 #include "game/behavior/NodeIdComponent.h"
-#include "game/behavior/TriggerComponent.h"
+#include "game/components/ColliderComponent.h"
 #include "game/components/InteractableComponent.h"
 #include "game/components/LightComponent.h"
 #include "game/components/MeshComponent.h"
 #include "game/components/ReflectionProbeComponent.h"
 #include "game/rendering/RetroPalette.h"
-#include "game/components/StaticColliderComponent.h"
 #include "game/components/TransformComponent.h"
 
 #include "engine/core/MathUtils.h"
@@ -195,31 +194,29 @@ entt::entity LevelBuilder::addLight(const glm::vec3& position,
     return entity;
 }
 
-entt::entity LevelBuilder::addBoxCollider(const glm::vec3& position,
-                                          const glm::vec3& halfExtents,
-                                          const glm::vec3& rotation) {
-    auto entity = createEntity();
-    StaticColliderComponent collider;
-    collider.shape = ColliderShape::Box;
-    collider.position = position;
-    collider.rotation = rotation;
-    collider.halfExtents = halfExtents;
-    context_.registry.emplace<StaticColliderComponent>(entity, collider);
-    return entity;
-}
+entt::entity LevelBuilder::addCollider(const LevelColliderPlacement& placement) {
+    auto entity = createTransformEntity(placement.position, placement.rotation);
 
-entt::entity LevelBuilder::addCylinderCollider(const glm::vec3& position,
-                                               float radius,
-                                               float halfHeight,
-                                               const glm::vec3& rotation) {
-    auto entity = createEntity();
-    StaticColliderComponent collider;
-    collider.shape = ColliderShape::Cylinder;
-    collider.position = position;
-    collider.rotation = rotation;
-    collider.radius = radius;
-    collider.halfHeight = halfHeight;
-    context_.registry.emplace<StaticColliderComponent>(entity, collider);
+    ColliderComponent collider;
+    collider.shape = placement.shape;
+    collider.mode = placement.mode;
+    collider.position = placement.position;
+    collider.rotation = placement.rotation;
+    collider.halfExtents = placement.halfExtents;
+    collider.radius = placement.radius;
+    collider.halfHeight = placement.halfHeight;
+    collider.fireOnce = placement.fireOnce;
+    collider.enabled = true;
+    context_.registry.emplace<ColliderComponent>(entity, collider);
+
+    if (!placement.nodeId.empty()) {
+        attachNodeId(entity, placement.nodeId);
+    }
+
+    if (!placement.behaviors.empty()) {
+        attachBehaviors(entity, placement.behaviors);
+    }
+
     return entity;
 }
 
@@ -279,21 +276,3 @@ void LevelBuilder::attachInteractable(entt::entity entity, const InteractableDec
     ic.interactDotThreshold = decl.dotThreshold;
 }
 
-entt::entity LevelBuilder::addTrigger(const TriggerPlacement& placement) {
-    auto entity = createTransformEntity(placement.position);
-
-    TriggerComponent trigger;
-    trigger.shape = placement.shape;
-    trigger.halfExtents = placement.halfExtents;
-    trigger.radius = placement.radius;
-    trigger.fireOnce = placement.fireOnce;
-    context_.registry.emplace<TriggerComponent>(entity, trigger);
-
-    attachNodeId(entity, placement.nodeId);
-
-    if (!placement.behaviors.empty()) {
-        attachBehaviors(entity, placement.behaviors);
-    }
-
-    return entity;
-}

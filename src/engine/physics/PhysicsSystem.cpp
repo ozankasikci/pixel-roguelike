@@ -154,10 +154,10 @@ PhysicsSystem::~PhysicsSystem() = default;
 namespace {
 
 JPH::ShapeRefC makeColliderShape(const StaticColliderComponent& collider) {
-    if (collider.shape == ColliderShape::Box) {
+    if (collider.shape == StaticColliderShape::Box) {
         return new JPH::BoxShape(toJolt(collider.halfExtents));
     }
-    if (collider.shape == ColliderShape::Cylinder) {
+    if (collider.shape == StaticColliderShape::Cylinder) {
         return new JPH::CylinderShape(collider.halfHeight, collider.radius);
     }
     return nullptr;

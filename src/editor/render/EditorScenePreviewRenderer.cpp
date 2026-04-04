@@ -8,6 +8,7 @@
 #include "engine/rendering/geometry/MeshLibrary.h"
 #include "engine/rendering/lighting/ShadowMap.h"
 #include "game/behavior/TriggerComponent.h"
+#include "game/components/ColliderComponent.h"
 #include "game/components/LightComponent.h"
 #include "game/components/MeshComponent.h"
 #include "game/components/StaticColliderComponent.h"
@@ -137,8 +138,11 @@ void appendHelperObjects(std::vector<RenderObject>& objects,
     Mesh* cube = world.meshLibrary().get("cube");
     Mesh* cylinder = world.meshLibrary().get("cylinder");
     if (showColliders) {
-        auto colliderView = world.registry().view<StaticColliderComponent>();
+        auto colliderView = world.registry().view<ColliderComponent>();
         for (auto [entity, collider] : colliderView.each()) {
+            if (collider.mode == ColliderMode::Trigger) {
+                continue; // triggers rendered separately
+            }
             const std::uint64_t ownerId = world.ownerMap().contains(entity) ? world.ownerMap().at(entity) : 0;
             const bool selected = ownerId != 0 && isSelected(selectedIds, ownerId);
             const glm::vec3 tint = selected ? glm::vec3(0.48f, 1.00f, 0.58f) : glm::vec3(0.20f, 0.92f, 0.28f);
@@ -153,7 +157,7 @@ void appendHelperObjects(std::vector<RenderObject>& objects,
                     true,
                     selected ? 3.0f : 2.0f
                 });
-            } else if (collider.shape == ColliderShape::Cylinder && cylinder != nullptr) {
+            } else if ((collider.shape == ColliderShape::Cylinder || collider.shape == ColliderShape::Capsule) && cylinder != nullptr) {
                 objects.push_back(RenderObject{
                     cylinder,
                     makeModelMatrix(collider.position, glm::vec3(collider.radius, collider.halfHeight * 2.0f, collider.radius), collider.rotation),
@@ -199,20 +203,21 @@ void appendHelperObjects(std::vector<RenderObject>& objects,
         }
     }
 
-    // Trigger volume visualization (D-14): semi-transparent wireframe in the editor viewport
-    // Box triggers: green wireframe; Sphere triggers: blue wireframe (approximated as scaled cube)
+    // Trigger volume visualization: semi-transparent wireframe in the editor viewport
+    // Trigger-mode colliders: green wireframe (box) or blue (non-box)
     if (showTriggers && cube != nullptr) {
         for (const auto& object : document.objects()) {
-            if (object.kind != EditorSceneObjectKind::Trigger) continue;
-            const auto& trigger = std::get<TriggerPlacement>(object.payload);
+            if (object.kind != EditorSceneObjectKind::Collider) continue;
+            const auto& collider = std::get<LevelColliderPlacement>(object.payload);
+            if (collider.mode != ColliderMode::Trigger && collider.mode != ColliderMode::SolidAndTrigger) continue;
             const bool selected = isSelected(selectedIds, object.id);
-            if (trigger.shape == TriggerShape::Box) {
+            if (collider.shape == ColliderShape::Box) {
                 const glm::vec3 tint = selected
                     ? glm::vec3(0.40f, 1.00f, 0.40f)
                     : glm::vec3(0.20f, 0.80f, 0.20f);
                 objects.push_back(RenderObject{
                     cube,
-                    makeModelMatrix(trigger.position, trigger.halfExtents * 2.0f),
+                    makeModelMatrix(collider.position, collider.halfExtents * 2.0f),
                     tint,
                     materials.resolve("metal_default"),
                     true,   // wireframe
@@ -226,7 +231,7 @@ void appendHelperObjects(std::vector<RenderObject>& objects,
                     : glm::vec3(0.20f, 0.40f, 0.80f);
                 objects.push_back(RenderObject{
                     cube,
-                    makeModelMatrix(trigger.position, glm::vec3(trigger.radius * 2.0f)),
+                    makeModelMatrix(collider.position, glm::vec3(collider.radius * 2.0f)),
                     tint,
                     materials.resolve("metal_default"),
                     true,   // wireframe
@@ -236,7 +241,7 @@ void appendHelperObjects(std::vector<RenderObject>& objects,
                 });
             }
 
-            // Render resize handles for selected triggers (per D-02)
+            // Render resize handles for selected trigger-mode colliders
             if (selected) {
                 const float handleSize = 0.08f; // world-space handle size
                 const glm::vec3 axes[] = {
@@ -245,10 +250,10 @@ void appendHelperObjects(std::vector<RenderObject>& objects,
                     {0, 0, 1}, {0, 0, -1},
                 };
                 for (const auto& axis : axes) {
-                    const float extent = (trigger.shape == TriggerShape::Box)
-                        ? glm::dot(axis, trigger.halfExtents * glm::abs(axis))
-                        : trigger.radius;
-                    const glm::vec3 handlePos = trigger.position + axis * extent;
+                    const float extent = (collider.shape == ColliderShape::Box)
+                        ? glm::dot(axis, collider.halfExtents * glm::abs(axis))
+                        : collider.radius;
+                    const glm::vec3 handlePos = collider.position + axis * extent;
                     objects.push_back(RenderObject{
                         cube,
                         makeModelMatrix(handlePos, glm::vec3(handleSize)),

@@ -86,12 +86,8 @@ void LevelLoader::load(const LevelLoadRequest& request, const LevelLoadArgs& arg
         }
     }
 
-    for (const auto& placement : level.boxColliders) {
-        builder.addBoxCollider(placement.position, placement.halfExtents, placement.rotation);
-    }
-
-    for (const auto& placement : level.cylinderColliders) {
-        builder.addCylinderCollider(placement.position, placement.radius, placement.halfHeight, placement.rotation);
+    for (const auto& placement : level.colliders) {
+        builder.addCollider(placement);
     }
 
     for (const auto& placement : level.reflectionProbes) {
@@ -109,10 +105,6 @@ void LevelLoader::load(const LevelLoadRequest& request, const LevelLoadArgs& arg
             continue;
         }
         (void)spawnGameplayPrefab(builder, instantiateGameplayArchetype(*archetype, placement.position, placement.yawDegrees));
-    }
-
-    for (const auto& placement : level.triggers) {
-        builder.addTrigger(placement);
     }
 
     // Build NodeIndex from all entities that received a NodeIdComponent

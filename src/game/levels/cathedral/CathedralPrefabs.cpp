@@ -35,5 +35,10 @@ void spawnCathedralSideShrineBay(LevelBuilder& builder, float side, float halfW,
 
 void spawnCathedralDaisStep(LevelBuilder& builder, const glm::vec3& center, const glm::vec3& scale) {
     builder.addMesh("cube", center, scale);
-    builder.addBoxCollider(center, scale * 0.5f);
+    LevelColliderPlacement cp;
+    cp.shape = ColliderShape::Box;
+    cp.mode = ColliderMode::Solid;
+    cp.position = center;
+    cp.halfExtents = scale * 0.5f;
+    builder.addCollider(cp);
 }

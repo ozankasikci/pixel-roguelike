@@ -775,8 +775,7 @@ void renderSceneAssetInspector(const EditorInspectedAsset& asset) {
         ImGui::Text("Environment: %s", level.environmentId.c_str());
         ImGui::Text("Meshes: %zu", level.meshes.size());
         ImGui::Text("Lights: %zu", level.lights.size());
-        ImGui::Text("Box Colliders: %zu", level.boxColliders.size());
-        ImGui::Text("Cylinder Colliders: %zu", level.cylinderColliders.size());
+        ImGui::Text("Colliders: %zu", level.colliders.size());
         ImGui::Text("Archetypes: %zu", level.archetypes.size());
         ImGui::Text("Player Spawn: %s", level.hasPlayerSpawn ? "Yes" : "No");
     } catch (const std::exception& ex) {
@@ -1303,26 +1302,23 @@ void renderSceneSelectionInspector(EditorSceneDocument& document,
         renderBehaviorSections(light.behaviors, document, commandStack);
         return;  // table already ended above
     }
-    case EditorSceneObjectKind::BoxCollider: {
-        auto& box = std::get<LevelBoxColliderPlacement>(object->payload);
+    case EditorSceneObjectKind::Collider: {
+        auto& collider = std::get<LevelColliderPlacement>(object->payload);
         auto beforeState = document.captureState();
-        trackSceneItem(beforeState, "Move Box Collider", renderInspectorPropertyRow("Position", [&]() { return editVec3("##value", box.position); }));
-        beforeState = document.captureState();
-        const bool extentsChanged = renderInspectorPropertyRow("Half Extents", [&]() { return editVec3("##value", box.halfExtents, 0.02f); });
-        if (extentsChanged) {
-            box.halfExtents = glm::max(box.halfExtents, glm::vec3(0.01f));
+        trackSceneItem(beforeState, "Move Collider", renderInspectorPropertyRow("Position", [&]() { return editVec3("##value", collider.position); }));
+        if (collider.shape == ColliderShape::Box) {
+            beforeState = document.captureState();
+            const bool extentsChanged = renderInspectorPropertyRow("Half Extents", [&]() { return editVec3("##value", collider.halfExtents, 0.02f); });
+            if (extentsChanged) {
+                collider.halfExtents = glm::max(collider.halfExtents, glm::vec3(0.01f));
+            }
+            trackSceneItem(beforeState, "Resize Collider", extentsChanged);
+        } else {
+            beforeState = document.captureState();
+            trackSceneItem(beforeState, "Adjust Collider Radius", renderInspectorPropertyRow("Radius", [&]() { return ImGui::DragFloat("##value", &collider.radius, 0.02f, 0.05f, 20.0f, "%.2f"); }));
+            beforeState = document.captureState();
+            trackSceneItem(beforeState, "Adjust Collider Height", renderInspectorPropertyRow("Half Height", [&]() { return ImGui::DragFloat("##value", &collider.halfHeight, 0.02f, 0.05f, 20.0f, "%.2f"); }));
         }
-        trackSceneItem(beforeState, "Resize Box Collider", extentsChanged);
-        break;
-    }
-    case EditorSceneObjectKind::CylinderCollider: {
-        auto& cylinder = std::get<LevelCylinderColliderPlacement>(object->payload);
-        auto beforeState = document.captureState();
-        trackSceneItem(beforeState, "Move Cylinder Collider", renderInspectorPropertyRow("Position", [&]() { return editVec3("##value", cylinder.position); }));
-        beforeState = document.captureState();
-        trackSceneItem(beforeState, "Adjust Cylinder Radius", renderInspectorPropertyRow("Radius", [&]() { return ImGui::DragFloat("##value", &cylinder.radius, 0.02f, 0.05f, 20.0f, "%.2f"); }));
-        beforeState = document.captureState();
-        trackSceneItem(beforeState, "Adjust Cylinder Height", renderInspectorPropertyRow("Half Height", [&]() { return ImGui::DragFloat("##value", &cylinder.halfHeight, 0.02f, 0.05f, 20.0f, "%.2f"); }));
         break;
     }
     case EditorSceneObjectKind::ReflectionProbe: {
@@ -1399,76 +1395,6 @@ void renderSceneSelectionInspector(EditorSceneDocument& document,
         beforeState = document.captureState();
         trackSceneItem(beforeState, "Rotate Group", renderInspectorPropertyRow("Rotation", [&]() { return editVec3("##value", group.rotation, 0.5f); }));
         break;
-    }
-    case EditorSceneObjectKind::Trigger: {
-        auto& trigger = std::get<TriggerPlacement>(object->payload);
-
-        // Shape selector (D-03)
-        const char* shapeNames[] = {"Box", "Sphere"};
-        int shapeIndex = (trigger.shape == TriggerShape::Box) ? 0 : 1;
-        if (renderInspectorPropertyRow("Shape", [&]() {
-                return ImGui::Combo("##value", &shapeIndex, shapeNames, 2);
-            }, EditorInspectorFieldKind::Enum)) {
-            const auto beforeState = document.captureState();
-            trigger.shape = (shapeIndex == 0) ? TriggerShape::Box : TriggerShape::Sphere;
-            document.markSceneDirty();
-            commandStack.pushDocumentStateCommand("Change Trigger Shape", beforeState, document.captureState(), document);
-        }
-
-        // Position
-        {
-            auto beforeState = document.captureState();
-            trackSceneItem(beforeState, "Move Trigger",
-                renderInspectorPropertyRow("Position", [&]() { return editVec3("##value", trigger.position); }));
-        }
-
-        // Box-specific: Half Extents
-        if (trigger.shape == TriggerShape::Box) {
-            auto beforeState = document.captureState();
-            const bool extChanged = renderInspectorPropertyRow("Half Extents", [&]() {
-                bool c = ImGui::DragFloat3("##value", &trigger.halfExtents.x, 0.05f, 0.05f, 50.0f, "%.2f");
-                trigger.halfExtents = glm::max(trigger.halfExtents, glm::vec3(0.05f));
-                return c;
-            });
-            trackSceneItem(beforeState, "Resize Trigger", extChanged);
-        } else {
-            // Sphere-specific: Radius
-            auto beforeState = document.captureState();
-            const bool radChanged = renderInspectorPropertyRow("Radius", [&]() {
-                bool c = ImGui::DragFloat("##value", &trigger.radius, 0.05f, 0.05f, 50.0f, "%.2f");
-                trigger.radius = std::max(trigger.radius, 0.05f);
-                return c;
-            });
-            trackSceneItem(beforeState, "Resize Trigger", radChanged);
-        }
-
-        // Fire Once toggle
-        {
-            auto beforeState = document.captureState();
-            trackSceneItem(beforeState, "Toggle Trigger Fire Once",
-                renderInspectorPropertyRow("Fire Once", [&]() {
-                    return ImGui::Checkbox("##value", &trigger.fireOnce);
-                }));
-        }
-
-        // Node ID (per UI-SPEC: InputText, 64-char limit)
-        {
-            char nodeIdBuf[64];
-            std::snprintf(nodeIdBuf, sizeof(nodeIdBuf), "%s", trigger.nodeId.c_str());
-            auto beforeState = document.captureState();
-            if (renderInspectorPropertyRow("Node ID", [&]() {
-                    return ImGui::InputText("##value", nodeIdBuf, sizeof(nodeIdBuf));
-                })) {
-                trigger.nodeId = nodeIdBuf;
-                document.markSceneDirty();
-                commandStack.pushDocumentStateCommand("Rename Trigger Node ID", beforeState, document.captureState(), document);
-            }
-        }
-
-        endInspectorPropertyTable();
-        ImGui::Separator();
-        renderBehaviorSections(trigger.behaviors, document, commandStack);
-        return;  // table already ended above
     }
     }
 
