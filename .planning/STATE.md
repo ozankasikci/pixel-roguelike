@@ -2,10 +2,10 @@
 gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: Editor UX
-status: Executing Phase 14
-stopped_at: "Completed quick task 260402-uz2: Fix walls/floors to use QuestDoorsPack textured materials"
-last_updated: "2026-04-03T10:58:31.213Z"
-last_activity: 2026-04-03
+status: Ready to execute
+stopped_at: Completed 16-01-PLAN.md
+last_updated: "2026-04-04T19:29:18.876Z"
+last_activity: 2026-04-04
 progress:
   total_phases: 16
   completed_phases: 13
@@ -25,7 +25,7 @@ See: .planning/PROJECT.md (updated 2026-03-23)
 ## Current Position
 
 Phase: 14 (improve-lighting-reflections-occlusion-and-shadow-quality) — EXECUTING
-Plan: 1 of 3
+Plan: 2 of 3
 
 ## Performance Metrics
 
@@ -72,6 +72,7 @@ Plan: 1 of 3
 | Phase 07 P04 | 525609 | 2 tasks | 6 files |
 | Phase 07 P03 | 10 | 2 tasks | 4 files |
 | Phase 13-data-driven-behavior-system P01 | 15 | 3 tasks | 10 files |
+| Phase 16-editor-trigger-and-behavior-authoring-with-save-load-fidelity P01 | 60 | 3 tasks | 11 files |
 
 ## Accumulated Context
 
@@ -177,6 +178,9 @@ Recent decisions affecting current work:
 - [Phase quick]: AI_CONFIG_FBX_CONVERT_TO_M set via SetPropertyBool on both AssimpLoader import paths — converts FBX cm vertices to meters at import, eliminates 0.01 scale workarounds in scene files and scripted geometry
 - [Phase 13-data-driven-behavior-system]: NodeIndex built via registry.view<NodeIdComponent>() after all entity placement, not from parallel vectors — ensures scripted geometry entities are also indexed
 - [Phase 13-data-driven-behavior-system]: LevelDef.cpp parser refactored to buffer all lines and detect indented sub-lines for behavior/interactable declarations
+- [Phase 16]: Triggers promoted from read-only side-channel (readOnlyTriggers_) to first-class EditorSceneObject entries with full CRUD, undo/redo, and serialization
+- [Phase 16]: appendHelperObjects showTriggers parameter uses default=true to avoid breaking existing callers
+- [Phase 16]: Trigger inspector deferred to geometric fields only; behavior authoring panel planned for 16-02
 
 ### Roadmap Evolution
 
@@ -248,7 +252,7 @@ None yet.
 
 ## Session Continuity
 
-Last activity: 2026-04-03
-Last session: 2026-04-02T19:24:45Z
-Stopped at: Completed quick task 260402-uz2: Fix walls/floors to use QuestDoorsPack textured materials
+Last activity: 2026-04-04
+Last session: 2026-04-04T19:29:18.870Z
+Stopped at: Completed 16-01-PLAN.md
 Resume file: None
