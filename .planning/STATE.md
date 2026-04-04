@@ -4,7 +4,7 @@ milestone: v1.1
 milestone_name: Editor UX
 status: Ready to execute
 stopped_at: Completed 15-01-PLAN.md
-last_updated: "2026-04-04T12:19:10.703Z"
+last_updated: "2026-04-04T14:44:30.000Z"
 last_activity: 2026-04-04
 progress:
   total_phases: 17
@@ -237,10 +237,11 @@ None yet.
 | 260403-udy | Fix play preview texture corruption after moving a scene mesh with the gizmo | 2026-04-03 | 9d1ee2b | [260403-udy-fix-play-preview-texture-corruption-afte](./quick/260403-udy-fix-play-preview-texture-corruption-afte/) |
 | 260403-v4x | Fix editor freezing after gizmo or inspector scene changes trigger runtime preview rebuild | 2026-04-03 | ff7ce59 | [260403-v4x-fix-editor-freezing-after-gizmo-or-inspe](./quick/260403-v4x-fix-editor-freezing-after-gizmo-or-inspe/) |
 | 260403-wsw | Enable arrow-key navigation in the hierarchy panel | 2026-04-03 | 534ed10 | [260403-wsw-enable-arrow-key-navigation-in-the-hiera](./quick/260403-wsw-enable-arrow-key-navigation-in-the-hiera/) |
+| 260404-omb | Fix editor light gizmo moving helper but not preview light | 2026-04-04 | 1464a2a | [260404-omb-fix-editor-light-gizmo-moving-helper-but](./quick/260404-omb-fix-editor-light-gizmo-moving-helper-but/) |
 
 ## Session Continuity
 
-Last activity: 2026-04-04
+Last activity: 2026-04-04 - Completed quick task 260404-omb: Fix editor light gizmo moving helper but not preview light
 Last session: 2026-04-04T12:19:10.699Z
 Stopped at: Completed 15-01-PLAN.md
 Resume file: None
