@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: Editor UX
 status: Ready to execute
-stopped_at: Phase 17 context gathered
-last_updated: "2026-04-04T22:20:17.888Z"
+stopped_at: Completed 17-unified-collider-system-with-trigger-capabilities-and-scripting-support/17-01-PLAN.md
+last_updated: "2026-04-04T23:27:36.573Z"
 last_activity: 2026-04-04
 progress:
   total_phases: 19
   completed_phases: 14
-  total_plans: 46
-  completed_plans: 41
+  total_plans: 49
+  completed_plans: 42
 ---
 
 # Project State
@@ -20,11 +20,11 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-23)
 
 **Core value:** The Stanley Parable-inspired art style — clean, minimalist environments with warm soft lighting, muted color palette, and stylized realism
-**Current focus:** Phase 16 — editor-trigger-and-behavior-authoring-with-save-load-fidelity
+**Current focus:** Phase 17 — unified-collider-system-with-trigger-capabilities-and-scripting-support
 
 ## Current Position
 
-Phase: 16 (editor-trigger-and-behavior-authoring-with-save-load-fidelity) — EXECUTING
+Phase: 17 (unified-collider-system-with-trigger-capabilities-and-scripting-support) — EXECUTING
 Plan: 2 of 3
 
 ## Performance Metrics
@@ -74,6 +74,7 @@ Plan: 2 of 3
 | Phase 13-data-driven-behavior-system P01 | 15 | 3 tasks | 10 files |
 | Phase 15 P01 | 8 | 2 tasks | 3 files |
 | Phase 16 P02 | 8 | 2 tasks | 1 files |
+| Phase 17-unified-collider-system-with-trigger-capabilities-and-scripting-support P01 | 180 | 2 tasks | 30 files |
 
 ## Accumulated Context
 
@@ -175,6 +176,9 @@ Recent decisions affecting current work:
 - [Phase 15]: The editor exposes theme comparison only through View -> Interface Theme, matching the existing Interface Font workflow.
 - [Phase 16]: End inspector property table early inside switch cases to allow CollapsingHeader behavior sections below for Mesh/Light/Trigger entities
 - [Phase 16]: Action categories limited to core subset (Door/Lighting/Audio/Entity/Timing) per D-08 to keep behavior authoring focused
+- [Phase 17-unified-collider-system-with-trigger-capabilities-and-scripting-support]: Renamed StaticColliderComponent.h enum to StaticColliderShape to avoid redeclaration conflict with new ColliderShape:uint8_t enum
+- [Phase 17-unified-collider-system-with-trigger-capabilities-and-scripting-support]: Editor consolidated BoxCollider/CylinderCollider/Trigger EditorSceneObjectKind to single Collider kind
+- [Phase 17-unified-collider-system-with-trigger-capabilities-and-scripting-support]: Parser reads old collider_box/collider_cylinder/trigger_box/trigger_sphere and new collider <shape> <mode> format; serializer emits only new format
 
 ### Pending Todos
 
@@ -248,6 +252,6 @@ None yet.
 ## Session Continuity
 
 Last activity: 2026-04-04
-Last session: 2026-04-04T22:20:17.882Z
-Stopped at: Phase 17 context gathered
-Resume file: .planning/phases/17-unified-collider-system-with-trigger-capabilities-and-scripting-support/17-CONTEXT.md
+Last session: 2026-04-04T23:27:36.568Z
+Stopped at: Completed 17-unified-collider-system-with-trigger-capabilities-and-scripting-support/17-01-PLAN.md
+Resume file: None

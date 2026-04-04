@@ -344,9 +344,9 @@ Plans:
   5. Editor has a single Collider kind with shape and mode dropdowns, replacing three separate object kinds
   6. TriggerSystem is deleted; BehaviorSystem reads flags from ColliderComponent
   7. All scene files migrated, all tests pass, all executables build
-**Plans:** 3 plans
+**Plans:** 1/3 plans executed
 
 Plans:
-- [ ] 17-01-PLAN.md — Core types (ColliderComponent), unified LevelDef placement, parser/serializer update, scene file migration
+- [x] 17-01-PLAN.md — Core types (ColliderComponent), unified LevelDef placement, parser/serializer update, scene file migration
 - [ ] 17-02-PLAN.md — PhysicsSystem sensor bodies via CharacterContactListener, BehaviorSystem update, TriggerSystem deletion, runtime wiring
 - [ ] 17-03-PLAN.md — Editor unification: single Collider kind, inspector shape/mode dropdowns, preview renderer, all panel updates
