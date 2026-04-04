@@ -143,7 +143,9 @@ void appendHelperObjects(std::vector<RenderObject>& objects,
             }
             const std::uint64_t ownerId = world.ownerMap().contains(entity) ? world.ownerMap().at(entity) : 0;
             const bool selected = ownerId != 0 && isSelected(selectedIds, ownerId);
-            const glm::vec3 tint = selected ? glm::vec3(0.48f, 1.00f, 0.58f) : glm::vec3(0.20f, 0.92f, 0.28f);
+            const glm::vec3 tint = (collider.mode == ColliderMode::SolidAndTrigger)
+                ? (selected ? glm::vec3(1.0f, 0.95f, 0.30f) : glm::vec3(0.85f, 0.75f, 0.0f))
+                : (selected ? glm::vec3(0.48f, 1.00f, 0.58f) : glm::vec3(0.20f, 0.92f, 0.28f));
             if (collider.shape == ColliderShape::Box && cube != nullptr) {
                 objects.push_back(RenderObject{
                     cube,
@@ -202,7 +204,7 @@ void appendHelperObjects(std::vector<RenderObject>& objects,
     }
 
     // Trigger volume visualization: semi-transparent wireframe in the editor viewport
-    // Trigger-mode colliders: green wireframe (box) or blue (non-box)
+    // Trigger-mode: green (box) / blue (non-box); SolidAndTrigger: yellow
     if (showTriggers && cube != nullptr) {
         for (const auto& object : document.objects()) {
             if (object.kind != EditorSceneObjectKind::Collider) continue;
@@ -210,9 +212,9 @@ void appendHelperObjects(std::vector<RenderObject>& objects,
             if (collider.mode != ColliderMode::Trigger && collider.mode != ColliderMode::SolidAndTrigger) continue;
             const bool selected = isSelected(selectedIds, object.id);
             if (collider.shape == ColliderShape::Box) {
-                const glm::vec3 tint = selected
-                    ? glm::vec3(0.40f, 1.00f, 0.40f)
-                    : glm::vec3(0.20f, 0.80f, 0.20f);
+                const glm::vec3 tint = (collider.mode == ColliderMode::SolidAndTrigger)
+                    ? (selected ? glm::vec3(1.0f, 0.95f, 0.30f) : glm::vec3(0.85f, 0.75f, 0.0f))
+                    : (selected ? glm::vec3(0.40f, 1.00f, 0.40f) : glm::vec3(0.20f, 0.80f, 0.20f));
                 objects.push_back(RenderObject{
                     cube,
                     makeModelMatrix(collider.position, collider.halfExtents * 2.0f),
@@ -224,9 +226,9 @@ void appendHelperObjects(std::vector<RenderObject>& objects,
                     1.5f    // lineWidth
                 });
             } else {
-                const glm::vec3 tint = selected
-                    ? glm::vec3(0.40f, 0.60f, 1.00f)
-                    : glm::vec3(0.20f, 0.40f, 0.80f);
+                const glm::vec3 tint = (collider.mode == ColliderMode::SolidAndTrigger)
+                    ? (selected ? glm::vec3(1.0f, 0.95f, 0.30f) : glm::vec3(0.85f, 0.75f, 0.0f))
+                    : (selected ? glm::vec3(0.40f, 0.60f, 1.00f) : glm::vec3(0.20f, 0.40f, 0.80f));
                 objects.push_back(RenderObject{
                     cube,
                     makeModelMatrix(collider.position, glm::vec3(collider.radius * 2.0f)),
