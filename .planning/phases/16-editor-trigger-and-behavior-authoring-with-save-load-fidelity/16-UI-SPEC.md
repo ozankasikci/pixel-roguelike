@@ -44,6 +44,8 @@ Dear ImGui spacing is governed by the active `ThemePresetDefinition`. The `Graph
 
 Source: `ImGuiLayer.cpp` `kGraphiteDense` definition — pre-populated, no user input required.
 
+> **Project exception — ImGui theme values:** The `xs`, `sm`, and `lg` tokens reflect the pre-existing `kGraphiteDense` constant values in `ImGuiLayer.cpp`. These values are not authored by this phase and are not subject to the 4px grid rule. No new spacing values are introduced; all new layout uses only the `md` (8px) and `xl` (20px) tokens, which conform to the standard set.
+
 **Exceptions:**
 - Action list rows use `ImGui::Spacing()` (1 implicit line gap) between each `ActionEntry` to maintain visual grouping without increasing padding globally.
 - Trigger resize handles (gizmo corners) use a minimum 8px hit-test zone for usability, matching the collider gizmo convention.
@@ -70,6 +72,8 @@ Line height is controlled by Dear ImGui's internal `GetTextLineHeightWithSpacing
 ## Color
 
 All colors use the active ImGui theme. The design contract specifies semantic usage, not overrides.
+
+**Focal point:** The primary visual anchor of the trigger inspector is the `[=] Trigger Zone` CollapsingHeader at the top, followed by the event-section headers (`[=] On Activate`, etc.) with `[+ Add Action]` as the primary interactive CTA.
 
 ### Theme colors (GraphiteDense defaults)
 
