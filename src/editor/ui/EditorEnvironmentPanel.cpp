@@ -36,7 +36,7 @@ bool renderEnvironmentPanel(EditorSceneDocument& document,
         return contentReloaded;
     }
     EnvironmentDefinition& environment = document.environment();
-    if (!ImGui::Begin("Environment", open)) {
+    if (!beginCompactEditorPanelWindow("Environment", open)) {
         ImGui::End();
         return contentReloaded;
     }

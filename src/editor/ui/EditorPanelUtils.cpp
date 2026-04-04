@@ -43,6 +43,18 @@ float inspectorFieldWidth(EditorInspectorFieldKind kind, bool wideMode) {
 
 } // namespace
 
+bool beginCompactEditorPanelWindow(const char* name,
+                                   bool* open,
+                                   ImGuiWindowFlags flags) {
+    const ImVec2 framePadding = ImGui::GetStyle().FramePadding;
+    ImGui::PushStyleVar(ImGuiStyleVar_FramePadding,
+                        ImVec2(std::max(3.0f, framePadding.x - 1.0f),
+                               std::max(2.0f, framePadding.y - 1.0f)));
+    const bool visible = ImGui::Begin(name, open, flags);
+    ImGui::PopStyleVar();
+    return visible;
+}
+
 bool beginInspectorPropertyTable(const char* id,
                                  float labelColumnFraction,
                                  float minLabelWidth,

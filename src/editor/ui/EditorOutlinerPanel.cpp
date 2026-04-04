@@ -238,7 +238,7 @@ std::vector<std::uint64_t> renderOutliner(EditorSceneDocument& document,
     if (open != nullptr && !*open) {
         return deleteRequests;
     }
-    if (!ImGui::Begin("Outliner", open)) {
+    if (!beginCompactEditorPanelWindow("Outliner", open)) {
         ImGui::End();
         return deleteRequests;
     }

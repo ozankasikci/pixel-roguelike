@@ -1244,15 +1244,15 @@ int main(int argc, char* argv[]) {
         bool viewportWindowVisible = false;
         if (ui.showViewport) {
             viewportWindowBegun = true;
-            viewportWindowVisible = ImGui::Begin("Viewport",
-                                                 &ui.showViewport,
-                                                 ImGuiWindowFlags_NoScrollbar
-                                                 | ImGuiWindowFlags_NoScrollWithMouse);
+            viewportWindowVisible = beginCompactEditorPanelWindow("Viewport",
+                                                                  &ui.showViewport,
+                                                                  ImGuiWindowFlags_NoScrollbar
+                                                                  | ImGuiWindowFlags_NoScrollWithMouse);
             if (viewportWindowVisible) {
                 // Double-click on title bar toggles fullscreen viewport
                 {
                     const ImVec2 winPos = ImGui::GetWindowPos();
-                    const float titleBarHeight = ImGui::GetFrameHeight();
+                    const float titleBarHeight = ImGui::GetCurrentWindowRead()->TitleBarHeight;
                     const float winWidth = ImGui::GetWindowWidth();
                     const ImVec2 mousePos = io.MousePos;
                     if (ImGui::IsMouseDoubleClicked(0)
@@ -2100,7 +2100,7 @@ int main(int argc, char* argv[]) {
         // Build Output panel
         if (ui.showBuildOutput && !ui.viewportFullscreen) {
             ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(6.0f, 6.0f));
-            if (ImGui::Begin(kBuildOutputWindowName, &ui.showBuildOutput)) {
+            if (beginCompactEditorPanelWindow(kBuildOutputWindowName, &ui.showBuildOutput)) {
                 // Stop Build button in header (D-14)
                 if (buildState.running) {
                     if (ImGui::Button("Stop Build")) {

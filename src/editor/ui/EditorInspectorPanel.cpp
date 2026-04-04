@@ -1080,7 +1080,7 @@ InspectorActionResult renderInspector(EditorUiState& ui,
     if (open != nullptr && !*open) {
         return result;
     }
-    if (!ImGui::Begin("Inspector", open)) {
+    if (!beginCompactEditorPanelWindow("Inspector", open)) {
         ImGui::End();
         return result;
     }

@@ -278,7 +278,7 @@ AssetBrowserActionResult renderAssetBrowser(EditorUiState& ui,
     if (open != nullptr && !*open) {
         return result;
     }
-    if (!ImGui::Begin("Asset Browser", open)) {
+    if (!beginCompactEditorPanelWindow("Asset Browser", open)) {
         ImGui::End();
         return result;
     }

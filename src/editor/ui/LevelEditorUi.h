@@ -209,6 +209,9 @@ bool beginInspectorPropertyTable(const char* id,
                                  float labelColumnFraction = 0.28f,
                                  float minLabelWidth = 88.0f,
                                  float maxLabelWidth = 180.0f);
+bool beginCompactEditorPanelWindow(const char* name,
+                                   bool* open = nullptr,
+                                   ImGuiWindowFlags flags = 0);
 void endInspectorPropertyTable();
 void beginInspectorPropertyLabel(const char* label,
                                  EditorInspectorFieldKind kind = EditorInspectorFieldKind::Scalar);
