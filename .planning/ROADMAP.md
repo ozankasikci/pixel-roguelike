@@ -307,3 +307,14 @@ Plans:
 - [ ] 14-01-PLAN.md — Add global specular IBL from the existing sky cubemap path
 - [ ] 14-02-PLAN.md — Add local box-projected reflection probes and scene/editor authoring support
 - [ ] 14-03-PLAN.md — Improve SSAO/shadow quality and add preview quality/render-scale controls
+
+### Phase 15: prototype editor ImGui themes and choose a final skin direction
+
+**Goal:** The level editor supports three live-switchable Dear ImGui theme presets, persists the chosen interface font/theme locally, and lands on a warm polished default skin direction that matches the project's muted institutional art style
+**Requirements**: None (editor chrome/polish phase; not mapped to `REQUIREMENTS.md` IDs)
+**Depends on:** Phase 14
+**Plans:** 1/2 plans executed
+
+Plans:
+- [x] 15-01-PLAN.md — Add ImGui theme preset infrastructure and a live View -> Interface Theme selector
+- [ ] 15-02-PLAN.md — Persist editor font/theme preferences locally and verify the final default skin in-editor
