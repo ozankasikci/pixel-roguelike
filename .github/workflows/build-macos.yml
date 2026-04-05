@@ -1,0 +1,41 @@
+name: Build macOS
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: macos-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Homebrew dependencies
+        run: brew install glfw glm spdlog openal-soft
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install jinja2 for GLAD
+        run: pip install jinja2
+
+      - name: Configure
+        run: cmake --preset ci-macos -DPython_EXECUTABLE=python
+
+      - name: Build
+        run: cmake --build build --config Release --parallel --target pixel-roguelike
+
+      - name: Package game
+        run: |
+          mkdir staging
+          cp build/apps/runtime/pixel-roguelike staging/
+          cp -R assets staging/assets
+
+      - name: Upload game
+        uses: actions/upload-artifact@v4
+        with:
+          name: pixel-roguelike-macos
+          path: staging/
+          retention-days: 7

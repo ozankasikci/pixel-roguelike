@@ -34,11 +34,16 @@ jobs:
       - name: Build
         run: cmake --build build --config Release --parallel --target pixel-roguelike
 
+      - name: Package game
+        run: |
+          mkdir staging
+          cp build/apps/runtime/Release/pixel-roguelike.exe staging/
+          xcopy /E /I assets staging\assets
+        shell: cmd
+
       - name: Upload game
         uses: actions/upload-artifact@v4
         with:
           name: pixel-roguelike-windows
-          path: |
-            build/apps/runtime/Release/pixel-roguelike.exe
-            assets/
+          path: staging/
           retention-days: 7

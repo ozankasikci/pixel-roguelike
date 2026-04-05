@@ -98,3 +98,9 @@ std::string resolveProjectPath(const std::string& relativePath) {
 
     return relativePath;
 }
+
+bool hasValidProjectRoot() {
+    namespace fs = std::filesystem;
+    const std::string resolved = resolveProjectPath("assets");
+    return fs::exists(resolved) && fs::is_directory(resolved);
+}
