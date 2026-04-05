@@ -212,14 +212,11 @@ void SceneRenderPipeline::renderShadowPass(const std::vector<RenderObject>& obje
                                        input.postParams ? input.postParams->csmLambda : 0.5f);
 
         shadowShader_->use();
-        // CSM shadow caster offset is zero — junction gap coverage is handled by
-        // a receiver-side normal offset in scene.frag (sampleCsmShadow). This avoids
-        // the directional bias of caster offsets that fixed wall-ceiling gaps but
-        // created triangle artifacts at wall-floor junctions in first-person view.
+        // Restore the caster offset for CSM: push shadow geometry 0.18 world-space units
+        // toward the light. This closes coverage gaps at grazing-angle junctions (e.g.
+        // wall top edges meeting the ceiling) that would otherwise appear as bright lines.
         shadowShader_->setVec3("uLightDirection", lighting.sun.direction);
-        // Caster offset disabled — receiver-side normal offset in scene.frag handles
-        // junction gaps at both wall-ceiling and wall-floor edges symmetrically.
-        shadowShader_->setFloat("uShadowCasterOffset", 0.0f);
+        shadowShader_->setFloat("uShadowCasterOffset", 0.18f);
         glEnable(GL_POLYGON_OFFSET_FILL);
         glPolygonOffset(1.1f, 4.0f);
 

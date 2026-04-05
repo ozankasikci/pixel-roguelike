@@ -862,18 +862,9 @@ vec3 cascadeDebugColor(int layer) {
 
 float sampleCsmShadow(vec3 fragWorldPos, vec3 fragViewPos, vec3 N, vec3 L) {
     if (uCsmEnabled == 0) return 1.0;
-
-    // Receiver-side normal offset: shift shadow lookup along the surface normal
-    // to close coverage gaps at geometry junctions (wall-floor, wall-ceiling).
-    // The offset scales with sin(angle between N and L) — maximum at grazing
-    // angles where junction gaps appear, zero when facing the light directly.
-    float csmNdotL = dot(N, L);
-    float csmSlopeFactor = sqrt(1.0 - clamp(csmNdotL * csmNdotL, 0.0, 1.0));
-    vec3 biasedWorldPos = fragWorldPos + N * 0.15 * csmSlopeFactor;
-
     int layer = 0;
     vec3 projCoords = vec3(0.0);
-    if (!computeCsmProjection(biasedWorldPos, fragViewPos, layer, projCoords)) {
+    if (!computeCsmProjection(fragWorldPos, fragViewPos, layer, projCoords)) {
         return 1.0;
     }
     if (!csmUvInBounds(projCoords)) return 1.0;
@@ -914,7 +905,7 @@ float sampleCsmShadow(vec3 fragWorldPos, vec3 fragViewPos, vec3 N, vec3 L) {
         if (distFromSplit < blendZone && distFromSplit > 0.0) {
             float blendFactor = 1.0 - distFromSplit / blendZone;
             int nextLayer = layer + 1;
-            vec4 nextLightSpace = uCsmMatrices[nextLayer] * vec4(biasedWorldPos, 1.0);
+            vec4 nextLightSpace = uCsmMatrices[nextLayer] * vec4(fragWorldPos, 1.0);
             vec3 nextProj = nextLightSpace.xyz / nextLightSpace.w * 0.5 + 0.5;
             float nextBias = baseBias / max(uCsmSplitDistances[nextLayer], 0.01);
             float nextCenterVisibility = texture(uCsmShadowMap,

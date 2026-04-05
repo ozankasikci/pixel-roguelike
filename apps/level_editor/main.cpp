@@ -50,6 +50,7 @@
 #include <csignal>
 #endif
 #include <cstdint>
+#include <cstdlib>
 #include <cstdio>
 #include <cstring>
 #include <filesystem>
@@ -63,6 +64,17 @@
 #include <vector>
 
 namespace {
+
+void openFolderInOS(const std::string& path) {
+#ifdef __APPLE__
+    std::string cmd = "open \"" + path + "\" &";
+#elif defined(_WIN32)
+    std::string cmd = "explorer \"" + path + "\"";
+#else
+    std::string cmd = "xdg-open \"" + path + "\" &";
+#endif
+    std::system(cmd.c_str());
+}
 
 volatile int g_editorScreenshotRequested = 0;
 #ifndef _WIN32
@@ -768,10 +780,15 @@ int main(int argc, char* argv[]) {
                         packagePressed = true;
                     }
                     ImGui::EndDisabled();
-                    ImGui::Separator();
                     // Build Settings — opens tabbed settings window
                     if (ImGui::MenuItem("Build Settings...")) {
                         buildSettingsPopupRequested = true;
+                    }
+                    if (ImGui::MenuItem("Open Build Folder")) {
+                        auto absPath = std::filesystem::absolute(buildConfig.buildDir).string();
+                        if (std::filesystem::exists(absPath)) {
+                            openFolderInOS(absPath);
+                        }
                     }
                     ImGui::Separator();
                     // Configuration submenu (D-04)
@@ -975,7 +992,7 @@ int main(int argc, char* argv[]) {
             ImGui::OpenPopup("Build Settings");
             buildSettingsPopupRequested = false;
         }
-        ImGui::SetNextWindowSize(ImVec2(400.0f, 0.0f), ImGuiCond_Appearing);
+        ImGui::SetNextWindowSize(ImVec2(400.0f, 350.0f), ImGuiCond_Appearing);
         {
             bool buildSettingsOpen = true;
             if (ImGui::BeginPopupModal("Build Settings", &buildSettingsOpen, ImGuiWindowFlags_AlwaysAutoResize)) {
@@ -2260,6 +2277,13 @@ int main(int argc, char* argv[]) {
                     ImGui::Text("Building... %d%%", static_cast<int>(buildState.progressPct));
                 } else if (buildState.exitCode == 0 && buildLog.lineCount() > 1) {
                     ImGui::TextColored(ImVec4(0.3f, 1.0f, 0.3f, 1.0f), "Build Succeeded");
+                    ImGui::SameLine();
+                    if (ImGui::SmallButton("Open Folder")) {
+                        auto absPath = std::filesystem::absolute(buildConfig.buildDir).string();
+                        if (std::filesystem::exists(absPath)) {
+                            openFolderInOS(absPath);
+                        }
+                    }
                 } else if (buildState.exitCode > 0) {
                     ImGui::TextColored(ImVec4(1.0f, 0.3f, 0.3f, 1.0f), "Build Failed (exit code %d)", buildState.exitCode);
                 }

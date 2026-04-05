@@ -339,24 +339,7 @@ static std::vector<fs::path> findFiles(const fs::path& dir, const std::string& e
     return result;
 }
 
-// ---------------------------------------------------------------------------
-// listBuildableScenes
-// ---------------------------------------------------------------------------
-
-std::vector<std::string> listBuildableScenes() {
-    std::vector<std::string> scenes;
-    for (const auto& path : findFiles("assets/scenes", ".scene")) {
-        scenes.push_back(path.filename().string());
-    }
-    std::sort(scenes.begin(), scenes.end());
-    return scenes;
-}
-
-// ---------------------------------------------------------------------------
-// collectUsedAssets (with optional scene filter)
-// ---------------------------------------------------------------------------
-
-AssetManifest collectUsedAssets(const std::vector<std::string>& sceneFilter) {
+AssetManifest collectUsedAssets() {
     AssetManifest manifest;
     std::set<std::string> neededMeshIds;
 
@@ -408,14 +391,8 @@ AssetManifest collectUsedAssets(const std::vector<std::string>& sceneFilter) {
         }
     }
 
-    // 3. Collect mesh IDs from scene files (filtered by sceneFilter if non-empty)
+    // 3. Collect mesh IDs from scene files
     for (const auto& sceneFile : findFiles("assets/scenes", ".scene")) {
-        if (!sceneFilter.empty()) {
-            std::string filename = sceneFile.filename().string();
-            if (std::find(sceneFilter.begin(), sceneFilter.end(), filename) == sceneFilter.end()) {
-                continue;
-            }
-        }
         std::ifstream in(sceneFile);
         std::string line;
         while (std::getline(in, line)) {
@@ -548,7 +525,8 @@ bool packageGame(const EditorBuildConfig& config, const std::string& outputDir,
     fs::create_directories(outAssets, ec);
 
     // --- Always-copy directories (small, all needed) ---
-    auto alwaysCopyDirs = {"shaders", "defs", "prefabs", "materials", "fonts", "environments"};
+    auto alwaysCopyDirs = {"shaders", "defs", "prefabs", "materials", "scenes", "fonts",
+                           "environments"};
     for (const auto& subdir : alwaysCopyDirs) {
         fs::path src = fs::path("assets") / subdir;
         fs::path dst = outAssets / subdir;
@@ -564,52 +542,14 @@ bool packageGame(const EditorBuildConfig& config, const std::string& outputDir,
         }
     }
 
-    // --- Copy scenes selectively ---
-    {
-        auto allScenes = listBuildableScenes();
-        const std::vector<std::string>& scenesToCopy =
-            config.buildScenes.empty() ? allScenes : config.buildScenes;
-
-        int includedCount = static_cast<int>(scenesToCopy.size());
-        int totalCount    = static_cast<int>(allScenes.size());
-
-        if (includedCount == 0) {
-            log.addLine("Package: warning — no scenes selected, package will contain no scenes",
-                        BuildLineKind::Warning);
-        } else {
-            char sceneMsg[128];
-            std::snprintf(sceneMsg, sizeof(sceneMsg), "Package: including %d of %d scenes",
-                          includedCount, totalCount);
-            log.addLine(sceneMsg, BuildLineKind::Normal);
-        }
-
-        fs::path scenesOutDir = outAssets / "scenes";
-        fs::create_directories(scenesOutDir, ec);
-        for (const auto& sceneName : scenesToCopy) {
-            fs::path src = fs::path("assets") / "scenes" / sceneName;
-            fs::path dst = scenesOutDir / sceneName;
-            if (fs::exists(src, ec)) {
-                fs::copy_file(src, dst, fs::copy_options::overwrite_existing, ec);
-                if (ec) {
-                    std::string msg = "Package: warning copying scene " + sceneName + ": " + ec.message();
-                    log.addLine(msg.c_str(), BuildLineKind::Warning);
-                    ec.clear();
-                }
-            } else {
-                std::string msg = "Package: selected scene not found: " + src.string();
-                log.addLine(msg.c_str(), BuildLineKind::Warning);
-            }
-        }
-    }
-
     // --- Copy project.cfg if it exists ---
     if (fs::exists("assets/project.cfg", ec)) {
         fs::copy_file("assets/project.cfg", outAssets / "project.cfg",
                       fs::copy_options::overwrite_existing, ec);
     }
 
-    // --- Collect and copy referenced assets (filtered by selected scenes) ---
-    AssetManifest manifest = collectUsedAssets(config.buildScenes);
+    // --- Collect and copy referenced assets ---
+    AssetManifest manifest = collectUsedAssets();
 
     int fileCount = 0;
     uintmax_t totalBytes = 0;
@@ -703,17 +643,6 @@ void loadBuildConfig(EditorBuildConfig& config, const std::string& path) {
             config.buildDir = buf;
         } else if (std::sscanf(line.c_str(), "build_config=%511s", buf) == 1) {
             config.buildConfig = buf;
-        } else if (line.rfind("build_scenes=", 0) == 0) {
-            // Parse comma-separated list of scene filenames
-            std::string value = line.substr(std::strlen("build_scenes="));
-            config.buildScenes.clear();
-            std::istringstream ss(value);
-            std::string token;
-            while (std::getline(ss, token, ',')) {
-                if (!token.empty()) {
-                    config.buildScenes.push_back(token);
-                }
-            }
         }
     }
 }
@@ -726,12 +655,4 @@ void saveBuildConfig(const EditorBuildConfig& config, const std::string& path) {
     }
     file << "build_dir=" << config.buildDir << "\n";
     file << "build_config=" << config.buildConfig << "\n";
-    if (!config.buildScenes.empty()) {
-        file << "build_scenes=";
-        for (size_t i = 0; i < config.buildScenes.size(); ++i) {
-            if (i > 0) file << ",";
-            file << config.buildScenes[i];
-        }
-        file << "\n";
-    }
 }
