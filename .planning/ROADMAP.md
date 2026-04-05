@@ -294,7 +294,7 @@ Phases execute in numeric order: 1 → 1.1 → 2 → 2.1 → 3 → 4 → 5 → 6
 | 15. Editor ImGui Themes | v1.2 | 2/2 | Complete | 2026-04-03 |
 | 16. Trigger & Behavior Authoring | v1.2 | 3/3 | Complete | 2026-04-04 |
 | 17. Unified Collider System | v1.2 | 4/4 | Complete | 2026-04-05 |
-| 18. Maintainability Refactoring | — | 2/4 | In Progress|  |
+| 18. Maintainability Refactoring | — | 3/4 | In Progress|  |
 
 ### Phase 14: improve lighting, reflections, occlusion, and shadow quality
 
@@ -370,10 +370,10 @@ Plans:
   4. EditorInspectorPanel.cpp is a thin dispatcher under 200 lines with 10+ per-type inspector files
   5. EditorSceneDocument.cpp uses std::visit instead of switch-on-kind for payload dispatch
   6. All existing tests pass, all three executables build
-**Plans:** 2/4 plans executed
+**Plans:** 3/4 plans executed
 
 Plans:
 - [x] 18-01-PLAN.md — Parser consolidation: extract parseNodeMetadata/parseShapeTokens helpers, per-action parsers, PlacementBase struct, delete legacy format code
 - [ ] 18-02-PLAN.md — Unified light keyword: single parser/serializer, scene file migration, round-trip test update
-- [ ] 18-03-PLAN.md — Inspector decomposition: 10+ per-type inspector files, InspectorUtils shared module, thin dispatcher
+- [x] 18-03-PLAN.md — Inspector decomposition: 10+ per-type inspector files, InspectorUtils shared module, thin dispatcher
 - [x] 18-04-PLAN.md — Visitor pattern: replace 5 switch-on-kind statements with std::visit in EditorSceneDocument.cpp
