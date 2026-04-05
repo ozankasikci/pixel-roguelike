@@ -750,74 +750,55 @@ LevelDef loadLevelDef(const std::string& path) {
 
         if (kind == "light") {
             LevelLightPlacement placement;
-            if (!(stream >> placement.position.x >> placement.position.y >> placement.position.z
-                         >> placement.color.r >> placement.color.g >> placement.color.b
-                         >> placement.radius >> placement.intensity)) {
-                throwParseError(path, lineNumber, "invalid light record");
+            std::string typeToken;
+            if (!(stream >> typeToken)) {
+                throwParseError(path, lineNumber, "invalid light record: missing type (point/spot/directional)");
             }
-            const auto tokens = collectRemainingTokens(stream);
-            for (std::size_t index = 0; index < tokens.size();) {
-                if (parseNodeMetadata(path, lineNumber, tokens, index,
-                                      placement.nodeId, placement.parentNodeId)) {
-                    continue;
-                }
-                throwParseError(path, lineNumber, "invalid light metadata");
-            }
-            currentKind = CurrentEntityKind::Light;
-            currentIndex = data.lights.size();
-            data.lights.push_back(placement);
-            continue;
-        }
 
-        if (kind == "spot_light") {
-            LevelLightPlacement placement;
-            placement.type = LightType::Spot;
-            std::string shadowToken;
-            if (!(stream >> placement.position.x >> placement.position.y >> placement.position.z
-                         >> placement.direction.x >> placement.direction.y >> placement.direction.z
-                         >> placement.color.r >> placement.color.g >> placement.color.b
-                         >> placement.radius >> placement.intensity
-                         >> placement.innerConeDegrees >> placement.outerConeDegrees
-                         >> shadowToken)) {
-                throwParseError(path, lineNumber, "invalid spot_light record");
-            }
-            if (!tryParseBoolToken(shadowToken, placement.castsShadows)) {
-                throwParseError(path, lineNumber, "invalid spot_light shadow flag");
-            }
-            const auto tokens = collectRemainingTokens(stream);
-            for (std::size_t index = 0; index < tokens.size();) {
-                if (parseNodeMetadata(path, lineNumber, tokens, index,
-                                      placement.nodeId, placement.parentNodeId)) {
-                    continue;
+            if (typeToken == "point") {
+                placement.type = LightType::Point;
+                if (!(stream >> placement.position.x >> placement.position.y >> placement.position.z
+                             >> placement.color.r >> placement.color.g >> placement.color.b
+                             >> placement.radius >> placement.intensity)) {
+                    throwParseError(path, lineNumber, "invalid light point record");
                 }
-                throwParseError(path, lineNumber, "invalid spot_light metadata");
+            } else if (typeToken == "spot") {
+                placement.type = LightType::Spot;
+                std::string shadowToken;
+                if (!(stream >> placement.position.x >> placement.position.y >> placement.position.z
+                             >> placement.direction.x >> placement.direction.y >> placement.direction.z
+                             >> placement.color.r >> placement.color.g >> placement.color.b
+                             >> placement.radius >> placement.intensity
+                             >> placement.innerConeDegrees >> placement.outerConeDegrees
+                             >> shadowToken)) {
+                    throwParseError(path, lineNumber, "invalid light spot record");
+                }
+                if (!tryParseBoolToken(shadowToken, placement.castsShadows)) {
+                    throwParseError(path, lineNumber, "invalid light spot shadow flag");
+                }
+            } else if (typeToken == "directional") {
+                placement.type = LightType::Directional;
+                if (!(stream >> placement.direction.x >> placement.direction.y >> placement.direction.z
+                             >> placement.color.r >> placement.color.g >> placement.color.b
+                             >> placement.intensity)) {
+                    throwParseError(path, lineNumber, "invalid light directional record");
+                }
+                placement.radius = 0.0f;
+            } else {
+                throwParseError(path, lineNumber, "unknown light type: '" + typeToken + "' (expected point/spot/directional)");
             }
-            currentKind = CurrentEntityKind::Light;
-            currentIndex = data.lights.size();
-            data.lights.push_back(placement);
-            continue;
-        }
 
-        if (kind == "dir_light") {
-            LevelLightPlacement placement;
-            placement.type = LightType::Directional;
-            if (!(stream >> placement.direction.x >> placement.direction.y >> placement.direction.z
-                         >> placement.color.r >> placement.color.g >> placement.color.b
-                         >> placement.intensity)) {
-                throwParseError(path, lineNumber, "invalid dir_light record");
-            }
-            placement.radius = 0.0f;
             const auto tokens = collectRemainingTokens(stream);
             for (std::size_t index = 0; index < tokens.size();) {
                 if (parseNodeMetadata(path, lineNumber, tokens, index,
                                       placement.nodeId, placement.parentNodeId)) {
                     continue;
                 }
-                throwParseError(path, lineNumber, "invalid dir_light metadata");
+                throwParseError(path, lineNumber, "invalid light metadata token: '" + tokens[index] + "'");
             }
             currentKind = CurrentEntityKind::Light;
             currentIndex = data.lights.size();
-            data.lights.push_back(placement);
+            data.lights.push_back(std::move(placement));
             continue;
         }
 
@@ -1216,8 +1197,9 @@ std::string serializeLevelDef(const LevelDef& data) {
     }
 
     for (const auto& placement : data.lights) {
-        if (placement.type == LightType::Spot) {
-            out << "spot_light "
+        switch (placement.type) {
+        case LightType::Spot:
+            out << "light spot "
                 << formatFloat(placement.position.x) << ' '
                 << formatFloat(placement.position.y) << ' '
                 << formatFloat(placement.position.z) << ' '
@@ -1232,14 +1214,9 @@ std::string serializeLevelDef(const LevelDef& data) {
                 << formatFloat(placement.innerConeDegrees) << ' '
                 << formatFloat(placement.outerConeDegrees) << ' '
                 << (placement.castsShadows ? "true" : "false");
-            appendNodeMetadata(out, placement.nodeId, placement.parentNodeId);
-            out << '\n';
-            serializeBehaviors(out, placement.behaviors);
-            continue;
-        }
-
-        if (placement.type == LightType::Directional) {
-            out << "dir_light "
+            break;
+        case LightType::Directional:
+            out << "light directional "
                 << formatFloat(placement.direction.x) << ' '
                 << formatFloat(placement.direction.y) << ' '
                 << formatFloat(placement.direction.z) << ' '
@@ -1247,21 +1224,19 @@ std::string serializeLevelDef(const LevelDef& data) {
                 << formatFloat(placement.color.g) << ' '
                 << formatFloat(placement.color.b) << ' '
                 << formatFloat(placement.intensity);
-            appendNodeMetadata(out, placement.nodeId, placement.parentNodeId);
-            out << '\n';
-            serializeBehaviors(out, placement.behaviors);
-            continue;
+            break;
+        default: // LightType::Point
+            out << "light point "
+                << formatFloat(placement.position.x) << ' '
+                << formatFloat(placement.position.y) << ' '
+                << formatFloat(placement.position.z) << ' '
+                << formatFloat(placement.color.r) << ' '
+                << formatFloat(placement.color.g) << ' '
+                << formatFloat(placement.color.b) << ' '
+                << formatFloat(placement.radius) << ' '
+                << formatFloat(placement.intensity);
+            break;
         }
-
-        out << "light "
-            << formatFloat(placement.position.x) << ' '
-            << formatFloat(placement.position.y) << ' '
-            << formatFloat(placement.position.z) << ' '
-            << formatFloat(placement.color.r) << ' '
-            << formatFloat(placement.color.g) << ' '
-            << formatFloat(placement.color.b) << ' '
-            << formatFloat(placement.radius) << ' '
-            << formatFloat(placement.intensity);
         appendNodeMetadata(out, placement.nodeId, placement.parentNodeId);
         out << '\n';
         serializeBehaviors(out, placement.behaviors);

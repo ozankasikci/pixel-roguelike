@@ -31,6 +31,14 @@ int main() {
         .materialId = "stone_default",
     });
     level.lights.push_back(LevelLightPlacement{
+        .type = LightType::Point,
+        .position = glm::vec3(1.0f, 5.0f, 2.0f),
+        .nodeId = "point_1",
+        .color = glm::vec3(1.0f, 0.9f, 0.7f),
+        .radius = 8.0f,
+        .intensity = 2.5f,
+    });
+    level.lights.push_back(LevelLightPlacement{
         .type = LightType::Spot,
         .position = glm::vec3(0.0f, 3.0f, 4.0f),
         .direction = glm::vec3(0.0f, -1.0f, 0.0f),
@@ -41,6 +49,13 @@ int main() {
         .innerConeDegrees = 22.0f,
         .outerConeDegrees = 34.0f,
         .castsShadows = true,
+    });
+    level.lights.push_back(LevelLightPlacement{
+        .type = LightType::Directional,
+        .direction = glm::vec3(-0.28f, -1.0f, -0.18f),
+        .nodeId = "dir_1",
+        .color = glm::vec3(0.98f, 0.95f, 0.88f),
+        .intensity = 1.55f,
     });
     level.colliders.push_back(LevelColliderPlacement{
         .shape = ColliderShape::Box,
@@ -103,12 +118,19 @@ int main() {
     assert(serialized.find("parent root_mesh") != std::string::npos);
     assert(serialized.find("rotation 0.0 15.0 0.0") != std::string::npos);
     assert(serialized.find("reflection_probe 7.0 2.0 -4.0 5.0 3.0 6.0 1.4 0.85 false") != std::string::npos);
+    // Verify new unified light format
+    assert(serialized.find("light point ") != std::string::npos);
+    assert(serialized.find("light spot ") != std::string::npos);
+    assert(serialized.find("light directional ") != std::string::npos);
+    // Verify old light formats are NOT present
+    assert(serialized.find("spot_light") == std::string::npos);
+    assert(serialized.find("dir_light") == std::string::npos);
     // Verify new unified collider format
     assert(serialized.find("collider box solid") != std::string::npos);
     assert(serialized.find("collider cylinder solid") != std::string::npos);
     assert(serialized.find("collider sphere trigger") != std::string::npos);
     assert(serialized.find("collider capsule solidandtrigger") != std::string::npos);
-    // Verify old formats are NOT present
+    // Verify old collider formats are NOT present
     assert(serialized.find("collider_box") == std::string::npos);
     assert(serialized.find("collider_cylinder") == std::string::npos);
     assert(serialized.find("trigger_box") == std::string::npos);
@@ -126,9 +148,17 @@ int main() {
     assert(loaded.meshes.front().tint.has_value());
     assert(*loaded.meshes.front().tint == glm::vec3(0.4f, 0.5f, 0.6f));
     assert(loaded.meshes[1].parentNodeId == "root_mesh");
-    assert(loaded.lights.size() == 1);
-    assert(loaded.lights.front().type == LightType::Spot);
-    assert(loaded.lights.front().castsShadows);
+    assert(loaded.lights.size() == 3);
+    assert(loaded.lights[0].type == LightType::Point);
+    assert(loaded.lights[0].nodeId == "point_1");
+    assert(test_support::nearlyEqual(loaded.lights[0].radius, 8.0f));
+    assert(test_support::nearlyEqual(loaded.lights[0].intensity, 2.5f));
+    assert(loaded.lights[1].type == LightType::Spot);
+    assert(loaded.lights[1].nodeId == "spot_1");
+    assert(loaded.lights[1].castsShadows);
+    assert(loaded.lights[2].type == LightType::Directional);
+    assert(loaded.lights[2].nodeId == "dir_1");
+    assert(test_support::nearlyEqual(loaded.lights[2].intensity, 1.55f));
     assert(loaded.colliders.size() == 4);
     // Box collider
     assert(loaded.colliders[0].shape == ColliderShape::Box);
