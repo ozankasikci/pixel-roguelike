@@ -188,19 +188,46 @@ void RuntimeGameSession::tick(float deltaTime, float aspect) {
     if (!physicsInitialized_) {
         return;
     }
+
+    const Clock::time_point tickStart = Clock::now();
+
+    Clock::time_point t0 = Clock::now();
     updateRuntimeInteraction(registry_, inputSystem_);
+    Clock::time_point t1 = Clock::now();
+    performanceStats_.interactionMs = elapsedMilliseconds(t0, t1);
+
+    t0 = t1;
     updateRuntimeCheckpoints(registry_, deltaTime, runSession_);
+    t1 = Clock::now();
+    performanceStats_.checkpointsMs = elapsedMilliseconds(t0, t1);
+
+    t0 = t1;
     physics_.update(registry_, deltaTime);
+    t1 = Clock::now();
+    performanceStats_.physicsMs = elapsedMilliseconds(t0, t1);
 
     ContentRegistry* content = nullptr;
     if (registry_.ctx().contains<ContentRegistry*>()) {
         content = registry_.ctx().get<ContentRegistry*>();
     }
+    t0 = Clock::now();
     if (content != nullptr) {
         updateRuntimeInventory(registry_, inputSystem_, runSession_, *content);
     }
+    t1 = Clock::now();
+    performanceStats_.inventoryMs = elapsedMilliseconds(t0, t1);
+
+    t0 = t1;
     updateRuntimePlayerMovement(registry_, inputSystem_, physics_, deltaTime);
+    t1 = Clock::now();
+    performanceStats_.movementMs = elapsedMilliseconds(t0, t1);
+
+    t0 = t1;
     updateRuntimeCamera(registry_, inputSystem_, aspect, deltaTime);
+    t1 = Clock::now();
+    performanceStats_.cameraMs = elapsedMilliseconds(t0, t1);
+
+    performanceStats_.totalTickMs = elapsedMilliseconds(tickStart, t1);
 }
 
 void RuntimeGameSession::prewarmRenderer(ContentRegistry& content) {
