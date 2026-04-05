@@ -25,6 +25,14 @@ add_library(editor STATIC
     ui/EditorInspectorPanel.cpp
     ui/EditorOutlinerPanel.cpp
     ui/EditorPanelUtils.cpp
+    ui/inspectors/ArchetypeInspector.cpp
+    ui/inspectors/ColliderInspector.cpp
+    ui/inspectors/GroupInspector.cpp
+    ui/inspectors/InspectorUtils.cpp
+    ui/inspectors/LightInspector.cpp
+    ui/inspectors/MeshInspector.cpp
+    ui/inspectors/PlayerSpawnInspector.cpp
+    ui/inspectors/ReflectionProbeInspector.cpp
     viewport/EditorViewportController.cpp
     viewport/EditorViewportInteraction.cpp
     ${CMAKE_SOURCE_DIR}/external/ImGuizmo/ImGuizmo.cpp
