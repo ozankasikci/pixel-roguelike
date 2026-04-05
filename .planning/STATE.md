@@ -284,10 +284,11 @@ None yet.
 | 260406-0u4 | Package only used assets by scanning scene and content references | 2026-04-06 | 5ad8797 | [260406-0u4-package-only-used-assets-by-scanning-sce](./quick/260406-0u4-package-only-used-assets-by-scanning-sce/) |
 | 260406-2h1 | Add Open Build Folder menu item and clickable link in build output | 2026-04-06 | 3b7addf | [260406-2h1-add-open-build-folder-menu-item-and-clic](./quick/260406-2h1-add-open-build-folder-menu-item-and-clic/) |
 | 260406-29h | Fix regression: triangle artifacts at bottom of walls in play view only | 2026-04-06 | d87c705 | [260406-29h-fix-regression-triangle-artifacts-at-bot](./quick/260406-29h-fix-regression-triangle-artifacts-at-bot/) |
+| 260406-2s8 | Fix editor build: undeclared listBuildableScenes and missing EditorBuildConfig.buildScenes member | 2026-04-06 | fe042d7 | [260406-2s8-fix-editor-build-undeclared-listbuildabl](./quick/260406-2s8-fix-editor-build-undeclared-listbuildabl/) |
 
 ## Session Continuity
 
-Last activity: 2026-04-06 - Completed quick task 260406-29h: Fix CSM shadow triangle artifacts at wall-floor junctions
+Last activity: 2026-04-06 - Completed quick task 260406-2s8: Fix editor build: undeclared listBuildableScenes and missing EditorBuildConfig.buildScenes member
 Last session: 2026-04-05T03:13:41.712Z
 Stopped at: Completed 18-06-PLAN.md
 Resume file: None
