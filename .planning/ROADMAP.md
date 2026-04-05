@@ -240,7 +240,7 @@ Plans:
   5. DebugParams is decomposed into focused sub-structs (CameraDebugInfo, RuntimeLightingOverride)
   6. LevelLoader has a single unified load() overload
   7. GenericFileScene has no hard-coded level-specific if-chains
-**Plans:** 4/4 plans complete
+**Plans:** 6 plans (4 complete + 2 gap closure)
 
 Plans:
 - [x] 12-01-PLAN.md — TextureUnits.h named constants and EventBus RAII SubscriptionToken
@@ -294,7 +294,7 @@ Phases execute in numeric order: 1 → 1.1 → 2 → 2.1 → 3 → 4 → 5 → 6
 | 15. Editor ImGui Themes | v1.2 | 2/2 | Complete | 2026-04-03 |
 | 16. Trigger & Behavior Authoring | v1.2 | 3/3 | Complete | 2026-04-04 |
 | 17. Unified Collider System | v1.2 | 4/4 | Complete | 2026-04-05 |
-| 18. Maintainability Refactoring | — | 4/4 | Complete   | 2026-04-05 |
+| 18. Maintainability Refactoring | — | 4/6 | Gap closure | - |
 
 ### Phase 14: improve lighting, reflections, occlusion, and shadow quality
 
@@ -350,7 +350,7 @@ Plans:
   5. Editor has a single Collider kind with shape and mode dropdowns, replacing three separate object kinds
   6. TriggerSystem is deleted; BehaviorSystem reads flags from ColliderComponent
   7. All scene files migrated, all tests pass, all executables build
-**Plans:** 4/4 plans complete
+**Plans:** 6 plans (4 complete + 2 gap closure)
 
 Plans:
 - [x] 17-01-PLAN.md — Core types (ColliderComponent), unified LevelDef placement, parser/serializer update, scene file migration
@@ -370,10 +370,12 @@ Plans:
   4. EditorInspectorPanel.cpp is a thin dispatcher under 200 lines with 10+ per-type inspector files
   5. EditorSceneDocument.cpp uses std::visit instead of switch-on-kind for payload dispatch
   6. All existing tests pass, all three executables build
-**Plans:** 4/4 plans complete
+**Plans:** 6 plans (4 complete + 2 gap closure)
 
 Plans:
 - [x] 18-01-PLAN.md — Parser consolidation: extract parseNodeMetadata/parseShapeTokens helpers, per-action parsers, PlacementBase struct, delete legacy format code
 - [x] 18-02-PLAN.md — Unified light keyword: single parser/serializer, scene file migration, round-trip test update
 - [x] 18-03-PLAN.md — Inspector decomposition: 10+ per-type inspector files, InspectorUtils shared module, thin dispatcher
 - [x] 18-04-PLAN.md — Visitor pattern: replace 5 switch-on-kind statements with std::visit in EditorSceneDocument.cpp
+- [ ] 18-05-PLAN.md — Gap closure: migrate test fixture light format, extract drawTransformSection shared utility
+- [ ] 18-06-PLAN.md — Gap closure: extract asset inspector helpers from EditorInspectorPanel.cpp
