@@ -577,6 +577,7 @@ void ImGuiLayer::init(GLFWwindow* window) {
     ImGui::CreateContext();
     ImGuiIO& io = ImGui::GetIO();
     io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
+    io.ConfigDragClickToInputText = true;
 
     applyPendingThemePreset();
 
