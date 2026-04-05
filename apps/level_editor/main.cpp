@@ -441,6 +441,8 @@ int main(int argc, char* argv[]) {
     loadBuildConfig(buildConfig, kBuildConfigFile);
     bool buildPressed = false;
     bool buildAndRunPressed = false;
+    bool packagePressed = false;
+    std::string prePackageConfig;
     bool buildConfigurePhase = false;
     bool buildSaveModalPending = false;
     bool buildSaveModalRunAfter = false;
@@ -759,6 +761,9 @@ int main(int argc, char* argv[]) {
                     }
                     if (ImGui::MenuItem("Build and Run", "Cmd+R")) {
                         buildAndRunPressed = true;
+                    }
+                    if (ImGui::MenuItem("Package for Sharing")) {
+                        packagePressed = true;
                     }
                     ImGui::EndDisabled();
                     ImGui::Separator();
@@ -2127,6 +2132,20 @@ int main(int argc, char* argv[]) {
             buildAndRunPressed = false;
         }
 
+        // Handle Package for Sharing request
+        if (packagePressed && !buildState.running) {
+            prePackageConfig = buildConfig.buildConfig;
+            buildConfig.buildConfig = "Release";
+            buildState.packageAfterBuild = true;
+            if (document.dirty()) {
+                buildSaveModalPending = true;
+                buildSaveModalRunAfter = false;
+            } else {
+                triggerBuild(false);
+            }
+            packagePressed = false;
+        }
+
         // Build Output panel
         if (ui.showBuildOutput && !ui.viewportFullscreen) {
             ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(6.0f, 6.0f));
@@ -2205,6 +2224,14 @@ int main(int argc, char* argv[]) {
                 startBuild(buildState, buildConfig, "pixel-roguelike");
             } else {
                 buildConfigurePhase = false; // configure failed, don't build
+                // Clean up packaging state on configure failure
+                if (buildState.packageAfterBuild) {
+                    buildState.packageAfterBuild = false;
+                    if (!prePackageConfig.empty()) {
+                        buildConfig.buildConfig = prePackageConfig;
+                        prePackageConfig.clear();
+                    }
+                }
             }
         }
 
@@ -2212,6 +2239,24 @@ int main(int argc, char* argv[]) {
         if (!buildState.running && !buildConfigurePhase && buildState.exitCode == 0 && buildState.runAfterBuild) {
             buildState.runAfterBuild = false;
             launchGame(buildConfig, buildState.currentScenePath);
+        }
+
+        // Handle build completion: package game if Package for Sharing succeeded
+        if (!buildState.running && !buildConfigurePhase && buildState.packageAfterBuild) {
+            buildState.packageAfterBuild = false;
+            if (buildState.exitCode == 0) {
+                bool ok = packageGame(buildConfig, "build-package", buildLog);
+                if (ok) {
+                    buildLog.addLine("", BuildLineKind::Normal);
+                    buildLog.addLine("=== Package created: build-package/ ===",
+                                     BuildLineKind::Normal);
+                }
+            }
+            // Restore original build config whether build succeeded or failed
+            if (!prePackageConfig.empty()) {
+                buildConfig.buildConfig = prePackageConfig;
+                prePackageConfig.clear();
+            }
         }
 
         // Unsaved changes modal (D-15)
@@ -2235,6 +2280,14 @@ int main(int argc, char* argv[]) {
             }
             ImGui::SameLine();
             if (ImGui::Button("Cancel")) {
+                // Clean up packaging state if user cancels
+                if (buildState.packageAfterBuild) {
+                    buildState.packageAfterBuild = false;
+                    if (!prePackageConfig.empty()) {
+                        buildConfig.buildConfig = prePackageConfig;
+                        prePackageConfig.clear();
+                    }
+                }
                 ImGui::CloseCurrentPopup();
             }
             ImGui::EndPopup();
