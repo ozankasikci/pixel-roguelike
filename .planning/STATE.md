@@ -255,10 +255,11 @@ None yet.
 | 260404-omb | Fix editor light gizmo moving helper but not preview light | 2026-04-04 | 1464a2a | [260404-omb-fix-editor-light-gizmo-moving-helper-but](./quick/260404-omb-fix-editor-light-gizmo-moving-helper-but/) |
 | 260404-p8q | Safe cleanup of environment shader properties: remove redundant sky sun fields, unify sky enable toggle, stop persisting depth preview scale | 2026-04-04 | 5bad39e | [260404-p8q-safe-cleanup-of-environment-shader-prope](./quick/260404-p8q-safe-cleanup-of-environment-shader-prope/) |
 | 260405-4rg | Reduce editVec3 default drag speed from 0.1 to 0.01 for finer precision | 2026-04-05 | 9fcaff1 | [260405-4rg-just-like-unity-for-float-and-int-values](./quick/260405-4rg-just-like-unity-for-float-and-int-values/) |
+| 260405-587 | Enable single-click text input on DragFloat inspector fields | 2026-04-05 | 6351cfe | [260405-587-single-click-on-inspector-fields-should-](./quick/260405-587-single-click-on-inspector-fields-should-/) |
 
 ## Session Continuity
 
-Last activity: 2026-04-05 - Completed quick task 260405-4rg: Unity-style drag precision for inspector fields
+Last activity: 2026-04-05 - Completed quick task 260405-587: Single-click text input on inspector fields
 Last session: 2026-04-04T23:57:44.079Z
 Stopped at: Completed 17-04-PLAN.md
 Resume file: None
