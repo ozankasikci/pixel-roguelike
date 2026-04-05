@@ -101,6 +101,7 @@ struct EditorUiState {
     bool showEnvironment = true;
     bool showViewport = true;
     bool showBuildOutput = false;
+    bool showPerformance = false;
     bool viewportFullscreen = false;
     bool showColliders = true;
     bool showLightHelpers = false;

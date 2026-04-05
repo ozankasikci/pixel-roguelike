@@ -21,6 +21,7 @@
 #include "editor/render/EditorViewportRenderer.h"
 #include "editor/ui/EditorOutlinerPanel.h"
 #include "editor/ui/EditorPanels.h"
+#include "editor/ui/EditorPerformancePanel.h"
 #include "editor/viewport/EditorViewportController.h"
 #include "editor/viewport/EditorViewportInteraction.h"
 #include "game/content/ContentRegistry.h"
@@ -730,6 +731,7 @@ int main(int argc, char* argv[]) {
                     ImGui::MenuItem("Show Spawn Marker", nullptr, &ui.showSpawnMarker);
                     ImGui::Separator();
                     ImGui::MenuItem("Viewport Stats", nullptr, &ui.showViewportStats);
+                    ImGui::MenuItem("Performance", nullptr, &ui.showPerformance);
                     ImGui::EndMenu();
                 }
                 ImGui::EndMenu();
@@ -1039,6 +1041,13 @@ int main(int argc, char* argv[]) {
         }
         if (!ui.viewportFullscreen && renderEnvironmentPanel(document, content, environmentIds, &ui.showEnvironment, widgetCommand, commandStack)) {
             previewDirty = true;
+        }
+        if (ui.showPerformance) {
+            renderPerformancePanel(
+                runtimePreviewSession.performanceStats(),
+                runtimePreviewSession.pipelineStats(),
+                ui.playPreview,
+                &ui.showPerformance);
         }
         const AssetBrowserActionResult assetBrowserActions = ui.viewportFullscreen
             ? AssetBrowserActionResult{}

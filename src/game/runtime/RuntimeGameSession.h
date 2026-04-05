@@ -22,11 +22,21 @@ struct LevelDef;
 struct RuntimeMutableSnapshot;
 
 struct RuntimeSessionPerformanceStats {
+    // --- Setup stats (populated during rebuild / reset operations) ---
     double rebuildMs = 0.0;
     double resetForPlayMs = 0.0;
     double rendererInitMs = 0.0;
     double rendererPrewarmMs = 0.0;
     double lastRenderMs = 0.0;
+
+    // --- Per-frame tick stats (populated each tick() call) ---
+    double interactionMs = 0.0;
+    double checkpointsMs = 0.0;
+    double physicsMs = 0.0;
+    double inventoryMs = 0.0;
+    double movementMs = 0.0;
+    double cameraMs = 0.0;
+    double totalTickMs = 0.0;
 };
 
 class RuntimeGameSession {
