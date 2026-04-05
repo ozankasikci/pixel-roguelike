@@ -439,6 +439,7 @@ int main(int argc, char* argv[]) {
     EditorBuildConfig buildConfig;
     BuildOutputLog buildLog;
     loadBuildConfig(buildConfig, kBuildConfigFile);
+    std::vector<std::string> allBuildableScenes = listBuildableScenes();
     bool buildPressed = false;
     bool buildAndRunPressed = false;
     bool packagePressed = false;
@@ -766,6 +767,53 @@ int main(int argc, char* argv[]) {
                         packagePressed = true;
                     }
                     ImGui::EndDisabled();
+                    ImGui::Separator();
+                    // Build Scenes submenu — per-scene checkboxes for packaging
+                    if (ImGui::BeginMenu("Build Scenes")) {
+                        bool allSelected = buildConfig.buildScenes.empty();
+                        if (ImGui::MenuItem("All Scenes (default)", nullptr, allSelected)) {
+                            buildConfig.buildScenes.clear();
+                        }
+                        ImGui::Separator();
+                        for (const auto& scene : allBuildableScenes) {
+                            bool included = allSelected;
+                            if (!allSelected) {
+                                included = std::find(buildConfig.buildScenes.begin(),
+                                                     buildConfig.buildScenes.end(), scene) !=
+                                           buildConfig.buildScenes.end();
+                            }
+                            if (ImGui::MenuItem(scene.c_str(), nullptr, included)) {
+                                if (allSelected) {
+                                    // Switching from "all" to selective: populate with all
+                                    // scenes then toggle this one off
+                                    buildConfig.buildScenes = allBuildableScenes;
+                                    auto it = std::find(buildConfig.buildScenes.begin(),
+                                                        buildConfig.buildScenes.end(), scene);
+                                    if (it != buildConfig.buildScenes.end()) {
+                                        buildConfig.buildScenes.erase(it);
+                                    }
+                                } else if (included) {
+                                    // Remove from list
+                                    auto it = std::find(buildConfig.buildScenes.begin(),
+                                                        buildConfig.buildScenes.end(), scene);
+                                    if (it != buildConfig.buildScenes.end()) {
+                                        buildConfig.buildScenes.erase(it);
+                                    }
+                                    // If empty, revert to "all" (empty = all)
+                                } else {
+                                    // Add to list
+                                    buildConfig.buildScenes.push_back(scene);
+                                    std::sort(buildConfig.buildScenes.begin(),
+                                              buildConfig.buildScenes.end());
+                                    // If all scenes now selected, revert to empty (= all)
+                                    if (buildConfig.buildScenes == allBuildableScenes) {
+                                        buildConfig.buildScenes.clear();
+                                    }
+                                }
+                            }
+                        }
+                        ImGui::EndMenu();
+                    }
                     ImGui::Separator();
                     // Configuration submenu (D-04)
                     if (ImGui::BeginMenu("Configuration")) {
