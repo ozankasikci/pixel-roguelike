@@ -1,0 +1,52 @@
+name: Build Windows
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: windows-latest
+    env:
+      VCPKG_DEFAULT_TRIPLET: x64-windows-static
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup vcpkg
+        uses: lukka/run-vcpkg@v11
+        with:
+          vcpkgGitCommitId: '89dc8be5a32e5cec20f460e0e7a16950f0053ba0'
+
+      - name: Install dependencies
+        run: vcpkg install glfw3 glm spdlog openal-soft zlib
+
+      - name: Setup Python for GLAD
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install GLAD jinja2 dependency
+        run: pip install jinja2
+
+      - name: Configure CMake
+        run: >
+          cmake -B build -S .
+          -DCMAKE_TOOLCHAIN_FILE=${{ github.workspace }}/vcpkg/scripts/buildsystems/vcpkg.cmake
+          -DVCPKG_TARGET_TRIPLET=x64-windows-static
+          -DCMAKE_BUILD_TYPE=Release
+          -DPython_EXECUTABLE=python
+
+      - name: Build
+        run: cmake --build build --config Release --parallel
+
+      - name: Run tests
+        run: ctest --test-dir build --build-config Release --output-on-failure
+
+      - name: Upload binaries
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-binaries
+          path: |
+            build/Release/*.exe
+            build/apps/**/Release/*.exe
+          retention-days: 7

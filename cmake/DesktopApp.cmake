@@ -11,5 +11,7 @@ function(configure_desktop_app target)
             "-framework IOKit"
         )
         target_compile_definitions(${target} PRIVATE GL_SILENCE_DEPRECATION)
+    elseif(WIN32)
+        target_link_libraries(${target} PRIVATE opengl32)
     endif()
 endfunction()
