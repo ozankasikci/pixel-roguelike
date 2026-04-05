@@ -277,6 +277,45 @@ void launchGame(const EditorBuildConfig& config, const std::string& scenePath) {
     spdlog::info("EditorBuildSystem: game launched (pid={})", pid);
 }
 
+// ---------------------------------------------------------------------------
+// packageGame
+// ---------------------------------------------------------------------------
+
+bool packageGame(const EditorBuildConfig& config, const std::string& outputDir, BuildOutputLog& log) {
+    namespace fs = std::filesystem;
+
+    try {
+        // Clean and recreate output directory
+        fs::remove_all(outputDir);
+        fs::create_directories(outputDir);
+
+        // Copy the game binary
+        std::string binaryPath = gameBinaryPath(config);
+        fs::path destBinary = fs::path(outputDir) / fs::path(binaryPath).filename();
+        fs::copy_file(binaryPath, destBinary, fs::copy_options::overwrite_existing);
+
+        // Set executable permissions (Unix)
+        fs::permissions(destBinary,
+                        fs::perms::owner_exec | fs::perms::group_exec | fs::perms::others_exec,
+                        fs::perm_options::add);
+
+        // Copy assets directory recursively
+        fs::copy("assets", fs::path(outputDir) / "assets",
+                 fs::copy_options::recursive | fs::copy_options::overwrite_existing);
+
+        spdlog::info("EditorBuildSystem: package created at {}/", outputDir);
+        log.addLine(("Package created successfully: " + outputDir + "/").c_str(),
+                     BuildLineKind::Normal);
+        return true;
+
+    } catch (const fs::filesystem_error& e) {
+        spdlog::error("EditorBuildSystem: packaging failed: {}", e.what());
+        log.addLine(("Packaging failed: " + std::string(e.what())).c_str(),
+                     BuildLineKind::Error);
+        return false;
+    }
+}
+
 #else // _WIN32 stubs
 
 void startBuild(EditorBuildState& state, const EditorBuildConfig& config, const std::string& target) {
@@ -300,6 +339,12 @@ void pollBuild(EditorBuildState& state, BuildOutputLog& log) {
 void launchGame(const EditorBuildConfig& config, const std::string& scenePath) {
     (void)config; (void)scenePath;
     spdlog::warn("EditorBuildSystem: launchGame not implemented on Windows");
+}
+
+bool packageGame(const EditorBuildConfig& config, const std::string& outputDir, BuildOutputLog& log) {
+    (void)config; (void)outputDir; (void)log;
+    spdlog::warn("EditorBuildSystem: packageGame not implemented on Windows");
+    return false;
 }
 
 #endif // _WIN32

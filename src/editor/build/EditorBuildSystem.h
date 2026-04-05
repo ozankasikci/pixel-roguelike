@@ -79,6 +79,7 @@ struct EditorBuildState {
     int    pipeFd  = -1;
     bool   running = false;
     bool   runAfterBuild = false;  // true when triggered by "Build and Run" (D-17)
+    bool   packageAfterBuild = false;  // true when triggered by "Package for Sharing"
     int    exitCode = -1;
     float  progressPct = 0.0f;
     std::string currentScenePath;  // --scene path for game launch (D-18)
@@ -116,6 +117,9 @@ std::string gameBinaryPath(const EditorBuildConfig& config);
 
 /// Launch the game binary (fire-and-forget fork+exec, D-17/D-18).
 void launchGame(const EditorBuildConfig& config, const std::string& scenePath);
+
+/// Package the game binary + assets into a distributable folder.
+bool packageGame(const EditorBuildConfig& config, const std::string& outputDir, BuildOutputLog& log);
 
 /// Load build preferences from a key=value INI file.
 void loadBuildConfig(EditorBuildConfig& config, const std::string& path);
