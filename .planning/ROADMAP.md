@@ -197,7 +197,7 @@ Plans:
 
 ### Phase 10: Global Keyboard Shortcuts and Hover Highlight
 
-**Goal:** The editor responds to Delete, Ctrl+D, Escape, and F from any focused panel — viewport, outliner, or inspector — and shows a hover highlight on objects under the cursor before they are clicked
+**Goal:** The editor responds to Delete, Ctrl+D, Escape, and F from any focused panel �� viewport, outliner, or inspector — and shows a hover highlight on objects under the cursor before they are clicked
 **Depends on:** Phase 9
 **Requirements**: SEL-02, SEL-03, OBJ-01, OBJ-02, OBJ-03
 **Success Criteria** (what must be TRUE):
@@ -271,7 +271,7 @@ Plans:
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order: 1 → 1.1 → 2 → 2.1 → 3 → 4 → 5 → 6 → 7 → 8 → 9 → 10 → 11 → 12 → 13 → 14 → 15 → 16 → 17
+Phases execute in numeric order: 1 → 1.1 → 2 → 2.1 → 3 → 4 → 5 → 6 → 7 → 8 → 9 → 10 → 11 → 12 → 13 → 14 → 15 → 16 → 17 → 18
 
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
@@ -294,6 +294,7 @@ Phases execute in numeric order: 1 → 1.1 → 2 → 2.1 → 3 → 4 → 5 → 6
 | 15. Editor ImGui Themes | v1.2 | 2/2 | Complete | 2026-04-03 |
 | 16. Trigger & Behavior Authoring | v1.2 | 3/3 | Complete | 2026-04-04 |
 | 17. Unified Collider System | v1.2 | 4/4 | Complete | 2026-04-05 |
+| 18. Maintainability Refactoring | — | 0/4 | Planned | - |
 
 ### Phase 14: improve lighting, reflections, occlusion, and shadow quality
 
@@ -356,3 +357,23 @@ Plans:
 - [x] 17-02-PLAN.md — PhysicsSystem sensor bodies via CharacterContactListener, BehaviorSystem update, TriggerSystem deletion, runtime wiring
 - [x] 17-03-PLAN.md — Editor unification: single Collider kind, inspector shape/mode dropdowns, preview renderer, all panel updates
 - [x] 17-04-PLAN.md — Gap closure: SolidAndTrigger yellow wireframe, fix stale test, delete orphaned headers
+
+### Phase 18: Maintainability refactoring for editor UI, serialization, and round-trip fidelity
+
+**Goal:** Reduce code duplication, improve type safety, and increase maintainability across LevelDef.cpp (parser consolidation, legacy deletion, light keyword unification), EditorInspectorPanel.cpp (decomposition into per-type inspector files), and EditorSceneDocument.cpp (switch-to-visitor refactoring). No new features.
+**Requirements**: None (maintainability refactoring phase; not mapped to REQUIREMENTS.md IDs)
+**Depends on:** Phase 17
+**Success Criteria** (what must be TRUE):
+  1. parseNodeMetadata() and per-action parser helpers eliminate duplicate parsing loops in LevelDef.cpp
+  2. All legacy format parsers (collider_box, collider_cylinder, trigger_box, trigger_sphere) are deleted
+  3. Light keywords use unified `light point/spot/directional` format across all scene files
+  4. EditorInspectorPanel.cpp is a thin dispatcher under 200 lines with 10+ per-type inspector files
+  5. EditorSceneDocument.cpp uses std::visit instead of switch-on-kind for payload dispatch
+  6. All existing tests pass, all three executables build
+**Plans:** 4 plans
+
+Plans:
+- [ ] 18-01-PLAN.md — Parser consolidation: extract parseNodeMetadata/parseShapeTokens helpers, per-action parsers, PlacementBase struct, delete legacy format code
+- [ ] 18-02-PLAN.md — Unified light keyword: single parser/serializer, scene file migration, round-trip test update
+- [ ] 18-03-PLAN.md — Inspector decomposition: 10+ per-type inspector files, InspectorUtils shared module, thin dispatcher
+- [ ] 18-04-PLAN.md — Visitor pattern: replace 5 switch-on-kind statements with std::visit in EditorSceneDocument.cpp
