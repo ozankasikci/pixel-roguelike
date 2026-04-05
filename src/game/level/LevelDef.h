@@ -11,6 +11,15 @@
 #include <string>
 #include <vector>
 
+// Common fields shared by all placement structs (node graph metadata).
+// Used as the parameter type for parser helpers — does not replace existing struct fields.
+struct PlacementBase {
+    glm::vec3 position{0.0f};
+    glm::vec3 rotation{0.0f};
+    std::string nodeId;
+    std::string parentNodeId;
+};
+
 struct BehaviorDeclaration {
     std::string eventType;   // "on_activate", "on_enter", "on_exit", "on_timer"
     ActionEntry action;

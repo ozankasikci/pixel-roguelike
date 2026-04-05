@@ -94,6 +94,28 @@ void appendNodeMetadata(std::ostringstream& out,
     }
 }
 
+// Returns true if the current token was a "node" or "parent" keyword and was consumed.
+// Caller should `continue` to the next token on true.
+bool parseNodeMetadata(const std::string& path, int lineNumber,
+                       const std::vector<std::string>& tokens, std::size_t& index,
+                       std::string& outNodeId, std::string& outParentNodeId) {
+    if (tokens[index] == "node") {
+        if (index + 1 >= tokens.size())
+            throwParseError(path, lineNumber, "missing node id after 'node'");
+        outNodeId = tokens[index + 1];
+        index += 2;
+        return true;
+    }
+    if (tokens[index] == "parent") {
+        if (index + 1 >= tokens.size())
+            throwParseError(path, lineNumber, "missing parent node id after 'parent'");
+        outParentNodeId = tokens[index + 1];
+        index += 2;
+        return true;
+    }
+    return false;
+}
+
 bool decomposeTransformMatrix(const glm::mat4& matrix,
                               glm::vec3& position,
                               glm::vec3& rotationDegrees,
@@ -166,6 +188,169 @@ ActionType parseActionTypeName(const std::string& path, int lineNumber, const st
     return ActionType::Delay; // unreachable
 }
 
+// Per-action parser helpers — each handles the type-specific token fields for one action family.
+// Called by parseActionEntry after the common fields (target, delay, fire_once) have been handled.
+
+void parseDoorActionParams(DoorActionParams& params, const std::string& path,
+                           int lineNumber, const std::vector<std::string>& tokens,
+                           std::size_t& i) {
+    if (tokens[i] == "duration") {
+        if (i + 1 >= tokens.size()) throwParseError(path, lineNumber, "missing duration value");
+        float v = 0.0f;
+        if (!tryParseFloatToken(tokens[i + 1], v)) throwParseError(path, lineNumber, "invalid duration value");
+        params.duration = v;
+        i += 2;
+        return;
+    }
+    throwParseError(path, lineNumber, "unknown door action parameter '" + tokens[i] + "'");
+}
+
+void parseSoundActionParams(SoundActionParams& params, const std::string& path,
+                            int lineNumber, const std::vector<std::string>& tokens,
+                            std::size_t& i) {
+    if (tokens[i] == "sound") {
+        if (i + 1 >= tokens.size()) throwParseError(path, lineNumber, "missing sound id");
+        params.soundId = tokens[i + 1];
+        i += 2;
+        return;
+    }
+    if (tokens[i] == "volume") {
+        if (i + 1 >= tokens.size()) throwParseError(path, lineNumber, "missing volume value");
+        float v = 0.0f;
+        if (!tryParseFloatToken(tokens[i + 1], v)) throwParseError(path, lineNumber, "invalid volume value");
+        params.volume = v;
+        i += 2;
+        return;
+    }
+    throwParseError(path, lineNumber, "unknown sound action parameter '" + tokens[i] + "'");
+}
+
+void parseLightActionParams(LightActionParams& params, const std::string& path,
+                            int lineNumber, const std::vector<std::string>& tokens,
+                            std::size_t& i) {
+    if (tokens[i] == "intensity") {
+        if (i + 1 >= tokens.size()) throwParseError(path, lineNumber, "missing intensity value");
+        float v = 0.0f;
+        if (!tryParseFloatToken(tokens[i + 1], v)) throwParseError(path, lineNumber, "invalid intensity value");
+        params.intensity = v;
+        i += 2;
+        return;
+    }
+    if (tokens[i] == "color") {
+        if (i + 3 >= tokens.size()) throwParseError(path, lineNumber, "missing color values");
+        glm::vec3 col{1.0f};
+        if (!tryParseVec3Tokens(tokens, i + 1, col)) throwParseError(path, lineNumber, "invalid color values");
+        params.color = col;
+        i += 4;
+        return;
+    }
+    if (tokens[i] == "radius") {
+        if (i + 1 >= tokens.size()) throwParseError(path, lineNumber, "missing radius value");
+        float v = 0.0f;
+        if (!tryParseFloatToken(tokens[i + 1], v)) throwParseError(path, lineNumber, "invalid radius value");
+        params.radius = v;
+        i += 2;
+        return;
+    }
+    throwParseError(path, lineNumber, "unknown set_light action parameter '" + tokens[i] + "'");
+}
+
+void parseFlickerLightParams(FlickerLightParams& params, const std::string& path,
+                             int lineNumber, const std::vector<std::string>& tokens,
+                             std::size_t& i) {
+    if (tokens[i] == "duration") {
+        if (i + 1 >= tokens.size()) throwParseError(path, lineNumber, "missing duration value");
+        float v = 0.0f;
+        if (!tryParseFloatToken(tokens[i + 1], v)) throwParseError(path, lineNumber, "invalid duration value");
+        params.duration = v;
+        i += 2;
+        return;
+    }
+    if (tokens[i] == "rate") {
+        if (i + 1 >= tokens.size()) throwParseError(path, lineNumber, "missing rate value");
+        float v = 0.0f;
+        if (!tryParseFloatToken(tokens[i + 1], v)) throwParseError(path, lineNumber, "invalid rate value");
+        params.rate = v;
+        i += 2;
+        return;
+    }
+    throwParseError(path, lineNumber, "unknown flicker_light action parameter '" + tokens[i] + "'");
+}
+
+void parseMessageActionParams(MessageActionParams& params, const std::string& path,
+                              int lineNumber, const std::vector<std::string>& tokens,
+                              std::size_t& i) {
+    if (tokens[i] == "text") {
+        if (i + 1 >= tokens.size()) throwParseError(path, lineNumber, "missing text value");
+        params.text = tokens[i + 1];
+        i += 2;
+        return;
+    }
+    if (tokens[i] == "duration") {
+        if (i + 1 >= tokens.size()) throwParseError(path, lineNumber, "missing duration value");
+        float v = 0.0f;
+        if (!tryParseFloatToken(tokens[i + 1], v)) throwParseError(path, lineNumber, "invalid duration value");
+        params.duration = v;
+        i += 2;
+        return;
+    }
+    throwParseError(path, lineNumber, "unknown show_message action parameter '" + tokens[i] + "'");
+}
+
+void parseDelayActionParams(DelayActionParams& params, const std::string& path,
+                            int lineNumber, const std::vector<std::string>& tokens,
+                            std::size_t& i) {
+    if (tokens[i] == "duration") {
+        if (i + 1 >= tokens.size()) throwParseError(path, lineNumber, "missing duration value");
+        float v = 0.0f;
+        if (!tryParseFloatToken(tokens[i + 1], v)) throwParseError(path, lineNumber, "invalid duration value");
+        params.seconds = v;
+        i += 2;
+        return;
+    }
+    throwParseError(path, lineNumber, "unknown delay action parameter '" + tokens[i] + "'");
+}
+
+void parseEventActionParams(EventActionParams& params, const std::string& path,
+                            int lineNumber, const std::vector<std::string>& tokens,
+                            std::size_t& i) {
+    if (tokens[i] == "event") {
+        if (i + 1 >= tokens.size()) throwParseError(path, lineNumber, "missing event name");
+        params.eventName = tokens[i + 1];
+        i += 2;
+        return;
+    }
+    throwParseError(path, lineNumber, "unknown emit_event action parameter '" + tokens[i] + "'");
+}
+
+void parsePlayerLockParams(PlayerLockParams& params, const std::string& path,
+                           int lineNumber, const std::vector<std::string>& tokens,
+                           std::size_t& i) {
+    if (tokens[i] == "duration") {
+        if (i + 1 >= tokens.size()) throwParseError(path, lineNumber, "missing duration value");
+        float v = 0.0f;
+        if (!tryParseFloatToken(tokens[i + 1], v)) throwParseError(path, lineNumber, "invalid duration value");
+        params.duration = v;
+        i += 2;
+        return;
+    }
+    throwParseError(path, lineNumber, "unknown lock_player action parameter '" + tokens[i] + "'");
+}
+
+void parseTeleportPlayerParams(TeleportPlayerParams& params, const std::string& path,
+                               int lineNumber, const std::vector<std::string>& tokens,
+                               std::size_t& i) {
+    if (tokens[i] == "position") {
+        if (i + 3 >= tokens.size()) throwParseError(path, lineNumber, "missing position values");
+        glm::vec3 pos{0.0f};
+        if (!tryParseVec3Tokens(tokens, i + 1, pos)) throwParseError(path, lineNumber, "invalid position values");
+        params.position = pos;
+        i += 4;
+        return;
+    }
+    throwParseError(path, lineNumber, "unknown teleport_player action parameter '" + tokens[i] + "'");
+}
+
 ActionEntry parseActionEntry(const std::string& path,
                              int lineNumber,
                              const std::string& actionTypeName,
@@ -217,6 +402,7 @@ ActionEntry parseActionEntry(const std::string& path,
     for (std::size_t i = startIndex; i < tokens.size();) {
         const std::string& tok = tokens[i];
 
+        // Common fields shared by all action types
         if (tok == "target") {
             if (i + 1 >= tokens.size()) throwParseError(path, lineNumber, "missing target node id");
             entry.targetNodeId = tokens[i + 1];
@@ -236,85 +422,44 @@ ActionEntry parseActionEntry(const std::string& path,
             i += 1;
             continue;
         }
-        if (tok == "duration") {
-            if (i + 1 >= tokens.size()) throwParseError(path, lineNumber, "missing duration value");
-            float v = 0.0f;
-            if (!tryParseFloatToken(tokens[i + 1], v)) throwParseError(path, lineNumber, "invalid duration value");
-            if (auto* p = std::get_if<DoorActionParams>(&entry.params)) { p->duration = v; }
-            else if (auto* p2 = std::get_if<FlickerLightParams>(&entry.params)) { p2->duration = v; }
-            else if (auto* p3 = std::get_if<MessageActionParams>(&entry.params)) { p3->duration = v; }
-            else if (auto* p4 = std::get_if<PlayerLockParams>(&entry.params)) { p4->duration = v; }
-            else if (auto* p5 = std::get_if<DelayActionParams>(&entry.params)) { p5->seconds = v; }
-            i += 2;
-            continue;
+
+        // Type-specific fields — dispatch to per-action helpers
+        switch (entry.type) {
+        case ActionType::OpenDoor:
+        case ActionType::CloseDoor:
+        case ActionType::ToggleDoor:
+            parseDoorActionParams(std::get<DoorActionParams>(entry.params), path, lineNumber, tokens, i);
+            break;
+        case ActionType::PlaySound:
+            parseSoundActionParams(std::get<SoundActionParams>(entry.params), path, lineNumber, tokens, i);
+            break;
+        case ActionType::SetLight:
+            parseLightActionParams(std::get<LightActionParams>(entry.params), path, lineNumber, tokens, i);
+            break;
+        case ActionType::FlickerLight:
+            parseFlickerLightParams(std::get<FlickerLightParams>(entry.params), path, lineNumber, tokens, i);
+            break;
+        case ActionType::ShowMessage:
+            parseMessageActionParams(std::get<MessageActionParams>(entry.params), path, lineNumber, tokens, i);
+            break;
+        case ActionType::Delay:
+            parseDelayActionParams(std::get<DelayActionParams>(entry.params), path, lineNumber, tokens, i);
+            break;
+        case ActionType::EnableEntity:
+        case ActionType::DisableEntity:
+            throwParseError(path, lineNumber, "unknown enable/disable_entity action parameter '" + tok + "'");
+            break;
+        case ActionType::EmitEvent:
+            parseEventActionParams(std::get<EventActionParams>(entry.params), path, lineNumber, tokens, i);
+            break;
+        case ActionType::LockPlayer:
+        case ActionType::UnlockPlayer:
+            parsePlayerLockParams(std::get<PlayerLockParams>(entry.params), path, lineNumber, tokens, i);
+            break;
+        case ActionType::TeleportPlayer:
+            parseTeleportPlayerParams(std::get<TeleportPlayerParams>(entry.params), path, lineNumber, tokens, i);
+            break;
         }
-        if (tok == "sound") {
-            if (i + 1 >= tokens.size()) throwParseError(path, lineNumber, "missing sound id");
-            if (auto* p = std::get_if<SoundActionParams>(&entry.params)) { p->soundId = tokens[i + 1]; }
-            i += 2;
-            continue;
-        }
-        if (tok == "volume") {
-            if (i + 1 >= tokens.size()) throwParseError(path, lineNumber, "missing volume value");
-            float v = 0.0f;
-            if (!tryParseFloatToken(tokens[i + 1], v)) throwParseError(path, lineNumber, "invalid volume value");
-            if (auto* p = std::get_if<SoundActionParams>(&entry.params)) { p->volume = v; }
-            i += 2;
-            continue;
-        }
-        if (tok == "intensity") {
-            if (i + 1 >= tokens.size()) throwParseError(path, lineNumber, "missing intensity value");
-            float v = 0.0f;
-            if (!tryParseFloatToken(tokens[i + 1], v)) throwParseError(path, lineNumber, "invalid intensity value");
-            if (auto* p = std::get_if<LightActionParams>(&entry.params)) { p->intensity = v; }
-            i += 2;
-            continue;
-        }
-        if (tok == "color") {
-            if (i + 3 >= tokens.size()) throwParseError(path, lineNumber, "missing color values");
-            glm::vec3 col{1.0f};
-            if (!tryParseVec3Tokens(tokens, i + 1, col)) throwParseError(path, lineNumber, "invalid color values");
-            if (auto* p = std::get_if<LightActionParams>(&entry.params)) { p->color = col; }
-            i += 4;
-            continue;
-        }
-        if (tok == "radius") {
-            if (i + 1 >= tokens.size()) throwParseError(path, lineNumber, "missing radius value");
-            float v = 0.0f;
-            if (!tryParseFloatToken(tokens[i + 1], v)) throwParseError(path, lineNumber, "invalid radius value");
-            if (auto* p = std::get_if<LightActionParams>(&entry.params)) { p->radius = v; }
-            i += 2;
-            continue;
-        }
-        if (tok == "rate") {
-            if (i + 1 >= tokens.size()) throwParseError(path, lineNumber, "missing rate value");
-            float v = 0.0f;
-            if (!tryParseFloatToken(tokens[i + 1], v)) throwParseError(path, lineNumber, "invalid rate value");
-            if (auto* p = std::get_if<FlickerLightParams>(&entry.params)) { p->rate = v; }
-            i += 2;
-            continue;
-        }
-        if (tok == "text") {
-            if (i + 1 >= tokens.size()) throwParseError(path, lineNumber, "missing text value");
-            if (auto* p = std::get_if<MessageActionParams>(&entry.params)) { p->text = tokens[i + 1]; }
-            i += 2;
-            continue;
-        }
-        if (tok == "event") {
-            if (i + 1 >= tokens.size()) throwParseError(path, lineNumber, "missing event name");
-            if (auto* p = std::get_if<EventActionParams>(&entry.params)) { p->eventName = tokens[i + 1]; }
-            i += 2;
-            continue;
-        }
-        if (tok == "position") {
-            if (i + 3 >= tokens.size()) throwParseError(path, lineNumber, "missing position values");
-            glm::vec3 pos{0.0f};
-            if (!tryParseVec3Tokens(tokens, i + 1, pos)) throwParseError(path, lineNumber, "invalid position values");
-            if (auto* p = std::get_if<TeleportPlayerParams>(&entry.params)) { p->position = pos; }
-            i += 4;
-            continue;
-        }
-        throwParseError(path, lineNumber, "unknown action parameter '" + tok + "'");
     }
 
     return entry;
@@ -572,20 +717,8 @@ LevelDef loadLevelDef(const std::string& path) {
                             index += 4;
                             continue;
                         }
-                        if (tokens[index] == "node") {
-                            if (index + 1 >= tokens.size()) {
-                                throwParseError(path, lineNumber, "missing mesh node id");
-                            }
-                            placement.nodeId = tokens[index + 1];
-                            index += 2;
-                            continue;
-                        }
-                        if (tokens[index] == "parent") {
-                            if (index + 1 >= tokens.size()) {
-                                throwParseError(path, lineNumber, "missing mesh parent node id");
-                            }
-                            placement.parentNodeId = tokens[index + 1];
-                            index += 2;
+                        if (parseNodeMetadata(path, lineNumber, tokens, index,
+                                              placement.nodeId, placement.parentNodeId)) {
                             continue;
                         }
                         if (tryParseVec3Tokens(tokens, index, tint)) {
@@ -624,20 +757,8 @@ LevelDef loadLevelDef(const std::string& path) {
             }
             const auto tokens = collectRemainingTokens(stream);
             for (std::size_t index = 0; index < tokens.size();) {
-                if (tokens[index] == "node") {
-                    if (index + 1 >= tokens.size()) {
-                        throwParseError(path, lineNumber, "missing light node id");
-                    }
-                    placement.nodeId = tokens[index + 1];
-                    index += 2;
-                    continue;
-                }
-                if (tokens[index] == "parent") {
-                    if (index + 1 >= tokens.size()) {
-                        throwParseError(path, lineNumber, "missing light parent node id");
-                    }
-                    placement.parentNodeId = tokens[index + 1];
-                    index += 2;
+                if (parseNodeMetadata(path, lineNumber, tokens, index,
+                                      placement.nodeId, placement.parentNodeId)) {
                     continue;
                 }
                 throwParseError(path, lineNumber, "invalid light metadata");
@@ -665,20 +786,8 @@ LevelDef loadLevelDef(const std::string& path) {
             }
             const auto tokens = collectRemainingTokens(stream);
             for (std::size_t index = 0; index < tokens.size();) {
-                if (tokens[index] == "node") {
-                    if (index + 1 >= tokens.size()) {
-                        throwParseError(path, lineNumber, "missing spot_light node id");
-                    }
-                    placement.nodeId = tokens[index + 1];
-                    index += 2;
-                    continue;
-                }
-                if (tokens[index] == "parent") {
-                    if (index + 1 >= tokens.size()) {
-                        throwParseError(path, lineNumber, "missing spot_light parent node id");
-                    }
-                    placement.parentNodeId = tokens[index + 1];
-                    index += 2;
+                if (parseNodeMetadata(path, lineNumber, tokens, index,
+                                      placement.nodeId, placement.parentNodeId)) {
                     continue;
                 }
                 throwParseError(path, lineNumber, "invalid spot_light metadata");
@@ -700,20 +809,8 @@ LevelDef loadLevelDef(const std::string& path) {
             placement.radius = 0.0f;
             const auto tokens = collectRemainingTokens(stream);
             for (std::size_t index = 0; index < tokens.size();) {
-                if (tokens[index] == "node") {
-                    if (index + 1 >= tokens.size()) {
-                        throwParseError(path, lineNumber, "missing dir_light node id");
-                    }
-                    placement.nodeId = tokens[index + 1];
-                    index += 2;
-                    continue;
-                }
-                if (tokens[index] == "parent") {
-                    if (index + 1 >= tokens.size()) {
-                        throwParseError(path, lineNumber, "missing dir_light parent node id");
-                    }
-                    placement.parentNodeId = tokens[index + 1];
-                    index += 2;
+                if (parseNodeMetadata(path, lineNumber, tokens, index,
+                                      placement.nodeId, placement.parentNodeId)) {
                     continue;
                 }
                 throwParseError(path, lineNumber, "invalid dir_light metadata");
@@ -741,20 +838,8 @@ LevelDef loadLevelDef(const std::string& path) {
                     index += 4;
                     continue;
                 }
-                if (tokens[index] == "node") {
-                    if (index + 1 >= tokens.size()) {
-                        throwParseError(path, lineNumber, "missing collider_box node id");
-                    }
-                    placement.nodeId = tokens[index + 1];
-                    index += 2;
-                    continue;
-                }
-                if (tokens[index] == "parent") {
-                    if (index + 1 >= tokens.size()) {
-                        throwParseError(path, lineNumber, "missing collider_box parent node id");
-                    }
-                    placement.parentNodeId = tokens[index + 1];
-                    index += 2;
+                if (parseNodeMetadata(path, lineNumber, tokens, index,
+                                      placement.nodeId, placement.parentNodeId)) {
                     continue;
                 }
                 throwParseError(path, lineNumber, "invalid collider_box metadata");
@@ -781,20 +866,8 @@ LevelDef loadLevelDef(const std::string& path) {
                     index += 4;
                     continue;
                 }
-                if (tokens[index] == "node") {
-                    if (index + 1 >= tokens.size()) {
-                        throwParseError(path, lineNumber, "missing collider_cylinder node id");
-                    }
-                    placement.nodeId = tokens[index + 1];
-                    index += 2;
-                    continue;
-                }
-                if (tokens[index] == "parent") {
-                    if (index + 1 >= tokens.size()) {
-                        throwParseError(path, lineNumber, "missing collider_cylinder parent node id");
-                    }
-                    placement.parentNodeId = tokens[index + 1];
-                    index += 2;
+                if (parseNodeMetadata(path, lineNumber, tokens, index,
+                                      placement.nodeId, placement.parentNodeId)) {
                     continue;
                 }
                 throwParseError(path, lineNumber, "invalid collider_cylinder metadata");
@@ -851,16 +924,8 @@ LevelDef loadLevelDef(const std::string& path) {
                     index += 4;
                     continue;
                 }
-                if (tokens[index] == "node") {
-                    if (index + 1 >= tokens.size()) throwParseError(path, lineNumber, "missing collider node id");
-                    placement.nodeId = tokens[index + 1];
-                    index += 2;
-                    continue;
-                }
-                if (tokens[index] == "parent") {
-                    if (index + 1 >= tokens.size()) throwParseError(path, lineNumber, "missing collider parent node id");
-                    placement.parentNodeId = tokens[index + 1];
-                    index += 2;
+                if (parseNodeMetadata(path, lineNumber, tokens, index,
+                                      placement.nodeId, placement.parentNodeId)) {
                     continue;
                 }
                 if (tokens[index] == "fire_once") {
@@ -896,20 +961,8 @@ LevelDef loadLevelDef(const std::string& path) {
             }
             const auto tokens = collectRemainingTokens(stream);
             for (std::size_t index = 0; index < tokens.size();) {
-                if (tokens[index] == "node") {
-                    if (index + 1 >= tokens.size()) {
-                        throwParseError(path, lineNumber, "missing reflection_probe node id");
-                    }
-                    placement.nodeId = tokens[index + 1];
-                    index += 2;
-                    continue;
-                }
-                if (tokens[index] == "parent") {
-                    if (index + 1 >= tokens.size()) {
-                        throwParseError(path, lineNumber, "missing reflection_probe parent node id");
-                    }
-                    placement.parentNodeId = tokens[index + 1];
-                    index += 2;
+                if (parseNodeMetadata(path, lineNumber, tokens, index,
+                                      placement.nodeId, placement.parentNodeId)) {
                     continue;
                 }
                 throwParseError(path, lineNumber, "invalid reflection_probe metadata");
@@ -927,20 +980,8 @@ LevelDef loadLevelDef(const std::string& path) {
             }
             const auto tokens = collectRemainingTokens(stream);
             for (std::size_t index = 0; index < tokens.size();) {
-                if (tokens[index] == "node") {
-                    if (index + 1 >= tokens.size()) {
-                        throwParseError(path, lineNumber, "missing player_spawn node id");
-                    }
-                    placement.nodeId = tokens[index + 1];
-                    index += 2;
-                    continue;
-                }
-                if (tokens[index] == "parent") {
-                    if (index + 1 >= tokens.size()) {
-                        throwParseError(path, lineNumber, "missing player_spawn parent node id");
-                    }
-                    placement.parentNodeId = tokens[index + 1];
-                    index += 2;
+                if (parseNodeMetadata(path, lineNumber, tokens, index,
+                                      placement.nodeId, placement.parentNodeId)) {
                     continue;
                 }
                 throwParseError(path, lineNumber, "invalid player_spawn metadata");
@@ -960,20 +1001,8 @@ LevelDef loadLevelDef(const std::string& path) {
             }
             const auto tokens = collectRemainingTokens(stream);
             for (std::size_t index = 0; index < tokens.size();) {
-                if (tokens[index] == "node") {
-                    if (index + 1 >= tokens.size()) {
-                        throwParseError(path, lineNumber, "missing archetype node id");
-                    }
-                    placement.nodeId = tokens[index + 1];
-                    index += 2;
-                    continue;
-                }
-                if (tokens[index] == "parent") {
-                    if (index + 1 >= tokens.size()) {
-                        throwParseError(path, lineNumber, "missing archetype parent node id");
-                    }
-                    placement.parentNodeId = tokens[index + 1];
-                    index += 2;
+                if (parseNodeMetadata(path, lineNumber, tokens, index,
+                                      placement.nodeId, placement.parentNodeId)) {
                     continue;
                 }
                 throwParseError(path, lineNumber, "invalid archetype metadata");
@@ -993,20 +1022,8 @@ LevelDef loadLevelDef(const std::string& path) {
             }
             const auto tokens = collectRemainingTokens(stream);
             for (std::size_t index = 0; index < tokens.size();) {
-                if (tokens[index] == "node") {
-                    if (index + 1 >= tokens.size()) {
-                        throwParseError(path, lineNumber, "missing group node id");
-                    }
-                    placement.nodeId = tokens[index + 1];
-                    index += 2;
-                    continue;
-                }
-                if (tokens[index] == "parent") {
-                    if (index + 1 >= tokens.size()) {
-                        throwParseError(path, lineNumber, "missing group parent node id");
-                    }
-                    placement.parentNodeId = tokens[index + 1];
-                    index += 2;
+                if (parseNodeMetadata(path, lineNumber, tokens, index,
+                                      placement.nodeId, placement.parentNodeId)) {
                     continue;
                 }
                 throwParseError(path, lineNumber, "invalid group metadata");
@@ -1027,16 +1044,8 @@ LevelDef loadLevelDef(const std::string& path) {
             }
             const auto tokens = collectRemainingTokens(stream);
             for (std::size_t index = 0; index < tokens.size();) {
-                if (tokens[index] == "node") {
-                    if (index + 1 >= tokens.size()) throwParseError(path, lineNumber, "missing trigger_box node id");
-                    placement.nodeId = tokens[index + 1];
-                    index += 2;
-                    continue;
-                }
-                if (tokens[index] == "parent") {
-                    if (index + 1 >= tokens.size()) throwParseError(path, lineNumber, "missing trigger_box parent node id");
-                    placement.parentNodeId = tokens[index + 1];
-                    index += 2;
+                if (parseNodeMetadata(path, lineNumber, tokens, index,
+                                      placement.nodeId, placement.parentNodeId)) {
                     continue;
                 }
                 if (tokens[index] == "fire_once") {
@@ -1063,16 +1072,8 @@ LevelDef loadLevelDef(const std::string& path) {
             }
             const auto tokens = collectRemainingTokens(stream);
             for (std::size_t index = 0; index < tokens.size();) {
-                if (tokens[index] == "node") {
-                    if (index + 1 >= tokens.size()) throwParseError(path, lineNumber, "missing trigger_sphere node id");
-                    placement.nodeId = tokens[index + 1];
-                    index += 2;
-                    continue;
-                }
-                if (tokens[index] == "parent") {
-                    if (index + 1 >= tokens.size()) throwParseError(path, lineNumber, "missing trigger_sphere parent node id");
-                    placement.parentNodeId = tokens[index + 1];
-                    index += 2;
+                if (parseNodeMetadata(path, lineNumber, tokens, index,
+                                      placement.nodeId, placement.parentNodeId)) {
                     continue;
                 }
                 if (tokens[index] == "fire_once") {
