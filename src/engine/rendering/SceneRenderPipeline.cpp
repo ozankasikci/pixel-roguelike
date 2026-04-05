@@ -24,9 +24,6 @@ void SceneRenderPipeline::init() {
                                             "assets/shaders/game/scene.frag");
     shadowShader_ = std::make_unique<Shader>("assets/shaders/engine/shadow_depth.vert",
                                               "assets/shaders/engine/shadow_depth.frag");
-    csmShader_ = std::make_unique<Shader>("assets/shaders/engine/csm_depth.vert",
-                                           "assets/shaders/engine/csm_depth.geom",
-                                           "assets/shaders/engine/csm_depth.frag");
     csmShadowMap_.create(CascadedShadowMap::kDefaultResolution);
     renderer_ = std::make_unique<Renderer>(sceneShader_.get());
     bloomPass_.init();
@@ -201,9 +198,9 @@ void SceneRenderPipeline::renderShadowPass(const std::vector<RenderObject>& obje
 
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
-    // Render CSM for directional sun
+    // Render CSM for directional sun — multi-pass, one pass per cascade
     const LightingEnvironment& lighting = input.lightingEnvironment;
-    if (lighting.sun.enabled && lighting.enableShadows && csmShader_ != nullptr) {
+    if (lighting.sun.enabled && lighting.enableShadows && shadowShader_ != nullptr) {
         csmShadowMap_.computeCascades(input.viewMatrix,
                                        input.projectionMatrix,
                                        lighting.sun.direction,
@@ -211,47 +208,41 @@ void SceneRenderPipeline::renderShadowPass(const std::vector<RenderObject>& obje
                                        input.farPlane,
                                        input.postParams ? input.postParams->csmLambda : 0.5f);
 
-        csmShadowMap_.bind();
-        csmShader_->use();
-        csmShader_->setVec3("uLightDirection", lighting.sun.direction);
-        csmShader_->setFloat("uShadowCasterOffset", 0.18f);
-
-        const auto& csmMatrices = csmShadowMap_.lightSpaceMatrices();
-        for (int i = 0; i < CascadedShadowMap::kCascadeCount; ++i) {
-            csmShader_->setMat4("uLightSpaceMatrices[" + std::to_string(i) + "]", csmMatrices[i]);
-        }
-
-        // Build frustum planes for each cascade
-        std::array<std::array<glm::vec4, 6>, CascadedShadowMap::kCascadeCount> cascadeFrustums;
-        for (int i = 0; i < CascadedShadowMap::kCascadeCount; ++i) {
-            cascadeFrustums[i] = extractFrustumPlanes(csmMatrices[i]);
-        }
-
+        shadowShader_->use();
         glEnable(GL_POLYGON_OFFSET_FILL);
         glPolygonOffset(1.1f, 4.0f);
+        glEnable(GL_CULL_FACE);
+        glCullFace(GL_FRONT);
 
-        for (const auto& object : objects) {
-            if (object.mesh) {
-                bool inAnyCascade = false;
-                for (int i = 0; i < CascadedShadowMap::kCascadeCount; ++i) {
-                    if (isAabbInsideFrustum(object.mesh->aabbMin(), object.mesh->aabbMax(),
-                                             object.modelMatrix, cascadeFrustums[i])) {
-                        inAnyCascade = true;
-                        break;
-                    }
-                }
-                if (!inAnyCascade) {
+        const auto& csmMatrices = csmShadowMap_.lightSpaceMatrices();
+        const int csmRes = csmShadowMap_.resolution();
+
+        for (int cascade = 0; cascade < CascadedShadowMap::kCascadeCount; ++cascade) {
+            glBindFramebuffer(GL_FRAMEBUFFER, csmShadowMap_.framebuffer());
+            glFramebufferTextureLayer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT,
+                                      csmShadowMap_.depthArrayTexture(), 0, cascade);
+            glViewport(0, 0, csmRes, csmRes);
+            glClear(GL_DEPTH_BUFFER_BIT);
+
+            shadowShader_->setMat4("uLightViewProjection", csmMatrices[cascade]);
+
+            const auto frustum = extractFrustumPlanes(csmMatrices[cascade]);
+            for (const auto& object : objects) {
+                if (object.mesh && !isAabbInsideFrustum(object.mesh->aabbMin(),
+                                                          object.mesh->aabbMax(),
+                                                          object.modelMatrix, frustum)) {
                     ++shadowCulled;
                     continue;
                 }
+                shadowShader_->setMat4("uModel", object.modelMatrix);
+                object.mesh->draw();
             }
-            csmShader_->setMat4("uModel", object.modelMatrix);
-            object.mesh->draw();
         }
 
         glDisable(GL_POLYGON_OFFSET_FILL);
-
-        csmShadowMap_.unbind();
+        glCullFace(GL_BACK);
+        glDisable(GL_CULL_FACE);
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
     }
 
     lastStats_.shadowCulledCount = shadowCulled;

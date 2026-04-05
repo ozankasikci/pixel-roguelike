@@ -116,7 +116,6 @@ private:
     Framebuffer compositeFBO_;
     std::unique_ptr<Shader> sceneShader_;
     std::unique_ptr<Shader> shadowShader_;
-    std::unique_ptr<Shader> csmShader_;
     std::unique_ptr<Renderer> renderer_;
     BloomPass bloomPass_;
     SsaoPass ssaoPass_;
