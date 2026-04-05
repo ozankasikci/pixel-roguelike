@@ -862,6 +862,24 @@ vec3 cascadeDebugColor(int layer) {
 
 float sampleCsmShadow(vec3 fragWorldPos, vec3 fragViewPos, vec3 N, vec3 L) {
     if (uCsmEnabled == 0) return 1.0;
+
+    // Receiver-side normal offset — MECHANISM 2 of the dual CSM junction gap fix.
+    // Shifts the shadow lookup position along the surface normal before cascade
+    // projection, closing coverage gaps at wall-FLOOR junctions for surfaces whose
+    // normal has a vertical component (floor/ceiling receivers: N * 0.15 pushes the
+    // lookup deeper into the wall's shadow). The offset scales with sin(angle between
+    // N and L) — maximum at grazing angles, zero when facing the light directly.
+    //
+    // IMPORTANT: This does NOT fix wall-CEILING gaps for WALL surfaces (N horizontal
+    // → lookup shifts sideways, not in the gap direction). Wall-ceiling gaps are
+    // handled by MECHANISM 1: the caster-side offset in shadow_depth.vert (0.06 units,
+    // set in SceneRenderPipeline.cpp). Do NOT remove Mechanism 1 thinking this is
+    // sufficient — that causes the wall-ceiling white line artifact to regress.
+    // See debug session .planning/debug/csm-white-line-wall-edge.md for full history.
+    float csmNdotL = dot(N, L);
+    float csmSlopeFactor = sqrt(1.0 - clamp(csmNdotL * csmNdotL, 0.0, 1.0));
+    vec3 biasedWorldPos = fragWorldPos + N * 0.15 * csmSlopeFactor;
+
     int layer = 0;
     vec3 projCoords = vec3(0.0);
     if (!computeCsmProjection(fragWorldPos, fragViewPos, layer, projCoords)) {

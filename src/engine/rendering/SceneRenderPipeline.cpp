@@ -212,11 +212,32 @@ void SceneRenderPipeline::renderShadowPass(const std::vector<RenderObject>& obje
                                        input.postParams ? input.postParams->csmLambda : 0.5f);
 
         shadowShader_->use();
-        // Restore the caster offset for CSM: push shadow geometry 0.18 world-space units
-        // toward the light. This closes coverage gaps at grazing-angle junctions (e.g.
-        // wall top edges meeting the ceiling) that would otherwise appear as bright lines.
+        // CSM junction gap coverage — DUAL MECHANISM. Do NOT remove either part without
+        // understanding why both are required (see debug session csm-white-line-wall-edge.md):
+        //
+        // MECHANISM 1 — Caster-side offset (this file, shadow_depth.vert):
+        //   Pushes shadow-casting geometry 0.06 units toward the light during shadow map
+        //   construction. This closes the coverage gap at wall-CEILING junctions, where
+        //   the wall's top edge texels would otherwise fall outside the shadow map's
+        //   recorded occluder coverage when the sun angle is near-grazing. The value 0.06
+        //   is deliberately small: large values (e.g. 0.18, tried previously) shift the
+        //   entire wall's shadow 0.18 units toward the light, creating a gap at wall-FLOOR
+        //   junctions visible as tessellation-shaped bright triangles from first-person view.
+        //
+        // MECHANISM 2 — Receiver-side normal offset (scene.frag, sampleCsmShadow):
+        //   Shifts the shadow lookup position along the fragment's surface normal before
+        //   cascade projection (biasedWorldPos = fragWorldPos + N * 0.15 * slopeFactor).
+        //   This closes the coverage gap at wall-FLOOR junctions for FLOOR/CEILING surfaces
+        //   (N vertical → lookup pushed deeper into the wall's shadow). It does NOT fix
+        //   wall-CEILING gaps for WALL surfaces (N horizontal → lookup pushed sideways,
+        //   not in the gap direction) — that is why Mechanism 1 is still required.
+        //
+        // WHY THEY REGRESS:
+        //   - Remove Mechanism 1 (caster offset = 0) → wall-ceiling white line returns
+        //   - Remove Mechanism 2 (no normal offset in scene.frag) → floor triangle artifacts
+        //   - Increase Mechanism 1 beyond ~0.08 → floor triangle artifacts even with Mechanism 2
         shadowShader_->setVec3("uLightDirection", lighting.sun.direction);
-        shadowShader_->setFloat("uShadowCasterOffset", 0.18f);
+        shadowShader_->setFloat("uShadowCasterOffset", 0.06f);  // See dual-mechanism comment above
         glEnable(GL_POLYGON_OFFSET_FILL);
         glPolygonOffset(1.1f, 4.0f);
 
