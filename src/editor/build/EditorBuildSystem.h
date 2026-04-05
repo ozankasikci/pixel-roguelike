@@ -11,6 +11,7 @@ using pid_t = int;
 
 #include <atomic>
 #include <mutex>
+#include <set>
 #include <string>
 #include <thread>
 #include <vector>
@@ -116,6 +117,20 @@ std::string gameBinaryPath(const EditorBuildConfig& config);
 
 /// Launch the game binary (fire-and-forget fork+exec, D-17/D-18).
 void launchGame(const EditorBuildConfig& config, const std::string& scenePath);
+
+/// Collected set of asset file paths that are actually referenced by game content.
+struct AssetManifest {
+    std::set<std::string> texturePaths;  // e.g. "assets/packs/.../T_Wall_BaseColor.png"
+    std::set<std::string> skyPaths;      // e.g. "assets/skies/.../px.png"
+    std::set<std::string> meshFiles;     // e.g. "assets/packs/.../SM_Wall.fbx"
+};
+
+/// Scan scene/material/environment/prefab/def files to build a manifest of referenced assets.
+AssetManifest collectUsedAssets();
+
+/// Package the game binary and referenced assets into outputDir.
+bool packageGame(const EditorBuildConfig& config, const std::string& outputDir,
+                 BuildOutputLog& log);
 
 /// Load build preferences from a key=value INI file.
 void loadBuildConfig(EditorBuildConfig& config, const std::string& path);
