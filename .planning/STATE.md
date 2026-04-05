@@ -277,10 +277,11 @@ None yet.
 | 260405-hxx | Implement editor-only performance metrics system to track system execution times | 2026-04-05 | 0af2746 | [260405-hxx-implement-editor-only-performance-metric](./quick/260405-hxx-implement-editor-only-performance-metric/) |
 | 260405-ify | Remove CSM double-draw hack and replace with GPU polygon offset bias | 2026-04-05 | 01e191a | [260405-ify-remove-csm-double-draw-hack-and-replace-](./quick/260405-ify-remove-csm-double-draw-hack-and-replace-/) |
 | 260405-isu | Replace geometry shader CSM with multi-pass rendering + front-face culling | 2026-04-05 | b87ee0f | [260405-isu-replace-geometry-shader-csm-with-multi-p](./quick/260405-isu-replace-geometry-shader-csm-with-multi-p/) |
+| 260405-nb9 | Auto-detect project root from executable path so game works when double-clicked | 2026-04-05 | 2c102cb | [260405-nb9-auto-detect-project-root-from-executable](./quick/260405-nb9-auto-detect-project-root-from-executable/) |
 
 ## Session Continuity
 
-Last activity: 2026-04-05 - Completed quick task 260405-isu: Replace geometry shader CSM with multi-pass
+Last activity: 2026-04-05 - Completed quick task 260405-nb9: Auto-detect project root from executable path
 Last session: 2026-04-05T03:13:41.712Z
 Stopped at: Completed 18-06-PLAN.md
 Resume file: None
