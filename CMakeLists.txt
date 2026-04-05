@@ -5,6 +5,11 @@ project(pixel-roguelike LANGUAGES C CXX)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+# Support macOS 13+ (Ventura) so binaries run on older systems
+if(APPLE)
+    set(CMAKE_OSX_DEPLOYMENT_TARGET "14.5" CACHE STRING "Minimum macOS version" FORCE)
+endif()
+
 # Use dynamic CRT on MSVC (/MD) for all targets including FetchContent deps.
 # CMP0091 NEW is required for CMAKE_MSVC_RUNTIME_LIBRARY to propagate to
 # FetchContent subprojects (Jolt, Assimp, etc).
@@ -63,6 +68,54 @@ FetchContent_Declare(imgui
 )
 FetchContent_MakeAvailable(imgui)
 
+# GLFW 3.4 - Window creation, OpenGL context, input
+set(GLFW_BUILD_DOCS OFF CACHE BOOL "" FORCE)
+set(GLFW_BUILD_TESTS OFF CACHE BOOL "" FORCE)
+set(GLFW_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
+FetchContent_Declare(glfw
+    GIT_REPOSITORY https://github.com/glfw/glfw.git
+    GIT_TAG        3.4
+    GIT_PROGRESS   TRUE
+)
+FetchContent_MakeAvailable(glfw)
+
+# GLM 1.0.3 - Math library (vectors, matrices, quaternions)
+FetchContent_Declare(glm
+    GIT_REPOSITORY https://github.com/g-truc/glm.git
+    GIT_TAG        1.0.3
+    GIT_PROGRESS   TRUE
+)
+FetchContent_MakeAvailable(glm)
+
+# fmt 12.1.0 - Formatting library (used by spdlog and OpenAL Soft)
+FetchContent_Declare(fmt
+    GIT_REPOSITORY https://github.com/fmtlib/fmt.git
+    GIT_TAG        12.1.0
+    GIT_PROGRESS   TRUE
+)
+FetchContent_MakeAvailable(fmt)
+
+# spdlog v1.15.3 - Fast logging (uses external fmt)
+set(SPDLOG_FMT_EXTERNAL ON CACHE BOOL "" FORCE)
+FetchContent_Declare(spdlog
+    GIT_REPOSITORY https://github.com/gabime/spdlog.git
+    GIT_TAG        v1.15.3
+    GIT_PROGRESS   TRUE
+)
+FetchContent_MakeAvailable(spdlog)
+
+# OpenAL Soft v1.25.1 - 3D positional audio
+set(ALSOFT_UTILS OFF CACHE BOOL "" FORCE)
+set(ALSOFT_EXAMPLES OFF CACHE BOOL "" FORCE)
+set(ALSOFT_INSTALL OFF CACHE BOOL "" FORCE)
+set(LIBTYPE "STATIC" CACHE STRING "" FORCE)
+FetchContent_Declare(openal-soft
+    GIT_REPOSITORY https://github.com/kcat/openal-soft.git
+    GIT_TAG        1.25.1
+    GIT_PROGRESS   TRUE
+)
+FetchContent_MakeAvailable(openal-soft)
+
 add_library(imgui STATIC
     ${imgui_SOURCE_DIR}/imgui.cpp
     ${imgui_SOURCE_DIR}/imgui_demo.cpp
@@ -74,17 +127,6 @@ add_library(imgui STATIC
 )
 target_include_directories(imgui PUBLIC ${imgui_SOURCE_DIR} ${imgui_SOURCE_DIR}/backends)
 target_link_libraries(imgui PRIVATE glfw)
-
-# System packages via Homebrew
-find_package(glfw3 3.4 REQUIRED)
-find_package(glm REQUIRED)
-find_package(spdlog REQUIRED)
-# OpenAL Soft via Homebrew — prefer the keg-only package over macOS system framework
-if(APPLE AND EXISTS "/opt/homebrew/opt/openal-soft")
-    set(OPENAL_INCLUDE_DIR "/opt/homebrew/opt/openal-soft/include" CACHE PATH "" FORCE)
-    set(OPENAL_LIBRARY "/opt/homebrew/opt/openal-soft/lib/libopenal.dylib" CACHE FILEPATH "" FORCE)
-endif()
-find_package(OpenAL REQUIRED)
 
 # tinygltf - header-only glTF 2.0 loader/writer
 set(TINYGLTF_BUILD_LOADER_EXAMPLE OFF CACHE BOOL "" FORCE)
@@ -108,10 +150,6 @@ set(ASSIMP_INSTALL OFF CACHE BOOL "" FORCE)
 set(ASSIMP_NO_EXPORT OFF CACHE BOOL "" FORCE)
 set(ASSIMP_WARNINGS_AS_ERRORS OFF CACHE BOOL "" FORCE)
 set(ASSIMP_INJECT_DEBUG_POSTFIX OFF CACHE BOOL "" FORCE)
-if(APPLE AND EXISTS "/opt/homebrew/opt/zlib")
-    list(PREPEND CMAKE_PREFIX_PATH "/opt/homebrew/opt/zlib")
-    set(ZLIB_ROOT "/opt/homebrew/opt/zlib" CACHE PATH "" FORCE)
-endif()
 if(DEFINED BUILD_SHARED_LIBS)
     set(_pixel_roguelike_saved_build_shared_libs "${BUILD_SHARED_LIBS}")
     set(_pixel_roguelike_had_build_shared_libs TRUE)
