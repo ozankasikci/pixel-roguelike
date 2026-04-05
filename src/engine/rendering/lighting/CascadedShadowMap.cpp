@@ -35,11 +35,10 @@ void CascadedShadowMap::create(int resolution) {
     glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_COMPARE_FUNC, GL_LEQUAL);
     glBindTexture(GL_TEXTURE_2D_ARRAY, 0);
 
-    // Create FBO and attach the entire array (all layers) via glFramebufferTexture
+    // Create FBO and attach layer 0 initially; multi-pass rendering will retarget per cascade
     glGenFramebuffers(1, &fbo_);
     glBindFramebuffer(GL_FRAMEBUFFER, fbo_);
-    // Use glFramebufferTexture (not glFramebufferTexture2D) to attach all layers at once
-    glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, depthArray_, 0);
+    glFramebufferTextureLayer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, depthArray_, 0, 0);
     glDrawBuffer(GL_NONE);
     glReadBuffer(GL_NONE);
 
@@ -68,7 +67,6 @@ void CascadedShadowMap::destroy() {
 void CascadedShadowMap::bind() const {
     glBindFramebuffer(GL_FRAMEBUFFER, fbo_);
     glViewport(0, 0, resolution_, resolution_);
-    glClear(GL_DEPTH_BUFFER_BIT);
 }
 
 void CascadedShadowMap::unbind() const {
