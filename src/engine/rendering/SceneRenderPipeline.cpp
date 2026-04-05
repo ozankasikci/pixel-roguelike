@@ -166,6 +166,9 @@ void SceneRenderPipeline::renderShadowPass(const std::vector<RenderObject>& obje
 
     glEnable(GL_DEPTH_TEST);
     shadowShader_->use();
+    // Spot light passes do not use a caster offset — zero it out so any previous
+    // CSM value left in the uniform does not bleed into spot shadow renders.
+    shadowShader_->setFloat("uShadowCasterOffset", 0.0f);
 
     for (const auto& light : lights) {
         if (light.shadowIndex < 0 || light.shadowIndex >= kMaxShadowedSpotLights) {
@@ -209,10 +212,13 @@ void SceneRenderPipeline::renderShadowPass(const std::vector<RenderObject>& obje
                                        input.postParams ? input.postParams->csmLambda : 0.5f);
 
         shadowShader_->use();
+        // Restore the caster offset for CSM: push shadow geometry 0.18 world-space units
+        // toward the light. This closes coverage gaps at grazing-angle junctions (e.g.
+        // wall top edges meeting the ceiling) that would otherwise appear as bright lines.
+        shadowShader_->setVec3("uLightDirection", lighting.sun.direction);
+        shadowShader_->setFloat("uShadowCasterOffset", 0.18f);
         glEnable(GL_POLYGON_OFFSET_FILL);
         glPolygonOffset(1.1f, 4.0f);
-        glEnable(GL_CULL_FACE);
-        glCullFace(GL_FRONT);
 
         const auto& csmMatrices = csmShadowMap_.lightSpaceMatrices();
         const int csmRes = csmShadowMap_.resolution();
@@ -240,8 +246,6 @@ void SceneRenderPipeline::renderShadowPass(const std::vector<RenderObject>& obje
         }
 
         glDisable(GL_POLYGON_OFFSET_FILL);
-        glCullFace(GL_BACK);
-        glDisable(GL_CULL_FACE);
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
     }
 
