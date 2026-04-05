@@ -148,3 +148,13 @@ completed: 2026-04-05
 ---
 *Phase: 18-maintainability-refactoring-for-editor-ui-serialization-and-round-trip-fidelity*
 *Completed: 2026-04-05*
+
+## Self-Check: PASSED
+
+- `src/editor/ui/inspectors/InspectorUtils.h` — FOUND
+- `src/editor/ui/inspectors/MeshInspector.h` — FOUND
+- `src/editor/ui/inspectors/MaterialInspector.h` — FOUND
+- `.planning/phases/18-.../18-03-SUMMARY.md` — FOUND
+- Commit `b215266` — FOUND (Task 1: scene object inspector extraction)
+- Commit `1dc924e` — FOUND (Task 2: asset inspector extraction)
+- Commit `c90edd1` — FOUND (docs: plan metadata)
