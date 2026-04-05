@@ -237,7 +237,7 @@ void SceneRenderPipeline::renderShadowPass(const std::vector<RenderObject>& obje
         //   - Remove Mechanism 2 (no normal offset in scene.frag) → floor triangle artifacts
         //   - Increase Mechanism 1 beyond ~0.08 → floor triangle artifacts even with Mechanism 2
         shadowShader_->setVec3("uLightDirection", lighting.sun.direction);
-        shadowShader_->setFloat("uShadowCasterOffset", 0.06f);  // See dual-mechanism comment above
+        shadowShader_->setFloat("uShadowCasterOffset", 0.15f);  // See dual-mechanism comment above
         glEnable(GL_POLYGON_OFFSET_FILL);
         glPolygonOffset(1.1f, 4.0f);
 

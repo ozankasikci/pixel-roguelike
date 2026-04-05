@@ -1,7 +1,9 @@
 #include "editor/debug/DebugHarness.h"
 #include "editor/core/EditorRuntimePreviewSession.h"
 
+#include <GLFW/glfw3.h>
 #include <ImGuizmo.h>
+#include <glad/gl.h>
 #include <spdlog/spdlog.h>
 
 DebugHarness::DebugHarness(EditorSceneDocument& doc,
@@ -100,6 +102,76 @@ void DebugHarness::init() {
                 {"note", "Coordinates are in GLFW cursor space (logical pixels, window-relative). "
                          "Only valid after ImGuizmo::Manipulate() has been called this frame."}
             }}
+        };
+    });
+
+    // Pixel sampling — read RGB values from the rendered framebuffer at screen coordinates.
+    // Useful for automated visual regression tests (e.g., detecting bright-line shadow artifacts).
+    registry_.registerCommand("inspect.pixel_sample", [this](const nlohmann::json& args) {
+        int ww = 0, wh = 0;
+        if (window_) {
+            glfwGetFramebufferSize(window_, &ww, &wh);
+        }
+        if (ww == 0 || wh == 0) {
+            return nlohmann::json{{"ok", false}, {"error", "Cannot determine framebuffer size"}};
+        }
+
+        // Accept {x, y}, {points: [{x, y}, ...]}, or {line: {x0, y0, x1, y1, samples}}
+        nlohmann::json points = nlohmann::json::array();
+        if (args.contains("line")) {
+            auto& line = args["line"];
+            float x0 = line.value("x0", 0.0f), y0 = line.value("y0", 0.0f);
+            float x1 = line.value("x1", 0.0f), y1 = line.value("y1", 0.0f);
+            int samples = line.value("samples", 20);
+            if (samples < 2) samples = 2;
+            points.clear();
+            for (int i = 0; i < samples; ++i) {
+                float t = static_cast<float>(i) / static_cast<float>(samples - 1);
+                points.push_back({{"x", x0 + (x1 - x0) * t}, {"y", y0 + (y1 - y0) * t}});
+            }
+        } else if (args.contains("points") && args["points"].is_array()) {
+            points = args["points"];
+        } else if (args.contains("x") && args.contains("y")) {
+            points.push_back({{"x", args["x"]}, {"y", args["y"]}});
+        } else {
+            return nlohmann::json{{"ok", false}, {"error", "Provide {x, y}, {points: [...]}, or {line: {x0,y0,x1,y1,samples}}"}};
+        }
+
+        // GLFW logical coords → framebuffer coords (handles Retina/HiDPI)
+        int logW = 0, logH = 0;
+        if (window_) {
+            glfwGetWindowSize(window_, &logW, &logH);
+        }
+        float scaleX = (logW > 0) ? static_cast<float>(ww) / logW : 1.0f;
+        float scaleY = (logH > 0) ? static_cast<float>(wh) / logH : 1.0f;
+
+        nlohmann::json results = nlohmann::json::array();
+        glBindFramebuffer(GL_READ_FRAMEBUFFER, 0); // default framebuffer
+        for (const auto& pt : points) {
+            float sx = pt.value("x", 0.0f);
+            float sy = pt.value("y", 0.0f);
+            int px = static_cast<int>(sx * scaleX);
+            int py = wh - 1 - static_cast<int>(sy * scaleY); // flip Y for OpenGL
+
+            if (px < 0 || px >= ww || py < 0 || py >= wh) {
+                results.push_back({{"x", sx}, {"y", sy}, {"error", "out of bounds"}});
+                continue;
+            }
+
+            unsigned char rgba[4] = {0, 0, 0, 255};
+            glReadPixels(px, py, 1, 1, GL_RGBA, GL_UNSIGNED_BYTE, rgba);
+
+            results.push_back({
+                {"x", sx}, {"y", sy},
+                {"r", rgba[0]}, {"g", rgba[1]}, {"b", rgba[2]}, {"a", rgba[3]},
+                {"brightness", (0.299f * rgba[0] + 0.587f * rgba[1] + 0.114f * rgba[2]) / 255.0f}
+            });
+        }
+
+        return nlohmann::json{
+            {"ok", true},
+            {"framebuffer_size", {{"w", ww}, {"h", wh}}},
+            {"data", results}
         };
     });
 

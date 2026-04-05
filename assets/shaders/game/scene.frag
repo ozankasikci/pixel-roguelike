@@ -882,7 +882,7 @@ float sampleCsmShadow(vec3 fragWorldPos, vec3 fragViewPos, vec3 N, vec3 L) {
 
     int layer = 0;
     vec3 projCoords = vec3(0.0);
-    if (!computeCsmProjection(fragWorldPos, fragViewPos, layer, projCoords)) {
+    if (!computeCsmProjection(biasedWorldPos, fragViewPos, layer, projCoords)) {
         return 1.0;
     }
     if (!csmUvInBounds(projCoords)) return 1.0;
@@ -892,8 +892,8 @@ float sampleCsmShadow(vec3 fragWorldPos, vec3 fragViewPos, vec3 N, vec3 L) {
     // smaller than the spot-light bias values exposed in the editor. Scale the shared
     // controls down and use the geometric receiver normal to reduce contact light leaks.
     float receiverSlope = 1.0 - max(dot(N, L), 0.0);
-    float constantBias = 0.0;
-    float normalBias = 0.0 * receiverSlope;
+    float constantBias = 0.001;
+    float normalBias = 0.002 * receiverSlope;
     float baseBias = max(constantBias, normalBias);
     float bias = baseBias / max(uCsmSplitDistances[layer], 0.01);
 
