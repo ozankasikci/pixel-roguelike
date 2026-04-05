@@ -1,322 +1,369 @@
 # Testing Patterns
 
-**Analysis Date:** 2026-04-01
+**Analysis Date:** 2026-04-05
 
 ## Test Framework
 
 **Runner:**
-- Custom CMake-based: no external test framework (no Catch2, gtest, doctest)
-- Each test is a standalone executable; exit code 0 = pass, non-zero = fail
-- CTest collects and runs all executables via `add_test()`
-- Config: `tests/cmake/TestSupport.cmake` — defines `pixel_roguelike_add_test()` and `pixel_roguelike_add_profile()`
+- Custom standalone executables (no external test framework)
+- `tests/cmake/TestSupport.cmake` provides `pixel_roguelike_add_test()` macro
+- Each test compiles to a binary; exit code = pass/fail (0 = success, non-zero = failure)
 
 **Assertion Library:**
-- `<cassert>` exclusively — `assert()` macros
-- No matcher library; float comparisons use `test_support::nearlyEqual()` from `tests/common/TestSupport.h`
+- `#include <cassert>` only — plain C++ `assert()` macro
+- Custom helper functions in `tests/common/TestSupport.h` for floating-point and vector comparisons
+- No external testing library (no Google Test, Catch2, or Doctest)
 
 **Run Commands:**
 ```bash
-cmake -B build-test -DCMAKE_BUILD_TYPE=Debug
-cmake --build build-test
-cd build-test && ctest                     # Run all tests
-ctest -L game                              # Run game-labelled tests only
-ctest -L editor                            # Run editor-labelled tests only
-ctest -L engine                            # Run engine-labelled tests only
-ctest --output-on-failure                  # Show output for failing tests
+ctest                                    # Run all tests
+ctest -L engine                          # Run tests labeled "engine"
+ctest -L game                            # Run tests labeled "game"
+ctest -L editor                          # Run tests labeled "editor"
+./build-test/tests/engine/test_level_def  # Run specific test executable
 ```
 
 ## Test File Organization
 
 **Location:**
-- Separate from source, under `tests/` — not co-located with source files
-- Mirror of the source layer structure: `tests/engine/`, `tests/game/`, `tests/editor/`
+- Separate from source: `tests/engine/`, `tests/game/`, `tests/editor/` parallel to `src/` layers
+- Data files in `tests/data/` (scene files, model files, test assets)
 
 **Naming:**
-- Files: `test_<subject>.cpp` — e.g., `test_level_def.cpp`, `test_material_definitions.cpp`
-- CMake target: same as filename without `.cpp` — e.g., target `test_level_def`
-- CTest name: strips `test_` prefix — e.g., CTest name `level_def`
+- `test_*.cpp` for all test files — examples: `test_level_def.cpp`, `test_model_loader.cpp`, `test_editor_command_stack.cpp`
+- Profile tests use `profile_*.cpp`: `profile_play_preview.cpp`
 
-**Structure:**
+**Structure by Layer:**
 ```
 tests/
-├── cmake/
-│   └── TestSupport.cmake    # pixel_roguelike_add_test(), pixel_roguelike_add_profile()
 ├── common/
-│   └── TestSupport.h        # nearlyEqual(), nearlyEqualVec3(), tempPath(), resetTempDirectory()
-├── data/
-│   ├── light_records.scene  # Test fixture scene
-│   └── models/
-│       └── pillar_import_test.fbx
-├── engine/                  # 4 tests
-├── game/                    # 11 tests
-└── editor/                  # 6 tests + 1 profile
+│   ├── TestSupport.h          # Helper functions (nearlyEqual, tempPath, resetTempDirectory)
+│   └── cmake/
+│       └── TestSupport.cmake   # CMake functions (pixel_roguelike_add_test, pixel_roguelike_add_profile)
+├── engine/
+│   ├── CMakeLists.txt
+│   ├── test_mesh_geometry.cpp
+│   ├── test_model_discovery.cpp
+│   ├── test_model_loader.cpp
+│   ├── test_asset_cache.cpp
+│   └── test_questdoor_scale.cpp
+├── game/
+│   ├── CMakeLists.txt
+│   ├── test_level_def.cpp
+│   ├── test_level_lighting.cpp
+│   ├── test_content_registry.cpp
+│   ├── test_equipment_state.cpp
+│   ├── test_cathedral_prefabs.cpp
+│   ├── test_material_definitions.cpp
+│   ├── test_silos_cloister_level.cpp
+│   ├── test_level_roundtrip.cpp
+│   ├── test_behavior_trigger_roundtrip.cpp
+│   ├── test_environment_profiles.cpp
+│   ├── test_environment_debug_sync.cpp
+│   └── test_runtime_game_session.cpp
+└── editor/
+    ├── CMakeLists.txt
+    ├── test_command_registry.cpp
+    ├── test_editor_asset_browser.cpp
+    ├── test_editor_command_stack.cpp
+    ├── test_editor_debug_commands.cpp
+    ├── test_editor_hierarchy.cpp
+    ├── test_editor_layout_presets.cpp
+    ├── test_editor_runtime_preview.cpp
+    ├── test_editor_scene_document.cpp
+    ├── test_editor_selection.cpp
+    ├── test_editor_ui_preferences.cpp
+    ├── test_runtime_preview_quality.cpp
+    ├── test_session_record_replay.cpp
+    └── profile_play_preview.cpp
 ```
-
-**Total test count:** 21 test executables + 1 profiling executable
 
 ## Test Structure
 
 **Suite Organization:**
-Each test file is a single `main()` function. Related assertions are grouped into anonymous scopes using `{}` blocks. No named sub-tests or test cases — scope blocks serve as logical groupings:
-
 ```cpp
 int main() {
-    // Test: base case
-    const auto base = loadMaterialDefinitionAsset(MATERIAL_BASE_FILE);
-    assert(base.id == "masonry_base");
-
-    // Test: error handling — missing parent throws
-    {
-        std::unordered_map<std::string, MaterialDefinition> missingParent;
-        // ...
-        bool threw = false;
-        try { (void)resolveMaterialDefinition("child", missingParent); }
-        catch (const std::runtime_error&) { threw = true; }
-        assert(threw);
-    }
-
-    // Test: roundtrip serialization
-    {
-        MaterialDefinition roundtrip;
-        // ... set fields ...
-        saveMaterialDefinitionAsset(path, roundtrip);
-        const auto loaded = loadMaterialDefinitionAsset(path);
-        assert(loaded.id == roundtrip.id);
-    }
-
+    // Setup phase
+    const auto data = loadLevelDef(CATHEDRAL_SCENE_FILE);
+    
+    // Assertion sequence (no test framework grouping)
+    assert(data.environmentProfile == EnvironmentProfile::Default);
+    assert(data.meshes.size() == 126);
+    assert(data.lights.size() == 13);
+    
+    // Conditional logic for complex checks
+    assert(std::count_if(data.colliders.begin(), data.colliders.end(), 
+        [](const LevelColliderPlacement& c) { return c.shape == ColliderShape::Box; }) == 25);
+    
+    // Return 0 on success (exit code signals pass)
     return 0;
 }
 ```
 
 **Patterns:**
-- No setup/teardown functions — each `{}` block is self-contained
-- Temp files created via `test_support::tempPath()` and deleted manually with `std::filesystem::remove()`
-- Temp directories via `test_support::resetTempDirectory()` which deletes and recreates
-- No shared global state between test groups (within one test exe)
+- No test classes or fixtures (procedural style)
+- Single `main()` function per test file
+- Assertions executed sequentially; first failure terminates program with non-zero exit
+- Local helper functions in anonymous namespace: `computeMin()`, `computeMax()` in `test_model_loader.cpp`
+- Ternary construction for readable assertions: `const LevelDef level = resolveLevelHierarchy(...)`
 
-## CMake Test Registration
+## Mocking
 
-**`pixel_roguelike_add_test()` signature:**
+**Framework:** None detected (no Gtest, Catch2, or manual mock infrastructure)
 
-```cmake
-pixel_roguelike_add_test(<target>
-    SOURCES <files>
-    LIBRARIES <targets>
-    [DEFINITIONS <defines>]   # For injecting asset file paths
-    [LABELS <labels>]         # "game", "editor", "engine"
-    [TEST_NAME <name>]        # Override default CTest name
-)
-```
+**Patterns:**
+- **Constructor injection**: Systems take dependencies as references in constructor
+  - Example: `PlayerMovementSystem(InputSystem& input, PhysicsSystem& physics);` in `src/game/systems/PlayerMovementSystem.h`
+  - Tests can construct with real implementations or custom instances
 
-**Asset path injection via `DEFINITIONS`:**
-Test files that load real assets receive absolute paths as compile-time `#define` macros:
+**What to Mock:**
+- Heavy I/O operations (file loading is tested directly, not mocked)
+- Physical simulation (tests exercise real Jolt Physics or use simplified test data)
 
-```cmake
-# CMakeLists.txt
-set(CATHEDRAL_SCENE_FILE_DEF
-    CATHEDRAL_SCENE_FILE="${CMAKE_SOURCE_DIR}/assets/scenes/cathedral.scene"
-)
+**What NOT to Mock:**
+- ECS operations (`entt::registry`) — tested directly with real components
+- Mesh/shader loading — tested with actual asset files
+- Level loading — tested with real `.scene` files in `tests/data/`
 
-pixel_roguelike_add_test(test_level_def
-    SOURCES test_level_def.cpp
-    LIBRARIES game_content
-    DEFINITIONS ${CATHEDRAL_SCENE_FILE_DEF}
-    LABELS game
-)
+**Integration test approach:**
+- Tests construct real objects and exercise their interaction
+- Example: `test_editor_command_stack.cpp` creates `EditorSceneDocument`, adds mesh, runs undo/redo on real state
+- Example: `test_runtime_game_session.cpp` spawns real game session with level loading
 
-# test_level_def.cpp
-const auto data = loadLevelDef(CATHEDRAL_SCENE_FILE);  // expands to absolute path
-```
+## Fixtures and Factories
 
-**`pixel_roguelike_add_profile()` — profiling executables:**
-Same as test registration but without `add_test()`, so profiling executables are not part of the CTest suite. Used for `profile_play_preview` (editor preview performance profiling).
-
-## Shared Test Utilities
-
-**`tests/common/TestSupport.h`:**
-
+**Test Data:**
 ```cpp
-namespace test_support {
-
-inline constexpr float kFloatEpsilon = 0.0001f;
-
-// Float comparison with tolerance
-inline bool nearlyEqual(float a, float b, float epsilon = kFloatEpsilon);
-
-// vec3 comparison component-wise with tolerance
-inline bool nearlyEqualVec3(const glm::vec3& a, const glm::vec3& b,
-                             float epsilon = kFloatEpsilon);
-
-// Temp file path under OS temp dir
-inline std::filesystem::path tempPath(std::string_view leaf);
-
-// Delete-and-recreate a temp directory, return its path
-inline std::filesystem::path resetTempDirectory(std::string_view leaf);
-
-} // namespace test_support
-```
-
-**Local helpers per test file:**
-Each test that needs factory helpers defines them in an anonymous `namespace {}` at the top of the file:
-
-```cpp
+// Named helper functions in anonymous namespace
 namespace {
 
 LevelMeshPlacement makeMeshPlacement() {
     LevelMeshPlacement placement;
     placement.meshId = "cube";
-    // ...
+    placement.materialId = "stone_default";
+    placement.position = glm::vec3(0.0f);
+    placement.scale = glm::vec3(1.0f);
+    placement.rotation = glm::vec3(0.0f);
     return placement;
+}
+
+glm::vec3 computeMin(const RawMeshData& mesh) {
+    assert(!mesh.positions.empty());
+    glm::vec3 result = mesh.positions.front();
+    for (const auto& position : mesh.positions) {
+        result = glm::min(result, position);
+    }
+    return result;
 }
 
 } // namespace
 ```
 
-## Mocking
+**Location:**
+- Inline in test .cpp files (no separate fixture library)
+- Helper functions in `tests/common/TestSupport.h`:
+  - `nearlyEqual(float a, float b, float epsilon)` — floating-point comparison with tolerance
+  - `nearlyEqualVec3(const glm::vec3& a, const glm::vec3& b, float epsilon)` — vector comparison
+  - `tempPath(std::string_view leaf)` — construct temp directory path
+  - `resetTempDirectory(std::string_view leaf)` — create/clear temp directory
 
-**Framework:** None — no mocking library used.
-
-**Strategy:** Real objects are used in tests. The free-function architecture (game logic in `RuntimeGameplay.cpp`) means systems can be tested by constructing minimal `entt::registry` instances and calling the update functions directly, without needing the full `Application` object.
-
-```cpp
-// test_runtime_game_session.cpp — direct ECS construction
-entt::registry registry;
-auto player = registry.create();
-registry.emplace<TransformComponent>(player, ...);
-registry.emplace<PlayerTag>(player);
-// ...
-PhysicsSystem physics;
-physics.init(registry);
-updateRuntimePlayerMovement(registry, input, physics, 1.0f / 60.0f);
-```
-
-**What to Mock:** Nothing — real implementations are always used.
-
-**What NOT to Mock:** The test suite runs full physics (`PhysicsSystem` with Jolt), real serialization, and in some cases real OpenGL rendering (`test_editor_runtime_preview` creates a 320x200 `Window` and calls `preview.render()`).
-
-## Fixtures and Factories
-
-**Test Data Files (`tests/data/`):**
-- `tests/data/light_records.scene` — synthetic scene for `test_level_lighting`
-- `tests/data/models/pillar_import_test.fbx` — FBX model for loader comparison tests
-
-**Real Asset Files (from `assets/`):**
-Many tests load production assets directly to validate parsing correctness:
-- `assets/scenes/cathedral.scene`
-- `assets/scenes/silos_cloister.scene`
-- `assets/materials/masonry_base.material`, `brick_default.material`, `brick_wall_old.material`
-- `assets/defs/weapons/old_dagger.weapon`, `assets/defs/enemies/sentinel.enemy`
-- `assets/prefabs/gameplay/checkpoint.prefab`, `double_door.prefab`
-
-**In-test Constructed Data:**
-Tests that need fresh data construct structs inline using designated initializers:
-
-```cpp
-level.meshes.push_back(LevelMeshPlacement{
-    .meshId = "cube",
-    .position = glm::vec3(1.0f, 2.0f, 3.0f),
-    .nodeId = "root_mesh",
-    .materialId = "brick_default",
-    .tint = glm::vec3(0.4f, 0.5f, 0.6f),
-});
-```
+**Test Assets:**
+- Real files referenced via compile-time defines:
+  - `CATHEDRAL_SCENE_FILE` → `${CMAKE_SOURCE_DIR}/assets/scenes/cathedral.scene`
+  - `SILOS_CLOISTER_SCENE_FILE` → `${CMAKE_SOURCE_DIR}/assets/scenes/silos_cloister.scene`
+  - `MATERIAL_BRICK_FILE` → `${CMAKE_SOURCE_DIR}/assets/materials/brick_default.material`
+  - Defined in `tests/game/CMakeLists.txt` as `DEFINITIONS` passed to `pixel_roguelike_add_test()`
+  - Example: `test_level_def.cpp` uses `loadLevelDef(CATHEDRAL_SCENE_FILE)` where `CATHEDRAL_SCENE_FILE` is a macro
 
 ## Coverage
 
-**Requirements:** None enforced — no coverage tool configured in CMake.
+**Requirements:** Not enforced (no coverage target in CMakeLists.txt)
 
-**Observed Coverage:**
-
-| Area | Coverage |
-|------|----------|
-| `MaterialDefinition` serialization and inheritance | High — roundtrip, error paths, inheritance chains |
-| `LevelDef` load/save/roundtrip | High — cathedral scene, silos scene, hierarchy |
-| `EditorSceneDocument` — hierarchy, parenting, reordering | High |
-| `EditorCommandStack` — undo/redo, dirty state | High |
-| `ContentRegistry` — weapon/enemy/item/skill/archetype parsing | High |
-| `EnvironmentDefinition` / `EnvironmentProfile` | High |
-| `MeshGeometry` — cube/plane/cylinder generation, merging | High |
-| `AssetCache` — mesh and texture cache read/write | High |
-| `ModelLoader` — glTF vs FBX parity | Good |
-| `RuntimeGameSession` / `EditorRuntimePreviewSession` — play/reset flow | Good |
-| `EquipmentState` — equip/unequip logic | High |
-| Rendering systems (`SceneRenderPipeline`, shaders) | None |
-| `InputSystem` | None |
-| `AudioSystem` | None |
-| `Window` / `Application` | None |
-| Individual ECS systems (`CameraSystem`, `CheckpointSystem`) | Indirect only (via session tests) |
+**View Coverage:** Not supported natively (no lcov, gcov integration)
 
 ## Test Types
 
-**Unit Tests (data/logic only):**
-Tests that do not require OpenGL or a window. These are the majority:
-- `test_mesh_geometry` — pure math, no GL
-- `test_level_def`, `test_level_roundtrip`, `test_level_lighting`
-- `test_material_definitions`, `test_content_registry`, `test_environment_profiles`
-- `test_equipment_state`, `test_cathedral_prefabs`, `test_editor_command_stack`
-- `test_editor_hierarchy`, `test_editor_layout_presets`, `test_editor_selection`
-- `test_asset_cache`, `test_model_discovery`, `test_model_loader`
+**Unit Tests:**
+- **Scope**: Single class or function in isolation
+- **Examples**:
+  - `test_mesh_geometry.cpp` — tests `Mesh` construction from raw vertex data
+  - `test_asset_cache.cpp` — tests `AssetCache<Mesh>` caching behavior
+  - `test_equipment_state.cpp` — tests `EquipmentState` struct serialization/deserialization
+  - **Approach**: Construct object, call methods, assert on return values and side effects
 
-**Integration Tests (require OpenGL context / window):**
-Tests that create a `Window` (which initializes OpenGL via GLFW):
-- `test_editor_runtime_preview` — creates `Window(320, 200, "test")`, builds a full `EditorRuntimePreviewSession`, renders frames, resets state
-- `test_runtime_game_session` — requires GLFW for input (`GLFW_KEY_W`, `GLFW_KEY_I`) but does not create a visible window (uses `PhysicsSystem` directly)
+**Integration Tests:**
+- **Scope**: Multiple layers interacting (ECS, systems, content registry, etc.)
+- **Examples**:
+  - `test_level_def.cpp` — loads cathedral.scene file, validates mesh/light/collider counts and specific placements
+  - `test_level_roundtrip.cpp` — loads level from file → converts to ECS entities → serializes back → compares
+  - `test_runtime_game_session.cpp` — spawns full `RuntimeGameSession`, runs gameplay systems for a frame
+  - `test_editor_command_stack.cpp` — creates document, performs edits, executes undo/redo, validates state
+  - **Approach**: Use real implementations of dependencies; exercise cross-layer communication
 
-**E2E Tests:** Not applicable — game is not web-based; no browser automation.
-
-**Profiling Executables (not in CTest suite):**
-- `profile_play_preview` — measures editor preview rebuild/render time
+**E2E Tests:**
+- **Framework or "Not used"**: Implicit via level_editor and runtime binaries; no formal E2E test suite
+- Profile tests (`profile_play_preview.cpp`) load editor, play preview session, profile frame times — closest to E2E
 
 ## Common Patterns
 
-**Roundtrip Serialization Testing:**
-The dominant pattern for data-layer tests: construct → serialize → deserialize → assert equality.
-
+**Assertion patterns in test_level_def.cpp:**
 ```cpp
-const std::string serialized = serializeLevelDef(level);
-assert(serialized.find("material brick_default tint 0.4 0.5 0.6") != std::string::npos);
-
-const LevelDef loaded = loadLevelDef(tempPath);
-assert(loaded.meshes.front().materialId == "brick_default");
-assert(*loaded.meshes.front().tint == glm::vec3(0.4f, 0.5f, 0.6f));
-```
-
-**Error Path Testing:**
-Exception-based errors tested via manual `try/catch` + boolean flag:
-
-```cpp
-bool threw = false;
-try {
-    (void)resolveMaterialDefinition("child", missingParent);
-} catch (const std::runtime_error&) {
-    threw = true;
-}
-assert(threw);
-```
-
-**Simulation Testing (ECS integration):**
-For gameplay logic: build a minimal ECS world, run update functions for N frames, assert world state changed:
-
-```cpp
-const glm::vec3 startPosition = registry.get<TransformComponent>(player).position;
-for (int frame = 0; frame < 12; ++frame) {
-    input.setKeyPressed(GLFW_KEY_W, true);
-    physics.update(registry, 1.0f / 60.0f);
-    updateRuntimePlayerMovement(registry, input, physics, 1.0f / 60.0f);
-}
-const glm::vec3 movedPosition = registry.get<TransformComponent>(player).position;
-assert(glm::length(movedPosition - startPosition) > 0.01f);
-```
-
-**Asset Snapshot Testing:**
-Some tests encode expected counts/values from real scene files as assertions. These will break if the scene is edited:
-
-```cpp
-// test_level_def.cpp — brittle if cathedral.scene is edited
+// Direct equality
+assert(data.environmentProfile == EnvironmentProfile::Default);
 assert(data.meshes.size() == 126);
-assert(data.lights.size() == 13);
+
+// Container counting with predicates
+assert(std::count_if(data.colliders.begin(), data.colliders.end(),
+    [](const LevelColliderPlacement& c) { return c.shape == ColliderShape::Box; }) == 25);
+
+// Existence checking
+assert(std::any_of(data.meshes.begin(), data.meshes.end(),
+    [](const LevelMeshPlacement& mesh) { return mesh.position == glm::vec3(-9.0f, 4.5f, -6.5f); }));
+
+// Floating-point comparison with tolerance
+assert(test_support::nearlyEqualVec3(gltfMin, fbxMin, 0.02f));
+
+// Optional value checking
+assert(mesh.tint.has_value() && *mesh.tint == glm::vec3(0.60f, 0.45f, 0.29f));
 ```
+
+**State roundtrip pattern in test_editor_command_stack.cpp:**
+```cpp
+// Capture initial state
+const EditorSceneDocumentState before = document.captureState();
+
+// Mutate object
+auto* object = document.findObject(meshId);
+auto& mesh = std::get<LevelMeshPlacement>(object->payload);
+mesh.position.x = 2.5f;
+document.markSceneDirty();
+
+// Push command with before/after states
+const bool pushed = stack.pushDocumentStateCommand("Move Mesh", before, document.captureState(), document);
+assert(pushed);
+
+// Test undo
+const bool undone = stack.undo(document);
+assert(undone);
+assert(test_support::nearlyEqual(mesh.position.x, 0.0f));
+```
+
+**Async Testing:** Not applicable (no async/concurrent code in main engine)
+
+**Error Testing:**
+- Limited error path testing observed
+- `test_asset_cache.cpp` tests "asset not found" path
+- Most tests focus on happy path (success cases)
+
+## Test Organization & Execution
+
+**CMake test function:**
+```cmake
+pixel_roguelike_add_test(target
+    SOURCES test_file.cpp
+    LIBRARIES library1 library2
+    DEFINITIONS ASSET_PATH="/path"
+    LABELS engine
+)
+```
+
+**Test registration:**
+- All tests registered with `add_test()` via `pixel_roguelike_add_test()` macro
+- CTest discovers and runs all via `ctest` command
+- Labels enable filtering: `ctest -L engine` runs only engine tests
+
+**Test isolation:**
+- Each test is standalone executable with its own `main()`
+- No shared state between tests
+- Tests can run in parallel (independent binaries)
+
+## Coverage Gaps & Quality Issues
+
+**Gap 1: Error path testing is minimal**
+- Most tests exercise happy path (load succeeds, parse succeeds, round-trip succeeds)
+- **Files affected**: `src/engine/rendering/assets/GltfLoader.cpp`, `src/game/content/ContentRegistry.cpp`
+- **Risk**: Loading errors (corrupted files, missing assets) may not be caught until runtime
+- **Recommendation**: Add tests for invalid input (malformed JSON, missing mesh references)
+
+**Gap 2: No mocking/test doubles for complex systems**
+- `PhysicsSystem` tests use real Jolt Physics (slow, brittle)
+- `AudioSystem` not tested
+- **Files affected**: `src/engine/physics/`, `src/engine/audio/`
+- **Recommendation**: Create test doubles for physics/audio to enable faster unit tests
+
+**Gap 3: Shader compilation not tested**
+- `Shader` class has error handling for GL_COMPILE_ERROR but no tests verify it
+- **Files affected**: `src/engine/rendering/core/Shader.cpp`
+- **Recommendation**: Add test that verifies exception is thrown on shader compile failure
+
+**Gap 4: Memory/lifetime issues hard to detect**
+- Non-copyable/move-only patterns enforced via `= delete` but tests don't explicitly verify
+- Raw pointer non-ownership not verified by tests
+- **Files affected**: All GPU resource RAII classes (`Shader`, `Framebuffer`, `Mesh`)
+- **Recommendation**: Consider AddressSanitizer in CI; add lifetime validation tests
+
+**Gap 5: No performance regression tests**
+- Profile test `profile_play_preview.cpp` exists but results not tracked
+- **Recommendation**: Add performance baseline tracking (frame time, memory usage)
+
+**Gap 6: Editor debug harness tested minimally**
+- Unix socket protocol in `src/editor/debug/DebugServer.cpp` has 33 commands but only ~5 tested
+- **Files affected**: `src/editor/debug/`
+- **Risk**: Debug protocol drift from implementation; untested commands may bitrot
+- **Recommendation**: Add command-by-command roundtrip tests for harness
+
+**Gap 7: Integration between game systems untested**
+- `PlayerMovementSystem` + `PhysicsSystem` interaction tested indirectly via `test_runtime_game_session.cpp`
+- Specific failure modes (e.g., character falls through collider) not isolated
+- **Recommendation**: Add targeted tests for system interaction edge cases
+
+**Gap 8: Test coverage for string parsing**
+- Material definitions, level files, and behavior declarations use custom string parsers
+- Limited error path testing for malformed input
+- **Files affected**: `src/game/rendering/MaterialDefinition.cpp`, `src/game/level/LevelDef.cpp`, `src/game/content/ContentRegistry.cpp`
+- **Recommendation**: Add negative tests (invalid enum values, missing fields, etc.)
+
+## Test Count & Distribution
+
+- **Engine layer**: 5 tests (asset loading, mesh geometry, model discovery, asset caching, scale validation)
+- **Game layer**: 13 tests (level loading, content, prefabs, serialization, environment, equipment, gameplay)
+- **Editor layer**: 11 tests (commands, UI, selection, hierarchy, debug harness, preview quality)
+- **Total**: 29 standalone test executables
+
+## Framework Assessment
+
+**Strengths:**
+- No external dependencies (no test framework to install/maintain)
+- Fast compilation (each test is small, standalone)
+- Clear pass/fail semantics (exit code)
+- Parallelizable (independent binaries, no shared fixtures)
+- Integration-focused (tests real interactions, not mocks)
+
+**Weaknesses:**
+- No parametrized tests (hard to test multiple input cases)
+- No test descriptions/reporting beyond binary pass/fail
+- No setup/teardown hooks (everything inline)
+- Hard to debug failure (no assertion messages beyond `assert(0)`)
+- No test grouping (all tests in CMake `add_test()` have flat namespace)
+- Error messages from failed assertions are cryptic
+
+**Migration path:**
+- If test complexity grows, migrate to Google Test or Catch2
+- Current framework sufficient for ~30 tests; becomes unwieldy at 100+
+
+## Quality Metrics
+
+| Metric | Value | Assessment |
+|--------|-------|------------|
+| Test count | 29 | Small but focused suite |
+| Framework overhead | Minimal | No external dependencies |
+| Average test size | ~50 lines | Concise, readable |
+| Test execution time | <5s total | Fast feedback loop |
+| Parametrization support | None | Single code path per test |
+| Mock support | None | Integration-focused |
+| Coverage reporting | None | Not tracked |
+| Assertion messages | None | Exit code only |
 
 ---
 
-*Testing analysis: 2026-04-01*
+*Testing analysis: 2026-04-05*

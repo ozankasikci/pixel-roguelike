@@ -1,252 +1,268 @@
 # Architecture
 
-**Analysis Date:** 2026-04-01
+**Analysis Date:** 2026-04-05
 
 ## Pattern Overview
 
-**Overall:** Layered monorepo with explicit dependency direction — Engine → Game → Editor — enforced by CMake target graph. Within each layer, an Entity-Component System (EnTT) is used for game state, with free-function systems operating on typed component views rather than OOP objects owning their own logic.
+**Overall:** Strict three-layer architecture with Engine → Game → Editor dependency flow. Game layer owns ECS state and gameplay logic; Engine provides low-level subsystems; Editor consumes both for scene authoring.
 
 **Key Characteristics:**
-- Strict layer boundaries: engine has zero game/editor includes; game includes engine only; editor includes game and engine
-- ECS for runtime game state (EnTT `entt::registry` owned by `Application` or `RuntimeGameSession`)
-- Phase-ordered system execution registered at boot time; not a runtime scheduler
-- Type-erased service locator (`std::any` map keyed by `std::type_index`) for cross-cutting singletons
-- Rendering is fully decoupled from ECS — renderer collects `RenderObject`/`RenderLight` structs from the registry each frame and hands them to a pipeline that has no ECS dependency
-
-**Comparison to known engines:**
-- Closer to **Hazel/TheCherno** than Godot: no scene-tree node hierarchy, no signal system, explicit system registration in `main.cpp`
-- Unlike **Bevy**, systems are not auto-discovered via reflection; registration is manual and phase assignment is explicit
-- Unlike **Godot**, there is no built-in node ownership model — entity lifetime is managed by scenes and tracked in `std::vector<entt::entity>`
-- Similar to **raylib** in keeping `main()` as the wiring point; unlike raylib there is a proper System abstraction with `init/update/shutdown` lifecycle
-
----
+- Type-safe service locator pattern via `Application` for cross-system access
+- Phase-ordered system execution (Input → Interaction → Physics → Gameplay → Camera → Render)
+- ECS-centric game logic with POD components and pure update functions
+- RuntimeGameSession as autonomous game simulation container (used by both runtime and editor preview)
+- Clear separation between serializable asset definitions (LevelDef, MaterialDefinition) and runtime state
 
 ## Layers
 
-**Engine Layer:**
-- Purpose: Platform abstraction, core loop, rendering pipeline, physics, input, ECS registry wrapper
-- Location: `src/engine/`
-- Contains: `Application`, `Window`, `EventBus`, `System`, `SceneManager`, `InputSystem`, `PhysicsSystem`, `AudioSystem`, `ImGuiLayer`, mesh/shader/texture RAII classes, all post-process passes, `SceneRenderPipeline`
-- Depends on: GLFW, EnTT, GLM, GLAD, Jolt Physics, OpenAL Soft, Dear ImGui, spdlog
-- Used by: Game layer, Editor layer, all three app executables
+**Engine Layer (`src/engine/`):**
+- Purpose: Low-level cross-platform abstractions for graphics, input, physics, audio, UI
+- Exports subsystems as standalone libraries: `engine_core`, `engine_rendering`, `engine_input`, `engine_physics`, `engine_audio`, `engine_ui`, `engine_scene`
+- Depends on: GLAD, GLFW, GLM, EnTT (core only), spdlog, Jolt Physics, OpenAL, Dear ImGui
+- Used by: Game, Editor (via Game for shared functionality)
+- Key constraint: Must NOT import from `game/` or `editor/` — exists independently
 
-**Game Layer:**
-- Purpose: Game-specific components, systems, content loading, level management, runtime session
-- Location: `src/game/`
-- Contains: All POD components, `RuntimeGameSession`, `RuntimeSceneRenderer`, `ContentRegistry`, `LevelDef`/`LevelLoader`/`LevelBuilder`, `GameplayPrefabs`, `RunSession`, game UI overlays
-- Depends on: Engine layer only
-- Used by: Editor layer (preview sessions), runtime app, level editor app
+**Game Layer (`src/game/`):**
+- Purpose: Roguelike-specific gameplay, content management, rendering pipeline, systems
+- Three sub-libraries: `game_content` (data definitions) → `game_rendering` (scene visualization) → `gameplay` (systems & runtime)
+- Depends on: All engine libraries, EnTT for ECS
+- Used by: Editor, Runtime application
+- Key responsibility: Owns `RuntimeGameSession` — complete simulation container for a play session or editor preview
 
-**Editor Layer:**
-- Purpose: Level editor tooling — scene document model, undo/redo, viewport, inspector, asset browser
-- Location: `src/editor/`
-- Contains: `EditorSceneDocument`, `EditorCommandStack`, `EditorPreviewWorld`, `EditorRuntimePreviewSession`, `LevelEditorCore`, `EditorViewportController`, all editor UI panels
-- Depends on: Game layer and Engine layer
-- Used by: `apps/level_editor/` only
+**Editor Layer (`src/editor/`):**
+- Purpose: Scene authoring, asset browsing, gizmo manipulation, layout/undo
+- Consumes: Game layer directly (RuntimeGameSession for previews, LevelDef for serialization, ContentRegistry for asset resolution)
+- Depends on: Game, Engine, ImGui, ImGuizmo, nlohmann_json
+- Key constraint: Editor code never executes in the shipped game
 
----
+## Layers: Detailed Breakdown
 
-## Subsystems
+**Engine Core (`src/engine/core/`):**
+- `Application.h` — Main loop orchestrator, system registry, phase-ordered execution, service locator
+- `Window.h` — GLFW window creation/input callbacks
+- `EventBus.h` — Type-safe pub/sub, subscription tokens for automatic cleanup
+- `System.h` — Base class for phase-ordered systems (init/update/shutdown lifecycle)
+- `Time.h` — Delta time tracking
+- Services stored in `Application` via `emplaceService<T>()` / `getService<T>()`
 
-### ECS (Entity-Component System)
+**Engine Rendering (`src/engine/rendering/`):**
+- **core/**: `Shader` (GLSL compilation + uniform caching), `Framebuffer` (FBO/RBO management)
+- **geometry/**: `Mesh` (RAII VAO/VBO/EBO), `MeshLibrary` (named registry), `Renderer` (stateless draw dispatch)
+- **assets/**: `AssimpLoader` (FBX/etc), `GltfLoader`, `Texture2D`, `TextureCube`, `AssetCache`
+- **lighting/**: `RenderLight` (struct for spot/point/directional), `ShadowMap`, `CascadedShadowMap`, `ReflectionProbeRenderer`
+- **post/**: `CompositePass`, `StylizePass`, `BloomPass`, `SsaoPass` (post-process chain)
+- `SceneRenderPipeline.h` — Coordinates scene pass (PBR + shadows) and post-process passes
 
-The `entt::registry` lives in `Application` for the runtime game (accessed via `app.registry()`), and as a private member of `RuntimeGameSession` and `EditorPreviewWorld` for isolated editor contexts.
+**Engine Input (`src/engine/input/`):**
+- `InputSystem.h` — GLFW callback aggregation, ImGui integration, `RuntimeInputState` snapshot
+- `ActionMap.h` — Key binding resolution
 
-**Components** — all POD structs, no methods except computed properties:
-- `src/game/components/TransformComponent.h` — position/rotation/scale + `modelMatrix()` helper
-- `src/game/components/MeshComponent.h` — non-owning `Mesh*` + materialId + tint
-- `src/game/components/LightComponent.h`, `CameraComponent.h`, `CharacterControllerComponent.h`
-- `src/game/components/DoorComponent.h`, `DoorLeafComponent.h`, `InteractableComponent.h`, `CheckpointComponent.h`
-- `src/game/components/PlayerTag.h`, `PrimaryCameraTag.h`, `ControllableTag.h`, `AudioListenerTag.h` — zero-size marker types
-- `src/game/components/PlayerMovementComponent.h`, `ViewmodelComponent.h`, `StaticColliderComponent.h`
+**Engine Physics (`src/engine/physics/`):**
+- `PhysicsSystem.h` — Jolt Physics wrapper (pimpl'd to hide Jolt internals)
+- Character controller API: `setCharacterVelocity()`, `updateCharacter()`, `getCharacterGroundState()`
+- Dual interface: `init(Application&)` for Application phase system, `init(entt::registry&)` for RuntimeGameSession
 
-Components follow the **Bevy/EnTT data-oriented** idiom: no virtual methods, no inheritance, no back-pointer to owning entity. Systems are the only code that reads/writes components.
+**Engine Audio (`src/engine/audio/`):**
+- `AudioSystem.h` — OpenAL Soft 3D audio dispatcher
+- Integrated with `AudioSourceComponent` in game layer
 
-**Systems** — inherit from `System` base class in `src/engine/core/System.h`:
-```cpp
-class System {
-public:
-    virtual void init(Application& app) = 0;
-    virtual void update(Application& app, float deltaTime) = 0;
-    virtual void shutdown() = 0;
-};
-```
+**Engine UI (`src/engine/ui/`):**
+- `ImGuiLayer.h` — ImGui initialization, theme/font presets, `DebugParams` struct
+- `Screenshot.h` — Screenshot capture utilities
+- **Issue**: `ImGuiLayer.h` violates layer boundary by including `game/rendering/RuntimeLightingOverride.h`
 
-Unlike Godot nodes or Unity MonoBehaviours, systems are not per-entity. One system instance processes all entities with matching components via EnTT views.
+**Game Content (`src/game/content/`):**
+- `ContentRegistry.h` — Central asset resolver for materials, environments, weapons, enemies, archetypes
+- Loads from `assets/` directory, supports hot-reload via `pollMaterialHotReload()`
+- Serialized format: JSON for definitions, GLSL procedural textures for materials
 
-### System Execution Model
+**Game Rendering (`src/game/rendering/`):**
+- `RuntimeSceneRenderer.h` — Queries ECS for mesh/light/camera components, dispatches to `SceneRenderPipeline`
+- `MaterialDefinition.h` — Shader parameter template with inheritance; resolves to `RenderMaterialData` at render time
+- `MaterialTextureLibrary.h` — Deferred texture binding, GPU memory pooling
+- `EnvironmentDefinition.h` — Sky, lighting presets, post-process overrides
+- `EnvironmentProfile.h` — Legacy enum-based environment (deprecated, being phased out)
 
-Systems are registered by phase in `apps/runtime/main.cpp` and stored in `Application::systemsByPhase_` — a `std::array<std::vector<unique_ptr<System>>, 6>`:
+**Game Systems (`src/game/systems/`):**
+- `PlayerMovementSystem.h` — Queries `PlayerMovementComponent`, calls `PhysicsSystem` API
+- `CameraSystem.h` — Queries `CameraComponent`, `PrimaryCameraTag`; updates view/projection matrices
+- `RenderSystem.h` — Game-layer system; calls `RuntimeSceneRenderer`, manages ImGui overlays
+- `InteractionSystem.h` — Raycast-based door/object detection, prompt display
+- `CheckpointSystem.h` — Checkpoint state tracking and respawn
+- `InventorySystem.h` — Equipment and item management
+- `AudioListenerSystem.h` — Queries `AudioListenerTag`, syncs OpenAL listener position
+- **Pattern**: All game systems derive from `System`, registered in `Application` with phase ordering
 
-```
-Phase 0: Input       → InputSystem
-Phase 1: Interaction → InteractionSystem, DoorSystem, CheckpointSystem
-Phase 2: Physics     → PhysicsSystem
-Phase 3: Gameplay    → AudioSystem, AudioListenerSystem, InventorySystem, PlayerMovementSystem
-Phase 4: Camera      → CameraSystem
-Phase 5: Render      → RenderSystem
-```
+**Game Components (`src/game/components/`):**
+- All POD structs (no methods, no inheritance)
+- Marker tags: `PlayerTag`, `ControllableTag`, `PrimaryCameraTag`, `AudioListenerTag`
+- Data structs: `TransformComponent` (position/rotation/scale, computes modelMatrix()), `MeshComponent`, `LightComponent`, `CameraComponent`, `CharacterControllerComponent`, `StaticColliderComponent`, `InteractableComponent`, `DoorComponent`, `CheckpointComponent`, `PlayerMovementComponent`, `ViewmodelComponent`, `AudioSourceComponent`, `ReflectionProbeComponent`
+- ECS queries use EnTT view patterns: `registry.view<PlayerTag, TransformComponent>()`
 
-The main loop in `Application::run()` iterates all phases in order each frame. Shutdown runs in reverse phase order. There is no dependency graph or parallel execution — single-threaded, sequential, deterministic.
+**Game Level Authoring (`src/game/level/`):**
+- `LevelDef.h` — Serializable scene structure: placements of meshes, lights, colliders, archetypes, hierarchy
+- `LevelLoader.h` — File I/O and ECS instantiation from `LevelDef`
+- `LevelBuilder.h` — Factory for entities; used by loader and scripted geometry setup
+- `LevelBuildContext.h` — Shared context during level construction (registry, content, mesh library)
 
-This differs from **Bevy's** scheduler (which can parallelize independent systems automatically) and **Godot's** `_process/_physics_process` split, but is simpler to reason about and debug.
+**Game Runtime (`src/game/runtime/`):**
+- `RuntimeGameSession.h` — **Complete simulation container**: owns registry, mesh library, physics, input, renderer, run session state. Can be instantiated standalone or in editor.
+- Lifetime: `rebuild()` → `resetForPlay()` → `tick()/render()` loop → `clear()`
+- `RuntimeGameplay.h` — Free functions for gameplay feature initialization/update (interaction, inventory, checkpoints, movement, camera)
+- Used by: Runtime application (main game loop) and Editor (preview world)
 
-### Service Locator
+**Game Behavior (`src/game/behavior/`):**
+- `ActionTypes.h` — Enum + variant-based action system for door opening, sound playing, messages, delays
+- `BehaviorSystem.h` — Executes actions triggered by collider/entity events
+- `DoorAnimationSystem.h` — Animates door leaf rotation over time
 
-`Application` provides a type-safe service locator backed by `std::unordered_map<std::type_index, std::any>`:
+**Game Prefabs (`src/game/prefabs/`):**
+- `GameplayPrefabs.h` — Factory functions for composite entities (checkpoint with collider + visual, double door with linked leaves)
+- `GameplayPrefabData.h` — Data structures for prefab specifications
 
-```cpp
-// Registration (in main.cpp)
-auto& content = app.emplaceService<ContentRegistry>();
+**Editor Scene (`src/editor/scene/`):**
+- `EditorSceneDocument.h` — In-memory scene graph with parent/child hierarchy, world transform calculation, serialization
+- `EditorSceneObject` — Variant type holding mesh/light/collider/archetype/group placements
+- Conversion: `EditorSceneDocument` ↔ `LevelDef` ↔ `.scene` file (JSON)
+- `EditorSelectionSystem.h` — Picking and multi-select
+- `EditorPreviewWorld.h` — Spawns `RuntimeGameSession` from `EditorSceneDocument` for live preview
 
-// Retrieval (in any system that receives Application&)
-ContentRegistry& content = app.getService<ContentRegistry>();
+**Editor Viewport (`src/editor/viewport/`):**
+- `EditorViewportController.h` — Camera orbit control
+- ImGuizmo gizmo integration for translate/rotate/scale
+- `EditorViewportInteraction.h` — Gizmo drag state machine
 
-// Safe retrieval
-ContentRegistry* content = app.tryGetService<ContentRegistry>();
-```
+**Editor UI (`src/editor/ui/`):**
+- `LevelEditorUi.h` — ImGui windows: outliner, inspector, asset browser, environment panel
+- Editable fields with undo/redo integration
 
-Services registered: `RunSession`, `ContentRegistry`, `AudioSystem*`.
+**Editor Core (`src/editor/core/`):**
+- `LevelEditorCore.h` — Dock layout management, scene loading, layout presets
+- `EditorRuntimePreviewSession.h` — Wraps `RuntimeGameSession`, syncs input/camera/environment from editor UI
+- `EditorCommandStack.h` — Undo/redo implementation
 
-This is a classic **service locator** pattern. Unlike Godot's singleton nodes, services are not globally accessible — only code holding an `Application&` reference can reach them. This is stricter than a global singleton but looser than pure dependency injection.
+**Editor Debug Harness (`src/editor/debug/`):**
+- Unix socket remote control system at `/tmp/pixel-roguelike-editor-{pid}.sock`
+- 33 commands for inspection and mutation (see project memory: `editor_debug_harness.md`)
 
-**Registry context** is also used for some per-registry singletons:
-```cpp
-app.registry().ctx().insert_or_assign<ContentRegistry*>(&content);
-```
-This pattern appears in `GenericFileScene` and `LevelLoader` for data that needs to be accessible from inside ECS systems without passing `Application&` everywhere.
+## Data Flow
 
----
+**Level Loading (Runtime):**
+1. File on disk: `assets/scenes/{scene}.scene` (JSON)
+2. `LevelLoader::load()` → deserialize to `LevelDef` struct
+3. `LevelBuilder` iterates `LevelDef` placements, spawns ECS entities with components
+4. `ContentRegistry` resolves mesh IDs, material IDs, archetype definitions
+5. `PhysicsSystem` collects `StaticColliderComponent` entities, initializes Jolt bodies
+6. `RuntimeSceneRenderer` reads `MeshComponent`, `LightComponent`, `CameraComponent` from registry each frame
 
-## Rendering Pipeline
+**Rendering (Per Frame):**
+1. `RenderSystem` calls `RuntimeSceneRenderer::render()`
+2. `RuntimeSceneRenderer` queries: `registry.view<MeshComponent, TransformComponent>()`
+3. Collects `RenderObject` (mesh, modelMatrix, material) into scratch vectors
+4. Passes to `SceneRenderPipeline`:
+   - Shadow depth pass (per light)
+   - Scene pass (PBR, samples shadow maps, 32 max lights)
+   - Post-process: stylize, composite to screen
+5. ImGui overlay pass (debug params, prompts, HUD)
 
-The rendering stack has two layers: engine (`SceneRenderPipeline`) and game (`RuntimeSceneRenderer`).
+**Material Resolution:**
+1. `MaterialDefinition` loaded from JSON with inheritance chain
+2. At render time: `MaterialTextureLibrary` binds albedo/normal/roughness/AO textures to GPU
+3. Shader receives `RenderMaterialData` with booleans for detail/subsurface/etc
+4. Procedural textures generated in shader for patterns (brick, stone, wood, floor)
 
-### RuntimeSceneRenderer (game layer) — `src/game/rendering/RuntimeSceneRenderer.h`
+**Editor Round-Trip:**
+1. User edits in `EditorSceneDocument` (in-memory hierarchy)
+2. Changes published to `EditorRuntimePreviewSession` which owns a `RuntimeGameSession`
+3. Preview session's registry updated with new components/entities
+4. Save: `EditorSceneDocument` serialized to `LevelDef` JSON
+5. Load: JSON deserialized to `EditorSceneDocument`
 
-Queries ECS each frame and produces engine-layer structs:
+**Behavior Execution:**
+1. `BehaviorSystem` queries entities with `BehaviorDeclaration` vectors
+2. On trigger (collider contact, timer, event): enqueue `ActionEntry`
+3. Dispatch: variant-based switch on `ActionType` (OpenDoor, PlaySound, etc)
+4. Example: `ActionType::OpenDoor` → find `DoorComponent` by `targetNodeId`, set state
+5. `DoorAnimationSystem` animates the leaf rotation based on door state
 
-1. **`captureCamera()`** — finds entity with `PrimaryCameraTag`, reads `CameraComponent`, builds view/projection matrices
-2. **`collectSceneObjects()`** — queries entities with `TransformComponent + MeshComponent`, resolves `materialId` via `MaterialTextureLibrary`, produces `std::vector<RenderObject>`
-3. **`collectViewmodelObjects()`** — queries `ViewmodelComponent` entities; applies first-person camera-space positioning
-4. **`collectLights()`** — queries entities with `LightComponent`, produces `std::vector<RenderLight>`
-5. Packs everything into a `SceneRenderInput` struct and calls `SceneRenderPipeline::render()`
+## Key Abstractions
 
-This follows the **push-data** pattern (similar to how TheCherno's Hazel engine works): ECS state is extracted into plain renderer input structs with no ECS types crossing the engine/game boundary.
+**Application (Service Locator):**
+- Purpose: Centralized access to systems and singletons
+- Examples: `app.getService<InputSystem>()`, `app.getService<ContentRegistry>()`
+- Pattern: `std::unordered_map<std::type_index, std::any>` with template accessors
+- Eliminates spaghetti global state; enforces explicit dependency
 
-### SceneRenderPipeline (engine layer) — `src/engine/rendering/SceneRenderPipeline.h`
+**System (Phase-Ordered Execution):**
+- Purpose: Decouples game logic from main loop scheduling
+- Lifecycle: `init(app)` once, `update(app, dt)` per frame, `shutdown()` on exit
+- Examples: `PlayerMovementSystem`, `CameraSystem`, `RenderSystem`
+- Phase enum ensures deterministic order: Input → Physics → Gameplay → Render
 
-Has zero game-layer dependencies. Orchestrates the full GPU pipeline:
+**EventBus (Type-Safe Pub/Sub):**
+- Purpose: Decouples event producers from consumers
+- Subscription tokens auto-unsubscribe on destruction (RAII)
+- Not currently heavily used in gameplay systems (direct ECS queries preferred)
 
-```
-1. Shadow pass    → spot light shadow maps (up to 8)   — shadow_depth.vert/frag
-2. CSM pass       → cascaded shadow map for sun         — csm_depth.vert/geom/frag
-3. Scene pass     → PBR-like lighting to sceneFBO_      — game/scene.vert/frag (42KB)
-4. Bloom pass     → dual-pass downsample/upsample        — bloom_downsample, bloom_upsample
-5. SSAO pass      → screen-space ambient occlusion       — ssao.vert/frag, ssao_blur
-6. Composite pass → tone map + fog + sky + SSAO blend   → compositeFBO_   — composite.frag (12KB)
-7. Stylize pass   → edge detection + vignette + grain    → targetFramebuffer — stylize.frag
-```
+**RuntimeGameSession (Simulation Container):**
+- Purpose: Self-contained play session or editor preview
+- Owns: ECS registry, mesh library, physics, input, renderer
+- Allows: Multiple independent game instances (e.g., editor with background preview)
+- Lifetime: Call `rebuild(levelDef, content)` → `resetForPlay()` → `tick()/render()` → `clear()`
 
-The scene shader at `assets/shaders/game/scene.frag` (42KB) handles: PBR (metalness/roughness), 32 point/spot/area lights, LTC area light approximation, cascaded shadow maps, procedural textures (brick, stone, wood, floor, ceiling), subsurface scattering approximation, animated materials.
+**ECS Component Queries:**
+- Pattern: `auto view = registry.view<ComponentA, ComponentB>();` via EnTT
+- Sparse-set storage guarantees cache-friendly iteration
+- Example: `registry.view<PlayerTag, TransformComponent>()` finds player entity
 
-**Post-process chain** is configured via `PostProcessParams` (30+ toggleable features). `EnvironmentDefinition` wraps `PostProcessParams + SkySettings + LightingEnvironment` and is serialized to `.environment` files.
+**Content Registry (Asset Resolver):**
+- Purpose: Central authority for mesh, material, environment, prefab definitions
+- Hot-reload support for editor iteration
+- Validation: Material inheritance chains checked on load
 
-### Editor rendering
+## Entry Points
 
-The editor has its own renderer path at `src/editor/render/EditorScenePreviewRenderer.h` that:
-- Uses the same `SceneRenderPipeline` (shared engine layer)
-- Adds selection overlays, collider wireframes, light indicators as extra `RenderObject`s
-- `EditorRuntimePreviewSession` wraps `RuntimeGameSession` for in-editor play-testing
+**Runtime Application (`apps/runtime/main.cpp`):**
+- Creates `Application` (GLFW window, ECS registry)
+- Registers game systems: `PlayerMovementSystem`, `CameraSystem`, `RenderSystem`, etc.
+- Loads level via `RuntimeGameSession::rebuild()`
+- Main loop: `app.run()` → phases → `RenderSystem::update()` → `window.swap()`
 
----
+**Level Editor (`apps/level_editor/main.cpp`):**
+- Creates `Application` for ImGui context
+- `LevelEditorCore` manages scene document and preview world
+- ImGui dockspace layout with viewport, outliner, inspector, asset browser
+- Hot-reload: material changes + scene preview updates in real-time
 
-## Scene / Level System
-
-**Scene stack** (`SceneManager`) — pushes/pops `Scene` interface instances:
-```cpp
-class Scene {
-    virtual void onEnter(Application& app) = 0;
-    virtual void onExit(Application& app) = 0;
-    virtual void onUpdate(Application& app, float deltaTime) {}
-};
-```
-
-`SceneManager::updateActive()` is called before system phases each frame, not as a system itself.
-
-Currently only one concrete `Scene` implementation exists: `GenericFileScene` (`src/game/scenes/GenericFileScene.h`) which loads any `.scene` file by path plus optional scripted geometry hooks.
-
-**Level loading data flow:**
-
-```
-.scene file
-    ↓ LevelLoader::load()
-LevelDef struct (meshes[], lights[], colliders[], playerSpawn, archetypes[])
-    ↓ LevelBuilder
-    ECS entities spawned: TransformComponent + MeshComponent + LightComponent + etc.
-    ↓ GameplayPrefabs::spawnDoubleDoor / spawnCheckpoint
-    Compound entities (door = DoorComponent + 2x DoorLeafComponent + InteractableComponent)
-    ↓
-Systems operate on components each frame
-```
-
-`LevelDef` uses `nodeId` / `parentNodeId` string pairs to represent the scene hierarchy (for round-trip with editor). The hierarchy is resolved via `resolveLevelHierarchy()` before spawning.
-
----
-
-## Editor Integration
-
-The editor is an independent application (`apps/level_editor/`) that shares the game and engine libraries.
-
-**EditorSceneDocument** — the editor's authoritative scene state:
-- Stores a flat `std::vector<EditorSceneObject>` where each object wraps a `std::variant` of `LevelMeshPlacement | LevelLightPlacement | LevelBoxColliderPlacement | ...`
-- Maintains parent/child relationships via `nodeId`/`parentNodeId` strings (same as `LevelDef`)
-- `toLevelDef()` converts to `LevelDef` for serialization or preview rebuild
-- Tracks two dirty flags independently: `sceneDirty_` and `environmentDirty_`
-- Exposes `sceneRevision_` and `environmentRevision_` counters for change detection
-
-**EditorPreviewWorld** — a live ECS world for the static editor view:
-- Rebuilt from `EditorSceneDocument` on scene changes
-- Maintains an `ownerMap` (entity → document object ID) for click-to-select
-- Uses `MaterialTextureLibrary` for material resolution, same as runtime
-
-**EditorRuntimePreviewSession** — wraps `RuntimeGameSession` for in-editor play mode:
-- Converts `EditorSceneDocument` → `LevelDef` → rebuilds full runtime session
-- Intercepts GLFW input and injects it via `InputSystem::setKeyPressed()` / `setMouseDelta()` etc. (bypassing GLFW callback path)
-- `captured_` flag controls whether mouse input goes to editor camera or runtime player
-
-**Undo/Redo** — `EditorCommandStack` / `EditorDocumentStateCommand`:
-- Full document state snapshot strategy (not fine-grained command diffs)
-- `EditorSceneDocumentState` is a plain copyable struct with `objects`, `environment`, `nextObjectId`, `dirty` flags
-- Ring buffer limited to 256 commands
-- Compares serialized scene/environment content to detect save state
-
-Unlike **Godot's** undo/redo (which uses method call pairs), this engine uses a memento pattern with full state captures. This is simpler to implement but has higher memory cost per command.
-
----
+**Procedural Model Viewer (`apps/model_viewer/main.cpp`):**
+- Minimal application for testing procedural geometry generation
+- Does not need full gameplay systems
 
 ## Error Handling
 
-**Strategy:** Assertions and exceptions for programmer errors; log-and-continue for asset load failures.
+**Strategy:** Exceptions for initialization failures; assertions for runtime invariants
 
 **Patterns:**
-- `Application::getService<T>()` throws `std::runtime_error` if service not registered
-- Asset loaders return empty/default structs on failure and log via spdlog
-- Physics system uses Jolt's internal error callbacks (not exceptions)
-- No RTTI except `std::type_index` in service locator and event bus
+- Asset loading: throws on file not found, parse errors → caught and logged at startup
+- Physics: assertions on invalid shapes or character controller state
+- Rendering: GL error checks in debug builds via `glGetError()`
+- ECS: assertions on invalid entity/component access (EnTT checks)
 
----
+**In Editor:** Validation warnings displayed in ImGui windows (invalid material inheritance, missing mesh)
 
 ## Cross-Cutting Concerns
 
-**Logging:** spdlog with category-less global logger. `spdlog::info/warn/error` throughout. Editor has a custom `EditorConsoleSink` (`src/engine/core/EditorConsoleSink.h`) that captures log output for the in-editor console panel.
+**Logging:** spdlog with category filters. Examples: `SPDLOG_INFO("scene_loader")`, `SPDLOG_WARN("physics")`
 
-**Validation:** `ContentRegistry::validateMaterialInheritance()` run at load time. Material inheritance is resolved at use time via `resolveMaterialDefinition()` which walks `parent` chains.
+**Validation:** 
+- Materials: inheritance chains validated on load
+- Levels: nodeId references checked (orphaned children logged as warnings)
+- Archetypes: prefab instantiation validates component slots
 
-**Authentication:** Not applicable.
+**Authentication/Authorization:** Not applicable (single-player game)
 
-**Hot reload:** `ContentRegistry::pollMaterialHotReload()` — called per-frame in editor, polls `.material` file modification times at 500ms intervals and triggers `RuntimeSceneRenderer::reloadContent()`.
+**Thread Safety:** Main thread only. Physics and audio run in background threads via their respective libraries (Jolt, OpenAL), but game layer never touches them concurrently.
 
 ---
 
-*Architecture analysis: 2026-04-01*
+*Architecture analysis: 2026-04-05*

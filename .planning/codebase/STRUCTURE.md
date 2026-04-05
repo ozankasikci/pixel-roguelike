@@ -1,369 +1,387 @@
 # Codebase Structure
 
-**Analysis Date:** 2026-04-01
+**Analysis Date:** 2026-04-05
 
 ## Directory Layout
 
 ```
-gsd-3d-roguelike/
-├── apps/                   # Executable entry points (one per binary)
-│   ├── runtime/            # pixel-roguelike — the playable game
-│   ├── level_editor/       # level-editor — the scene authoring tool
-│   └── model_viewer/       # procedural-model-viewer — standalone mesh preview
-├── assets/                 # All runtime assets (shaders, meshes, scenes, defs)
-│   ├── defs/               # Content definition files (.weapon, .environment, etc.)
-│   ├── environments/       # (reserved; .environment files live in defs/environments/)
-│   ├── fonts/              # TTF fonts (editor only)
-│   ├── materials/          # .material definition files
-│   ├── meshes/             # 3D mesh files (.glb, .fbx)
-│   ├── packs/              # Third-party asset packs (raw, not yet integrated)
-│   ├── prefabs/            # .prefab files for gameplay archetypes
-│   ├── scenes/             # .scene files (authored in level editor)
-│   ├── shaders/
-│   │   ├── engine/         # Post-process shaders (composite, stylize, bloom, ssao, shadow)
-│   │   └── game/           # Scene PBR shaders (scene.vert / scene.frag)
-│   ├── skies/              # Cubemap PNGs and TGA sky textures
-│   └── textures/           # PBR texture sets (albedo, normal, roughness, ao)
-├── cmake/                  # Custom CMake helpers (DesktopApp.cmake)
-├── external/               # Vendored headers (ImGuizmo, stb_image_write, stb_vorbis)
+pixel-roguelike/
 ├── src/
-│   ├── engine/             # Engine layer — no game/editor dependencies
-│   ├── game/               # Game layer — depends on engine only
-│   └── editor/             # Editor layer — depends on game and engine
+│   ├── engine/              # Cross-platform subsystems (no game dependencies)
+│   │   ├── core/            # Application, Window, EventBus, System base, Time
+│   │   ├── ecs/             # EnTT convenience header
+│   │   ├── rendering/       # OpenGL pipeline, shaders, meshes, lighting, post-process
+│   │   │   ├── core/
+│   │   │   ├── geometry/
+│   │   │   ├── assets/
+│   │   │   ├── lighting/
+│   │   │   └── post/
+│   │   ├── input/           # GLFW input aggregation, input state
+│   │   ├── physics/         # Jolt Physics wrapper
+│   │   ├── audio/           # OpenAL 3D audio
+│   │   ├── scene/           # SceneManager base
+│   │   └── ui/              # ImGui layer, screenshots
+│   │
+│   ├── game/                # Roguelike gameplay logic and content
+│   │   ├── components/      # ECS component POD structs
+│   │   ├── systems/         # Game-layer systems (PlayerMovement, Camera, Render, etc.)
+│   │   ├── behavior/        # Behavior tree and action execution (doors, messages, etc.)
+│   │   ├── content/         # ContentRegistry, asset definition loaders
+│   │   ├── rendering/       # RuntimeSceneRenderer, MaterialDefinition, EnvironmentDefinition
+│   │   ├── level/           # LevelDef (serializable scene), LevelBuilder, LevelLoader
+│   │   ├── levels/          # Level-specific code (cathedral/, prison/)
+│   │   │   ├── cathedral/
+│   │   │   └── prison/
+│   │   ├── runtime/         # RuntimeGameSession, RuntimeGameplay (core play loop)
+│   │   ├── session/         # RunSession (persistent play state), EquipmentState
+│   │   ├── prefabs/         # GameplayPrefabs (composite entity factories)
+│   │   ├── scenes/          # Scene-specific implementations (GenericFileScene)
+│   │   └── ui/              # Game HUD overlays (GameOverlays)
+│   │
+│   └── editor/              # Level editor (only runs in editor, not in shipped game)
+│       ├── core/            # LevelEditorCore, layout management, command stack
+│       ├── scene/           # EditorSceneDocument, serialization, preview world
+│       ├── viewport/        # Camera control, ImGuizmo integration
+│       ├── ui/              # Inspector, outliner, asset browser, environment panel
+│       ├── render/          # Preview renderers (EditorScenePreviewRenderer)
+│       ├── assets/          # Asset browser backend
+│       ├── build/           # Editor build context
+│       └── debug/           # Unix socket debug harness
+│
+├── apps/
+│   ├── runtime/             # Main game executable (main.cpp)
+│   ├── level_editor/        # Level editor executable (main.cpp)
+│   └── model_viewer/        # Procedural model preview tool
+│
 ├── tests/
-│   ├── common/             # TestSupport.h shared test helpers
-│   ├── engine/             # Engine-layer unit tests
-│   └── game/               # Game-layer integration tests
-├── tools/                  # Offline tools (procedural mesh generators)
-├── CMakeLists.txt          # Root build configuration with FetchContent deps
-├── CLAUDE.md               # Project conventions and architecture reference
-└── .planning/              # GSD workflow artifacts (phases, codebase docs)
-```
-
-## Source Tree — Engine Layer (`src/engine/`)
-
-```
-src/engine/
-├── audio/
-│   └── AudioSystem.h/.cpp          # OpenAL Soft 3D audio, System subclass
-├── core/
-│   ├── Application.h/.cpp          # Main loop, system registry, service locator
-│   ├── EventBus.h                  # Type-safe pub/sub (std::type_index keyed)
-│   ├── System.h                    # Base class: init/update/shutdown interface
-│   ├── Time.h/.cpp                 # Frame delta time tracking
-│   ├── Window.h/.cpp               # GLFW window + context creation
-│   ├── PathUtils.h/.cpp            # resolveProjectPath() utility
-│   ├── ProjectConfig.h/.cpp        # assets/project.cfg (last-opened scene)
-│   ├── MathUtils.h                 # GLM helper functions
-│   └── EditorConsoleSink.h         # spdlog sink for in-editor log panel
-├── ecs/
-│   └── Registry.h                  # EnTT include alias (registry lives in Application)
-├── input/
-│   ├── InputSystem.h/.cpp          # GLFW callbacks, action map, cursor lock
-│   └── ActionMap.h                 # Named action bindings
-├── physics/
-│   └── PhysicsSystem.h/.cpp        # Jolt Physics behind pimpl (character controller)
-├── rendering/
-│   ├── SceneRenderPipeline.h/.cpp  # Orchestrates full GPU pipeline
-│   ├── assets/
-│   │   ├── AssetCache.h            # Generic key→resource cache
-│   │   ├── AssimpLoader.h/.cpp     # FBX/multi-format mesh import
-│   │   ├── GltfLoader.h/.cpp       # tinygltf glTF 2.0 loader
-│   │   ├── ModelLoader.h/.cpp      # Unified loader dispatching to Assimp/tinygltf
-│   │   ├── Texture2D.h/.cpp        # RAII OpenGL 2D texture (stb_image backed)
-│   │   └── TextureCube.h/.cpp      # RAII OpenGL cubemap texture
-│   ├── core/
-│   │   ├── Framebuffer.h/.cpp      # RAII FBO with color + depth attachments
-│   │   └── Shader.h/.cpp           # RAII GLSL program, uniform setters
-│   ├── geometry/
-│   │   ├── Mesh.h/.cpp             # RAII VAO/VBO/EBO
-│   │   ├── MeshGeometry.h          # RawMeshData struct (CPU-side vertices/indices)
-│   │   ├── MeshLibrary.h/.cpp      # Named mesh registry (string → Mesh*)
-│   │   └── Renderer.h/.cpp         # drawScene() — sets uniforms, binds textures, draws
-│   ├── lighting/
-│   │   ├── RenderLight.h           # LightType enum, RenderLight struct, LightingEnvironment
-│   │   ├── ShadowMap.h/.cpp        # Single spot-light shadow map FBO
-│   │   ├── CascadedShadowMap.h/.cpp # CSM for directional sun light
-│   │   └── LtcData.h/.cpp          # LTC lookup tables for area lights
-│   └── post/
-│       ├── BloomPass.h/.cpp        # Dual-pass bloom (downsample → upsample)
-│       ├── CompositePass.h/.cpp    # Tone map + fog + sky + SSAO blend
-│       ├── SsaoPass.h/.cpp         # Screen-space ambient occlusion
-│       ├── StylizePass.h/.cpp      # Edge detection, vignette, grain, scanlines
-│       ├── PostProcessParams.h     # 30+ configurable post-process parameters
-│       ├── SkySettings.h           # Sky cubemap + horizon configuration
-│       └── SkyTextureLibrary.h/.cpp # Loads and caches sky cubemap textures
-├── scene/
-│   ├── Scene.h                     # Abstract scene interface: onEnter/onExit/onUpdate
-│   └── SceneManager.h/.cpp         # Push/pop scene stack, calls updateActive() per frame
-└── ui/
-    ├── ImGuiLayer.h/.cpp           # Dear ImGui init/beginFrame/endFrame/shutdown
-    └── Screenshot.h/.cpp           # PNG screenshot capture to disk
-```
-
-## Source Tree — Game Layer (`src/game/`)
-
-```
-src/game/
-├── components/                     # All ECS component structs (POD, no methods)
-│   ├── TransformComponent.h        # position/rotation/scale + modelMatrix()
-│   ├── MeshComponent.h             # Mesh* + materialId + tint
-│   ├── LightComponent.h            # Light type and params
-│   ├── CameraComponent.h           # FOV, near/far planes
-│   ├── CharacterControllerComponent.h
-│   ├── StaticColliderComponent.h
-│   ├── InteractableComponent.h     # Prompt text, interact distance/dot threshold
-│   ├── DoorComponent.h             # leftLeaf/rightLeaf entities, open progress
-│   ├── DoorLeafComponent.h         # Per-leaf open angle animation state
-│   ├── CheckpointComponent.h
-│   ├── PlayerMovementComponent.h
-│   ├── ViewmodelComponent.h        # First-person weapon mesh offset/sway state
-│   ├── AudioSourceComponent.h
-│   ├── PlayerSpawnComponent.h
-│   ├── PlayerInteractionLockComponent.h
-│   ├── PlayerTag.h                 # Zero-size marker
-│   ├── PrimaryCameraTag.h          # Zero-size marker
-│   ├── ControllableTag.h           # Zero-size marker
-│   └── AudioListenerTag.h          # Zero-size marker
-├── content/
-│   ├── ContentRegistry.h/.cpp      # Loads and owns all definition assets
-│   └── ParseUtils.h                # Text parsing helpers for .scene/.def files
-├── level/
-│   ├── LevelDef.h                  # Data structs: LevelMeshPlacement, LevelDef, etc.
-│   ├── LevelBuildContext.h         # registry + meshLibrary + entities refs bundle
-│   ├── LevelBuilder.h/.cpp         # Entity factory: addMesh, addLight, addCollider
-│   └── LevelLoader.h/.cpp          # .scene file → LevelDef → calls LevelBuilder
-├── levels/
-│   ├── GameAssets.h/.cpp           # registerAllGameAssets() — registers all .glb/.fbx meshes
-│   ├── cathedral/
-│   │   └── CathedralPrefabs.h/.cpp # Cathedral-specific procedural geometry helpers
-│   └── prison/                     # (empty — institutional room geometry in GenericFileScene)
-├── prefabs/
-│   ├── GameplayPrefabData.h        # CheckpointSpawnSpec, DoubleDoorSpawnSpec structs
-│   └── GameplayPrefabs.h/.cpp      # spawnCheckpoint(), spawnDoubleDoor(), spawnGameplayPrefab()
-├── rendering/
-│   ├── RuntimeSceneRenderer.h/.cpp # ECS query → RenderObject/RenderLight → SceneRenderPipeline
-│   ├── MaterialDefinition.h/.cpp   # MaterialDefinition struct, resolve/serialize/load
-│   ├── MaterialTextureLibrary.h/.cpp # Resolves materialId → bound GL textures
-│   ├── EnvironmentDefinition.h/.cpp # Wraps PostProcessParams + SkySettings + LightingEnvironment
-│   ├── EnvironmentProfile.h        # Enum for preset environments (Default, Outdoor, etc.)
-│   ├── EnvironmentDebugSync.h/.cpp # ImGui debug panel for live environment tweaking
-│   ├── MeshAssetProvider.h         # Registry context singleton for mesh access in systems
-│   ├── RuntimeCameraMath.h         # View/projection matrix helpers
-│   └── RetroPalette.h              # (legacy — palette colors, not actively used)
-├── runtime/
-│   ├── RuntimeGameSession.h/.cpp   # Self-contained play session: registry + physics + renderer
-│   └── RuntimeGameplay.h/.cpp      # Free-function gameplay logic (interaction, doors, movement, camera)
-├── scenes/
-│   └── GenericFileScene.h/.cpp     # Scene impl that loads any .scene file + optional scripted geometry
-├── session/
-│   ├── RunSession.h                # Persistent per-run state (inventory, equipped weapons, checkpoints)
-│   └── EquipmentState.h/.cpp       # Equipment weight/slot validation helpers
-├── systems/
-│   ├── PlayerMovementSystem.h/.cpp # Reads InputSystem → drives PhysicsSystem character controller
-│   ├── CameraSystem.h/.cpp         # Mouse delta → camera yaw/pitch on PrimaryCameraTag entity
-│   ├── RenderSystem.h/.cpp         # Owns RuntimeSceneRenderer, drives full render each frame
-│   ├── DoorSystem.h/.cpp           # Door open/close animation ticks
-│   ├── InteractionSystem.h/.cpp    # Raycasts for interactable prompt display
-│   ├── CheckpointSystem.h/.cpp     # Checkpoint trigger and respawn logic
-│   ├── InventorySystem.h/.cpp      # Inventory menu input and equip/unequip
-│   ├── AudioListenerSystem.h/.cpp  # Syncs PrimaryCameraTag position to OpenAL listener
-│   └── AudioListenerSystem.h/.cpp
-└── ui/
-    ├── GameOverlays.h/.cpp         # Interaction prompts, inventory HUD (ImGui rendered)
-    ├── InteractionPromptState.h    # Prompt visibility/text state
-    ├── InteractionFocusState.h     # Which entity is in focus for interaction
-    └── InventoryMenuState.h        # Inventory open/close + selection state
-```
-
-## Source Tree — Editor Layer (`src/editor/`)
-
-```
-src/editor/
+│   ├── cmake/               # CMake build tests
+│   ├── common/              # Shared test utilities
+│   ├── engine/              # Engine subsystem tests
+│   ├── game/                # Game logic tests
+│   ├── editor/              # Editor tests
+│   └── data/                # Test fixtures (models, scenes)
+│
 ├── assets/
-│   └── EditorAssetBrowser.h/.cpp   # Asset browser panel (meshes, materials, archetypes)
-├── build/
-│   └── EditorBuildSystem.h/.cpp    # Export/build pipeline (scene validation, asset packaging)
-├── core/
-│   ├── EditorCommand.h/.cpp        # IEditorCommand + EditorCommandStack (undo/redo)
-│   ├── EditorLayoutPreset.h/.cpp   # Save/load ImGui dock layout presets to disk
-│   ├── EditorRuntimePreviewSession.h/.cpp # Wraps RuntimeGameSession for in-editor play
-│   └── LevelEditorCore.h/.cpp      # Top-level editor helpers (scene load, sorted asset lists)
-├── render/
-│   ├── EditorScenePreviewRenderer.h/.cpp  # collectRenderObjects + overlays for editor view
-│   ├── EditorAssetPreviewRenderer.h/.cpp  # Renders single mesh for asset browser thumbnails
-│   └── EditorViewportRenderer.h/.cpp      # Combines scene + gizmos + selection into viewport FBO
-├── scene/
-│   ├── EditorSceneDocument.h/.cpp  # Authoritative scene state: objects[], environment, dirty flags
-│   ├── EditorSceneSerializer.h/.cpp # Document ↔ LevelDef ↔ .scene file serialization
-│   ├── EditorPreviewWorld.h/.cpp   # ECS world built from document for static editor preview
-│   └── EditorSelectionSystem.h/.cpp # Click/box selection, hover highlight
-├── ui/
-│   ├── LevelEditorUi.h/.cpp        # Top-level ImGui UI state (EditorUiState struct)
-│   ├── EditorPanels.h/.cpp         # Inspector, environment, material editor panels
-│   └── EditorOutlinerPanel.h/.cpp  # Scene hierarchy tree panel
-└── viewport/
-    ├── EditorViewportController.h/.cpp  # Camera orbit, pan, zoom; ImGuizmo gizmo integration
-    └── EditorViewportInteraction.h/.cpp # Mouse picking, placement mode, drag state
+│   ├── scenes/              # .scene files (JSON level definitions)
+│   ├── materials/           # .material files (JSON with shader parameters)
+│   ├── environments/        # .environment files (sky, lighting presets)
+│   ├── prefabs/             # .prefab files (reusable entity templates)
+│   ├── meshes/              # .glb/.fbx model files
+│   ├── textures/            # PNG/TGA albedo, normal, roughness maps
+│   ├── shaders/             # GLSL 4.10 vertex/fragment shaders
+│   │   ├── engine/          # Post-process, shadow depth, composite shaders
+│   │   └── game/            # Scene rendering (PBR, procedural textures)
+│   └── skies/               # Cubemap skyboxes + horizon overlays
+│
+├── cmake/
+│   └── DesktopApp.cmake     # CMake utilities for FetchContent targets
+│
+├── external/
+│   └── ImGuizmo/            # Gizmo library for editor
+│
+├── editor_layouts/          # ImGui dock layout presets (generated)
+│
+├── docs/
+│   ├── concept-art/         # Level design mockups (per-level subdirs)
+│   └── plans/               # Planning documents
+│
+├── .planning/               # GSD workflow artifacts
+│   ├── phases/              # Work phase documents
+│   └── codebase/            # ARCHITECTURE.md, STRUCTURE.md, etc.
+│
+├── CMakeLists.txt           # Root build configuration
+├── CLAUDE.md                # Project conventions and stack (checked into repo)
+└── .clang-format            # Code style: LLVM 4-space indent, 100-char line
 ```
 
-## App Entry Points
+## Directory Purposes
 
-**`apps/runtime/main.cpp`** — `pixel-roguelike` binary:
-- Creates `Application`, registers all systems by phase, loads `ContentRegistry`
-- Scene resolution order: `--scene` arg → `assets/project.cfg` last scene → ImGui scene picker
-- Pushes `GenericFileScene` onto `SceneManager`, calls `app.run()`
+**`src/engine/`:**
+- Purpose: Reusable subsystems for any C++ graphics engine
+- Contains: Graphics (OpenGL), input (GLFW), physics (Jolt), audio (OpenAL), UI (ImGui)
+- Key files: `core/Application.h`, `rendering/SceneRenderPipeline.h`, `physics/PhysicsSystem.h`
+- Constraint: Zero dependencies on `game/` or `editor/`
 
-**`apps/level_editor/main.cpp`** — `level-editor` binary (99KB):
-- Creates `Application` with editor-specific system set
-- Owns `EditorSceneDocument`, `EditorCommandStack`, `EditorPreviewWorld`, `EditorRuntimePreviewSession`
-- Dock-based ImGui layout with viewport, outliner, inspector, asset browser, environment, console panels
+**`src/engine/core/`:**
+- `Application.h` — Main loop, phase-ordered system execution, service locator
+- `Window.h` — GLFW window wrapper
+- `System.h` — Base class for phased systems
+- `EventBus.h` — Type-safe pub/sub
+- `Time.h` — Frame timing
 
-**`apps/model_viewer/main.cpp`** — `procedural-model-viewer` binary:
-- Lightweight standalone viewer using `game_rendering` library
-- No ECS systems — directly calls `SceneRenderPipeline` for mesh inspection
+**`src/engine/rendering/`:**
+- **core/**: Shader compilation, Framebuffer (FBO) management
+- **geometry/**: Mesh (VAO/VBO), MeshLibrary registry, Renderer draw dispatch
+- **assets/**: Model loaders (Assimp, tinygltf), texture loading (stb_image)
+- **lighting/**: RenderLight struct, shadow maps, reflection probes
+- **post/**: Post-process passes (bloom, SSAO, stylize, composite)
+
+**`src/game/`:**
+- Purpose: Roguelike-specific content, gameplay logic, and systems
+- Three sub-libraries: `game_content` (definitions) → `game_rendering` (visualization) → `gameplay` (runtime systems)
+- Key files: `runtime/RuntimeGameSession.h` (self-contained simulation), `level/LevelDef.h` (serializable scene), `components/*.h` (ECS data)
+
+**`src/game/components/`:**
+- All files are POD struct definitions (no methods, no inheritance)
+- Examples: `TransformComponent.h` (position/rotation/scale), `MeshComponent.h` (mesh reference), `PlayerTag.h` (marker)
+- Naming: PascalCase struct names matching component type
+
+**`src/game/systems/`:**
+- All inherit from `System` base class
+- Examples: `PlayerMovementSystem.h`, `CameraSystem.h`, `RenderSystem.h`
+- Pattern: Constructor takes dependencies (InputSystem, PhysicsSystem); update() queries ECS and modifies components
+
+**`src/game/rendering/`:**
+- `RuntimeSceneRenderer.h` — Queries ECS, collects RenderObject/RenderLight, dispatches to SceneRenderPipeline
+- `MaterialDefinition.h` — Shader parameter templates with inheritance
+- `EnvironmentDefinition.h` — Sky/lighting/post-process presets
+- `MaterialTextureLibrary.h` — GPU texture binding pool
+
+**`src/game/level/`:**
+- `LevelDef.h` — Serializable scene structure (placements of meshes, lights, colliders, archetypes)
+- `LevelLoader.h` — File I/O and ECS instantiation
+- `LevelBuilder.h` — Factory for spawning entities from placements
+- `LevelBuildContext.h` — Shared state during level construction
+
+**`src/game/runtime/`:**
+- `RuntimeGameSession.h` — **Central**: Self-contained simulation (registry, physics, input, renderer). Used by both runtime and editor.
+- `RuntimeGameplay.h` — Free functions for gameplay feature updates (not a class)
+- Lifetime: `build()` → `resetForPlay()` → `tick()` → `render()` → `clear()`
+
+**`src/game/content/`:**
+- `ContentRegistry.h` — Asset resolver for meshes, materials, environments, weapons, enemies, archetypes
+- Supports hot-reload for editor iteration
+- Validation of material inheritance chains
+
+**`src/game/behavior/`:**
+- `ActionTypes.h` — Variant-based action system (OpenDoor, PlaySound, ShowMessage, etc.)
+- `BehaviorSystem.h` — Executes queued actions
+- `DoorAnimationSystem.h` — Animates door rotation
+
+**`src/editor/`:**
+- Purpose: Scene authoring tool (does not ship with game)
+- Consumes game layer directly for preview (`RuntimeGameSession`) and serialization (`LevelDef`)
+
+**`src/editor/scene/`:**
+- `EditorSceneDocument.h` — In-memory scene with parent/child hierarchy, world transforms
+- `EditorSceneObject` — Variant holding mesh/light/collider placements
+- Serialization to/from `LevelDef` and `.scene` JSON files
+
+**`src/editor/core/`:**
+- `LevelEditorCore.h` — Dock layout, scene loading, layout presets
+- `EditorRuntimePreviewSession.h` — Wraps `RuntimeGameSession` for live preview
+- `EditorCommandStack.h` — Undo/redo
+
+**`src/editor/viewport/`:**
+- Camera orbit control
+- ImGuizmo integration for translate/rotate/scale manipulation
+
+**`src/editor/debug/`:**
+- Unix socket remote control server (`/tmp/pixel-roguelike-editor-{pid}.sock`)
+- 33 commands for inspection and mutation (described in project MEMORY.md)
+
+**`assets/scenes/`:**
+- `.scene` files — JSON serialized `LevelDef` structs
+- Format: Placements of meshes, lights, colliders, archetypes with hierarchy and properties
+
+**`assets/materials/`:**
+- `.material` files — JSON `MaterialDefinition` structs
+- Properties: Shader parameters (specular, roughness, normal strength), texture references, material kind
+- Inheritance: Child materials can override parent properties
+
+**`assets/shaders/`:**
+- **engine/**: Post-process (composite, stylize, bloom, SSAO), shadow depth
+- **game/**: Main scene shader (PBR-like, 32 max lights, shadow maps, procedural textures)
+- All GLSL 4.10 (#version 410 core — macOS ceiling)
+
+**`tests/`:**
+- Standalone executables (no external test framework)
+- Exit code 0 = pass, non-zero = fail
+- Custom CMake macro: `pixel_roguelike_add_test(target_name source.cpp)`
+- Examples: shader compilation tests, material parsing tests, level loading tests
 
 ## Key File Locations
 
-**Entry points:**
-- `apps/runtime/main.cpp` — game boot, system registration, scene selection
-- `apps/level_editor/main.cpp` — editor boot, UI wiring
-- `apps/model_viewer/main.cpp` — model viewer boot
+**Entry Points:**
+- `apps/runtime/main.cpp` — Main game executable
+- `apps/level_editor/main.cpp` — Level editor executable
+- `apps/model_viewer/main.cpp` — Procedural model viewer
 
-**Core engine files:**
-- `src/engine/core/Application.h` — main loop, phase system, service locator API
-- `src/engine/rendering/SceneRenderPipeline.h` — full GPU pipeline orchestration
-- `src/engine/core/System.h` — base class for all systems
+**Core Application:**
+- `src/engine/core/Application.h` — Main loop, system registration, service locator
+- `src/engine/core/System.h` — Base class for all systems
+- `src/engine/core/EventBus.h` — Type-safe pub/sub
 
-**Core game files:**
-- `src/game/runtime/RuntimeGameSession.h` — isolated play session (used by editor preview)
-- `src/game/rendering/RuntimeSceneRenderer.h` — ECS → renderer bridge
-- `src/game/level/LevelDef.h` — scene data model (source of truth for .scene files)
-- `src/game/content/ContentRegistry.h` — all loaded definition assets
+**ECS & Components:**
+- `src/engine/ecs/Registry.h` — EnTT convenience header
+- `src/game/components/*.h` — POD component definitions (TransformComponent, MeshComponent, etc.)
 
-**Asset serialization:**
-- `src/game/level/LevelDef.h` — `loadLevelDef()`, `serializeLevelDef()`, `saveLevelDef()`
-- `src/game/rendering/MaterialDefinition.h` — `.material` file round-trip
-- `src/game/rendering/EnvironmentDefinition.h` — `.environment` file round-trip
-- `src/game/content/ContentRegistry.h` — loads `.weapon`, `.enemy`, `.item`, `.skill`, `.prefab` files
+**Rendering Pipeline:**
+- `src/engine/rendering/SceneRenderPipeline.h` — Coordinates shadow/scene/post-process passes
+- `src/engine/rendering/geometry/Renderer.h` — Draw dispatch to GPU
+- `src/game/rendering/RuntimeSceneRenderer.h` — Queries ECS, collects render data
 
-**Shaders:**
-- `assets/shaders/game/scene.frag` — PBR scene shader (42KB, all lighting + procedural textures)
-- `assets/shaders/engine/composite.frag` — tone map, fog, sky, SSAO composite (12KB)
-- `assets/shaders/engine/stylize.frag` — edge detection, vignette, film grain
+**Game Content:**
+- `src/game/content/ContentRegistry.h` — Asset definitions and resolution
+- `src/game/level/LevelDef.h` — Serializable scene structure
+- `src/game/rendering/MaterialDefinition.h` — Shader parameter templates
 
-## Asset File Formats
+**Level Loading:**
+- `src/game/level/LevelLoader.h` — Deserialize .scene files and instantiate ECS entities
+- `src/game/level/LevelBuilder.h` — Entity factory
 
-| Extension | Purpose | Location |
-|-----------|---------|----------|
-| `.scene` | Level scene data (text, JSON-like) | `assets/scenes/` |
-| `.material` | Material definition (inheritable) | `assets/materials/` |
-| `.environment` | Post-process + sky + lighting config | `assets/defs/environments/` |
-| `.prefab` | Gameplay archetype definition | `assets/prefabs/gameplay/` |
-| `.weapon` | Weapon definition | `assets/defs/weapons/` |
-| `.enemy` | Enemy definition | `assets/defs/enemies/` |
-| `.item` | Item definition | `assets/defs/items/` |
-| `.skill` | Skill definition | `assets/defs/skills/` |
-| `.glb` | glTF 2.0 mesh (preferred for new meshes) | `assets/meshes/` |
-| `.fbx` | FBX mesh (legacy, loaded via Assimp) | `assets/meshes/` |
+**Game Systems:**
+- `src/game/systems/PlayerMovementSystem.h`
+- `src/game/systems/CameraSystem.h`
+- `src/game/systems/RenderSystem.h`
+- `src/game/systems/InteractionSystem.h`
+- `src/game/systems/CheckpointSystem.h`
+- `src/game/systems/InventorySystem.h`
+
+**Runtime Simulation:**
+- `src/game/runtime/RuntimeGameSession.h` — Self-contained play session container
+- `src/game/runtime/RuntimeGameplay.h` — Gameplay feature updates (free functions)
+
+**Editor:**
+- `src/editor/scene/EditorSceneDocument.h` — Scene graph with serialization
+- `src/editor/core/LevelEditorCore.h` — Editor orchestration
+- `src/editor/ui/LevelEditorUi.h` — ImGui windows (outliner, inspector, asset browser)
+
+**Configuration:**
+- `CMakeLists.txt` — Root CMake build
+- `src/engine/CMakeLists.txt` — Engine library targets
+- `src/game/CMakeLists.txt` — Game library targets
+- `src/editor/CMakeLists.txt` — Editor library targets
+- `.clang-format` — Code style (LLVM, 4-space, 100-char)
 
 ## Naming Conventions
 
 **Files:**
-- `PascalCase.h` / `PascalCase.cpp` — matches primary class name
-- Exception: `main.cpp` for entry points
-- Test files: `test_snake_case.cpp`
+- Classes/components: `PascalCase.h` matching primary class (e.g., `TransformComponent.h`)
+- Free functions: `snake_case.h` (e.g., `level_def.h` hypothetically, though most are in .cpp)
+- Units: UPPERCASE prefix convention sometimes used (e.g., `Time.h`, not `TimeUtils.h`)
 
 **Directories:**
-- `snake_case/` for all source and asset directories
-- Exception: `ImGuizmo/` (vendored, kept as-is)
+- Lowercase with underscores: `engine/`, `game/`, `editor/`, `src/`
+- Functional grouping: `components/`, `systems/`, `rendering/`, `physics/`, `audio/`, `level/`
 
-**Classes/Structs:** `PascalCase` — `RuntimeGameSession`, `TransformComponent`, `SceneRenderPipeline`
-
-**Components:** suffix `Component` for data components, suffix `Tag` for marker types — `MeshComponent`, `PlayerTag`
-
-**Systems:** suffix `System` — `PlayerMovementSystem`, `RenderSystem`
-
-**Editors types:** prefix `Editor` — `EditorSceneDocument`, `EditorCommandStack`
-
-## CMake Targets
-
-```
-pixel-roguelike       → gameplay → game_rendering → game_content → engine_rendering → engine_core
-level-editor          → editor   → gameplay                        engine_ui
-procedural-model-viewer → game_rendering                           engine_scene
-                                                                   engine_input
-                                                                   engine_physics
-```
-
-CMake targets map to `add_subdirectory()` calls in `src/engine/`, `src/game/`, `src/editor/`. Custom macro `pixel_roguelike_add_test()` defined in `cmake/DesktopApp.cmake` registers test executables.
+**Code Elements:**
+- Classes/Structs: `PascalCase` (TransformComponent, RuntimeGameSession, PhysicsSystem)
+- Functions/Methods: `camelCase` (update(), getCharacterPosition(), loadFromFile())
+- Variables: `snake_case` generally; private members use trailing underscore (`registry_`, `window_`)
+- Constants: `k` prefix + PascalCase (kMaxRenderLights, kMaterialKindCount)
+- Enums: `PascalCase` enum class with `PascalCase` values (UpdatePhase::Input, ColliderShape::Box)
 
 ## Where to Add New Code
 
-**New ECS component:**
-- Header: `src/game/components/YourComponent.h`
-- Follow POD struct pattern, no methods (except pure computed helpers like `modelMatrix()`)
-- No registration needed — EnTT discovers component types at compile time
+**New Gameplay Feature (Door System, Checkpoint, etc.):**
+- Component definitions: `src/game/components/{FeatureName}Component.h`
+- System class: `src/game/systems/{FeatureName}System.h/.cpp`
+- Register in main game loop: `apps/runtime/main.cpp` (add to Application phase)
+- Tests: `tests/game/{feature_test}.cpp`
 
-**New system:**
-- Header + cpp: `src/game/systems/YourSystem.h/.cpp`
-- Inherit `System`, implement `init/update/shutdown`
-- Register in `apps/runtime/main.cpp` with appropriate `UpdatePhase`
+**New Rendering Technique (Post-Process, Lighting):**
+- Shader: `assets/shaders/engine/{technique_name}.frag` (+ .vert if needed)
+- C++ wrapper: `src/engine/rendering/post/{TechniqueName}Pass.h/.cpp` (or `lighting/` as appropriate)
+- Integration: Call from `SceneRenderPipeline::render()` or `RuntimeSceneRenderer`
+- Material updates: `src/game/rendering/MaterialDefinition.h` if new material property needed
 
-**New level scene:**
-- Author in level editor → saves to `assets/scenes/your_level.scene`
-- No code changes needed — `GenericFileScene` loads any `.scene` file
+**New Editor Panel (Behavior Editor, Script Editor):**
+- ImGui code: `src/editor/ui/LevelEditorUi.h/.cpp` (add new window function)
+- Data struct: Define in `EditorSceneDocument` or separate `EditorFoo.h`
+- Layout integration: Update `EditorLayoutPreset` and dock layout builder
+- Serialization: Update `EditorSceneSerializer` if needed
 
-**New material:**
-- Create `assets/materials/your_material.material`
-- Can declare `parent: existing_material` to inherit properties
-- Hot-reloads in editor automatically (500ms poll)
+**New Asset Type (Weapon, Enemy, Skill):**
+- Definition struct: `src/game/content/` (e.g., `WeaponDefinition` already exists in `ContentRegistry.h`)
+- Loader function: `src/game/content/{AssetType}Loader.h`
+- Registry method: Add to `ContentRegistry::load{AssetType}()` and cache
+- File format: Choose JSON or binary; document in comments
 
-**New environment preset:**
-- Create `assets/defs/environments/your_env.environment`
-- Loaded by `ContentRegistry::loadDefaults()`
-
-**New gameplay archetype (door variant, checkpoint variant):**
-- Create `assets/prefabs/gameplay/your_prefab.prefab`
-- Register archetype kind in `ContentRegistry.h` if it's a new `GameplayArchetypeKind`
-- Implement spawn function in `src/game/prefabs/GameplayPrefabs.h/.cpp`
-
-**New mesh:**
-- Place `.glb` in `assets/meshes/`
-- Register in `src/game/levels/GameAssets.cpp` inside `registerAllGameAssets()`
-
-**New engine post-process pass:**
-- Shader: `assets/shaders/engine/your_pass.vert/.frag`
-- Pass class: `src/engine/rendering/post/YourPass.h/.cpp`
-- Wire into `SceneRenderPipeline` at `src/engine/rendering/SceneRenderPipeline.h/.cpp`
-- Add parameters to `PostProcessParams` if user-configurable
-
-**New test:**
-- `tests/game/test_your_feature.cpp` (for game layer) or `tests/engine/test_your_feature.cpp`
-- Register in `tests/game/CMakeLists.txt` using `pixel_roguelike_add_test()`
+**New Engine Subsystem (Networking, Analytics):**
+- Header: `src/engine/{subsystem}/{Subsystem}.h`
+- Register as service: In Application setup, call `app.emplaceService<NewService>()`
+- Access from game: `app.getService<NewService>()`
 
 ## Special Directories
 
-**`.planning/`:**
-- Purpose: GSD workflow artifacts — phases, quick tasks, debug investigations, codebase docs
-- Generated: Partially (by GSD commands)
+**`assets/scenes/`:**
+- Purpose: Level definition files in JSON format
+- Generated: No (authored by editor)
 - Committed: Yes
+- Format: `.scene` files are serialized `LevelDef` structs (meshes, lights, colliders, archetypes, hierarchy)
 
-**`external/`:**
-- Purpose: Vendored single-header libraries (ImGuizmo, stb_image_write, stb_vorbis)
-- Generated: No (manually copied)
+**`assets/materials/`:**
+- Purpose: Shader parameter templates with inheritance
+- Generated: No (authored in editor or written by hand)
 - Committed: Yes
+- Format: `.material` files are JSON serialized `MaterialDefinition` structs
 
-**`assets/packs/`:**
-- Purpose: Raw third-party asset packs not yet integrated into the project asset pipeline
+**`assets/environments/`:**
+- Purpose: Sky/lighting/post-process presets
 - Generated: No
-- Committed: Yes (binary assets)
+- Committed: Yes
+- Format: `.environment` files are JSON serialized `EnvironmentDefinition` structs
+
+**`assets/shaders/`:**
+- Purpose: GLSL source code
+- Generated: No
+- Committed: Yes
+- Format: `.vert`, `.frag` files (GLSL 4.10)
 
 **`editor_layouts/`:**
-- Purpose: Saved ImGui dock layout presets (created by `saveLayoutPresetFromUi()`)
-- Generated: Yes (at runtime by editor)
-- Committed: No (user-specific)
+- Purpose: ImGui dock layout presets (ImGui format)
+- Generated: Yes (saved from editor via "Save Layout")
+- Committed: Yes (useful for collaboration)
+- Auto-loaded on editor startup if matching layout name selected
+
+**`tests/data/`:**
+- Purpose: Test fixtures (models, scenes, materials)
+- Generated: No (curated for test coverage)
+- Committed: Yes
+- Examples: `tests/data/models/`, `tests/data/scenes/`
+
+**`.planning/phases/`:**
+- Purpose: GSD workflow — phase planning documents
+- Generated: Dynamically by `/gsd:plan-phase` command
+- Committed: Yes
+- Format: Markdown with implementation tasks and test plans
+
+**`.planning/codebase/`:**
+- Purpose: GSD reference docs for code execution
+- Generated: Dynamically by `/gsd:map-codebase` command
+- Committed: Yes
+- Files: ARCHITECTURE.md, STRUCTURE.md, CONVENTIONS.md, TESTING.md, STACK.md, INTEGRATIONS.md, CONCERNS.md
+
+## Organizational Issues
+
+**Layer Boundary Violation:**
+- `src/engine/ui/ImGuiLayer.h` includes `game/rendering/RuntimeLightingOverride.h`
+- Impact: Engine should not depend on game
+- Fix: Extract `RuntimeLightingOverride` into a shared data struct in `engine/rendering/`, or pass as opaque parameter
+- Severity: Medium — limits engine reusability but doesn't break functionality
+
+**Tight Coupling in RenderSystem:**
+- `src/game/systems/RenderSystem.h` imports `engine/ui/ImGuiLayer.h` directly
+- Creates circular dependency potential if engine_ui ever needs game types
+- Fix: Pass ImGuiLayer via injection rather than storing it
+- Severity: Low — currently works but limits extensibility
+
+**Missing Integration Tests:**
+- `tests/` has minimal integration testing between systems
+- Example: No test for "load level → spawn entities → render frame → verify output"
+- Fix: Add `tests/integration/` with end-to-end scenarios
+- Severity: Low — system design is sound, but coverage could be better
+
+## Module Organization Strengths
+
+1. **Clear layer separation**: Engine has zero game dependencies; Editor clearly depends on Game
+2. **Component-based design**: POD components + ECS queries make systems decoupled
+3. **Procedural content**: Levels, materials, environments are data-driven, not hard-coded
+4. **Simulation containers**: `RuntimeGameSession` allows multiple independent play sessions
+5. **Hot-reload support**: Material/environment definitions reload at runtime in editor
+6. **Extensible systems**: New gameplay features easily added as new System subclasses
 
 ---
 
-*Structure analysis: 2026-04-01*
+*Structure analysis: 2026-04-05*

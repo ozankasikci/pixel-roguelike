@@ -1,132 +1,235 @@
 # External Integrations
 
-**Analysis Date:** 2026-04-01
+**Analysis Date:** 2026-04-05
 
-## Graphics API Integration
+## Graphics & Rendering Integration
 
 **OpenGL 4.1 Core Profile:**
-- Loader: GLAD 2 (`v2.0.8`), generated as `glad_gl` static library configured for `gl:core=4.1`. Requires Python + jinja2 at CMake configure time.
-- Loader header: `<glad/gl.h>` — included in `Shader.h`, `Texture2D.h`, `ShadowMap.h`, `Framebuffer.h`, all OpenGL-touching files.
-- Platform: macOS OpenGL silences deprecation warnings via `GL_SILENCE_DEPRECATION` (set in `cmake/DesktopApp.cmake` for all app targets).
-- Context creation: GLFW (`glfw3 3.4`) via `Window.cpp` (`src/engine/core/Window.cpp`). `GLFWwindow*` stored and exposed as `Window::handle()`.
-- macOS link flags: `-framework Cocoa`, `-framework OpenGL`, `-framework IOKit` injected by `configure_desktop_app()`.
+- Entry point: `src/engine/rendering/core/Shader.h`, `src/engine/rendering/core/Framebuffer.h`
+- GLAD 2 v2.0.8 generates function pointers
+- All shaders use `#version 410 core` (macOS ceiling, set in CMakeLists.txt line 20)
+- GLSL math types use GLM header-only library (syntax mirrors GLSL)
+- Abstraction: Non-copyable RAII classes manage GPU resources (VAO, VBO, FBO, program IDs)
+- Wrapping pattern: Direct `#include <glad/gl.h>` used in Shader/Framebuffer, no intermediate wrapper layer
+- Renderer at `src/engine/rendering/geometry/Renderer.h/cpp` queries scene graph and batches draw calls
 
-**Shader compilation pipeline:**
-- All shaders use `#version 410 core` (macOS ceiling).
-- Shaders loaded from disk at runtime via `Shader::readFile()` in `src/engine/rendering/core/Shader.cpp`.
-- Compilation and linking done via OpenGL driver: `glCreateShader`, `glCompileShader`, `glCreateProgram`, `glLinkProgram`.
-- No offline shader compilation or SPIR-V; errors reported at runtime via spdlog.
-- Three shader constructor overloads in `Shader`: `(vert, frag)`, `(vert, geom, frag)`. Geometry shader used by CSM depth pass (`csm_depth.geom`).
-- Engine shaders location: `assets/shaders/engine/` — composite, stylize, shadow_depth, csm_depth, bloom_downsample, bloom_upsample, ssao, ssao_blur.
-- Game shaders location: `assets/shaders/game/` — scene.vert / scene.frag (PBR-like; 32 lights, LTC area lights, shadow maps, procedural textures).
+**Post-Processing Pipeline:**
+- Fullscreen fragment shader passes for stylization and composition
+- `src/engine/rendering/post/` contains StylizePass, CompositePass, BloomPass, SsaoPass
+- Custom lighting via cascaded shadow maps and LTC area lights (see `src/engine/rendering/lighting/`)
 
-**Framebuffer objects:**
-- `Framebuffer` class in `src/engine/rendering/core/Framebuffer.h` — RAII wrapper for FBO + color/depth attachments.
-- Scene rendered to an off-screen FBO (`sceneFBO_` in `SceneRenderPipeline`), then post-processed and composited.
-- `SceneRenderPipeline::render()` in `src/engine/rendering/SceneRenderPipeline.cpp` orchestrates the full frame: shadow pass → CSM → scene pass → bloom → SSAO → composite → stylize.
+## Asset Loading & Format Support
 
-## Physics Engine Integration
+**3D Model Formats:**
 
-**Jolt Physics (`v5.4.0`):**
-- Integrated behind a pimpl boundary in `src/engine/physics/PhysicsSystem.cpp` / `PhysicsSystem.h`.
-- Jolt headers used: `<Jolt/Jolt.h>`, `RegisterTypes.h`, `Factory.h`, `TempAllocator.h`, `JobSystemThreadPool.h`, `PhysicsSettings.h`, `PhysicsSystem.h`, `BoxShape.h`, `CapsuleShape.h`, `CylinderShape.h`, `RotatedTranslatedShape.h`, `BodyCreationSettings.h`, `BodyActivationListener.h`, `CharacterVirtual.h`.
-- Jolt is linked privately into `engine_physics` — callers depend only on `PhysicsSystem.h` (no Jolt headers exposed).
-- API exposed to gameplay: `setCharacterVelocity()`, `updateCharacter()`, `getCharacterPosition()`, `setCharacterPosition()`, `getCharacterGroundState()` (returns `GroundState` enum: `OnGround`, `OnSteepGround`, `InAir`).
-- Static colliders spawned from `StaticColliderComponent` via `PhysicsSystem::init(entt::registry&)`.
-- CMake: all sample/viewer/test targets disabled before `FetchContent_MakeAvailable(JoltPhysics)`.
+**glTF 2.0 (Primary):**
+- Library: tinygltf v2.9.3 (header-only)
+- Wrapper: `src/engine/rendering/assets/GltfLoader.h/cpp`
+- API: `GltfLoader::load(filepath)` returns `std::unique_ptr<Mesh>`, or `loadRaw()` for CPU-side MeshGeometry
+- Auto-generates missing normals
+- Used by game asset pipeline for `.glb` files
+- tinygltf also provides `stb_image.h` for embedded texture decoding
+
+**FBX & Multi-Format (Legacy):**
+- Library: Assimp v6.0.4 (static library)
+- Wrapper: `src/engine/rendering/assets/AssimpLoader.h/cpp`
+- API: `AssimpLoader::load(filepath)` returns `std::unique_ptr<Mesh>`, or `loadRaw()` / `loadRawMulti()`
+- Handles FBX import with material name grouping
+- Superceded by tinygltf for new glTF-only paths (lighter dependency)
+- CMakeLists.txt (lines 89-121): Assimp built static, demo/samples/tests disabled
+
+**Texture Loading:**
+- Library: stb_image (bundled with tinygltf or imported separately)
+- Used by: `src/engine/rendering/assets/Texture2D.cpp`, `TextureCube.cpp`
+- API: Direct `stb_image.h` inclusion, `stbi_load()` for PNG/JPG → raw RGBA pixels
+- Screenshot export: `stb_image_write.h` (single-header, at `external/stb_image_write.h`)
+
+**Mesh Management:**
+- `MeshLibrary` at `src/engine/rendering/geometry/MeshLibrary.h` — named registry of loaded meshes
+- `AssetCache` at `src/engine/rendering/assets/AssetCache.h` — LRU cache with eviction policy
 
 ## Audio System Integration
 
-**OpenAL Soft (`v1.25.1`):**
-- Integrated in `src/engine/audio/AudioSystem.cpp` with pimpl pattern.
-- Headers: `<AL/al.h>`, `<AL/alc.h>`.
-- macOS: Homebrew keg-only path forced via CMake (`/opt/homebrew/opt/openal-soft/`) to avoid macOS system framework.
-- SFX: WAV files loaded via custom 44-byte header parser in `AudioSystem.cpp`. Preloaded into OpenAL buffers, played positionally with `alSource3f(AL_POSITION)`.
-- Music streaming: OGG Vorbis via `external/stb_vorbis.c`. Streaming with double-buffering into OpenAL source.
-- Ambient streaming: Same OGG/stb_vorbis pipeline as music but separate source.
-- Listener transform updated each frame by `AudioListenerSystem` (`src/game/systems/AudioListenerSystem.cpp`) calling `AudioSystem::setListenerTransform()`.
-- Volume categories: master, SFX, music, ambient (0.0–1.0 floats).
+**OpenAL Soft v1.25.1:**
+- API: Native OpenAL C headers
+- Wrapper: `src/engine/audio/AudioSystem.h/cpp`
+- Pimpl pattern hides OpenAL internals (non-copyable, unique_ptr impl_)
+- CMakeLists.txt (lines 71-77): Custom Homebrew path detection for macOS keg-only installation
+- Private link target: OpenAL library resolved at configure time
 
-**OGG Vorbis (stb_vorbis):**
-- `external/stb_vorbis.c` compiled as C source (`set_source_files_properties(... LANGUAGE C)`) and linked into `engine_audio`.
-- Used for music and ambient streaming in `AudioSystem`.
+**Audio Format Support:**
 
-## Asset Loading Pipeline
+**WAV (Preloaded SFX):**
+- Handled by OpenAL Soft directly (native format)
+- API: `AudioSystem::loadSound(path)` → uint32_t handle, `playSound(handle, position, volume, pitch)`
+- Positional audio: 3D source positions, listener transforms updated per frame
+- Refundance & max distance parameters for attenuation falloff
 
-**Model loading:**
-- `ModelLoader` (`src/engine/rendering/assets/ModelLoader.h`) is the unified entry point. Routes by file extension.
-- GLB/glTF: loaded via `GltfLoader` (`src/engine/rendering/assets/GltfLoader.cpp`) using tinygltf (`v2.9.3`). tinygltf stb_image integration disabled (`TINYGLTF_NO_STB_IMAGE`, `TINYGLTF_NO_STB_IMAGE_WRITE`) since textures are loaded separately.
-- FBX and legacy formats: loaded via `AssimpLoader` (`src/engine/rendering/assets/AssimpLoader.cpp`) using Assimp (`v6.0.4`). Post-process flags include triangulate, join identical vertices, smooth normals, calc tangents, pre-transform vertices.
-- Submesh loading: `ModelLoader::loadRawMulti()` groups FBX meshes by material name; glTF returns single merged mesh.
-- Asset cache: `AssetCache` (`src/engine/rendering/assets/AssetCache.h`) caches processed mesh data to disk using FNV-1a 64-bit hash of source file contents. Cache invalidated on source file change. Texture cache also supported. Cache root from `AssetCache::cacheRoot()`.
-- Mesh discovery: `ModelLoader::discoverProjectAssets()` walks the assets directory for `.glb` and `.fbx` files.
-- Supported mesh formats in `assets/meshes/`: `.glb` (arch, pillar, hand, dagger, gothic door) and `.fbx` (country_house, doors, wood_door).
+**OGG Vorbis Streaming:**
+- Library: stb_vorbis (single C file at `external/stb_vorbis.c`)
+- Compiled as part of `engine_audio` target (CMakeLists.txt line 71)
+- Set as C language to avoid C++ name mangling (line 78)
+- API: `AudioSystem::playMusic(path, loop)`, `playAmbient(path, loop)`
+- Streamed in 64KB chunks to avoid memory bloat
+- Music & ambient have separate volume controls
 
-**Texture loading:**
-- `Texture2D` (`src/engine/rendering/assets/Texture2D.cpp`) — PNG/JPG via `stb_image` (pulled in through tinygltf's STB_IMAGE_IMPLEMENTATION).
-- `TextureCube` (`src/engine/rendering/assets/TextureCube.cpp`) — cubemap loading for skyboxes (cubemap PNGs in `assets/skies/`).
-- Texture formats used: RGBA8, R8 (for AO/roughness).
-- Material textures: albedo map, normal map, AO map — paths stored in `.material` asset files.
+**Volume Management:**
+- Four independent categories: master, sfx, music, ambient
+- Float range 0.0-1.0, real-time mixing via OpenAL gain property
 
-**Material asset format:**
-- Custom key-value text format, parsed by `ContentRegistry` from `assets/materials/*.material` files.
-- Fields: `id`, `base_color`, `uv_mode`, `uv_scale`, `normal_strength`, `roughness_scale`, `roughness_bias`, `metalness`, `ao_strength`, `albedo_map`, `normal_map`, `ao_map`, `normal_map_flip_y`.
-- Example: `assets/materials/wood_door_1.material`.
-- `ContentRegistry` supports hot-reload polling every 500ms (editor only) via `pollMaterialHotReload()`.
+**Listener Transform:**
+- Called each frame by `AudioListenerSystem` (see `src/game/systems/AudioListenerSystem.cpp`)
+- Sets OpenAL listener position, forward, up vectors for spatial audio
 
-**Scene asset format:**
-- Custom text format (one entity per line). Fields: mesh ID, position, scale, rotation, material, tint, node ID.
-- Example: `assets/scenes/institutional_room.scene`, `cathedral.scene`, `silos_cloister.scene`.
-- Loaded by `LevelLoader` (`src/game/level/LevelLoader.cpp`) into `LevelDef` structs, then spawned into ECS by `LevelBuilder`.
-- `project.cfg` tracks `last_scene` key for editor auto-open.
+## Physics Integration
 
-**Screenshot writing:**
-- `Screenshot` (`src/engine/ui/Screenshot.cpp`) — uses `external/stb_image_write.h` to write PNG files.
+**Jolt Physics v5.4.0:**
+- Library: Downloaded at CMakeLists.txt line 36-42, built as static library (all examples/tests disabled)
+- Wrapper: `src/engine/physics/PhysicsSystem.h/cpp`
+- Pimpl pattern completely hides Jolt API (no Jolt includes in public headers)
+- Implementation detail: `PhysicsSystem::Impl` struct holds `JPH::PhysicsSystem`, character controller state
 
-## LTC Area Light Lookup Tables
+**Character Controller API (Hidden):**
+- `setCharacterVelocity(entity, velocity)`
+- `getCharacterPosition(entity)`, `setCharacterPosition(entity, position)`
+- `getCharacterGroundState(entity)` → GroundState enum (OnGround, OnSteepGround, InAir)
+- `updateCharacter(entity, deltaTime, gravity)` — physics tick called during Physics phase
 
-**Heitz et al. LTC (Linearly Transformed Cosines):**
-- `LtcData` (`src/engine/rendering/lighting/LtcData.cpp`) — uploads two 64x64 RGBA32F GPU textures encoding the LTC inverse transform matrix and GGX amplitude/Fresnel.
-- Data baked in from `selfshadow/ltc_code` lookup tables (embedded in source, not loaded from disk).
-- Used by the scene shader for real-time area light shading (AreaRect and Tube light types).
+**Collision Shapes:**
+- Box & Cylinder colliders defined in level data
+- `src/game/components/ColliderComponent.h` — ColliderShape enum (Box, Cylinder)
+- Physics constraints built from LevelDef collider placements during LevelBuilder spawn
 
-## Editor Gizmo Integration
+**Integration Pattern:**
+- Game layer never directly touches Jolt types
+- All physics queries go through PhysicsSystem public API
+- ECS components store entity handles; PhysicsSystem maintains internal Jolt body map
 
-**ImGuizmo (vendored):**
-- `external/ImGuizmo/ImGuizmo.cpp` + `ImGuizmo.h` — 3D transform gizmos (translate/rotate/scale) rendered over the editor viewport.
-- Compiled directly into the `editor` static library (`src/editor/CMakeLists.txt`).
-- Used in `src/editor/viewport/EditorViewportController.cpp` via `ImGuizmo::Manipulate()`.
-- Operates within Dear ImGui's draw list; requires `ImGuizmo::SetOrthographic`, `SetDrawlist`, `SetRect` each frame.
+## Input Integration
 
-## Dear ImGui Integration
+**GLFW 3.4:**
+- Window creation & OpenGL context: `src/engine/core/Window.h/cpp`
+- Event callbacks: `src/engine/input/InputSystem.h/cpp`
+- Static callback approach: InputSystem stores `instance_` pointer, forwards GLFW events to instance methods
+- Callbacks implemented: `cursorPosCallback`, `scrollCallback`, `keyCallback`, `charCallback`, `dropCallback` (for scene file drag-drop)
 
-**Dear ImGui (`v1.92.6-docking`):**
-- Uses docking branch for the level editor's multi-panel dock layout.
-- Backends: `imgui_impl_glfw.cpp` + `imgui_impl_opengl3.cpp` compiled into the `imgui` static target.
-- `ImGuiLayer` (`src/engine/ui/ImGuiLayer.cpp`) wraps `ImGui_ImplGlfw_InitForOpenGL`, `ImGui_ImplOpenGL3_Init`, `beginFrame()`, `endFrame()`.
-- Runtime game uses ImGui only for `DebugParams` overlay (can be stripped for release).
-- Editor uses ImGui for full dock layout: inspector, outliner, environment panel, asset browser, viewport.
-- Font loading: TTF files from `assets/fonts/editor/` loaded into ImGui atlas at runtime. Font preset system in `ImGuiLayer` (JetBrainsMono, Inter, Roboto, plus system fonts).
+**Input Abstraction:**
+- Accumulated state: `currentKeys_`, `previousKeys_` arrays (kMaxKeys = 512)
+- Per-frame poll: `isKeyPressed()`, `isKeyJustPressed()`, `isKeyJustReleased()`
+- Mouse movement: `mouseDelta()`, `mousePosition()`, `scrollDelta()`
+- Cursor locking via GLFW (for FPS camera movement)
 
-## CI/CD & Deployment
+**ImGui Integration:**
+- ImGui v1.92.6-docking backend for GLFW + OpenGL3
+- InputSystem exposes `wantsCaptureMouse()` to check if ImGui consumed input
 
-**CI Pipeline:**
-- No CI configuration found (no `.github/workflows/`). Only a PR template at `.github/PULL_REQUEST_TEMPLATE.md`.
+**Action Mapping:**
+- `ActionMap` class at `src/engine/input/ActionMap.h` for rebindable input actions (D-03 requirement)
 
-**Hosting:**
-- Desktop application; no cloud deployment. Executables built locally.
+## Windowing & Desktop Environment
 
-## File Storage
+**GLFW 3.4:**
+- Window title, width, height configured at Application construction
+- Event polling via `GLFWwindow* handle()` and `swapBuffers()` / `pollEvents()`
+- Platform-specific: `-framework Cocoa`, `-framework IOKit` linked on macOS (lines 8-12 in DesktopApp.cmake)
+- File drag-drop support: `takeDroppedPaths()` returns filesystem paths dropped onto window
 
-**Local filesystem only:**
-- All assets (meshes, textures, shaders, scenes, materials, skies, fonts) loaded from relative `assets/` path at runtime.
-- No remote asset delivery, CDN, or database.
-- Asset cache: disk-local, in a subdirectory resolved by `AssetCache::cacheRoot()`.
+## UI & Editor Integration
 
-## Authentication & External APIs
+**Dear ImGui v1.92.6-docking:**
+- Compiled from source in CMakeLists.txt (lines 44-64) as static library
+- Backends: `imgui_impl_glfw.cpp` + `imgui_impl_opengl3.cpp`
+- Wrapper: `src/engine/ui/ImGuiLayer.h/cpp` manages initialization, frame begin/end, theme/font presets
+- Theme presets: WarmStudioDark, SpectrumInspiredDark, GraphiteDense, etc.
+- Font presets: SystemSans, JetBrainsMono (for editor debug text)
 
-- None. This is a self-contained desktop game engine. No network calls, no auth, no web APIs, no telemetry.
+**ImGuizmo Integration:**
+- Vendored at `external/ImGuizmo/` (117KB C++ implementation)
+- Compiled as part of `editor` target (CMakeLists.txt line 30)
+- Provides 3D transform gizmos (translate, rotate, scale) for editor viewport
+- Matrices passed in/out; no persistence layer (editor handles state)
+
+**Debug Harness (JSON IPC):**
+- Unix socket server at `src/editor/debug/DebugServer.h/cpp`
+- Wire protocol: Line-delimited JSON commands (33 commands total)
+- Libraries: nlohmann_json v3.11.3 for parsing/generation
+- Socket path: `/tmp/pixel-roguelike-editor-{pid}.sock`
+- Enables programmatic editor control, inspection, undo/redo replay without manual reproduction
+
+## Entity-Component System Integration
+
+**EnTT v3.16.0:**
+- Header-only library
+- Wrapper: Thin `src/engine/ecs/Registry.h` around `entt::registry`
+- No custom ECS implementation; EnTT used directly
+- Components are POD structs (no methods), accessed via `registry.get<ComponentType>(entity)`
+- Systems query via `registry.view<>()` and `registry.group<>()` for batching
+- Execution phases managed by Application (UpdatePhase enum, systems ordered per phase)
+
+## Data Serialization
+
+**JSON (Editor & Debug):**
+- Library: nlohmann/json v3.11.3 (header-only)
+- Used by: Editor debug harness command protocol (see `src/editor/debug/EditorCommander.h`)
+- Format: Line-delimited JSON commands sent over Unix socket
+- Example command: `{"id": 1, "cmd": "inspect.entities", "args": {}}`
+
+**Scene Files (Binary + Metadata):**
+- Format: Custom `.scene` files (binary with embedded LevelDef structs + metadata)
+- Loading: `src/game/level/LevelLoader.h` deserializes from file
+- Serialization: Scene graph roundtrip via `src/editor/scene/EditorSceneSerializer.cpp`
+- No external serialization library (custom binary format optimized for fast load)
+
+## Logging Integration
+
+**spdlog v1.x:**
+- Header-only logger (fast, fmt-backed)
+- Used throughout engine for subsystem logging
+- Category sinks allow filtering (rendering, AI, physics, audio logs separately)
+- Example: `src/engine/core/` uses spdlog for Application events
+
+## Math Integration
+
+**GLM 1.0.3:**
+- Header-only math library
+- Provides: `glm::vec3`, `glm::mat4`, `glm::quat`, common operations
+- GLSL syntax mirrors shader-side math (facilitates CPU/GPU sync)
+- No wrapper layer; used directly in all game/engine code
+- Dependency: `target_link_libraries(... glm::glm)` in CMakeLists.txt
+
+## Build Configuration Integration
+
+**CMake Build System:**
+- FetchContent for remote dependencies (GLAD, EnTT, Jolt, ImGui, tinygltf, Assimp, nlohmann_json)
+- System package discovery via `find_package()` (GLFW, GLM, spdlog, OpenAL)
+- Custom `cmake/DesktopApp.cmake` macro applies platform-specific link flags and framework includes
+- Test registration via `cmake/TestSupport.cmake` (standalone executables, no external test framework)
+
+**Python GLAD Generation:**
+- Requires Python 3 + jinja2 in isolated `.venv`
+- Configure step: `cmake .. -DPython_Executable=.venv/bin/python3`
+- GLAD C/C++ bindings generated locally for OpenGL 4.1 Core Profile
+
+## Performance Monitoring
+
+**Profiling & Metrics:**
+- ImGui debug overlay displays FPS, frame time (ms), draw call count
+- No external profiling library; metrics captured locally in rendering passes
+- spdlog used for frame-level timing logs
+
+## Platform-Specific Integrations
+
+**macOS:**
+- OpenGL framework (deprecated but required for OpenGL 4.1 Core support)
+- Cocoa framework for window management (GLFW abstraction)
+- IOKit framework for device input polling
+- Homebrew package paths detected at CMake time (keg-only OpenAL Soft, zlib for Assimp)
+- GL_SILENCE_DEPRECATION compile flag (line 13 in DesktopApp.cmake)
+
+**Windows/Linux:**
+- OpenGL 4.1 Core supported via system drivers
+- No platform-specific GUI frameworks; GLFW + OpenGL + Cocoa abstractions handle all
 
 ---
 
-*Integration audit: 2026-04-01*
+*Integration audit: 2026-04-05*

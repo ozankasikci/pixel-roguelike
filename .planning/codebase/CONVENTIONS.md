@@ -1,248 +1,233 @@
 # Coding Conventions
 
-**Analysis Date:** 2026-04-01
+**Analysis Date:** 2026-04-05
 
 ## Naming Patterns
 
-**Classes/Structs:**
-- `PascalCase` matching the header filename: `Application`, `RuntimeGameSession`, `EditorSceneDocument`
-- Component structs use `PascalCase` + `Component` suffix: `TransformComponent`, `DoorComponent`, `PlayerMovementComponent`
-- Tag/marker components use `PascalCase` + `Tag` suffix: `PlayerTag`, `ControllableTag`, `PrimaryCameraTag`
-- Systems use `PascalCase` + `System` suffix: `PlayerMovementSystem`, `PhysicsSystem`
-- Data structs omit the Component suffix: `LevelDef`, `MaterialDefinition`, `WeaponDefinition`
-
-**Functions/Methods:**
-- `camelCase` for all functions and methods: `isKeyPressed()`, `setCharacterVelocity()`, `captureCamera()`
-- Boolean predicates use `is`/`has`/`can` prefix: `isKeyJustPressed()`, `hasPlayerSpawn`, `canSetParent()`
-- Factory functions use `create` prefix on static methods: `Mesh::createCube()`, `Mesh::createPlane()`
-- Free-function initializers use `initialize` prefix: `initializeRuntimeDoors()`, `initializeRuntimeInventory()`
-- Free-function per-frame update use `update` prefix: `updateRuntimePlayerMovement()`, `updateRuntimeDoors()`
-- Load/save pairs use `load`/`save` prefix: `loadLevelDef()`, `saveLevelDef()`, `loadMaterialDefinitionAsset()`
-
-**Variables:**
-- `snake_case` for locals: `line_number`, `mesh_id`
-- Private members use trailing underscore: `window_`, `registry_`, `running_`, `program_`
-- In-class struct constants follow `PascalCase` with no underscore for small POD members: `leftLeaf`, `rightLeaf`
-
-**Constants:**
-- `k` prefix + `PascalCase` for named constants: `kMaxRenderLights`, `kMaterialPollIntervalMs`, `kFloatEpsilon`
-- Exception in `RuntimeInputState`: `MaxKeys`, `MaxButtons` (no `k` prefix — minor inconsistency)
-- Free-standing `constexpr` globals follow the same `k` prefix rule: `kMaxRenderLights = 32`
-
-**Enums:**
-- `enum class` exclusively (no plain `enum`): `enum class MaterialUvMode`, `enum class LightType`, `enum class UpdatePhase`
-- Enum values in `PascalCase`: `MaterialUvMode::WorldProjected`, `GroundState::OnGround`
-
 **Files:**
 - `PascalCase.h` / `PascalCase.cpp` matching the primary class name
-- No `.hpp` extension used anywhere — all C++ headers are `.h`
+- Examples: `Application.h`, `Shader.h`, `PlayerMovementSystem.cpp`, `EditorCommand.h`
+
+**Classes/Structs:**
+- `PascalCase` — `TransformComponent`, `PhysicsSystem`, `RuntimeGameSession`, `EditorSceneDocument`, `MaterialDefinition`, `LevelDef`
+- Structs and POD components also use `PascalCase`: `BehaviorDeclaration`, `LevelMeshPlacement`, `ResolvedMaterialDefinition`
+
+**Functions/Methods:**
+- `camelCase` — `isKeyPressed()`, `setCharacterVelocity()`, `loadFromFile()`, `captureState()`, `markSceneDirty()`, `findObject()`
+
+**Variables:**
+- `snake_case` generally; private members use trailing underscore — `window_`, `registry_`, `physics_`, `vertexCount_`, `uniform_cache_`, `selectedIds_`
+- Member variable pattern: consistently `name_` throughout codebase
+
+**Constants:**
+- `k` prefix + `PascalCase` — `kMaxRenderLights`, `kMaterialKindCount`, `kFloatEpsilon`, `kMaxCommands`
+- Namespace-scoped constants also use `k` prefix: `Layers::NON_MOVING` (exception: these are const-assigned ObjectLayer enums)
+
+**Enums:**
+- `PascalCase` enum class with `PascalCase` values — `enum class UpdatePhase { Input, Render }`, `enum class MaterialProceduralSource { GeneratedBrick, GeneratedStone }`, `enum class GroundState { OnGround, OnSteepGround, InAir }`
 
 ## Code Style
 
 **Formatting:**
-- `.clang-format` based on LLVM style: `BasedOnStyle: LLVM`
-- 4-space indent, `ContinuationIndentWidth: 4`
-- Column limit: 100 characters
-- Braces: attached (`BreakBeforeBraces: Attach`) — K&R style
-- Pointer alignment: left (`PointerAlignment: Left`), so `int* ptr` not `int *ptr`
-- No short functions on a single line (`AllowShortFunctionsOnASingleLine: None`)
-- No short if-statements on a single line (`AllowShortIfStatementsOnASingleLine: Never`)
-- Function arguments: never bin-packed, must be aligned (`BinPackArguments: false`)
+- `.clang-format` based on LLVM style
+- 4-space indentation
+- 100-character column limit
+- Attached braces: `if (x) {` not `if (x)\n{`
+- Pointer alignment: left (`int* ptr`)
+- No short functions on single line
+- `AllowShortFunctionsOnASingleLine: None` enforced
 
-**Headers:**
-- `#pragma once` universally — no include guards used anywhere
-- No `.hpp` — only `.h` for all C++ headers
+**Linting:**
+- `.clang-format` is the authority; no explicit linting tool detected
+- Consistent application observed across all main source files
 
-## Include Organization
+## Import Organization
 
-**Order (enforced by convention, not tool — `SortIncludes: Never`):**
-1. Own header (in `.cpp` files, the matching `.h` comes first)
-2. Other project headers, relative to `src/` root (e.g., `"engine/core/Application.h"`)
-3. Third-party headers (GLFW, GLM, spdlog, EnTT, GLAD)
-4. Standard library headers
-
-**Path style:**
-- All project includes use paths relative to `src/`: `#include "game/rendering/MaterialDefinition.h"`
-- No `../` relative paths anywhere in the source tree
+**Order:**
+1. Standard library headers (`#include <vector>`, `#include <memory>`, etc.)
+2. Third-party framework headers (`#include <glad/gl.h>`, `#include <glm/glm.hpp>`, `#include <entt/entt.hpp>`, `#include <spdlog/spdlog.h>`, `#include <Jolt/Jolt.h>`)
+3. Project headers (`#include "engine/..."`, `#include "game/..."`, `#include "editor/..."`)
 
 **Path Aliases:**
-- None — CMake `target_include_directories` sets `src/` as the include root for all targets
+- Project headers use paths relative to `src/` root: `#include "engine/core/Application.h"` not `#include "../core/Application.h"`
+- No CMake-level path aliases like `@` or `~` used
 
-## Anonymous Namespace Usage
-
-Every `.cpp` file uses `namespace { ... }` to contain file-local helpers and constants. This is consistent across all 45+ implementation files. File-local helpers are never declared `static`.
-
-```cpp
-// Correct pattern — used universally
-namespace {
-
-glm::mat4 makeModel(const glm::vec3& position, const glm::vec3& scale,
-                    const glm::vec3& rotation = glm::vec3(0.0f)) {
-    // ...
-}
-
-} // namespace
-```
-
-## Class Patterns
-
-**Non-copyable by default:**
-All resource-owning classes explicitly delete copy constructor and copy assignment. This is applied to every OpenGL resource class and any class owning unique resources:
-
-```cpp
-// Pattern used in Shader, Mesh, Framebuffer, Texture2D, PhysicsSystem, Application
-Shader(const Shader&) = delete;
-Shader& operator=(const Shader&) = delete;
-```
-
-**Move semantics:**
-Applied selectively where ownership transfer is needed. `Mesh`, `Texture2D`, `TextureCube` are both non-copyable and movable:
-
-```cpp
-Mesh(Mesh&& other) noexcept;
-Mesh& operator=(Mesh&& other) noexcept;
-```
-
-**RAII for OpenGL resources:**
-Destructors unconditionally release OpenGL handles. Handles are zero-initialized in the header:
-
-```cpp
-// Mesh.h
-GLuint vao_ = 0;
-GLuint vbo_ = 0;
-GLuint ebo_ = 0;
-```
-
-**Pimpl idiom:**
-Used for `PhysicsSystem` to hide Jolt Physics internals:
-
-```cpp
-// PhysicsSystem.h
-private:
-    struct Impl;
-    std::unique_ptr<Impl> impl_;
-```
-
-**Virtual destructors:**
-All base classes use `virtual ~ClassName() = default;`. The `System` base class follows this: `virtual ~System() = default;`.
-
-**Inline getters:**
-Short accessors are defined inline in the header. Single-line getter bodies stay on the same line as the method signature:
-
-```cpp
-Window& window() { return window_; }
-const Time& time() const { return time_; }
-float deltaTime() const { return time_.deltaTime(); }
-```
-
-## ECS Component Design
-
-Components are POD structs with no methods (except `TransformComponent`, which has a `modelMatrix()` helper — acceptable). No inheritance in components. Components use in-class member initializers:
-
-```cpp
-struct DoorComponent {
-    entt::entity leftLeaf = entt::null;
-    float interactDistance = 3.0f;
-    bool opened = false;
-};
-```
-
-Tag components are empty structs in single-header files — one tag per file.
-
-## Free Functions Over Member Functions (Game Logic)
-
-Game logic is implemented as free functions in `src/game/runtime/RuntimeGameplay.cpp` rather than methods on systems. Systems are thin wrappers that delegate to free functions:
-
-```cpp
-// PlayerMovementSystem.cpp — thin shell
-void PlayerMovementSystem::update(Application& app, float deltaTime) {
-    updateRuntimePlayerMovement(app.registry(), input_, physics_, deltaTime);
-}
-```
-
-This pattern makes game logic testable without instantiating a full `Application`.
-
-## Designated Initializers (C++20)
-
-Used consistently in test code for struct initialization:
-
-```cpp
-level.meshes.push_back(LevelMeshPlacement{
-    .meshId = "cube",
-    .position = glm::vec3(1.0f, 2.0f, 3.0f),
-    .materialId = "brick_default",
-    .tint = glm::vec3(0.4f, 0.5f, 0.6f),
-});
-```
-
-Not yet applied in production code — production code uses member-by-member assignment or in-class defaults.
+**Header Guards:**
+- `#pragma once` exclusively (no include guard macros)
 
 ## Error Handling
 
-**Strategy:** Exception-based for fatal/unrecoverable errors; return values / `std::optional` / logging for recoverable errors.
+**Strategy:** Exceptions for unrecoverable errors; assertions for development-time contracts
 
 **Patterns:**
-- Parse errors throw `std::runtime_error` with file path + line number context via `throwParseError()` in `src/game/content/ParseUtils.h`
-- Shader compile/link failure throws `std::runtime_error` after logging via spdlog
-- Missing content definitions throw `std::runtime_error`: `throw std::runtime_error("Unknown material id: " + id)`
-- Material inheritance cycles throw `std::runtime_error`: `throw std::runtime_error("Material inheritance cycle detected at: " + id)`
-- OpenGL resource failures that cannot recover throw `std::runtime_error`
-- Audio/texture load failures log a warning and continue (graceful degradation)
-- Lookup methods return raw pointer (nullable): `const WeaponDefinition* findWeapon(const std::string& id) const`
-- Disk cache misses return `std::optional<CachedMeshData>`
+- **Throw on initialization failure**: `Shader` constructor throws `std::runtime_error` if compilation/linking fails
+  - Example in `src/engine/rendering/core/Shader.cpp`: `throw std::runtime_error("Shader program link failed")`
+- **Logging + throw**: Errors logged via `spdlog::error()` before throwing
+  - Pattern: `spdlog::error("Shader compile error ({}): \n{}", path, infoLog); glDeleteShader(shader); throw std::runtime_error(...);`
+- **Assertions for null checks**: Heavy use of `assert()` for precondition validation
+  - Example in `src/game/level/LevelLoader.cpp`: `assert(args.content != nullptr && "LevelLoadArgs::content must not be null");`
+- **Silent null-return pattern in uniform setters**: Shader uniform setters silently skip if location is -1 (uniform not in shader)
+  - Pattern in `src/engine/rendering/core/Shader.cpp`: `if (loc != -1) { glUniform1f(loc, v); }`
+- **No null pointer exceptions**: Service locator patterns use `tryGetService<T>()` returning `nullptr` or `getService<T>()` throwing
+  - Both provided: `T* tryGetService<T>()` and `T& getService<T>()` in `src/engine/core/Application.h`
 
-**No exceptions in tests** — tests catch exceptions manually to verify error paths:
+**Anti-pattern observed:**
+- Bare `new`/`delete` avoided; `std::unique_ptr` and `std::make_unique` preferred throughout
+- Raw pointers used only for non-owning references (e.g., `Mesh* mesh` in `MeshComponent` with comment "non-owning pointer")
 
-```cpp
-bool threw = false;
-try {
-    (void)resolveMaterialDefinition("child", missingParent);
-} catch (const std::runtime_error&) {
-    threw = true;
-}
-assert(threw);
-```
+## Memory Management
 
-## Logging
+**RAII Compliance:**
+- All OpenGL resources (VAO, VBO, EBO, FBO, shader programs) wrapped in RAII classes
+- `Shader::~Shader()` deletes program if non-zero: `if (program_) { glDeleteProgram(program_); }`
+- `Framebuffer::~Framebuffer()` calls `destroy()`; resize() re-creates resources
+- `Mesh::~Mesh()` cleans up VAO/VBO/EBO; move constructor/assignment supported
 
-**Framework:** spdlog (`spdlog::info`, `spdlog::warn`, `spdlog::error`)
+**Ownership Model:**
+- `std::unique_ptr<T>` for exclusive ownership: `std::unique_ptr<Shader> load(...)`
+- Non-copyable by default (explicit `= delete` on copy constructor/assignment)
+- Move semantics where ownership transfer needed: `Mesh(Mesh&& other) noexcept`
+- Comments mark non-owning pointers: `Mesh* mesh = nullptr; // non-owning pointer`
 
-**Patterns:**
-- Subsystem name in brackets for non-trivial systems: `spdlog::warn("[AudioSystem] Failed to open OGG file '{}' (error {})", path, error)`
-- Shorter messages for game/editor: `spdlog::error("Material save failed: {}", ex.what())`
-- Info logs on system init/shutdown: `spdlog::info("PhysicsSystem initialized")`
-- No debug-level logs in production code observed
+**Memory Allocation Patterns:**
+- Factory functions return `std::unique_ptr`: `Shader::load()`, `ModelLoader::load()`
+- No manual `new`/`delete` in production code (tests use `assert()` only, no `delete`)
+- Constructor initializer lists used for member initialization
 
-## Comments
+## C++20 Features Usage
+
+**Actively used:**
+- `std::ranges` algorithms: `std::remove_if`, `std::any_of`, `std::count_if` in tests
+- `std::optional<T>` for nullable values: `std::optional<std::string> parent;`, `std::optional<glm::vec3> tint;`
+- `std::span` indirectly via GLM and Jolt (not seen in direct use in this codebase yet)
+- `std::function` + lambda captures: event subscriptions in `EventBus`
+- `std::any` for type-erased service locator: `std::unordered_map<std::type_index, std::any> services_`
+- Template specialization: `emplaceService<T>()`, `getService<T>()`, `hasService<T>()` in `Application`
+
+**NOT used:**
+- Concepts (C++20 feature but not detected in this codebase)
+- Designated initializers (not observed; struct initialization uses member assignment)
+- Modules (traditional includes used throughout)
+
+## Object Construction Patterns
+
+**POD Components:**
+- Zero initialization with `{}`: `glm::vec3 position{0.0f};`, `glm::vec3 scale{1.0f};`
+- Defaults in struct definitions: `ColliderShape shape = ColliderShape::Box;`, `bool castsShadows = false;`
+
+**Systems:**
+- Constructor takes dependencies as const references: `PlayerMovementSystem(InputSystem& input, PhysicsSystem& physics);`
+- No `init()` constructor argument; init logic in `System::init(Application& app)` virtual override
+- Unused parameters marked with `(void)param` to suppress warnings: `void PlayerMovementSystem::init(Application& app) { (void)app; }`
+
+**Services:**
+- Type-safe service locator via `std::type_index` and `std::any`
+- Example: `auto& content = app.getService<ContentRegistry>();`
+
+## Comments & Documentation
 
 **When to Comment:**
-- Complex math operations always get an explanation: rotation order in `TransformComponent::modelMatrix()`, tangent generation in `MeshGeometry.h`
-- Public API parameters or non-obvious semantics get inline comments
-- File-local helper functions in `.cpp` files get a separator comment block when there are many
+- Constructor preconditions for non-obvious contracts: `// required`, `// optional`
+- Non-owning pointer clarification: `// non-owning pointer, mesh lifetime managed by scene/resource manager`
+- Complex math explanation: Euler angle order explicitly documented in `TransformComponent`
+- File reading performance notes: comment about `readFile()` in Shader loading
 
-**Comment style:**
-- `//` only — no `/* */` block comments in production code
-- Section dividers use `// ---` style in larger files like `test_asset_cache.cpp`
+**JSDoc/TSDoc:**
+- Not used; minimal inline comments preferred
+- Function intent implied by name; only document where name is insufficient
 
-## Modern C++ Feature Usage
+**Inline Comments:**
+- Sparse; code is expected to be self-documenting via naming
+- Used for non-obvious intent or workarounds
 
-**Used:**
-- `std::optional<T>` extensively for nullable fields in `MaterialDefinition`, `LevelMeshPlacement`
-- `std::variant` in `EditorSceneObjectPayload`
-- `std::filesystem` for all file paths in tests and serialization code
-- `std::unique_ptr` for ownership (systems in `Application`, `PhysicsSystem::Impl`)
-- Structured bindings: `for (const auto& [mesh, transform] : parts)`
-- `[[noreturn]]` on `throwParseError()`
-- `constexpr` for all named integer/float constants at class and namespace scope
-- `noexcept` on move constructors/assignment operators
-- `enum class` exclusively
+## Function Design
 
-**Not used (C++20 features available but absent):**
-- `std::span` — not used anywhere; raw `std::vector` refs passed instead
-- `std::ranges` — not used; manual `std::sort`, `std::count_if`, `std::any_of` used
-- Concepts (`requires`, `concept`) — not used; templates without constraints
-- `std::format` — spdlog format strings used instead
+**Size:** 
+- No functions longer than ~50 lines observed in core engine layers
+- Helper functions extracted into anonymous namespaces: `test_model_loader.cpp` has local `computeMin()`, `computeMax()`
+- Systems and complex operations delegate to free functions: `updateRuntimePlayerMovement()`, `makeSignature()`
+
+**Parameters:**
+- Pass-by-const-reference for large objects: `const glm::mat4& mat`, `const std::string& name`
+- Pass-by-value for simple types: `float v`, `int v`
+- No pass-by-non-const-reference except when output parameter is semantically needed
+- Builder pattern used for complex object construction: `LevelBuilder::addMesh()`, `LevelBuilder::attachInteractable()`
+
+**Return Values:**
+- `std::unique_ptr<T>` for factory methods
+- Bare values for simple returns: `float deltaTime()`, `const Time& time() const`
+- Optional return for operations that might fail: `std::optional<std::string> parent;` in struct member
+- No exceptions leaked; methods document failure via precondition asserts
+
+## Module Design
+
+**Exports:**
+- Classes and structs in headers; implementations in .cpp
+- Free functions declared in headers (e.g., `loadLevelDef()`, `serializeLevelDef()`)
+- Helper functions hidden in anonymous namespaces: `namespace { ... } // namespace`
+
+**Barrel Files:**
+- Not used; direct includes of specific headers preferred
+- Each header pulls in only its direct dependencies
+
+**File Organization by Layer:**
+- **Engine (`src/engine/`)**: Core systems (Application, Window, EventBus), rendering (Shader, Mesh, Framebuffer), physics, input
+- **Game (`src/game/`)**: Components, systems (PlayerMovementSystem, CameraSystem), content registry, levels, prefabs, scenes
+- **Editor (`src/editor/`)**: Scene document, commands, UI panels, debug harness, viewport controller
+
+## Type Conversions
+
+**Explicit conversions:**
+- Jolt ↔ GLM conversions use inline helper functions: `toJolt()`, `toGlm()`, `toJoltQuat()` in `PhysicsSystem.cpp`
+- GLM functions used for matrix math: `glm::translate()`, `glm::scale()`, `glm::mat4_cast()`
+- Quaternion construction: `glm::angleAxis()` for Euler angle → quaternion
+
+**Casting:**
+- `static_cast<>` used for type-safe conversions: `static_cast<std::size_t>(UpdatePhase::Count)`
+- `std::any_cast<>` used in service locator: `std::any_cast<T&>(services_.at(key))`
+- `std::get<>` used with std::variant: `std::get<LevelMeshPlacement>(object.payload)`
+
+## Inconsistencies & Anti-Patterns
+
+1. **Variable parameter naming inconsistency:**
+   - Most use trailing underscore: `input_`, `physics_`, `window_`
+   - Some don't follow this for const references in small contexts (e.g., parameters in function signatures)
+
+2. **Assert usage for production code:**
+   - Heavy reliance on `assert()` for null checks in game/editor code
+   - Assertions may be disabled in Release builds; consider exceptions for recoverable errors in critical paths
+
+3. **Silent failure in uniform setters:**
+   - Shader uniform setters in `Shader.cpp` silently skip if location is -1
+   - Could log warnings for missing uniforms in development
+
+4. **Pimpl pattern incomplete:**
+   - `PhysicsSystem` uses pimpl (`struct Impl`) but pattern not consistently applied
+   - Other complex systems expose implementation details
+
+5. **Void parameter suppression:**
+   - `(void)param;` used to suppress unused parameter warnings
+   - Modern approach: use `[[maybe_unused]]` attribute instead
+
+6. **Error recovery in shaders:**
+   - Shader compilation errors set `program_ = 0` but don't expose this state to caller
+   - Caller assumes success; could add `isValid()` query
+
+## Consistency Summary
+
+**Strengths:**
+- Naming is consistent across 224 source files
+- RAII is properly applied to all GPU resources
+- Memory ownership is clear via `std::unique_ptr` and comments
+- Include order is consistent
+- No use of bare `new`/`delete`
+
+**Areas for improvement:**
+- Replace `assert()` with exceptions in production code paths
+- Add `[[maybe_unused]]` instead of `(void)param;`
+- Log warnings for silent failures (missing shader uniforms)
+- Standardize pimpl usage or abandon it in favor of direct composition
 
 ---
 
-*Convention analysis: 2026-04-01*
+*Convention analysis: 2026-04-05*
