@@ -46,7 +46,9 @@
 #include <array>
 #include <chrono>
 #include <cmath>
+#ifndef _WIN32
 #include <csignal>
+#endif
 #include <cstdint>
 #include <cstdio>
 #include <cstring>
@@ -62,8 +64,10 @@
 
 namespace {
 
-volatile std::sig_atomic_t g_editorScreenshotRequested = 0;
+volatile int g_editorScreenshotRequested = 0;
+#ifndef _WIN32
 void editorSignalHandler(int) { g_editorScreenshotRequested = 1; }
+#endif
 
 using Clock = std::chrono::steady_clock;
 
@@ -285,7 +289,9 @@ void renderStartupProgress(Window& window,
 
 int main(int argc, char* argv[]) {
     spdlog::set_level(spdlog::level::info);
+#ifndef _WIN32
     std::signal(SIGUSR1, editorSignalHandler);
+#endif
 
     std::string initialScene;
     if (argc > 1) {
