@@ -24,3 +24,9 @@ struct AssetInspectorSession {
     bool prefabDirty = false;
     EditorAssetPreviewRenderer previewRenderer;
 };
+
+struct EditorInspectedAsset;
+
+// Session accessors (implemented in AssetInspectorSession.cpp)
+AssetInspectorSession& assetInspectorSession();
+void syncAssetInspectorSession(const EditorInspectedAsset& asset, AssetInspectorSession& session);
