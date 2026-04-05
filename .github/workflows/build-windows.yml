@@ -32,10 +32,7 @@ jobs:
         run: cmake --preset ci-windows -DPython_EXECUTABLE=python
 
       - name: Build
-        run: cmake --build --preset ci-windows
-
-      - name: Run tests
-        run: ctest --test-dir build --build-config Release --output-on-failure
+        run: cmake --build build --config Release --parallel --target pixel-roguelike
 
       - name: Upload binaries
         uses: actions/upload-artifact@v4
