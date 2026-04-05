@@ -3,6 +3,7 @@
 #include "game/behavior/ActionTypes.h"
 #include "game/level/LevelDef.h"
 
+#include <glm/common.hpp>
 #include <imgui.h>
 
 #include <algorithm>
@@ -224,6 +225,77 @@ bool renderActionEntryRow(int index, BehaviorDeclaration& decl,
 }
 
 } // namespace
+
+void drawPositionSection(glm::vec3& position,
+                         const char* label,
+                         const char* undoLabel,
+                         EditorSceneDocument& document,
+                         EditorCommandStack& commandStack,
+                         EditorPendingCommand& pendingCommand) {
+    auto itemBefore = document.captureState();
+    bool changed = renderInspectorPropertyRow(label, [&]() { return editVec3("##value", position); });
+    if (changed) {
+        document.markSceneDirty();
+    }
+    trackLastItemCommand(itemBefore, undoLabel, pendingCommand, commandStack, document);
+}
+
+void drawTransformSection(glm::vec3& position,
+                          glm::vec3& rotation,
+                          const char* posLabel,
+                          const char* rotLabel,
+                          const char* posUndoLabel,
+                          const char* rotUndoLabel,
+                          EditorSceneDocument& document,
+                          EditorCommandStack& commandStack,
+                          EditorPendingCommand& pendingCommand) {
+    const auto trackSceneItem = [&](const EditorSceneDocumentState& itemBefore, const std::string& lbl, bool changed) {
+        if (changed) {
+            document.markSceneDirty();
+        }
+        trackLastItemCommand(itemBefore, lbl, pendingCommand, commandStack, document);
+    };
+
+    auto itemBefore = document.captureState();
+    trackSceneItem(itemBefore, posUndoLabel,
+                   renderInspectorPropertyRow(posLabel, [&]() { return editVec3("##value", position); }));
+    itemBefore = document.captureState();
+    trackSceneItem(itemBefore, rotUndoLabel,
+                   renderInspectorPropertyRow(rotLabel, [&]() { return editVec3("##value", rotation, 0.5f); }));
+}
+
+void drawTransformSectionWithScale(glm::vec3& position,
+                                   glm::vec3& rotation,
+                                   glm::vec3& scale,
+                                   const char* posLabel,
+                                   const char* rotLabel,
+                                   const char* scaleLabel,
+                                   const char* posUndoLabel,
+                                   const char* rotUndoLabel,
+                                   const char* scaleUndoLabel,
+                                   EditorSceneDocument& document,
+                                   EditorCommandStack& commandStack,
+                                   EditorPendingCommand& pendingCommand) {
+    const auto trackSceneItem = [&](const EditorSceneDocumentState& itemBefore, const std::string& lbl, bool changed) {
+        if (changed) {
+            document.markSceneDirty();
+        }
+        trackLastItemCommand(itemBefore, lbl, pendingCommand, commandStack, document);
+    };
+
+    auto itemBefore = document.captureState();
+    trackSceneItem(itemBefore, posUndoLabel,
+                   renderInspectorPropertyRow(posLabel, [&]() { return editVec3("##value", position); }));
+    itemBefore = document.captureState();
+    const bool scaleChanged = renderInspectorPropertyRow(scaleLabel, [&]() { return editVec3("##value", scale, 0.02f); });
+    if (scaleChanged) {
+        scale = glm::max(scale, glm::vec3(0.01f));
+    }
+    trackSceneItem(itemBefore, scaleUndoLabel, scaleChanged);
+    itemBefore = document.captureState();
+    trackSceneItem(itemBefore, rotUndoLabel,
+                   renderInspectorPropertyRow(rotLabel, [&]() { return editVec3("##value", rotation, 0.5f); }));
+}
 
 void drawBehaviorSections(std::vector<BehaviorDeclaration>& behaviors,
                           EditorSceneDocument& document,
