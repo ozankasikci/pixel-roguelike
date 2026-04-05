@@ -8,6 +8,7 @@
 #include <algorithm>
 #include <filesystem>
 #include <sstream>
+#include <type_traits>
 
 #define GLM_ENABLE_EXPERIMENTAL
 #include <glm/gtc/matrix_transform.hpp>
@@ -540,76 +541,66 @@ bool EditorSceneDocument::applyWorldTransform(std::uint64_t id, const glm::mat4&
     const glm::mat4 localMatrix = glm::inverse(localParentMatrix(*object)) * worldMatrix;
     glm::vec3 position(0.0f), rotation(0.0f), scale(1.0f);
 
-    switch (object->kind) {
-    case EditorSceneObjectKind::Mesh: {
-        auto& mesh = std::get<LevelMeshPlacement>(object->payload);
-        if (!decomposeTransformMatrix(localMatrix, position, rotation, scale)) {
-            return false;
-        }
-        mesh.position = position;
-        mesh.rotation = rotation;
-        mesh.scale = glm::max(scale, glm::vec3(0.01f));
-        break;
-    }
-    case EditorSceneObjectKind::Light: {
-        auto& light = std::get<LevelLightPlacement>(object->payload);
-        if (light.type != LightType::Directional) {
-            light.position = glm::vec3(localMatrix[3]);
-        }
-        break;
-    }
-    case EditorSceneObjectKind::Collider: {
-        auto& collider = std::get<LevelColliderPlacement>(object->payload);
-        if (!decomposeTransformMatrix(localMatrix, position, rotation, scale)) {
-            return false;
-        }
-        collider.position = position;
-        collider.rotation = rotation;
-        if (collider.shape == ColliderShape::Box) {
-            collider.halfExtents = glm::max(scale * 0.5f, glm::vec3(0.01f));
+    bool success = std::visit([&](auto& p) -> bool {
+        using T = std::decay_t<decltype(p)>;
+        if constexpr (std::is_same_v<T, LevelMeshPlacement>) {
+            if (!decomposeTransformMatrix(localMatrix, position, rotation, scale)) {
+                return false;
+            }
+            p.position = position;
+            p.rotation = rotation;
+            p.scale = glm::max(scale, glm::vec3(0.01f));
+            return true;
+        } else if constexpr (std::is_same_v<T, LevelLightPlacement>) {
+            if (p.type != LightType::Directional) {
+                p.position = glm::vec3(localMatrix[3]);
+            }
+            return true;
+        } else if constexpr (std::is_same_v<T, LevelColliderPlacement>) {
+            if (!decomposeTransformMatrix(localMatrix, position, rotation, scale)) {
+                return false;
+            }
+            p.position = position;
+            p.rotation = rotation;
+            if (p.shape == ColliderShape::Box) {
+                p.halfExtents = glm::max(scale * 0.5f, glm::vec3(0.01f));
+            } else {
+                p.radius = std::max(0.05f, (std::abs(scale.x) + std::abs(scale.z)) * 0.25f);
+                p.halfHeight = std::max(0.05f, std::abs(scale.y) * 0.5f);
+            }
+            return true;
+        } else if constexpr (std::is_same_v<T, LevelReflectionProbePlacement>) {
+            if (!decomposeTransformMatrix(localMatrix, position, rotation, scale)) {
+                return false;
+            }
+            p.position = position;
+            p.extents = glm::max(scale * 0.5f, glm::vec3(0.05f));
+            return true;
+        } else if constexpr (std::is_same_v<T, LevelPlayerSpawn>) {
+            p.position = glm::vec3(localMatrix[3]);
+            return true;
+        } else if constexpr (std::is_same_v<T, LevelArchetypePlacement>) {
+            if (!decomposeTransformMatrix(localMatrix, position, rotation, scale)) {
+                return false;
+            }
+            p.position = position;
+            p.yawDegrees = rotation.y;
+            return true;
+        } else if constexpr (std::is_same_v<T, LevelGroupNode>) {
+            if (!decomposeTransformMatrix(localMatrix, position, rotation, scale)) {
+                return false;
+            }
+            p.position = position;
+            p.rotation = rotation;
+            p.scale = glm::max(scale, glm::vec3(0.01f));
+            return true;
         } else {
-            collider.radius = std::max(0.05f, (std::abs(scale.x) + std::abs(scale.z)) * 0.25f);
-            collider.halfHeight = std::max(0.05f, std::abs(scale.y) * 0.5f);
+            static_assert(sizeof(T) == 0, "Unhandled payload type in applyWorldTransform");
         }
-        break;
-    }
-    case EditorSceneObjectKind::ReflectionProbe: {
-        auto& probe = std::get<LevelReflectionProbePlacement>(object->payload);
-        if (!decomposeTransformMatrix(localMatrix, position, rotation, scale)) {
-            return false;
-        }
-        probe.position = position;
-        probe.extents = glm::max(scale * 0.5f, glm::vec3(0.05f));
-        break;
-    }
-    case EditorSceneObjectKind::PlayerSpawn: {
-        auto& spawn = std::get<LevelPlayerSpawn>(object->payload);
-        spawn.position = glm::vec3(localMatrix[3]);
-        break;
-    }
-    case EditorSceneObjectKind::Archetype: {
-        auto& archetype = std::get<LevelArchetypePlacement>(object->payload);
-        if (!decomposeTransformMatrix(localMatrix, position, rotation, scale)) {
-            return false;
-        }
-        archetype.position = position;
-        archetype.yawDegrees = rotation.y;
-        break;
-    }
-    case EditorSceneObjectKind::Group: {
-        auto& group = std::get<LevelGroupNode>(object->payload);
-        if (!decomposeTransformMatrix(localMatrix, position, rotation, scale)) {
-            return false;
-        }
-        group.position = position;
-        group.rotation = rotation;
-        group.scale = glm::max(scale, glm::vec3(0.01f));
-        break;
-    }
-    }
+    }, object->payload);
 
-    markSceneDirty();
-    return true;
+    if (success) markSceneDirty();
+    return success;
 }
 
 std::uint64_t EditorSceneDocument::duplicateObject(std::uint64_t id) {
@@ -649,30 +640,27 @@ LevelDef EditorSceneDocument::toLevelDef() const {
     }
 
     for (const auto& object : objects_) {
-        switch (object.kind) {
-        case EditorSceneObjectKind::Mesh:
-            level.meshes.push_back(std::get<LevelMeshPlacement>(object.payload));
-            break;
-        case EditorSceneObjectKind::Light:
-            level.lights.push_back(std::get<LevelLightPlacement>(object.payload));
-            break;
-        case EditorSceneObjectKind::Collider:
-            level.colliders.push_back(std::get<LevelColliderPlacement>(object.payload));
-            break;
-        case EditorSceneObjectKind::ReflectionProbe:
-            level.reflectionProbes.push_back(std::get<LevelReflectionProbePlacement>(object.payload));
-            break;
-        case EditorSceneObjectKind::PlayerSpawn:
-            level.playerSpawn = std::get<LevelPlayerSpawn>(object.payload);
-            level.hasPlayerSpawn = true;
-            break;
-        case EditorSceneObjectKind::Archetype:
-            level.archetypes.push_back(std::get<LevelArchetypePlacement>(object.payload));
-            break;
-        case EditorSceneObjectKind::Group:
-            level.groups.push_back(std::get<LevelGroupNode>(object.payload));
-            break;
-        }
+        std::visit([&level](const auto& p) {
+            using T = std::decay_t<decltype(p)>;
+            if constexpr (std::is_same_v<T, LevelMeshPlacement>) {
+                level.meshes.push_back(p);
+            } else if constexpr (std::is_same_v<T, LevelLightPlacement>) {
+                level.lights.push_back(p);
+            } else if constexpr (std::is_same_v<T, LevelColliderPlacement>) {
+                level.colliders.push_back(p);
+            } else if constexpr (std::is_same_v<T, LevelReflectionProbePlacement>) {
+                level.reflectionProbes.push_back(p);
+            } else if constexpr (std::is_same_v<T, LevelPlayerSpawn>) {
+                level.playerSpawn = p;
+                level.hasPlayerSpawn = true;
+            } else if constexpr (std::is_same_v<T, LevelArchetypePlacement>) {
+                level.archetypes.push_back(p);
+            } else if constexpr (std::is_same_v<T, LevelGroupNode>) {
+                level.groups.push_back(p);
+            } else {
+                static_assert(sizeof(T) == 0, "Unhandled payload type in toLevelDef");
+            }
+        }, object.payload);
     }
 
     return level;
@@ -783,45 +771,34 @@ std::string EditorSceneDocument::ensureObjectNodeId(EditorSceneObject& object) {
 }
 
 glm::mat4 EditorSceneDocument::localTransformMatrix(const EditorSceneObject& object) const {
-    switch (object.kind) {
-    case EditorSceneObjectKind::Mesh: {
-        const auto& mesh = std::get<LevelMeshPlacement>(object.payload);
-        return makeTransformMatrix(mesh.position, mesh.rotation, mesh.scale);
-    }
-    case EditorSceneObjectKind::Light: {
-        const auto& light = std::get<LevelLightPlacement>(object.payload);
-        if (light.type == LightType::Directional) {
-            return glm::mat4(1.0f);
+    return std::visit([](const auto& p) -> glm::mat4 {
+        using T = std::decay_t<decltype(p)>;
+        if constexpr (std::is_same_v<T, LevelMeshPlacement>) {
+            return makeTransformMatrix(p.position, p.rotation, p.scale);
+        } else if constexpr (std::is_same_v<T, LevelLightPlacement>) {
+            if (p.type == LightType::Directional) {
+                return glm::mat4(1.0f);
+            }
+            return makeTransformMatrix(p.position, glm::vec3(0.0f), glm::vec3(1.0f));
+        } else if constexpr (std::is_same_v<T, LevelColliderPlacement>) {
+            if (p.shape == ColliderShape::Box) {
+                return makeTransformMatrix(p.position, p.rotation, p.halfExtents * 2.0f);
+            }
+            return makeTransformMatrix(p.position,
+                                       p.rotation,
+                                       glm::vec3(p.radius * 2.0f, p.halfHeight * 2.0f, p.radius * 2.0f));
+        } else if constexpr (std::is_same_v<T, LevelReflectionProbePlacement>) {
+            return makeTransformMatrix(p.position, glm::vec3(0.0f), p.extents * 2.0f);
+        } else if constexpr (std::is_same_v<T, LevelPlayerSpawn>) {
+            return makeTransformMatrix(p.position, glm::vec3(0.0f), glm::vec3(1.0f));
+        } else if constexpr (std::is_same_v<T, LevelArchetypePlacement>) {
+            return makeTransformMatrix(p.position, glm::vec3(0.0f, p.yawDegrees, 0.0f), glm::vec3(1.0f));
+        } else if constexpr (std::is_same_v<T, LevelGroupNode>) {
+            return makeTransformMatrix(p.position, p.rotation, p.scale);
+        } else {
+            static_assert(sizeof(T) == 0, "Unhandled payload type in localTransformMatrix");
         }
-        return makeTransformMatrix(light.position, glm::vec3(0.0f), glm::vec3(1.0f));
-    }
-    case EditorSceneObjectKind::Collider: {
-        const auto& collider = std::get<LevelColliderPlacement>(object.payload);
-        if (collider.shape == ColliderShape::Box) {
-            return makeTransformMatrix(collider.position, collider.rotation, collider.halfExtents * 2.0f);
-        }
-        return makeTransformMatrix(collider.position,
-                                   collider.rotation,
-                                   glm::vec3(collider.radius * 2.0f, collider.halfHeight * 2.0f, collider.radius * 2.0f));
-    }
-    case EditorSceneObjectKind::ReflectionProbe: {
-        const auto& probe = std::get<LevelReflectionProbePlacement>(object.payload);
-        return makeTransformMatrix(probe.position, glm::vec3(0.0f), probe.extents * 2.0f);
-    }
-    case EditorSceneObjectKind::PlayerSpawn: {
-        const auto& spawn = std::get<LevelPlayerSpawn>(object.payload);
-        return makeTransformMatrix(spawn.position, glm::vec3(0.0f), glm::vec3(1.0f));
-    }
-    case EditorSceneObjectKind::Archetype: {
-        const auto& archetype = std::get<LevelArchetypePlacement>(object.payload);
-        return makeTransformMatrix(archetype.position, glm::vec3(0.0f, archetype.yawDegrees, 0.0f), glm::vec3(1.0f));
-    }
-    case EditorSceneObjectKind::Group: {
-        const auto& group = std::get<LevelGroupNode>(object.payload);
-        return makeTransformMatrix(group.position, group.rotation, group.scale);
-    }
-    }
-    return glm::mat4(1.0f);
+    }, object.payload);
 }
 
 glm::mat4 EditorSceneDocument::localParentMatrix(const EditorSceneObject& object) const {
@@ -863,62 +840,37 @@ const char* editorSceneObjectKindName(EditorSceneObjectKind kind) {
 std::string editorSceneObjectLabel(const EditorSceneObject& object) {
     std::ostringstream label;
     label << editorSceneObjectKindName(object.kind) << " #" << object.id;
-    switch (object.kind) {
-    case EditorSceneObjectKind::Mesh:
-        label << " [" << std::get<LevelMeshPlacement>(object.payload).meshId << "]";
-        break;
-    case EditorSceneObjectKind::Light: {
-        const auto& light = std::get<LevelLightPlacement>(object.payload);
-        if (light.type == LightType::Directional) {
-            label << " [dir]";
-        } else if (light.type == LightType::Spot) {
-            label << " [spot]";
-        } else {
-            label << " [point]";
+    std::visit([&label](const auto& p) {
+        using T = std::decay_t<decltype(p)>;
+        if constexpr (std::is_same_v<T, LevelMeshPlacement>) {
+            label << " [" << p.meshId << "]";
+        } else if constexpr (std::is_same_v<T, LevelLightPlacement>) {
+            if (p.type == LightType::Directional) {
+                label << " [dir]";
+            } else if (p.type == LightType::Spot) {
+                label << " [spot]";
+            } else {
+                label << " [point]";
+            }
+        } else if constexpr (std::is_same_v<T, LevelColliderPlacement>) {
+            switch (p.shape) {
+            case ColliderShape::Box:      label << " [box]";      break;
+            case ColliderShape::Sphere:   label << " [sphere]";   break;
+            case ColliderShape::Cylinder: label << " [cylinder]"; break;
+            case ColliderShape::Capsule:  label << " [capsule]";  break;
+            }
+        } else if constexpr (std::is_same_v<T, LevelReflectionProbePlacement>) {
+            label << " [local]";
+        } else if constexpr (std::is_same_v<T, LevelArchetypePlacement>) {
+            label << " [" << p.archetypeId << "]";
+        } else if constexpr (std::is_same_v<T, LevelGroupNode>) {
+            label << " [" << p.name << "]";
         }
-        break;
-    }
-    case EditorSceneObjectKind::Archetype:
-        label << " [" << std::get<LevelArchetypePlacement>(object.payload).archetypeId << "]";
-        break;
-    case EditorSceneObjectKind::ReflectionProbe:
-        label << " [local]";
-        break;
-    case EditorSceneObjectKind::Group:
-        label << " [" << std::get<LevelGroupNode>(object.payload).name << "]";
-        break;
-    case EditorSceneObjectKind::Collider: {
-        const auto& collider = std::get<LevelColliderPlacement>(object.payload);
-        switch (collider.shape) {
-        case ColliderShape::Box:      label << " [box]";      break;
-        case ColliderShape::Sphere:   label << " [sphere]";   break;
-        case ColliderShape::Cylinder: label << " [cylinder]"; break;
-        case ColliderShape::Capsule:  label << " [capsule]";  break;
-        }
-        break;
-    }
-    default:
-        break;
-    }
+        // LevelPlayerSpawn: no suffix needed
+    }, object.payload);
     return label.str();
 }
 
 glm::vec3 editorSceneObjectAnchor(const EditorSceneObject& object) {
-    switch (object.kind) {
-    case EditorSceneObjectKind::Mesh:
-        return std::get<LevelMeshPlacement>(object.payload).position;
-    case EditorSceneObjectKind::Light:
-        return std::get<LevelLightPlacement>(object.payload).position;
-    case EditorSceneObjectKind::Collider:
-        return std::get<LevelColliderPlacement>(object.payload).position;
-    case EditorSceneObjectKind::ReflectionProbe:
-        return std::get<LevelReflectionProbePlacement>(object.payload).position;
-    case EditorSceneObjectKind::PlayerSpawn:
-        return std::get<LevelPlayerSpawn>(object.payload).position;
-    case EditorSceneObjectKind::Archetype:
-        return std::get<LevelArchetypePlacement>(object.payload).position;
-    case EditorSceneObjectKind::Group:
-        return std::get<LevelGroupNode>(object.payload).position;
-    }
-    return glm::vec3(0.0f);
+    return std::visit([](const auto& p) -> glm::vec3 { return p.position; }, object.payload);
 }
