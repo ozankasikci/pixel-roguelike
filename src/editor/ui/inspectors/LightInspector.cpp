@@ -30,8 +30,8 @@ void drawLightInspector(LevelLightPlacement& light,
         commandStack.pushDocumentStateCommand("Change Light Type", before, document.captureState(), document);
     }
     if (light.type != LightType::Directional) {
-        const auto itemBefore = document.captureState();
-        trackSceneItem(itemBefore, "Move Light", renderInspectorPropertyRow("Position", [&]() { return editVec3("##value", light.position); }));
+        drawPositionSection(light.position, "Position", "Move Light",
+                            document, commandStack, pendingCommand);
     }
     auto itemBefore = document.captureState();
     trackSceneItem(itemBefore, "Adjust Light Direction", renderInspectorPropertyRow("Direction", [&]() { return editVec3("##value", light.direction, 0.01f); }));

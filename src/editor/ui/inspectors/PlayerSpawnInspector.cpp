@@ -1,5 +1,6 @@
 #include "editor/ui/inspectors/PlayerSpawnInspector.h"
 
+#include "editor/ui/inspectors/InspectorUtils.h"
 #include "editor/ui/LevelEditorUi.h"
 #include "game/level/LevelDef.h"
 
@@ -19,9 +20,9 @@ void drawPlayerSpawnInspector(LevelPlayerSpawn& spawn,
         trackLastItemCommand(itemBefore, label, pendingCommand, commandStack, document);
     };
 
+    drawPositionSection(spawn.position, "Position", "Move Player Spawn",
+                        document, commandStack, pendingCommand);
     auto itemBefore = document.captureState();
-    trackSceneItem(itemBefore, "Move Player Spawn", renderInspectorPropertyRow("Position", [&]() { return editVec3("##value", spawn.position); }));
-    itemBefore = document.captureState();
     trackSceneItem(itemBefore, "Adjust Fall Respawn Height", renderInspectorPropertyRow("Fall Respawn Y", [&]() { return ImGui::DragFloat("##value", &spawn.fallRespawnY, 0.1f, -100.0f, 100.0f, "%.2f"); }));
     endInspectorPropertyTable();
 }

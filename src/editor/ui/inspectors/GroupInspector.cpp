@@ -1,9 +1,9 @@
 #include "editor/ui/inspectors/GroupInspector.h"
 
+#include "editor/ui/inspectors/InspectorUtils.h"
 #include "editor/ui/LevelEditorUi.h"
 #include "game/level/LevelDef.h"
 
-#include <glm/common.hpp>
 #include <imgui.h>
 
 void drawGroupInspector(LevelGroupNode& group,
@@ -29,15 +29,9 @@ void drawGroupInspector(LevelGroupNode& group,
         document.markSceneDirty();
         commandStack.pushDocumentStateCommand("Rename Group", itemBefore, document.captureState(), document);
     }
-    itemBefore = document.captureState();
-    trackSceneItem(itemBefore, "Move Group", renderInspectorPropertyRow("Position", [&]() { return editVec3("##value", group.position); }));
-    itemBefore = document.captureState();
-    const bool scaleChanged = renderInspectorPropertyRow("Scale", [&]() { return editVec3("##value", group.scale, 0.02f); });
-    if (scaleChanged) {
-        group.scale = glm::max(group.scale, glm::vec3(0.01f));
-    }
-    trackSceneItem(itemBefore, "Scale Group", scaleChanged);
-    itemBefore = document.captureState();
-    trackSceneItem(itemBefore, "Rotate Group", renderInspectorPropertyRow("Rotation", [&]() { return editVec3("##value", group.rotation, 0.5f); }));
+    drawTransformSectionWithScale(group.position, group.rotation, group.scale,
+                                  "Position", "Rotation", "Scale",
+                                  "Move Group", "Rotate Group", "Scale Group",
+                                  document, commandStack, pendingCommand);
     endInspectorPropertyTable();
 }

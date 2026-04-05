@@ -4,7 +4,6 @@
 #include "editor/ui/LevelEditorUi.h"
 #include "game/level/LevelDef.h"
 
-#include <glm/common.hpp>
 #include <imgui.h>
 
 void drawMeshInspector(LevelMeshPlacement& mesh,
@@ -65,18 +64,12 @@ void drawMeshInspector(LevelMeshPlacement& mesh,
         return false;
     });
 
-    auto itemBefore = document.captureState();
-    trackSceneItem(itemBefore, "Move Mesh", renderInspectorPropertyRow("Position", [&]() { return editVec3("##value", mesh.position); }));
-    itemBefore = document.captureState();
-    const bool scaleChanged = renderInspectorPropertyRow("Scale", [&]() { return editVec3("##value", mesh.scale, 0.02f); });
-    if (scaleChanged) {
-        mesh.scale = glm::max(mesh.scale, glm::vec3(0.01f));
-    }
-    trackSceneItem(itemBefore, "Scale Mesh", scaleChanged);
-    itemBefore = document.captureState();
-    trackSceneItem(itemBefore, "Rotate Mesh", renderInspectorPropertyRow("Rotation", [&]() { return editVec3("##value", mesh.rotation, 0.5f); }));
+    drawTransformSectionWithScale(mesh.position, mesh.rotation, mesh.scale,
+                                  "Position", "Rotation", "Scale",
+                                  "Move Mesh", "Rotate Mesh", "Scale Mesh",
+                                  document, commandStack, pendingCommand);
     bool hasTint = mesh.tint.has_value();
-    itemBefore = document.captureState();
+    auto itemBefore = document.captureState();
     const bool tintToggleChanged = renderInspectorPropertyRow("Use Tint", [&]() { return ImGui::Checkbox("##value", &hasTint); });
     if (tintToggleChanged) {
         mesh.tint = hasTint ? std::optional<glm::vec3>{mesh.tint.value_or(glm::vec3(1.0f))} : std::nullopt;

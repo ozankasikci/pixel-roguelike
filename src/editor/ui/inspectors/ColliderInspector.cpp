@@ -45,12 +45,13 @@ void drawColliderInspector(LevelColliderPlacement& collider,
     }
 
     // Position + Rotation
-    auto itemBefore = document.captureState();
-    trackSceneItem(itemBefore, "Move Collider", renderInspectorPropertyRow("Position", [&]() { return editVec3("##value", collider.position); }));
-    itemBefore = document.captureState();
-    trackSceneItem(itemBefore, "Rotate Collider", renderInspectorPropertyRow("Rotation", [&]() { return editVec3("##value", collider.rotation, 0.5f); }));
+    drawTransformSection(collider.position, collider.rotation,
+                         "Position", "Rotation",
+                         "Move Collider", "Rotate Collider",
+                         document, commandStack, pendingCommand);
 
     // Shape-specific params
+    auto itemBefore = document.captureState();
     if (collider.shape == ColliderShape::Box) {
         itemBefore = document.captureState();
         const bool extentsChanged = renderInspectorPropertyRow("Half Extents", [&]() { return editVec3("##value", collider.halfExtents, 0.02f); });

@@ -1,5 +1,6 @@
 #include "editor/ui/inspectors/ArchetypeInspector.h"
 
+#include "editor/ui/inspectors/InspectorUtils.h"
 #include "editor/ui/LevelEditorUi.h"
 #include "game/level/LevelDef.h"
 
@@ -38,9 +39,9 @@ void drawArchetypeInspector(LevelArchetypePlacement& archetype,
         }
         return false;
     });
+    drawPositionSection(archetype.position, "Position", "Move Archetype",
+                        document, commandStack, pendingCommand);
     auto itemBefore = document.captureState();
-    trackSceneItem(itemBefore, "Move Archetype", renderInspectorPropertyRow("Position", [&]() { return editVec3("##value", archetype.position); }));
-    itemBefore = document.captureState();
     trackSceneItem(itemBefore, "Rotate Archetype", renderInspectorPropertyRow("Yaw", [&]() { return ImGui::DragFloat("##value", &archetype.yawDegrees, 0.5f, -360.0f, 360.0f, "%.1f"); }));
     endInspectorPropertyTable();
 }
