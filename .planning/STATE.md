@@ -280,10 +280,11 @@ None yet.
 | 260405-nb9 | Auto-detect project root from executable path so game works when double-clicked | 2026-04-05 | 2c102cb | [260405-nb9-auto-detect-project-root-from-executable](./quick/260405-nb9-auto-detect-project-root-from-executable/) |
 | 260405-wd7 | Fix crash on missing assets and ensure CI packages all required files | 2026-04-05 | 8d3a4d1 | [260405-wd7-fix-crash-on-missing-assets-and-ensure-c](./quick/260405-wd7-fix-crash-on-missing-assets-and-ensure-c/) |
 | 260405-x13 | Fix asset discovery so game works when distributed outside project tree | 2026-04-05 | 8709a66 | [260405-x13-fix-asset-discovery-so-game-works-when-d](./quick/260405-x13-fix-asset-discovery-so-game-works-when-d/) |
+| 260406-04r | Add Package for Sharing button to editor Build menu | 2026-04-06 | c796970 | [260406-04r-add-build-package-button-to-editor-that-](./quick/260406-04r-add-build-package-button-to-editor-that-/) |
 
 ## Session Continuity
 
-Last activity: 2026-04-05 - Completed quick task 260405-x13: Fix asset discovery so game works when distributed outside project tree
+Last activity: 2026-04-06 - Completed quick task 260406-04r: Add Package for Sharing button to editor Build menu
 Last session: 2026-04-05T03:13:41.712Z
 Stopped at: Completed 18-06-PLAN.md
 Resume file: None
