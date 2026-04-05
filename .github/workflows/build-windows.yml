@@ -37,7 +37,7 @@ jobs:
           -DPython_EXECUTABLE=python
 
       - name: Build
-        run: cmake --build build --config Release --parallel
+        run: cmake --build build --config Release --parallel --target pixel-roguelike level-editor
 
       - name: Run tests
         run: ctest --test-dir build --build-config Release --output-on-failure

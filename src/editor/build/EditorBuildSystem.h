@@ -1,5 +1,12 @@
 #pragma once
 
+#ifdef _WIN32
+#include <process.h>
+using pid_t = int;
+#else
+#include <unistd.h>
+#endif
+
 #include <imgui.h>
 
 #include <atomic>

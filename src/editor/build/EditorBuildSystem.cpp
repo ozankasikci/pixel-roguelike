@@ -1,9 +1,11 @@
 #include "editor/build/EditorBuildSystem.h"
 
+#ifndef _WIN32
 #include <fcntl.h>
 #include <signal.h>
 #include <sys/wait.h>
 #include <unistd.h>
+#endif
 
 #include <algorithm>
 #include <chrono>
@@ -33,6 +35,7 @@ BuildLineKind classifyLine(const std::string& line, float& progressOut) {
     return BuildLineKind::Normal;
 }
 
+#ifndef _WIN32
 // ---------------------------------------------------------------------------
 // Internal reader thread
 // ---------------------------------------------------------------------------
@@ -289,6 +292,33 @@ void launchGame(const EditorBuildConfig& config, const std::string& scenePath) {
     // Parent: do not wait — fire-and-forget
     spdlog::info("EditorBuildSystem: game launched (pid={})", pid);
 }
+
+#else // _WIN32 stubs
+
+void startBuild(EditorBuildState& state, const EditorBuildConfig& config, const std::string& target) {
+    (void)state; (void)config; (void)target;
+    spdlog::warn("EditorBuildSystem: not implemented on Windows");
+}
+
+void startConfigure(EditorBuildState& state, const EditorBuildConfig& config) {
+    (void)state; (void)config;
+    spdlog::warn("EditorBuildSystem: not implemented on Windows");
+}
+
+void cancelBuild(EditorBuildState& state) {
+    (void)state;
+}
+
+void pollBuild(EditorBuildState& state, BuildOutputLog& log) {
+    (void)state; (void)log;
+}
+
+void launchGame(const EditorBuildConfig& config, const std::string& scenePath) {
+    (void)config; (void)scenePath;
+    spdlog::warn("EditorBuildSystem: launchGame not implemented on Windows");
+}
+
+#endif // _WIN32
 
 // ---------------------------------------------------------------------------
 // loadBuildConfig / saveBuildConfig
