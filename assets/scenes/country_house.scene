@@ -17,20 +17,20 @@ mesh country_house_door -2.5 0.0 -4.5 1.0 1.0 1.0 0.0 0.0 0.0 material ch_door t
 mesh country_house_door 2.5 0.0 -4.5 1.0 1.0 1.0 0.0 180.0 0.0 material ch_door tint 1.0 1.0 1.0 node node_door2
 
 # Interior warm lighting — strong, warm white
-light -3.0 6.5 0.0 1.0 0.97 0.9 20.0 8.0 node node_light_int_1
-light 3.0 6.5 0.0 1.0 0.97 0.9 20.0 8.0 node node_light_int_2
-light 0.0 6.5 3.5 1.0 0.97 0.9 20.0 8.0 node node_light_int_3
-light 0.0 6.5 -2.0 1.0 0.97 0.9 20.0 8.0 node node_light_int_4
-light -3.5 4.0 5.5 1.0 0.97 0.9 16.0 6.0 node node_light_int_5
-light 3.5 4.0 5.5 1.0 0.97 0.9 16.0 6.0 node node_light_int_6
+light point -3.0 6.5 0.0 1.0 0.97 0.9 20.0 8.0 node node_light_int_1
+light point 3.0 6.5 0.0 1.0 0.97 0.9 20.0 8.0 node node_light_int_2
+light point 0.0 6.5 3.5 1.0 0.97 0.9 20.0 8.0 node node_light_int_3
+light point 0.0 6.5 -2.0 1.0 0.97 0.9 20.0 8.0 node node_light_int_4
+light point -3.5 4.0 5.5 1.0 0.97 0.9 16.0 6.0 node node_light_int_5
+light point 3.5 4.0 5.5 1.0 0.97 0.9 16.0 6.0 node node_light_int_6
 
 # Exterior fill lights — surround the house from all sides
-light 0.0 6.0 -10.0 1.0 0.98 0.92 30.0 8.0 node node_light_ext_front
-light 0.0 10.0 -8.0 1.0 0.98 0.92 30.0 6.0 node node_light_ext_front_high
-light 12.0 6.0 1.0 1.0 0.98 0.92 30.0 6.0 node node_light_ext_right
-light -12.0 6.0 1.0 1.0 0.98 0.92 30.0 6.0 node node_light_ext_left
-light 0.0 10.0 10.0 1.0 0.98 0.92 30.0 6.0 node node_light_ext_back
-light 0.0 14.0 0.0 1.0 0.99 0.95 40.0 5.0 node node_light_ext_sky
+light point 0.0 6.0 -10.0 1.0 0.98 0.92 30.0 8.0 node node_light_ext_front
+light point 0.0 10.0 -8.0 1.0 0.98 0.92 30.0 6.0 node node_light_ext_front_high
+light point 12.0 6.0 1.0 1.0 0.98 0.92 30.0 6.0 node node_light_ext_right
+light point -12.0 6.0 1.0 1.0 0.98 0.92 30.0 6.0 node node_light_ext_left
+light point 0.0 10.0 10.0 1.0 0.98 0.92 30.0 6.0 node node_light_ext_back
+light point 0.0 14.0 0.0 1.0 0.99 0.95 40.0 5.0 node node_light_ext_sky
 
 # Floor collider — extended to cover around the house
 collider box solid 0.0 -0.05 0.0 12.0 0.05 12.0 node node_col_floor

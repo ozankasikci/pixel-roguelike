@@ -128,16 +128,16 @@ mesh inst_smoke_detector 0.0 3.97 3.0 1.0 1.0 1.0 0.0 0.0 0.0 material stone_def
 mesh inst_chain_padlock 2.5 1.1 5.93 1.0 1.0 1.0 0.0 180.0 0.0 material metal_default tint 0.20 0.16 0.12 node node_chain
 
 # Point lights below ceiling panels - warm white
-light -1.0 3.7 2.0 1.0 0.97 0.88 5.5 4.5 node node_l1
-light  1.0 3.7 2.0 1.0 0.97 0.88 5.5 4.5 node node_l2
-light -1.0 3.7 4.0 1.0 0.97 0.88 5.5 4.5 node node_l3
-light  1.0 3.7 4.0 1.0 0.97 0.88 5.5 4.5 node node_l4
+light point -1.0 3.7 2.0 1.0 0.97 0.88 5.5 4.5 node node_l1
+light point  1.0 3.7 2.0 1.0 0.97 0.88 5.5 4.5 node node_l2
+light point -1.0 3.7 4.0 1.0 0.97 0.88 5.5 4.5 node node_l3
+light point  1.0 3.7 4.0 1.0 0.97 0.88 5.5 4.5 node node_l4
 
 # Warm golden light behind open wooden doorway (spills onto floor)
-light -2.5 1.5 6.5 1.0 0.90 0.65 8.0 5.0 node node_l_door
+light point -2.5 1.5 6.5 1.0 0.90 0.65 8.0 5.0 node node_l_door
 
 # Red LED below smoke detector
-light 0.0 3.85 3.0 1.0 0.05 0.02 0.5 0.3 node node_led_red
+light point 0.0 3.85 3.0 1.0 0.05 0.02 0.5 0.3 node node_led_red
 
 # Colliders
 collider box solid  0.0 -0.05 3.0 4.0 0.05 3.0 node node_col_floor

@@ -71,13 +71,13 @@ mesh ceiling_light_panel -2.5 5.99 0.5 1.0 1.0 1.0 0.0 0.0 0.0 material stone_de
 mesh ceiling_light_panel 2.5 5.99 0.5 1.0 1.0 1.0 0.0 0.0 0.0 material stone_default tint 0.98 0.96 0.9 node n_clp2
 mesh ceiling_light_panel -2.5 5.99 3.5 1.0 1.0 1.0 0.0 0.0 0.0 material stone_default tint 0.98 0.96 0.9 node n_clp3
 mesh ceiling_light_panel 2.5 5.99 3.5 1.0 1.0 1.0 0.0 0.0 0.0 material stone_default tint 0.98 0.96 0.9 node n_clp4
-light -2.5 5.7 0.5 1.0 0.97 0.88 6.0 4.5 node n_l1
-light 2.5 5.7 0.5 1.0 0.97 0.88 6.0 4.5 node n_l2
-light -2.5 5.7 3.5 1.0 0.97 0.88 6.0 4.5 node n_l3
-light 2.5 5.7 3.5 1.0 0.97 0.88 6.0 4.5 node n_l4
-light -5.5 1.5 1.0 1.0 0.9 0.65 8.0 5.0 node n_l_door_a
-light 0.0 2.5 -1.5 0.85 0.8 0.72 5.0 1.0 node n_l_fill
-light 1.0 5.85 1.5 1.0 0.05 0.02 0.5 0.3 node n_l_led
+light point -2.5 5.7 0.5 1.0 0.97 0.88 6.0 4.5 node n_l1
+light point 2.5 5.7 0.5 1.0 0.97 0.88 6.0 4.5 node n_l2
+light point -2.5 5.7 3.5 1.0 0.97 0.88 6.0 4.5 node n_l3
+light point 2.5 5.7 3.5 1.0 0.97 0.88 6.0 4.5 node n_l4
+light point -5.5 1.5 1.0 1.0 0.9 0.65 8.0 5.0 node n_l_door_a
+light point 0.0 2.5 -1.5 0.85 0.8 0.72 5.0 1.0 node n_l_fill
+light point 1.0 5.85 1.5 1.0 0.05 0.02 0.5 0.3 node n_l_led
 collider box solid 0.0 -0.05 2.0 5.0 0.05 4.0 node n_col_floor
 collider box solid 0.0 6.05 2.0 5.0 0.05 4.0 node n_col_ceil
 collider box solid 0.0 3.0 -2.0 5.0 3.0 0.1 node n_col_south
