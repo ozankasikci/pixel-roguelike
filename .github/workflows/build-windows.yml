@@ -6,14 +6,19 @@ on:
 jobs:
   build:
     runs-on: windows-latest
-    env:
-      VCPKG_DEFAULT_TRIPLET: x64-windows-static
 
     steps:
       - uses: actions/checkout@v4
 
+      - name: Cache vcpkg packages
+        uses: actions/cache@v4
+        with:
+          path: C:/vcpkg/installed
+          key: vcpkg-x64-windows-${{ hashFiles('.github/workflows/build-windows.yml') }}
+          restore-keys: vcpkg-x64-windows-
+
       - name: Install dependencies
-        run: vcpkg install glfw3 glm spdlog openal-soft zlib
+        run: vcpkg install glfw3:x64-windows glm:x64-windows spdlog:x64-windows openal-soft:x64-windows zlib:x64-windows
 
       - name: Setup Python for GLAD
         uses: actions/setup-python@v5
@@ -27,7 +32,7 @@ jobs:
         run: >
           cmake -B build -S .
           -DCMAKE_TOOLCHAIN_FILE="$env:VCPKG_INSTALLATION_ROOT/scripts/buildsystems/vcpkg.cmake"
-          -DVCPKG_TARGET_TRIPLET=x64-windows-static
+          -DVCPKG_TARGET_TRIPLET=x64-windows
           -DCMAKE_BUILD_TYPE=Release
           -DPython_EXECUTABLE=python
 

@@ -15,11 +15,14 @@
 #include <GLFW/glfw3.h>
 #include <spdlog/spdlog.h>
 
+#ifndef _WIN32
 #include <csignal>
+#endif
 
 namespace {
-volatile std::sig_atomic_t g_screenshotRequested = 0;
+volatile int g_screenshotRequested = 0;
 
+#ifndef _WIN32
 void signalScreenshotHandler(int) {
     g_screenshotRequested = 1;
 }
@@ -30,6 +33,7 @@ bool installSignalHandler() {
 }
 
 [[maybe_unused]] static bool s_signalInstalled = installSignalHandler();
+#endif
 } // namespace
 
 // constexpr definitions (needed in pre-C++17 out-of-line)
