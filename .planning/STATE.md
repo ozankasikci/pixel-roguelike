@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: Editor UX
-status: Ready to execute
-stopped_at: Completed 18-03-PLAN.md
-last_updated: "2026-04-05T02:36:38.972Z"
+status: Phase complete — ready for verification
+stopped_at: Completed 18-02-PLAN.md
+last_updated: "2026-04-05T02:43:56.575Z"
 last_activity: 2026-04-05
 progress:
   total_phases: 20
-  completed_phases: 15
+  completed_phases: 16
   total_plans: 54
-  completed_plans: 48
+  completed_plans: 49
 ---
 
 # Project State
@@ -80,6 +80,7 @@ Plan: 4 of 4
 | Phase 18-maintainability-refactoring-for-editor-ui-serialization-and-round-trip-fidelity P04 | 3 | 1 tasks | 1 files |
 | Phase 18-maintainability-refactoring-for-editor-ui-serialization-and-round-trip-fidelity P01 | 25 | 2 tasks | 2 files |
 | Phase 18-maintainability-refactoring-for-editor-ui-serialization-and-round-trip-fidelity P03 | 35 | 2 tasks | 25 files |
+| Phase 18-maintainability-refactoring-for-editor-ui-serialization-and-round-trip-fidelity P02 | 15 | 2 tasks | 8 files |
 
 ## Accumulated Context
 
@@ -194,6 +195,8 @@ Recent decisions affecting current work:
 - [Phase 18-maintainability-refactoring-for-editor-ui-serialization-and-round-trip-fidelity]: parseNodeMetadata uses out-parameter references to enable clean 'if (...) { continue; }' caller pattern in all placement parser loops
 - [Phase 18]: Inspector decomposition: per-type inspector free functions in src/editor/ui/inspectors/, each closes the property table before post-table rendering
 - [Phase 18]: AssetInspectorSession extracted to shared header enabling Material/Environment/Prefab inspector file separation
+- [Phase 18]: Unified light format: 'light point/spot/directional' replaces separate light/spot_light/dir_light keywords
+- [Phase 18]: Shadow bool for spot lights remains positional read before collectRemainingTokens to preserve field order
 
 ### Pending Todos
 
@@ -271,6 +274,6 @@ None yet.
 ## Session Continuity
 
 Last activity: 2026-04-05
-Last session: 2026-04-05T02:36:38.965Z
-Stopped at: Completed 18-03-PLAN.md
+Last session: 2026-04-05T02:43:56.568Z
+Stopped at: Completed 18-02-PLAN.md
 Resume file: None
