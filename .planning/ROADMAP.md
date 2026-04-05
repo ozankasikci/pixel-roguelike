@@ -294,7 +294,7 @@ Phases execute in numeric order: 1 → 1.1 → 2 → 2.1 → 3 → 4 → 5 → 6
 | 15. Editor ImGui Themes | v1.2 | 2/2 | Complete | 2026-04-03 |
 | 16. Trigger & Behavior Authoring | v1.2 | 3/3 | Complete | 2026-04-04 |
 | 17. Unified Collider System | v1.2 | 4/4 | Complete | 2026-04-05 |
-| 18. Maintainability Refactoring | — | 5/6 | In Progress|  |
+| 18. Maintainability Refactoring | — | 6/6 | Complete   | 2026-04-05 |
 
 ### Phase 14: improve lighting, reflections, occlusion, and shadow quality
 
@@ -370,7 +370,7 @@ Plans:
   4. EditorInspectorPanel.cpp is a thin dispatcher under 200 lines with 10+ per-type inspector files
   5. EditorSceneDocument.cpp uses std::visit instead of switch-on-kind for payload dispatch
   6. All existing tests pass, all three executables build
-**Plans:** 5/6 plans executed
+**Plans:** 6/6 plans complete
 
 Plans:
 - [x] 18-01-PLAN.md — Parser consolidation: extract parseNodeMetadata/parseShapeTokens helpers, per-action parsers, PlacementBase struct, delete legacy format code
@@ -378,4 +378,4 @@ Plans:
 - [x] 18-03-PLAN.md — Inspector decomposition: 10+ per-type inspector files, InspectorUtils shared module, thin dispatcher
 - [x] 18-04-PLAN.md — Visitor pattern: replace 5 switch-on-kind statements with std::visit in EditorSceneDocument.cpp
 - [x] 18-05-PLAN.md — Gap closure: migrate test fixture light format, extract drawTransformSection shared utility
-- [ ] 18-06-PLAN.md — Gap closure: extract asset inspector helpers from EditorInspectorPanel.cpp
+- [x] 18-06-PLAN.md — Gap closure: extract asset inspector helpers from EditorInspectorPanel.cpp
