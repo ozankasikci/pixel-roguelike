@@ -422,6 +422,7 @@ int main(int argc, char* argv[]) {
     bool savePressed = false;
     bool newScenePopupRequested = false;
     bool saveLayoutPopupRequested = false;
+    bool buildSettingsPopupRequested = false;
     char newSceneNameBuffer[128] = "new_scene";
     char addMeshFilter[128] = {};
     std::string pendingDeleteScenePath;
@@ -439,6 +440,7 @@ int main(int argc, char* argv[]) {
     EditorBuildConfig buildConfig;
     BuildOutputLog buildLog;
     loadBuildConfig(buildConfig, kBuildConfigFile);
+    std::vector<std::string> allBuildableScenes = listBuildableScenes();
     bool buildPressed = false;
     bool buildAndRunPressed = false;
     bool packagePressed = false;
@@ -767,6 +769,11 @@ int main(int argc, char* argv[]) {
                     }
                     ImGui::EndDisabled();
                     ImGui::Separator();
+                    // Build Settings — opens tabbed settings window
+                    if (ImGui::MenuItem("Build Settings...")) {
+                        buildSettingsPopupRequested = true;
+                    }
+                    ImGui::Separator();
                     // Configuration submenu (D-04)
                     if (ImGui::BeginMenu("Configuration")) {
                         const char* configs[] = {"Debug", "Release", "RelWithDebInfo"};
@@ -961,6 +968,100 @@ int main(int argc, char* argv[]) {
                 ImGui::CloseCurrentPopup();
             }
             ImGui::EndPopup();
+        }
+
+        // Build Settings window — tabbed build configuration
+        if (buildSettingsPopupRequested) {
+            ImGui::OpenPopup("Build Settings");
+            buildSettingsPopupRequested = false;
+        }
+        ImGui::SetNextWindowSize(ImVec2(400.0f, 0.0f), ImGuiCond_Appearing);
+        {
+            bool buildSettingsOpen = true;
+            if (ImGui::BeginPopupModal("Build Settings", &buildSettingsOpen, ImGuiWindowFlags_AlwaysAutoResize)) {
+                if (ImGui::BeginTabBar("BuildSettingsTabs")) {
+                    // --- Scenes tab ---
+                    if (ImGui::BeginTabItem("Scenes")) {
+                        ImGui::TextUnformatted("Select scenes to include in builds:");
+                        ImGui::Separator();
+
+                        bool allSelected = buildConfig.buildScenes.empty();
+
+                        // "All Scenes" checkbox at top
+                        bool allCheck = allSelected;
+                        if (ImGui::Checkbox("All Scenes (default)", &allCheck)) {
+                            if (allCheck) {
+                                buildConfig.buildScenes.clear(); // empty = all
+                            } else {
+                                // Switching from all to individual: populate with all scenes
+                                buildConfig.buildScenes = allBuildableScenes;
+                            }
+                            allSelected = buildConfig.buildScenes.empty();
+                        }
+                        ImGui::Separator();
+
+                        // Per-scene checkboxes
+                        for (const auto& scene : allBuildableScenes) {
+                            bool included = allSelected;
+                            if (!allSelected) {
+                                included = std::find(buildConfig.buildScenes.begin(),
+                                                     buildConfig.buildScenes.end(), scene) !=
+                                           buildConfig.buildScenes.end();
+                            }
+                            if (ImGui::Checkbox(scene.c_str(), &included)) {
+                                if (allSelected && !included) {
+                                    // Was "all", user unchecked one: populate all then remove this
+                                    buildConfig.buildScenes = allBuildableScenes;
+                                    auto it = std::find(buildConfig.buildScenes.begin(),
+                                                        buildConfig.buildScenes.end(), scene);
+                                    if (it != buildConfig.buildScenes.end()) {
+                                        buildConfig.buildScenes.erase(it);
+                                    }
+                                } else if (included && !allSelected) {
+                                    // Add scene
+                                    buildConfig.buildScenes.push_back(scene);
+                                    std::sort(buildConfig.buildScenes.begin(),
+                                              buildConfig.buildScenes.end());
+                                    // If all scenes now selected, revert to empty (= all)
+                                    if (buildConfig.buildScenes == allBuildableScenes) {
+                                        buildConfig.buildScenes.clear();
+                                    }
+                                } else if (!included) {
+                                    // Remove scene
+                                    auto it = std::find(buildConfig.buildScenes.begin(),
+                                                        buildConfig.buildScenes.end(), scene);
+                                    if (it != buildConfig.buildScenes.end()) {
+                                        buildConfig.buildScenes.erase(it);
+                                    }
+                                }
+                            }
+                        }
+
+                        ImGui::Separator();
+                        if (ImGui::Button("Select All")) {
+                            buildConfig.buildScenes.clear(); // empty = all
+                        }
+                        ImGui::Separator();
+                        if (buildConfig.buildScenes.empty()) {
+                            ImGui::TextColored(ImVec4(0.6f, 0.8f, 0.6f, 1.0f),
+                                               "All %d scenes selected", (int)allBuildableScenes.size());
+                        } else {
+                            ImGui::Text("%d of %d scenes selected",
+                                        (int)buildConfig.buildScenes.size(), (int)allBuildableScenes.size());
+                        }
+                        ImGui::EndTabItem();
+                    }
+                    // Future tabs go here:
+                    // if (ImGui::BeginTabItem("Graphics")) { ... ImGui::EndTabItem(); }
+                    // if (ImGui::BeginTabItem("Platform")) { ... ImGui::EndTabItem(); }
+                    ImGui::EndTabBar();
+                }
+                ImGui::Separator();
+                if (ImGui::Button("Close", ImVec2(-1, 0))) {
+                    ImGui::CloseCurrentPopup();
+                }
+                ImGui::EndPopup();
+            }
         }
 
         ImGui::SetNextWindowSize(ImVec2(460.0f, 0.0f), ImGuiCond_Appearing);
