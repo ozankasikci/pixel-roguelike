@@ -1,30 +1,16 @@
-name: Build
+name: Build Windows
 
 on:
   workflow_dispatch:
 
 jobs:
   build:
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - os: windows-latest
-            preset: ci-windows
-            vcpkg: true
-          - os: macos-latest
-            preset: ci-macos
-            vcpkg: false
-
-    runs-on: ${{ matrix.os }}
-    name: ${{ matrix.preset }}
+    runs-on: windows-latest
 
     steps:
       - uses: actions/checkout@v4
 
-      # --- vcpkg (Windows only) ---
       - name: Cache vcpkg packages
-        if: matrix.vcpkg
         uses: actions/cache@v4
         with:
           path: C:/vcpkg/installed
@@ -32,15 +18,8 @@ jobs:
           restore-keys: vcpkg-x64-windows-
 
       - name: Install vcpkg dependencies
-        if: matrix.vcpkg
         run: vcpkg install glfw3:x64-windows glm:x64-windows spdlog:x64-windows openal-soft:x64-windows zlib:x64-windows
 
-      # --- Homebrew (macOS only) ---
-      - name: Install Homebrew dependencies
-        if: runner.os == 'macOS'
-        run: brew install glfw glm spdlog openal-soft
-
-      # --- Python for GLAD (both platforms) ---
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
@@ -49,20 +28,16 @@ jobs:
       - name: Install jinja2 for GLAD
         run: pip install jinja2
 
-      # --- Build ---
       - name: Configure
-        run: cmake --preset ${{ matrix.preset }} -DPython_EXECUTABLE=python
+        run: cmake --preset ci-windows -DPython_EXECUTABLE=python
 
       - name: Build
-        run: cmake --build --preset ${{ matrix.preset }}
+        run: cmake --build --preset ci-windows
 
       - name: Run tests
-        if: matrix.os == 'windows-latest'
         run: ctest --test-dir build --build-config Release --output-on-failure
 
-      # --- Artifacts (Windows only) ---
       - name: Upload binaries
-        if: matrix.os == 'windows-latest'
         uses: actions/upload-artifact@v4
         with:
           name: windows-binaries
