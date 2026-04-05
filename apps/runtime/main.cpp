@@ -24,7 +24,9 @@
 #include <spdlog/spdlog.h>
 #include <algorithm>
 #include <filesystem>
+#include <iostream>
 #include <memory>
+#include <stdexcept>
 #include <string>
 #include <vector>
 
@@ -61,10 +63,25 @@ int main(int argc, char* argv[]) {
         }
     }
 
+    if (!hasValidProjectRoot()) {
+        const char* msg =
+            "Could not find assets/ directory. Make sure the game executable is in the "
+            "same directory as the assets/ folder, or run from the project root.";
+        spdlog::error(msg);
+        std::cerr << "ERROR: " << msg << std::endl;
+        return 1;
+    }
+
     Application app(1280, 720, "Pixel Roguelike");
     app.emplaceService<RunSession>();
     auto& content = app.emplaceService<ContentRegistry>();
-    content.loadDefaults();
+    try {
+        content.loadDefaults();
+    } catch (const std::exception& e) {
+        spdlog::error("Failed to load game content: {}", e.what());
+        std::cerr << "ERROR: Failed to load game content: " << e.what() << std::endl;
+        return 1;
+    }
     app.registry().ctx().insert_or_assign<ContentRegistry*>(&content);
     app.registry().ctx().insert_or_assign<RunSession*>(&app.getService<RunSession>());
 
