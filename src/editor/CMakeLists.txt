@@ -27,11 +27,14 @@ add_library(editor STATIC
     ui/EditorPanelUtils.cpp
     ui/inspectors/ArchetypeInspector.cpp
     ui/inspectors/ColliderInspector.cpp
+    ui/inspectors/EnvironmentInspector.cpp
     ui/inspectors/GroupInspector.cpp
     ui/inspectors/InspectorUtils.cpp
     ui/inspectors/LightInspector.cpp
+    ui/inspectors/MaterialInspector.cpp
     ui/inspectors/MeshInspector.cpp
     ui/inspectors/PlayerSpawnInspector.cpp
+    ui/inspectors/PrefabInspector.cpp
     ui/inspectors/ReflectionProbeInspector.cpp
     viewport/EditorViewportController.cpp
     viewport/EditorViewportInteraction.cpp
