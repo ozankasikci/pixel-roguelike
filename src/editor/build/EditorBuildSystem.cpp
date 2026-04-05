@@ -241,22 +241,6 @@ void pollBuild(EditorBuildState& state, BuildOutputLog& log) {
 }
 
 // ---------------------------------------------------------------------------
-// needsConfigure
-// ---------------------------------------------------------------------------
-
-bool needsConfigure(const EditorBuildConfig& config) {
-    return !std::filesystem::exists(config.buildDir + "/CMakeCache.txt");
-}
-
-// ---------------------------------------------------------------------------
-// gameBinaryPath
-// ---------------------------------------------------------------------------
-
-std::string gameBinaryPath(const EditorBuildConfig& config) {
-    return config.buildDir + "/apps/runtime/pixel-roguelike";
-}
-
-// ---------------------------------------------------------------------------
 // launchGame
 // ---------------------------------------------------------------------------
 
@@ -319,6 +303,22 @@ void launchGame(const EditorBuildConfig& config, const std::string& scenePath) {
 }
 
 #endif // _WIN32
+
+// ---------------------------------------------------------------------------
+// needsConfigure
+// ---------------------------------------------------------------------------
+
+bool needsConfigure(const EditorBuildConfig& config) {
+    return !std::filesystem::exists(config.buildDir + "/CMakeCache.txt");
+}
+
+// ---------------------------------------------------------------------------
+// gameBinaryPath
+// ---------------------------------------------------------------------------
+
+std::string gameBinaryPath(const EditorBuildConfig& config) {
+    return config.buildDir + "/apps/runtime/pixel-roguelike";
+}
 
 // ---------------------------------------------------------------------------
 // loadBuildConfig / saveBuildConfig
