@@ -3,9 +3,9 @@ gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: Editor UX
 status: Milestone complete
-stopped_at: Completed 18-06-PLAN.md
-last_updated: "2026-04-05T03:18:31.361Z"
-last_activity: 2026-04-05
+stopped_at: Completed quick-260406-0u4-PLAN.md
+last_updated: "2026-04-05T22:07:57.476Z"
+last_activity: "2026-04-05 - Completed quick task 260405-isu: Replace geometry shader CSM with multi-pass"
 progress:
   total_phases: 20
   completed_phases: 16
@@ -201,6 +201,7 @@ Recent decisions affecting current work:
 - [Phase 18]: Shadow bool for spot lights remains positional read before collectRemainingTokens to preserve field order
 - [Phase 18]: drawPositionSection added to InspectorUtils for inspectors that only edit position (Light, Archetype, ReflectionProbe, PlayerSpawn)
 - [Phase 18]: EditorInspectorPanel.cpp reduced from 422 to 81 lines: extracted AssetInspectorHelpers, AssetInspectorSession, and SceneSelectionInspector into dedicated files
+- [Phase quick]: Built-in procedural meshes excluded from unresolved mesh warnings in asset packaging
 
 ### Pending Todos
 
@@ -281,6 +282,6 @@ None yet.
 ## Session Continuity
 
 Last activity: 2026-04-05 - Completed quick task 260405-isu: Replace geometry shader CSM with multi-pass
-Last session: 2026-04-05T03:13:41.712Z
-Stopped at: Completed 18-06-PLAN.md
+Last session: 2026-04-05T22:07:53.027Z
+Stopped at: Completed quick-260406-0u4-PLAN.md
 Resume file: None
