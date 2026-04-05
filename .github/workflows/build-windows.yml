@@ -1,48 +1,68 @@
-name: Build Windows
+name: Build
 
 on:
   workflow_dispatch:
 
 jobs:
   build:
-    runs-on: windows-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            preset: ci-windows
+            vcpkg: true
+          - os: macos-latest
+            preset: ci-macos
+            vcpkg: false
+
+    runs-on: ${{ matrix.os }}
+    name: ${{ matrix.preset }}
 
     steps:
       - uses: actions/checkout@v4
 
+      # --- vcpkg (Windows only) ---
       - name: Cache vcpkg packages
+        if: matrix.vcpkg
         uses: actions/cache@v4
         with:
           path: C:/vcpkg/installed
-          key: vcpkg-x64-windows-${{ hashFiles('.github/workflows/build-windows.yml') }}
+          key: vcpkg-x64-windows-${{ hashFiles('CMakePresets.json') }}
           restore-keys: vcpkg-x64-windows-
 
-      - name: Install dependencies
+      - name: Install vcpkg dependencies
+        if: matrix.vcpkg
         run: vcpkg install glfw3:x64-windows glm:x64-windows spdlog:x64-windows openal-soft:x64-windows zlib:x64-windows
 
-      - name: Setup Python for GLAD
+      # --- Homebrew (macOS only) ---
+      - name: Install Homebrew dependencies
+        if: runner.os == 'macOS'
+        run: brew install glfw glm spdlog openal-soft
+
+      # --- Python for GLAD (both platforms) ---
+      - name: Setup Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.12'
 
-      - name: Install GLAD jinja2 dependency
+      - name: Install jinja2 for GLAD
         run: pip install jinja2
 
-      - name: Configure CMake
-        run: >
-          cmake -B build -S .
-          -DCMAKE_TOOLCHAIN_FILE="$env:VCPKG_INSTALLATION_ROOT/scripts/buildsystems/vcpkg.cmake"
-          -DVCPKG_TARGET_TRIPLET=x64-windows
-          -DCMAKE_BUILD_TYPE=Release
-          -DPython_EXECUTABLE=python
+      # --- Build ---
+      - name: Configure
+        run: cmake --preset ${{ matrix.preset }} -DPython_EXECUTABLE=python
 
       - name: Build
-        run: cmake --build build --config Release --parallel --target pixel-roguelike level-editor
+        run: cmake --build --preset ${{ matrix.preset }}
 
       - name: Run tests
+        if: matrix.os == 'windows-latest'
         run: ctest --test-dir build --build-config Release --output-on-failure
 
+      # --- Artifacts (Windows only) ---
       - name: Upload binaries
+        if: matrix.os == 'windows-latest'
         uses: actions/upload-artifact@v4
         with:
           name: windows-binaries

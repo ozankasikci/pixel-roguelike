@@ -1,13 +1,18 @@
 cmake_minimum_required(VERSION 3.28)
+cmake_policy(SET CMP0091 NEW)
 project(pixel-roguelike LANGUAGES C CXX)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-# Use dynamic CRT on MSVC (/MD) for all targets including FetchContent deps
+# Use dynamic CRT on MSVC (/MD) for all targets including FetchContent deps.
+# CMP0091 NEW is required for CMAKE_MSVC_RUNTIME_LIBRARY to propagate to
+# FetchContent subprojects (Jolt, Assimp, etc).
 if(MSVC)
     set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>DLL")
 endif()
+
+option(BUILD_MODEL_VIEWER "Build the procedural-model-viewer target" OFF)
 
 include(FetchContent)
 include(${CMAKE_SOURCE_DIR}/cmake/DesktopApp.cmake)
@@ -140,7 +145,9 @@ add_subdirectory(src/engine)
 add_subdirectory(src/game)
 add_subdirectory(src/editor)
 add_subdirectory(apps/runtime)
-add_subdirectory(apps/model_viewer)
+if(BUILD_MODEL_VIEWER)
+    add_subdirectory(apps/model_viewer)
+endif()
 add_subdirectory(apps/level_editor)
 add_subdirectory(tests)
 add_subdirectory(tools)
