@@ -253,6 +253,6 @@ void trackLastItemCommand(const EditorSceneDocumentState& beforeState,
                           EditorPendingCommand& pending,
                           EditorCommandStack& commandStack,
                           EditorSceneDocument& document);
-bool editVec3(const char* label, glm::vec3& value, float speed = 0.1f);
+bool editVec3(const char* label, glm::vec3& value, float speed = 0.01f);
 bool editColor(const char* label, glm::vec3& value);
 bool editString(const char* label, std::string& value, const char* hint = nullptr);
