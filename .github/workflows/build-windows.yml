@@ -12,11 +12,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Setup vcpkg
-        uses: lukka/run-vcpkg@v11
-        with:
-          vcpkgGitCommitId: '89dc8be5a32e5cec20f460e0e7a16950f0053ba0'
-
       - name: Install dependencies
         run: vcpkg install glfw3 glm spdlog openal-soft zlib
 
@@ -31,7 +26,7 @@ jobs:
       - name: Configure CMake
         run: >
           cmake -B build -S .
-          -DCMAKE_TOOLCHAIN_FILE=${{ github.workspace }}/vcpkg/scripts/buildsystems/vcpkg.cmake
+          -DCMAKE_TOOLCHAIN_FILE="$env:VCPKG_INSTALLATION_ROOT/scripts/buildsystems/vcpkg.cmake"
           -DVCPKG_TARGET_TRIPLET=x64-windows-static
           -DCMAKE_BUILD_TYPE=Release
           -DPython_EXECUTABLE=python
