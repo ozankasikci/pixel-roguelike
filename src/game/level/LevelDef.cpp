@@ -821,62 +821,6 @@ LevelDef loadLevelDef(const std::string& path) {
             continue;
         }
 
-        if (kind == "collider_box") {
-            LevelColliderPlacement placement;
-            placement.shape = ColliderShape::Box;
-            placement.mode = ColliderMode::Solid;
-            if (!(stream >> placement.position.x >> placement.position.y >> placement.position.z
-                         >> placement.halfExtents.x >> placement.halfExtents.y >> placement.halfExtents.z)) {
-                throwParseError(path, lineNumber, "invalid collider_box record");
-            }
-            const auto tokens = collectRemainingTokens(stream);
-            for (std::size_t index = 0; index < tokens.size();) {
-                if (tokens[index] == "rotation") {
-                    if (!tryParseVec3Tokens(tokens, index + 1, placement.rotation)) {
-                        throwParseError(path, lineNumber, "invalid collider_box rotation");
-                    }
-                    index += 4;
-                    continue;
-                }
-                if (parseNodeMetadata(path, lineNumber, tokens, index,
-                                      placement.nodeId, placement.parentNodeId)) {
-                    continue;
-                }
-                throwParseError(path, lineNumber, "invalid collider_box metadata");
-            }
-            currentKind = CurrentEntityKind::None;
-            data.colliders.push_back(placement);
-            continue;
-        }
-
-        if (kind == "collider_cylinder") {
-            LevelColliderPlacement placement;
-            placement.shape = ColliderShape::Cylinder;
-            placement.mode = ColliderMode::Solid;
-            if (!(stream >> placement.position.x >> placement.position.y >> placement.position.z
-                         >> placement.radius >> placement.halfHeight)) {
-                throwParseError(path, lineNumber, "invalid collider_cylinder record");
-            }
-            const auto tokens = collectRemainingTokens(stream);
-            for (std::size_t index = 0; index < tokens.size();) {
-                if (tokens[index] == "rotation") {
-                    if (!tryParseVec3Tokens(tokens, index + 1, placement.rotation)) {
-                        throwParseError(path, lineNumber, "invalid collider_cylinder rotation");
-                    }
-                    index += 4;
-                    continue;
-                }
-                if (parseNodeMetadata(path, lineNumber, tokens, index,
-                                      placement.nodeId, placement.parentNodeId)) {
-                    continue;
-                }
-                throwParseError(path, lineNumber, "invalid collider_cylinder metadata");
-            }
-            currentKind = CurrentEntityKind::None;
-            data.colliders.push_back(placement);
-            continue;
-        }
-
         if (kind == "collider") {
             // New unified format: collider <shape> <mode> <px> <py> <pz> <shape_params...> [options]
             LevelColliderPlacement placement;
@@ -1030,62 +974,6 @@ LevelDef loadLevelDef(const std::string& path) {
             }
             currentKind = CurrentEntityKind::None;
             data.groups.push_back(std::move(placement));
-            continue;
-        }
-
-        if (kind == "trigger_box") {
-            // Legacy format — read as unified collider with Trigger mode
-            LevelColliderPlacement placement;
-            placement.shape = ColliderShape::Box;
-            placement.mode = ColliderMode::Trigger;
-            if (!(stream >> placement.position.x >> placement.position.y >> placement.position.z
-                         >> placement.halfExtents.x >> placement.halfExtents.y >> placement.halfExtents.z)) {
-                throwParseError(path, lineNumber, "invalid trigger_box record");
-            }
-            const auto tokens = collectRemainingTokens(stream);
-            for (std::size_t index = 0; index < tokens.size();) {
-                if (parseNodeMetadata(path, lineNumber, tokens, index,
-                                      placement.nodeId, placement.parentNodeId)) {
-                    continue;
-                }
-                if (tokens[index] == "fire_once") {
-                    placement.fireOnce = true;
-                    index += 1;
-                    continue;
-                }
-                throwParseError(path, lineNumber, "invalid trigger_box metadata");
-            }
-            currentKind = CurrentEntityKind::Collider;
-            currentIndex = data.colliders.size();
-            data.colliders.push_back(std::move(placement));
-            continue;
-        }
-
-        if (kind == "trigger_sphere") {
-            // Legacy format — read as unified collider with Trigger mode
-            LevelColliderPlacement placement;
-            placement.shape = ColliderShape::Sphere;
-            placement.mode = ColliderMode::Trigger;
-            if (!(stream >> placement.position.x >> placement.position.y >> placement.position.z
-                         >> placement.radius)) {
-                throwParseError(path, lineNumber, "invalid trigger_sphere record");
-            }
-            const auto tokens = collectRemainingTokens(stream);
-            for (std::size_t index = 0; index < tokens.size();) {
-                if (parseNodeMetadata(path, lineNumber, tokens, index,
-                                      placement.nodeId, placement.parentNodeId)) {
-                    continue;
-                }
-                if (tokens[index] == "fire_once") {
-                    placement.fireOnce = true;
-                    index += 1;
-                    continue;
-                }
-                throwParseError(path, lineNumber, "invalid trigger_sphere metadata");
-            }
-            currentKind = CurrentEntityKind::Collider;
-            currentIndex = data.colliders.size();
-            data.colliders.push_back(std::move(placement));
             continue;
         }
 
