@@ -7,7 +7,8 @@ Build a first-person 3D psychological horror game with a custom C++ engine, star
 ## Milestones
 
 - v1.0 — Phases 1-8 (shipped 2026-04-01)
-- v1.1 Editor UX — Phases 9-11 (in progress)
+- v1.1 Editor UX — Phases 9-11 (shipped 2026-04-01)
+- v1.2 Engine & Editor Polish — Phases 12-17 (shipped 2026-04-05)
 
 ## Phases
 
@@ -130,7 +131,7 @@ Plans:
 - [x] 04-02-PLAN.md — Mip-chain bloom pipeline (13-tap downsample, tent upsample, replace old bloomGlow)
 - [x] 04-03-PLAN.md — Screen-space ambient occlusion (32-sample hemisphere SSAO with blur)
 - [x] 04-04-PLAN.md — Cascaded shadow maps for directional sun light (3 cascades, geometry shader)
-- [ ] 04-05-PLAN.md — Area lights (LTC), tube lights (closest-point), and emissive material support
+- [x] 04-05-PLAN.md — Area lights (LTC), tube lights (closest-point), and emissive material support
 
 ### Phase 5: Unify editor/runtime/build rendering parity
 
@@ -260,17 +261,17 @@ Plans:
   5. DoorSystem is replaced by DoorAnimationSystem (animation only, no activation logic)
   6. Institutional room doors are defined in the .scene file with interactable sub-lines (not scripted geometry)
   7. Editor renders trigger volumes as semi-transparent wireframes for level design positioning
-**Plans:** 2/3 plans executed
+**Plans:** 3/3 plans complete
 
 Plans:
 - [x] 13-01-PLAN.md — Behavior type definitions (ActionTypes, BehaviorComponent, TriggerComponent, NodeIndex) and scene parser extension with indented sub-line support
 - [x] 13-02-PLAN.md — BehaviorSystem dispatcher, TriggerSystem overlap detection, DoorAnimationSystem refactor, runtime wiring
-- [ ] 13-03-PLAN.md — Scene file migration, scripted geometry cleanup, editor trigger visualization, end-to-end verification
+- [x] 13-03-PLAN.md — Scene file migration, scripted geometry cleanup, editor trigger visualization, end-to-end verification
 
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order: 1 → 1.1 → 2 → 2.1 → 3 → 4 → 5 → 6 → 7 → 8 → 9 → 10 → 11 → 12 → 13
+Phases execute in numeric order: 1 → 1.1 → 2 → 2.1 → 3 → 4 → 5 → 6 → 7 → 8 → 9 → 10 → 11 → 12 → 13 → 14 → 15 → 16 → 17
 
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
@@ -279,7 +280,7 @@ Phases execute in numeric order: 1 → 1.1 → 2 → 2.1 → 3 → 4 → 5 → 6
 | 2. Player, Environment, and Lighting | v1.0 | TBD | Not started | - |
 | 2.1. Equipment Inventory | v1.0 | 2/2 | Complete | 2026-03-25 |
 | 3. Build Menu in Editor | v1.0 | 2/2 | Complete | 2026-03-26 |
-| 4. Improve Lighting Quality | v1.0 | 4/5 | In progress | - |
+| 4. Improve Lighting Quality | v1.0 | 5/5 | Complete | 2026-03-27 |
 | 5. Unify Rendering Parity | v1.0 | 3/3 | Complete | 2026-03-28 |
 | 6. Data-driven Scene Management | v1.0 | 3/3 | Complete | 2026-03-29 |
 | 7. Data-driven Material System | v1.0 | 4/4 | Complete | 2026-03-30 |
@@ -288,7 +289,11 @@ Phases execute in numeric order: 1 → 1.1 → 2 → 2.1 → 3 → 4 → 5 → 6
 | 10. Global Keyboard Shortcuts and Hover Highlight | v1.1 | 2/2 | Complete    | 2026-04-01 |
 | 11. Add Mesh Discoverability | v1.1 | 1/1 | Complete    | 2026-04-01 |
 | 12. Engine Quality | — | 4/4 | Complete    | 2026-04-01 |
-| 13. Data-driven Behavior System | — | 1/3 | In Progress|  |
+| 13. Data-driven Behavior System | v1.2 | 3/3 | Complete | 2026-04-02 |
+| 14. Lighting, Reflections, Shadows | v1.2 | 3/3 | Complete | 2026-04-03 |
+| 15. Editor ImGui Themes | v1.2 | 2/2 | Complete | 2026-04-03 |
+| 16. Trigger & Behavior Authoring | v1.2 | 3/3 | Complete | 2026-04-04 |
+| 17. Unified Collider System | v1.2 | 4/4 | Complete | 2026-04-05 |
 
 ### Phase 14: improve lighting, reflections, occlusion, and shadow quality
 
@@ -301,35 +306,35 @@ Phases execute in numeric order: 1 → 1.1 → 2 → 2.1 → 3 → 4 → 5 → 6
   3. Ambient occlusion remains subtle, tunable, and cheaper to run than the current fixed full-resolution path
   4. Directional shadows are visibly more stable and tunable in large fullscreen views
   5. Fullscreen editor play preview exposes render scale / quality controls and no longer forces a single expensive full-resolution rendering path
-**Plans:** 3 plans
+**Plans:** 3/3 plans complete
 
 Plans:
-- [ ] 14-01-PLAN.md — Add global specular IBL from the existing sky cubemap path
-- [ ] 14-02-PLAN.md — Add local box-projected reflection probes and scene/editor authoring support
-- [ ] 14-03-PLAN.md — Improve SSAO/shadow quality and add preview quality/render-scale controls
+- [x] 14-01-PLAN.md — Add global specular IBL from the existing sky cubemap path
+- [x] 14-02-PLAN.md — Add local box-projected reflection probes and scene/editor authoring support
+- [x] 14-03-PLAN.md — Improve SSAO/shadow quality and add preview quality/render-scale controls
 
 ### Phase 15: prototype editor ImGui themes and choose a final skin direction
 
 **Goal:** The level editor supports three live-switchable Dear ImGui theme presets, persists the chosen interface font/theme locally, and lands on a warm polished default skin direction that matches the project's muted institutional art style
 **Requirements**: None (editor chrome/polish phase; not mapped to `REQUIREMENTS.md` IDs)
 **Depends on:** Phase 14
-**Plans:** 1/2 plans executed
+**Plans:** 2/2 plans complete
 
 Plans:
 - [x] 15-01-PLAN.md — Add ImGui theme preset infrastructure and a live View -> Interface Theme selector
-- [ ] 15-02-PLAN.md — Persist editor font/theme preferences locally and verify the final default skin in-editor
+- [x] 15-02-PLAN.md — Persist editor font/theme preferences locally and verify the final default skin in-editor
 
 ### Phase 16: Editor trigger and behavior authoring with save-load fidelity
 
 **Goal:** Make triggers first-class editor objects and add UI for authoring behaviors and interactables on scene entities, with full round-trip save-load fidelity through toLevelDef() and loadFromSceneFile()
 **Requirements**: None (editor tooling phase; not mapped to REQUIREMENTS.md IDs)
 **Depends on:** Phase 15
-**Plans:** 2/3 plans executed
+**Plans:** 3/3 plans complete
 
 Plans:
 - [x] 16-01-PLAN.md — Promote triggers to first-class EditorSceneObject entries, remove readOnlyTriggers_, update all switch sites, outliner context menu, round-trip test
 - [x] 16-02-PLAN.md — Inspector UI for trigger properties, behavior editing sections with categorized action dropdown, interactable editing
-- [ ] 16-03-PLAN.md — Trigger resize gizmo handles, interaction distance ring, showTriggers toggle, visual verification
+- [x] 16-03-PLAN.md — Trigger resize gizmo handles, interaction distance ring, showTriggers toggle, visual verification
 
 ### Phase 17: Unified collider system with trigger capabilities and scripting support
 
