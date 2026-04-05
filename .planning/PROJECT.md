@@ -92,9 +92,9 @@ This document evolves at phase transitions and milestone boundaries.
 
 ## Current State
 
-Phase 12 complete — engine quality improvements: AABB frustum culling in SceneRenderPipeline, named TextureUnits enum replacing magic numbers, file-based mesh auto-discovery in all loading paths, EventBus RAII subscription tokens, DebugParams decomposition into CameraDebugInfo + RuntimeLightingOverride, LevelLoader unified API, GenericFileScene scripted geometry extraction.
+Phase 18 complete — maintainability refactoring: LevelDef.cpp parser consolidated (parseNodeMetadata helper, 9 per-action parsers, legacy format deletion), light keywords unified to single `light point/spot/directional` format across all scene files, EditorInspectorPanel.cpp decomposed from 1,516 to 81 lines (11 per-type inspectors + shared utilities), EditorSceneDocument.cpp switch statements replaced with std::visit for compile-time exhaustiveness.
 
-v1.1 Editor UX milestone complete — all planned editor UX improvements shipped (selection overlay depth fix, global keyboard shortcuts, hover highlight, mesh discoverability). Phase 12 added engine quality polish.
+v1.1 Editor UX milestone — Phase 18 is the last phase. All planned editor UX improvements and maintainability refactoring shipped.
 
 ---
-*Last updated: 2026-04-01 after Phase 12 completion*
+*Last updated: 2026-04-05 after Phase 18 completion*
