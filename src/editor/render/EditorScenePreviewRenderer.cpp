@@ -157,6 +157,17 @@ void appendHelperObjects(std::vector<RenderObject>& objects,
                     true,
                     selected ? 3.0f : 2.0f
                 });
+            } else if (collider.shape == ColliderShape::Sphere && cube != nullptr) {
+                objects.push_back(RenderObject{
+                    cube,
+                    makeModelMatrix(collider.position, glm::vec3(collider.radius * 2.0f), collider.rotation),
+                    tint,
+                    materials.resolve("metal_default"),
+                    true,
+                    true,
+                    true,
+                    selected ? 3.0f : 2.0f
+                });
             } else if ((collider.shape == ColliderShape::Cylinder || collider.shape == ColliderShape::Capsule) && cylinder != nullptr) {
                 objects.push_back(RenderObject{
                     cylinder,

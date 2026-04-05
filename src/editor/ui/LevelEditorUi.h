@@ -102,7 +102,7 @@ struct EditorUiState {
     bool showViewport = true;
     bool showBuildOutput = false;
     bool viewportFullscreen = false;
-    bool showColliders = false;
+    bool showColliders = true;
     bool showLightHelpers = false;
     bool showSpawnMarker = false;
     bool showTriggers = true;

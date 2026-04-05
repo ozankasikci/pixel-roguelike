@@ -507,41 +507,7 @@ std::vector<std::uint64_t> renderOutliner(EditorSceneDocument& document,
                 if (ImGui::MenuItem("Sphere")) { addColliderShape(ColliderShape::Sphere, "Add Sphere Collider"); }
                 if (ImGui::MenuItem("Cylinder")) { addColliderShape(ColliderShape::Cylinder, "Add Cylinder Collider"); }
                 if (ImGui::MenuItem("Capsule")) { addColliderShape(ColliderShape::Capsule, "Add Capsule Collider"); }
-                ImGui::Separator();
-                if (ImGui::MenuItem("Box Trigger Zone")) {
-                    const EditorSceneDocumentState beforeState = document.captureState();
-                    LevelColliderPlacement trigger;
-                    trigger.shape = ColliderShape::Box;
-                    trigger.mode = ColliderMode::Trigger;
-                    trigger.halfExtents = glm::vec3(1.0f, 1.0f, 1.0f);
-                    const EditorSceneObject* target = document.findObject(objectId);
-                    if (target != nullptr) {
-                        trigger.position = editorSceneObjectAnchor(*target);
-                        std::visit([&](const auto& payload) { trigger.parentNodeId = payload.nodeId; }, target->payload);
-                    }
-                    const std::uint64_t triggerId = document.addCollider(trigger);
-                    commandStack.pushDocumentStateCommand("Add Trigger Zone", beforeState, document.captureState(), document);
-                    selectedIds = {triggerId};
-                    ui.inspectorContext = EditorInspectorContext::SceneSelection;
-                }
                 ImGui::EndMenu();
-            }
-            // Keep legacy "Add Trigger Zone" at top level for quick access
-            if (ImGui::MenuItem("Add Trigger Zone")) {
-                const EditorSceneDocumentState beforeState = document.captureState();
-                LevelColliderPlacement trigger;
-                trigger.shape = ColliderShape::Box;
-                trigger.mode = ColliderMode::Trigger;
-                trigger.halfExtents = glm::vec3(1.0f, 1.0f, 1.0f);
-                const EditorSceneObject* target = document.findObject(objectId);
-                if (target != nullptr) {
-                    trigger.position = editorSceneObjectAnchor(*target);
-                    std::visit([&](const auto& payload) { trigger.parentNodeId = payload.nodeId; }, target->payload);
-                }
-                const std::uint64_t triggerId = document.addCollider(trigger);
-                commandStack.pushDocumentStateCommand("Add Trigger Zone", beforeState, document.captureState(), document);
-                selectedIds = {triggerId};
-                ui.inspectorContext = EditorInspectorContext::SceneSelection;
             }
             ImGui::EndPopup();
         }

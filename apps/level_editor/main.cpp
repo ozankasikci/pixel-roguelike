@@ -410,6 +410,7 @@ int main(int argc, char* argv[]) {
     renderStartupProgress(window, imgui, 1.0f, "Ready", "Opening editor...");
 
     bool previewDirty = true;
+    std::size_t previewObjectCount = document.objects().size();
     int startupViewportHandoffFramesRemaining = 3;
     bool savePressed = false;
     bool newScenePopupRequested = false;
@@ -1444,19 +1445,24 @@ int main(int argc, char* argv[]) {
                 previewWorld.rebuild(document, content);
                 previewDirty = false;
                 previewSceneRevision = document.sceneRevision();
+                previewObjectCount = document.objects().size();
                 runtimePreviewDirtyState = RuntimePreviewDirtyState::FullWorldRebuild;
                 lastRuntimePreviewStructuralChangeTime = glfwGetTime();
                 runtimePreviewAutoRebuildPending = true;
             } else if (previewSceneRevision != document.sceneRevision()) {
-                previewWorld.syncTransforms(document);
-                previewWorld.syncMaterials(document, content);
-                previewWorld.syncLights(document);
-                previewSceneRevision = document.sceneRevision();
-                runtimePreviewDirtyState = mergeRuntimePreviewDirtyState(runtimePreviewDirtyState,
-                                                                         RuntimePreviewDirtyState::FullWorldRebuild);
-                // Ordinary scene edits should rebuild before the next play enter,
-                // but they should not stall the editor with an eager runtime rebuild.
-                runtimePreviewAutoRebuildPending = false;
+                if (document.objects().size() != previewObjectCount) {
+                    previewDirty = true;
+                } else {
+                    previewWorld.syncTransforms(document);
+                    previewWorld.syncMaterials(document, content);
+                    previewWorld.syncLights(document);
+                    previewSceneRevision = document.sceneRevision();
+                    runtimePreviewDirtyState = mergeRuntimePreviewDirtyState(runtimePreviewDirtyState,
+                                                                             RuntimePreviewDirtyState::FullWorldRebuild);
+                    // Ordinary scene edits should rebuild before the next play enter,
+                    // but they should not stall the editor with an eager runtime rebuild.
+                    runtimePreviewAutoRebuildPending = false;
+                }
             }
             if (previewEnvironmentRevision != document.environmentRevision()) {
                 previewEnvironmentRevision = document.environmentRevision();
