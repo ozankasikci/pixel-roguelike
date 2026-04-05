@@ -227,6 +227,9 @@ void SceneRenderPipeline::renderShadowPass(const std::vector<RenderObject>& obje
             cascadeFrustums[i] = extractFrustumPlanes(csmMatrices[i]);
         }
 
+        glEnable(GL_POLYGON_OFFSET_FILL);
+        glPolygonOffset(1.1f, 4.0f);
+
         for (const auto& object : objects) {
             if (object.mesh) {
                 bool inAnyCascade = false;
@@ -243,11 +246,10 @@ void SceneRenderPipeline::renderShadowPass(const std::vector<RenderObject>& obje
                 }
             }
             csmShader_->setMat4("uModel", object.modelMatrix);
-            csmShader_->setFloat("uShadowNormalOffset", 0.03f);
-            object.mesh->draw();
-            csmShader_->setFloat("uShadowNormalOffset", -0.03f);
             object.mesh->draw();
         }
+
+        glDisable(GL_POLYGON_OFFSET_FILL);
 
         csmShadowMap_.unbind();
     }
