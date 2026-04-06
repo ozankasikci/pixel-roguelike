@@ -59,34 +59,26 @@ entt::entity spawnDoorLeaf(LevelBuilder& builder,
 
 } // namespace
 
-glm::mat4 makePivotLeafModel(const glm::vec3& groupWorldPos,
-                              float groupYawDeg,
+glm::mat4 makePivotLeafModel(const glm::vec3& basePos,
+                              float yawDeg,
                               const glm::vec3& pivot,
                               const glm::vec3& scale) {
-    // Compute hinge position: groupPos + R(yaw) * (pivot * scale)
-    // Use glm::rotate directly to ensure rotation convention matches the model matrix
-    const float yawRad = glm::radians(groupYawDeg);
-    const glm::vec3 scaledPivot = pivot * scale;
-    const glm::mat4 yawRotation = glm::rotate(glm::mat4(1.0f), yawRad, glm::vec3(0.0f, 1.0f, 0.0f));
-    const glm::vec3 rotatedPivot = glm::vec3(yawRotation * glm::vec4(scaledPivot, 0.0f));
-    const glm::vec3 hingeWorldPos = groupWorldPos + rotatedPivot;
-
-    glm::mat4 model = glm::translate(glm::mat4(1.0f), hingeWorldPos);
-    model = glm::rotate(model, yawRad, glm::vec3(0.0f, 1.0f, 0.0f));
+    // basePos IS the hinge position. The pivot offset moves the mesh
+    // so that the pivot point sits at basePos. Rotation happens around basePos.
+    // Formula: T(basePos) * R(yaw) * S(scale) * T(-pivot)
+    glm::mat4 model = glm::translate(glm::mat4(1.0f), basePos);
+    model = glm::rotate(model, glm::radians(yawDeg), glm::vec3(0.0f, 1.0f, 0.0f));
     model = glm::scale(model, scale);
     model = glm::translate(model, -pivot);
     return model;
 }
 
-glm::vec3 computeHingeWorldPos(const glm::vec3& groupWorldPos,
-                                float groupYawDeg,
-                                const glm::vec3& pivot,
-                                const glm::vec3& scale) {
-    const float yawRad = glm::radians(groupYawDeg);
-    const glm::vec3 scaledPivot = pivot * scale;
-    const glm::mat4 yawRotation = glm::rotate(glm::mat4(1.0f), yawRad, glm::vec3(0.0f, 1.0f, 0.0f));
-    const glm::vec3 rotatedPivot = glm::vec3(yawRotation * glm::vec4(scaledPivot, 0.0f));
-    return groupWorldPos + rotatedPivot;
+glm::vec3 computeHingeWorldPos(const glm::vec3& basePos,
+                                float /*yawDeg*/,
+                                const glm::vec3& /*pivot*/,
+                                const glm::vec3& /*scale*/) {
+    // The hinge IS at basePos — no offset needed
+    return basePos;
 }
 
 entt::entity spawnCheckpoint(LevelBuilder& builder, const CheckpointSpawnSpec& spec) {
