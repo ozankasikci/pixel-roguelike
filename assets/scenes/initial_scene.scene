@@ -208,3 +208,8 @@ collider box solid 9.0 4.0 3.0 4.0 0.05 1.5 node r3_col_ceil
 collider box solid 9.0 2.0 5.0 4.0 2.0 0.1 node r3_col_north
 collider box solid 9.0 2.0 1.0 4.0 2.0 0.1 node r3_col_south
 collider box solid 13.0 2.0 3.0 0.1 2.0 2.0 node r3_col_east
+
+# Doors
+single_door SM_DoorA SM_FrameA -4.85 0.0 1.0 90.0 door_material qdp_door_a node n_doorA
+single_door SM_DoorD SM_FrameD 0.0 0.0 5.85 180.0 door_material qdp_door_d open_duration 1.8 door_tint 0.6 0.58 0.55 frame_tint 0.65 0.63 0.6 node n_doorB
+single_door SM_DoorC SM_FrameC 4.85 0.0 3.0 -90.0 door_material qdp_door_c open_duration 1.0 door_tint 0.88 0.85 0.8 frame_tint 0.85 0.82 0.78 node n_doorC

@@ -28,7 +28,6 @@
 #include "game/level/LevelDef.h"
 #include "game/rendering/MaterialDefinition.h"
 #include "game/rendering/MaterialTextureLibrary.h"
-#include "game/scenes/InitialSceneScripted.h"
 #include "game/session/EquipmentState.h"
 #include "game/ui/InteractionPromptState.h"
 #include "game/ui/InventoryMenuState.h"
@@ -305,9 +304,6 @@ int main(int argc, char* argv[]) {
 #ifndef _WIN32
     std::signal(SIGUSR1, editorSignalHandler);
 #endif
-
-    // Register scripted geometry callbacks before any scene loads (mirrors runtime/main.cpp).
-    registerInitialSceneScripted();
 
     std::string initialScene;
     if (argc > 1) {

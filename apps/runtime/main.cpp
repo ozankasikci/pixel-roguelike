@@ -16,7 +16,6 @@
 #include "game/systems/InteractionSystem.h"
 #include "game/systems/RenderSystem.h"
 #include "game/scenes/GenericFileScene.h"
-#include "game/scenes/InitialSceneScripted.h"
 #include "game/content/ContentRegistry.h"
 #include "game/session/RunSession.h"
 
@@ -72,9 +71,6 @@ int main(int argc, char* argv[]) {
         std::cerr << "ERROR: " << msg << std::endl;
         return 1;
     }
-
-    // Register scripted geometry callbacks before any scene loads.
-    registerInitialSceneScripted();
 
     Application app(1280, 720, "Pixel Roguelike");
     app.emplaceService<RunSession>();

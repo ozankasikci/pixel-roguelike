@@ -3,10 +3,8 @@
 #include "editor/scene/EditorSceneDocument.h"
 #include "game/components/MeshComponent.h"
 #include "game/rendering/MaterialDefinition.h"
-#include "game/scenes/GenericFileScene.h"
 
 #include <GLFW/glfw3.h>
-#include <filesystem>
 #include <imgui.h>
 
 namespace {
@@ -28,13 +26,6 @@ void EditorRuntimePreviewSession::rebuild(const EditorSceneDocument& document, C
     LevelLoadRequest request;
     request.levelId = document.scenePath().empty() ? "editor_runtime_preview" : document.scenePath();
     request.levelPath = document.scenePath();
-
-    // Derive the levelId the same way GenericFileScene does — stem of the scene path
-    std::string lookupId = request.levelId;
-    if (!document.scenePath().empty()) {
-        lookupId = std::filesystem::path(document.scenePath()).stem().string();
-    }
-    request.buildScriptedGeometry = GenericFileScene::lookupScriptedGeometry(lookupId);
 
     session_.rebuild(document.toLevelDef(), request.levelId, request.levelPath, content, request);
     syncEnvironment(document);
