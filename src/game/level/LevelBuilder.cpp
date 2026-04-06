@@ -399,6 +399,15 @@ entt::entity LevelBuilder::addDoorGroup(const LevelDoorGroupPlacement& group, co
                 true,
                 false
             });
+
+        // BehaviorComponent with ToggleDoor so BehaviorSystem processes the interaction
+        BehaviorComponent behavior;
+        ActionEntry toggleAction;
+        toggleAction.type = ActionType::ToggleDoor;
+        toggleAction.targetNodeId = "self";
+        toggleAction.params = DoorActionParams{group.openDuration};
+        behavior.onActivate.push_back(toggleAction);
+        reg.emplace<BehaviorComponent>(doorRoot, behavior);
     }
 
     if (!group.nodeId.empty()) {
