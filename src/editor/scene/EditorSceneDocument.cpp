@@ -80,9 +80,6 @@ void EditorSceneDocument::loadFromSceneFile(const std::string& scenePath, const 
     for (const auto& archetype : level.archetypes) {
         addArchetype(archetype);
     }
-    for (const auto& door : level.doors) {
-        addSingleDoor(door);
-    }
 
     sceneDirty_ = false;
     environmentDirty_ = false;
@@ -218,10 +215,6 @@ std::uint64_t EditorSceneDocument::addGroup(const LevelGroupNode& placement) {
     return addObject(EditorSceneObjectKind::Group, placement);
 }
 
-std::uint64_t EditorSceneDocument::addSingleDoor(const LevelSingleDoorPlacement& placement) {
-    return addObject(EditorSceneObjectKind::SingleDoor, placement);
-}
-
 
 std::uint64_t EditorSceneDocument::parentObjectId(std::uint64_t id) const {
     const EditorSceneObject* object = findObject(id);
@@ -272,8 +265,7 @@ bool EditorSceneDocument::supportsParenting(std::uint64_t id) const {
     return object->kind == EditorSceneObjectKind::Mesh
         || object->kind == EditorSceneObjectKind::Collider
         || object->kind == EditorSceneObjectKind::Archetype
-        || object->kind == EditorSceneObjectKind::Group
-        || object->kind == EditorSceneObjectKind::SingleDoor;
+        || object->kind == EditorSceneObjectKind::Group;
 }
 
 bool EditorSceneDocument::canSetParent(std::uint64_t childId, std::uint64_t parentId) const {
@@ -602,13 +594,6 @@ bool EditorSceneDocument::applyWorldTransform(std::uint64_t id, const glm::mat4&
             p.rotation = rotation;
             p.scale = glm::max(scale, glm::vec3(0.01f));
             return true;
-        } else if constexpr (std::is_same_v<T, LevelSingleDoorPlacement>) {
-            if (!decomposeTransformMatrix(localMatrix, position, rotation, scale)) {
-                return false;
-            }
-            p.rootPosition = position;
-            p.doorYawDegrees = rotation.y;
-            return true;
         } else {
             static_assert(sizeof(T) == 0, "Unhandled payload type in applyWorldTransform");
         }
@@ -672,8 +657,6 @@ LevelDef EditorSceneDocument::toLevelDef() const {
                 level.archetypes.push_back(p);
             } else if constexpr (std::is_same_v<T, LevelGroupNode>) {
                 level.groups.push_back(p);
-            } else if constexpr (std::is_same_v<T, LevelSingleDoorPlacement>) {
-                level.doors.push_back(p);
             } else {
                 static_assert(sizeof(T) == 0, "Unhandled payload type in toLevelDef");
             }
@@ -812,8 +795,6 @@ glm::mat4 EditorSceneDocument::localTransformMatrix(const EditorSceneObject& obj
             return makeTransformMatrix(p.position, glm::vec3(0.0f, p.yawDegrees, 0.0f), glm::vec3(1.0f));
         } else if constexpr (std::is_same_v<T, LevelGroupNode>) {
             return makeTransformMatrix(p.position, p.rotation, p.scale);
-        } else if constexpr (std::is_same_v<T, LevelSingleDoorPlacement>) {
-            return makeTransformMatrix(p.rootPosition, glm::vec3(0.0f, p.doorYawDegrees, 0.0f), glm::vec3(1.0f));
         } else {
             static_assert(sizeof(T) == 0, "Unhandled payload type in localTransformMatrix");
         }
@@ -852,8 +833,6 @@ const char* editorSceneObjectKindName(EditorSceneObjectKind kind) {
         return "Archetype";
     case EditorSceneObjectKind::Group:
         return "Group";
-    case EditorSceneObjectKind::SingleDoor:
-        return "Single Door";
     }
     return "Object";
 }
@@ -886,8 +865,6 @@ std::string editorSceneObjectLabel(const EditorSceneObject& object) {
             label << " [" << p.archetypeId << "]";
         } else if constexpr (std::is_same_v<T, LevelGroupNode>) {
             label << " [" << p.name << "]";
-        } else if constexpr (std::is_same_v<T, LevelSingleDoorPlacement>) {
-            label << " [" << p.doorMeshName << "]";
         }
         // LevelPlayerSpawn: no suffix needed
     }, object.payload);
@@ -895,12 +872,5 @@ std::string editorSceneObjectLabel(const EditorSceneObject& object) {
 }
 
 glm::vec3 editorSceneObjectAnchor(const EditorSceneObject& object) {
-    return std::visit([](const auto& p) -> glm::vec3 {
-        using T = std::decay_t<decltype(p)>;
-        if constexpr (std::is_same_v<T, LevelSingleDoorPlacement>) {
-            return p.rootPosition;
-        } else {
-            return p.position;
-        }
-    }, object.payload);
+    return std::visit([](const auto& p) -> glm::vec3 { return p.position; }, object.payload);
 }

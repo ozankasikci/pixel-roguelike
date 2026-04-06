@@ -54,6 +54,7 @@ struct LevelMeshPlacement {
     std::string parentNodeId;
     std::string materialId;
     std::optional<glm::vec3> tint;
+    std::optional<glm::vec3> pivot;   // hinge pivot for door leaf meshes
     std::vector<BehaviorDeclaration> behaviors;
     std::optional<InteractableDeclaration> interactable;
 };
@@ -107,22 +108,16 @@ struct LevelGroupNode {
     std::string parentNodeId;
 };
 
-struct LevelSingleDoorPlacement {
-    std::string doorMeshName = "SM_DoorA";
-    std::string frameMeshName = "SM_FrameA";
-    std::string doorMaterialId = "qdp_door_a";
-    std::string frameMaterialId = "stone_default";
-    glm::vec3 rootPosition{0.0f};
-    float doorYawDegrees = 0.0f;
+struct LevelDoorGroupPlacement {
+    std::string name = "Door";
+    glm::vec3 position{0.0f};
+    float yawDegrees = 0.0f;
     float openAngle = 90.0f;
     float openDuration = 1.2f;
     float interactDistance = 2.5f;
     float interactDotThreshold = 0.55f;
     bool locked = false;
     std::string lockedPrompt = "E  This door is locked";
-    glm::vec3 doorTint{1.0f};
-    glm::vec3 frameTint{1.0f};
-    glm::vec3 hingePivot{-0.45f, 0.0f, 0.04f};
     std::string nodeId;
     std::string parentNodeId;
 };
@@ -138,7 +133,7 @@ struct LevelDef {
     bool hasPlayerSpawn = false;
     std::vector<LevelArchetypePlacement> archetypes;
     std::vector<LevelGroupNode> groups;
-    std::vector<LevelSingleDoorPlacement> doors;
+    std::vector<LevelDoorGroupPlacement> doors;
 };
 
 LevelDef loadLevelDef(const std::string& path);

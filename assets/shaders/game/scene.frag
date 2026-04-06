@@ -33,8 +33,8 @@ uniform RenderLight uLights[32];
 uniform int uNumLights;
 uniform sampler2D uLtcMat;    // 64x64 LTC inverse transform matrix LUT
 uniform sampler2D uLtcAmp;    // 64x64 LTC amplitude/Fresnel LUT
-uniform sampler2D uShadowMaps[5];
-uniform mat4 uShadowMatrices[5];
+uniform sampler2D uShadowMaps[6];
+uniform mat4 uShadowMatrices[6];
 uniform int uShadowCount;
 uniform int uEnableShadows;
 uniform float uShadowBias;
@@ -46,10 +46,6 @@ uniform mat4 uCsmMatrices[3];
 uniform float uCsmSplitDistances[3];
 uniform int uCsmCascadeCount;
 uniform int uCsmEnabled;
-uniform int uEnableContactShadows;
-uniform int uDepthPrePass;
-uniform sampler2D uSceneDepthTex;
-uniform mat4 uProjection;
 uniform samplerCube uEnvironmentSpecularMap;
 uniform sampler2D uEnvironmentBrdfLut;
 uniform int uEnvironmentReflectionsEnabled;
@@ -788,7 +784,8 @@ vec2 shadowTexelSize(int shadowIndex) {
     if (shadowIndex == 1) return 1.0 / vec2(textureSize(uShadowMaps[1], 0));
     if (shadowIndex == 2) return 1.0 / vec2(textureSize(uShadowMaps[2], 0));
     if (shadowIndex == 3) return 1.0 / vec2(textureSize(uShadowMaps[3], 0));
-    return 1.0 / vec2(textureSize(uShadowMaps[4], 0));
+    if (shadowIndex == 4) return 1.0 / vec2(textureSize(uShadowMaps[4], 0));
+    return 1.0 / vec2(textureSize(uShadowMaps[5], 0));
 }
 
 float shadowDepthAt(int shadowIndex, vec2 uv) {
@@ -796,7 +793,8 @@ float shadowDepthAt(int shadowIndex, vec2 uv) {
     if (shadowIndex == 1) return texture(uShadowMaps[1], uv).r;
     if (shadowIndex == 2) return texture(uShadowMaps[2], uv).r;
     if (shadowIndex == 3) return texture(uShadowMaps[3], uv).r;
-    return texture(uShadowMaps[4], uv).r;
+    if (shadowIndex == 4) return texture(uShadowMaps[4], uv).r;
+    return texture(uShadowMaps[5], uv).r;
 }
 
 vec4 shadowClipPosition(int shadowIndex) {
@@ -804,7 +802,8 @@ vec4 shadowClipPosition(int shadowIndex) {
     if (shadowIndex == 1) return uShadowMatrices[1] * vec4(vWorldPos, 1.0);
     if (shadowIndex == 2) return uShadowMatrices[2] * vec4(vWorldPos, 1.0);
     if (shadowIndex == 3) return uShadowMatrices[3] * vec4(vWorldPos, 1.0);
-    return uShadowMatrices[4] * vec4(vWorldPos, 1.0);
+    if (shadowIndex == 4) return uShadowMatrices[4] * vec4(vWorldPos, 1.0);
+    return uShadowMatrices[5] * vec4(vWorldPos, 1.0);
 }
 
 const vec2 poissonDisk[16] = vec2[16](
@@ -822,33 +821,6 @@ float hash12(vec2 p) {
     vec3 p3 = fract(vec3(p.xyx) * 0.1031);
     p3 += dot(p3, p3.yzx + 33.33);
     return fract((p3.x + p3.y) * p3.z);
-}
-
-float linearizeDepth(float depthSample) {
-    float ndc = depthSample * 2.0 - 1.0;
-    return -uProjection[3][2] / (ndc + uProjection[2][2]);
-}
-
-float sampleDilatedLinearDepth(vec2 uv) {
-    vec2 texel = 1.0 / vec2(textureSize(uSceneDepthTex, 0));
-    float bestDepth = 1e9;
-
-    float depth0 = texture(uSceneDepthTex, uv).r;
-    if (depth0 < 0.99999) bestDepth = min(bestDepth, linearizeDepth(depth0));
-
-    float depth1 = texture(uSceneDepthTex, uv + vec2(texel.x, 0.0)).r;
-    if (depth1 < 0.99999) bestDepth = min(bestDepth, linearizeDepth(depth1));
-
-    float depth2 = texture(uSceneDepthTex, uv + vec2(-texel.x, 0.0)).r;
-    if (depth2 < 0.99999) bestDepth = min(bestDepth, linearizeDepth(depth2));
-
-    float depth3 = texture(uSceneDepthTex, uv + vec2(0.0, texel.y)).r;
-    if (depth3 < 0.99999) bestDepth = min(bestDepth, linearizeDepth(depth3));
-
-    float depth4 = texture(uSceneDepthTex, uv + vec2(0.0, -texel.y)).r;
-    if (depth4 < 0.99999) bestDepth = min(bestDepth, linearizeDepth(depth4));
-
-    return bestDepth;
 }
 
 int selectCascade(float viewDepth) {
@@ -888,102 +860,31 @@ vec3 cascadeDebugColor(int layer) {
     return vec3(1.0);
 }
 
-float traceContactShadow(vec3 fragViewPos, vec3 towardLight) {
-    if (uEnableContactShadows == 0) return 1.0;
-
-    vec3 rayDir = normalize(mat3(uViewMatrix) * towardLight);
-    float fade = 1.0 - smoothstep(12.0, 24.0, -fragViewPos.z);
-    if (fade <= 0.0) return 1.0;
-
-    float rayStart = 0.01;
-    float stepSize = 0.025;
-    float maxDist = 0.6;
-    float bias = 0.005;
-    float thickness = 0.12;
-    int maxSteps = 24;
-    float visibility = 1.0;
-
-    for (int i = 0; i < maxSteps; ++i) {
-        float dist = rayStart + stepSize * float(i);
-        if (dist > maxDist) break;
-
-        vec3 sampleViewPos = fragViewPos + rayDir * dist;
-        vec4 sampleClip = uProjection * vec4(sampleViewPos, 1.0);
-        if (sampleClip.w <= 0.0) break;
-
-        vec3 sampleNdc = sampleClip.xyz / sampleClip.w;
-        if (sampleNdc.z <= -1.0 || sampleNdc.z >= 1.0) break;
-
-        vec2 sampleUV = sampleNdc.xy * 0.5 + 0.5;
-
-        if (sampleUV.x < 0.0 || sampleUV.x > 1.0 || sampleUV.y < 0.0 || sampleUV.y > 1.0)
-            break;
-
-        float sceneDepth = sampleDilatedLinearDepth(sampleUV);
-        if (sceneDepth > 1e8) continue;
-        float rayDepth = -sampleViewPos.z;
-        if (rayDepth > sceneDepth + bias && rayDepth < sceneDepth + thickness) {
-            visibility = 0.0;
-            break;
-        }
-    }
-
-    return mix(1.0, visibility, fade);
-}
-
-// Receiver-side normal offset with per-cascade texel scaling.
-// Offsets the shadow lookup along the geometric normal by a number of shadow texels
-// proportional to the slope angle. This scales automatically with cascade coverage:
-//   Cascade 0 (~20m, 1024 res): offset ~0.04m at max slope
-//   Cascade 1 (~80m, 1024 res): offset ~0.16m at max slope
-// Junction gaps not addressed by normal offset (wall-ceiling with horizontal normals)
-// are handled by screen-space contact shadows below.
 float sampleCsmShadow(vec3 fragWorldPos, vec3 fragViewPos, vec3 N, vec3 L) {
     if (uCsmEnabled == 0) return 1.0;
-
-    float csmNdotL = dot(N, L);
-    float csmSlopeFactor = sqrt(1.0 - clamp(csmNdotL * csmNdotL, 0.0, 1.0));
-
-    // Determine cascade layer first (needed for texel size calculation)
-    int layer = selectCascade(abs(fragViewPos.z));
-    if (layer < 0 || layer >= uCsmCascadeCount) return 1.0;
-
-    // Per-cascade texel-scaled receiver bias with two components:
-    //
-    // 1. NORMAL OFFSET — pushes lookup along surface normal. Effective for floor/ceiling
-    //    surfaces (vertical normal pushes into wall's shadow). Ineffective for wall surfaces
-    //    at ceiling junctions (horizontal normal pushes sideways, not toward gap).
-    //
-    // 2. LIGHT-DIRECTION OFFSET — pushes lookup toward the light. Compensates where normal
-    //    offset fails. Modulated by (1 - normalEffectiveness) so it only activates for
-    //    surfaces whose normal is perpendicular to the light direction (walls).
-    //    This replaces the old caster-side geometry offset with a per-fragment, per-cascade,
-    //    receiver-side equivalent that doesn't modify the shadow map.
-    //
-    // Together they cover all junction orientations without parameter coupling.
-    float cascadeTexelSize = uCsmSplitDistances[layer] / float(textureSize(uCsmShadowMap, 0).x);
-    float normalOffsetScale = 2.0;
-    vec3 normalOffset = N * cascadeTexelSize * normalOffsetScale * csmSlopeFactor;
-
-    vec3 biasedWorldPos = fragWorldPos + normalOffset;
-
+    int layer = 0;
     vec3 projCoords = vec3(0.0);
-    {
-        vec4 fragInLightSpace = uCsmMatrices[layer] * vec4(biasedWorldPos, 1.0);
-        projCoords = fragInLightSpace.xyz / fragInLightSpace.w;
-        projCoords = projCoords * 0.5 + 0.5;
+    if (!computeCsmProjection(fragWorldPos, fragViewPos, layer, projCoords)) {
+        return 1.0;
     }
     if (!csmUvInBounds(projCoords)) return 1.0;
     if (projCoords.z >= 1.0) return 1.0;
 
-    float bias = 0.0;
+    // Directional shadow bias works in cascade depth space, so it needs to stay much
+    // smaller than the spot-light bias values exposed in the editor. Scale the shared
+    // controls down and use the geometric receiver normal to reduce contact light leaks.
+    float receiverSlope = 1.0 - max(dot(N, L), 0.0);
+    float constantBias = 0.0;
+    float normalBias = 0.0 * receiverSlope;
+    float baseBias = max(constantBias, normalBias);
+    float bias = baseBias / max(uCsmSplitDistances[layer], 0.01);
 
     // 16-tap Poisson PCF matching spot shadow quality
     float angle = hash12(gl_FragCoord.xy) * 6.2831853;
     float s = sin(angle), c = cos(angle);
     mat2 rot = mat2(c, s, -s, c);
     float texelSize = 1.0 / float(textureSize(uCsmShadowMap, 0).x);
-    float spread = 3.0;
+    float spread = 1.0;
 
     float centerVisibility = texture(uCsmShadowMap,
         vec4(projCoords.xy, float(layer), projCoords.z - bias));
@@ -1004,13 +905,9 @@ float sampleCsmShadow(vec3 fragWorldPos, vec3 fragViewPos, vec3 N, vec3 L) {
         if (distFromSplit < blendZone && distFromSplit > 0.0) {
             float blendFactor = 1.0 - distFromSplit / blendZone;
             int nextLayer = layer + 1;
-            // Apply same dual offset for the next cascade
-            float nextCascadeTexelSize = uCsmSplitDistances[nextLayer] / float(textureSize(uCsmShadowMap, 0).x);
-            vec3 nextNormalOffset = N * nextCascadeTexelSize * normalOffsetScale * csmSlopeFactor;
-            vec3 nextBiasedWorldPos = fragWorldPos + nextNormalOffset;
-            vec4 nextLightSpace = uCsmMatrices[nextLayer] * vec4(nextBiasedWorldPos, 1.0);
+            vec4 nextLightSpace = uCsmMatrices[nextLayer] * vec4(fragWorldPos, 1.0);
             vec3 nextProj = nextLightSpace.xyz / nextLightSpace.w * 0.5 + 0.5;
-            float nextBias = 0.0;
+            float nextBias = baseBias / max(uCsmSplitDistances[nextLayer], 0.01);
             float nextCenterVisibility = texture(uCsmShadowMap,
                 vec4(nextProj.xy, float(nextLayer), nextProj.z - nextBias));
             float nextVisibility = 0.0;
@@ -1024,11 +921,6 @@ float sampleCsmShadow(vec3 fragWorldPos, vec3 fragViewPos, vec3 N, vec3 L) {
             visibility = mix(visibility, nextVisibility, blendFactor);
         }
     }
-
-    // Screen-space contact shadows fill junction gaps that normal offset cannot reach
-    // (e.g., wall-ceiling junctions where the wall normal is horizontal).
-    float contactShadow = traceContactShadow(fragViewPos, L);
-    visibility = min(visibility, contactShadow);
 
     return visibility;
 }
@@ -1125,36 +1017,10 @@ vec3 sampleLocalProbeSpecular(vec3 N, vec3 V, vec3 F0, float roughness) {
     return iblSpecular * max(uReflectionProbeIntensity, 0.0);
 }
 
-vec3 geometricFaceNormal(vec3 interpolatedNormal) {
-    vec3 faceNormal = cross(dFdx(vWorldPos), dFdy(vWorldPos));
-    float faceNormalLength = length(faceNormal);
-    if (faceNormalLength < 0.0001) {
-        return normalize(interpolatedNormal);
-    }
-    faceNormal /= faceNormalLength;
-    return dot(faceNormal, interpolatedNormal) < 0.0 ? -faceNormal : faceNormal;
-}
-
 void main() {
     vec3 geometricNormal = normalize(vNormal);
-    vec3 shadowGeomNormal = geometricFaceNormal(geometricNormal);
-    vec2 uv = materialUv(geometricNormal);
-    if (uDepthPrePass != 0) {
-        if (uUseMaterialMaps != 0 && uMaterialBrickDetail == 0) {
-            vec4 albedoRGBA = (uUseProceduralDetail == 0 && uMaterialUvMode != 0)
-                ? textureNoTile(uAlbedoMap, uv)
-                : texture(uAlbedoMap, uv);
-            if (uAlphaTest != 0 && albedoRGBA.a < uAlphaCutoff) {
-                discard;
-            }
-        }
-        fragColor = vec4(0.0);
-        fragNormal = vec4(0.0);
-        fragGeomNormal = vec4(0.0);
-        return;
-    }
-
     fragGeomNormal = vec4(geometricNormal * 0.5 + 0.5, 1.0);
+    vec2 uv = materialUv(geometricNormal);
     vec4 brickMacro = vec4(0.0);
     if (uMaterialBrickDetail != 0) {
         brickMacro = brickMacroMasks(geometricNormal);
@@ -1340,11 +1206,11 @@ void main() {
                     }
                 }
             }
-            visibility = sampleCsmShadow(vWorldPos, fragViewPos, shadowGeomNormal, L);
+            visibility = sampleCsmShadow(vWorldPos, fragViewPos, geometricNormal, L);
             sunShadowVisibilityDebug = visibility;
             sunShadowValidDebug = true;
         } else if (light.castsShadows != 0 && light.shadowIndex >= 0) {
-            visibility = sampleShadow(light.shadowIndex, shadowGeomNormal, L);
+            visibility = sampleShadow(light.shadowIndex, geometricNormal, L);
         }
 
         vec3 lightContribution = visibility * ((kD * albedo * diffuseRadiance) + (specular * specularRadiance)) * NdotL * materialAo;

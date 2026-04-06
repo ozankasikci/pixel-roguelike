@@ -13,6 +13,7 @@ struct LevelLoadRequest {
     std::string levelId;
     std::string levelPath;
     std::function<void(MeshLibrary&)> registerAssets;
+    std::function<void(class LevelBuilder&)> buildScriptedGeometry;
 };
 
 /// Explicit context for a level load. Callers must supply content and session

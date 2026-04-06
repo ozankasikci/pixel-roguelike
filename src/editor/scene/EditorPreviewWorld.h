@@ -22,11 +22,6 @@ struct EditorObjectBounds {
     glm::vec3 center() const { return (min + max) * 0.5f; }
 };
 
-// Marker tag: identifies the door leaf entity of a SingleDoor (as opposed to the frame entity).
-// Both frame and leaf share the same owner ID in ownerMap_, so this tag is the only way to
-// distinguish them during syncTransforms.
-struct EditorDoorLeafTag {};
-
 class EditorPreviewWorld {
 public:
     EditorPreviewWorld();

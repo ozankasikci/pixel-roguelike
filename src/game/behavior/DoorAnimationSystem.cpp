@@ -8,7 +8,6 @@
 #include "game/components/PlayerInteractionLockComponent.h"
 #include "game/components/ColliderComponent.h"
 #include "game/components/TransformComponent.h"
-#include "game/ui/InteractionFocusState.h"
 
 #include <algorithm>
 #include <cmath>
@@ -123,19 +122,8 @@ void DoorAnimationSystem::update(Application& app, float deltaTime) {
         }
     }
 
-    // Check if player activated a door via InteractionFocusState
-    if (registry.ctx().contains<InteractionFocusState>()) {
-        auto& focus = registry.ctx().get<InteractionFocusState>();
-        if (focus.activationRequested && !focus.activationConsumed && focus.focused != entt::null) {
-            auto* door = registry.try_get<DoorComponent>(focus.focused);
-            if (door != nullptr && !door->opening && !door->opened) {
-                door->opening = true;
-                focus.activationConsumed = true;
-            }
-        }
-    }
-
-    // Animate all doors that are opening
+    // Animate all doors that are opening (BehaviorSystem sets opening=true)
+    // This system does NOT check InteractionFocusState or activationRequested (per D-11)
     auto doorView = registry.view<TransformComponent, DoorComponent>();
     for (auto [entity, transform, door] : doorView.each()) {
         (void)transform;

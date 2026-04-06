@@ -3,6 +3,8 @@
 #include "game/behavior/BehaviorComponent.h"
 #include "game/behavior/NodeIdComponent.h"
 #include "game/components/ColliderComponent.h"
+#include "game/components/DoorComponent.h"
+#include "game/components/DoorLeafComponent.h"
 #include "game/components/InteractableComponent.h"
 #include "game/components/LightComponent.h"
 #include "game/components/MeshComponent.h"
@@ -277,27 +279,122 @@ void LevelBuilder::attachInteractable(entt::entity entity, const InteractableDec
     ic.interactDotThreshold = decl.dotThreshold;
 }
 
-entt::entity LevelBuilder::addSingleDoor(const LevelSingleDoorPlacement& placement) {
-    SingleDoorSpawnSpec spec;
-    spec.doorMeshName = placement.doorMeshName;
-    spec.frameMeshName = placement.frameMeshName;
-    spec.doorMaterialId = placement.doorMaterialId;
-    spec.frameMaterialId = placement.frameMaterialId;
-    spec.rootPosition = placement.rootPosition;
-    spec.doorYawDegrees = placement.doorYawDegrees;
-    spec.openAngle = placement.openAngle;
-    spec.openDuration = placement.openDuration;
-    spec.interactDistance = placement.interactDistance;
-    spec.interactDotThreshold = placement.interactDotThreshold;
-    spec.locked = placement.locked;
-    spec.lockedPrompt = placement.lockedPrompt;
-    spec.doorTint = placement.doorTint;
-    spec.frameTint = placement.frameTint;
-    spec.hingePivot = placement.hingePivot;
-    auto entity = spawnSingleDoor(*this, spec);
-    if (entity != entt::null && !placement.nodeId.empty()) {
-        attachNodeId(entity, placement.nodeId);
+entt::entity LevelBuilder::addDoorGroup(const LevelDoorGroupPlacement& group, const LevelDef& level) {
+    // Find child meshes belonging to this door group by parentNodeId
+    const LevelMeshPlacement* framePlacement = nullptr;
+    const LevelMeshPlacement* leafPlacement = nullptr;
+    for (const auto& m : level.meshes) {
+        if (m.parentNodeId == group.nodeId) {
+            if (m.pivot.has_value()) {
+                leafPlacement = &m;
+            } else {
+                framePlacement = &m;
+            }
+        }
     }
-    return entity;
+
+    if (!leafPlacement) {
+        spdlog::warn("LevelBuilder::addDoorGroup: no leaf mesh found for door group '{}'", group.name);
+        return entt::null;
+    }
+
+    // Spawn frame mesh as a normal static mesh (if exists)
+    if (framePlacement) {
+        auto frameEntity = addMesh(framePlacement->meshId,
+            framePlacement->position,
+            framePlacement->scale,
+            framePlacement->rotation,
+            framePlacement->tint,
+            framePlacement->materialId.empty()
+                ? std::optional<std::string>{}
+                : std::optional<std::string>{framePlacement->materialId});
+        if (frameEntity != entt::null && !framePlacement->nodeId.empty()) {
+            attachNodeId(frameEntity, framePlacement->nodeId);
+        }
+    }
+
+    // Compute pivot-aware leaf model matrix
+    const glm::vec3 pivot = leafPlacement->pivot.value();
+    const glm::vec3 hingeWorldPos = computeHingeWorldPos(group.position, group.yawDegrees, pivot);
+    const glm::mat4 leafModel = makePivotLeafModel(group.position, group.yawDegrees, pivot, leafPlacement->scale);
+
+    // Spawn the leaf mesh entity
+    Mesh* leafMeshPtr = mesh(leafPlacement->meshId);
+    auto leafEntity = addMesh(leafMeshPtr,
+        group.position,
+        leafPlacement->scale,
+        glm::vec3(0.0f, group.yawDegrees, 0.0f),
+        leafPlacement->tint,
+        leafPlacement->materialId.empty()
+            ? std::optional<std::string>{}
+            : std::optional<std::string>{leafPlacement->materialId});
+
+    if (leafEntity == entt::null) {
+        spdlog::warn("LevelBuilder::addDoorGroup: failed to spawn leaf mesh '{}' for door group '{}'",
+                     leafPlacement->meshId, group.name);
+        return entt::null;
+    }
+
+    auto& reg = context_.registry;
+
+    // Override the model matrix for correct pivot-based rendering
+    if (auto* meshComp = reg.try_get<MeshComponent>(leafEntity)) {
+        meshComp->modelOverride = leafModel;
+        meshComp->useModelOverride = true;
+    }
+
+    // Attach DoorLeafComponent for swing animation
+    DoorLeafComponent doorLeaf;
+    doorLeaf.hingePosition = hingeWorldPos;
+    doorLeaf.centerOffsetFromHinge = glm::vec3(0.445f, 0.0f, 0.0f);
+    doorLeaf.closedScale = leafPlacement->scale;
+    doorLeaf.colliderHalfExtents = glm::vec3(0.445f, 1.01f, 0.05f);
+    doorLeaf.closedYaw = group.yawDegrees;
+    doorLeaf.openYaw = group.yawDegrees - group.openAngle;
+    reg.emplace<DoorLeafComponent>(leafEntity, doorLeaf);
+
+    if (!leafPlacement->nodeId.empty()) {
+        attachNodeId(leafEntity, leafPlacement->nodeId);
+    }
+
+    // Create door root entity with DoorComponent + InteractableComponent
+    auto doorRoot = createTransformEntity(group.position + glm::vec3(0.0f, 1.0f, 0.0f));
+
+    if (group.locked) {
+        // Locked door: only InteractableComponent, no DoorComponent
+        reg.emplace<InteractableComponent>(doorRoot,
+            InteractableComponent{
+                group.lockedPrompt,
+                "",
+                group.interactDistance,
+                group.interactDotThreshold,
+                true,
+                false
+            });
+    } else {
+        DoorComponent door;
+        door.leftLeaf = leafEntity;
+        door.rightLeaf = entt::null;
+        door.interactDistance = group.interactDistance;
+        door.interactDotThreshold = group.interactDotThreshold;
+        door.openDuration = group.openDuration;
+        reg.emplace<DoorComponent>(doorRoot, door);
+
+        reg.emplace<InteractableComponent>(doorRoot,
+            InteractableComponent{
+                "E  Open",
+                "",
+                group.interactDistance,
+                group.interactDotThreshold,
+                true,
+                false
+            });
+    }
+
+    if (!group.nodeId.empty()) {
+        attachNodeId(doorRoot, group.nodeId);
+    }
+
+    return doorRoot;
 }
 

@@ -13,6 +13,27 @@
 #include "engine/rendering/assets/ModelLoader.h"
 
 #include <filesystem>
+#include <unordered_map>
+
+// ---------------------------------------------------------------------------
+// Scripted geometry registry
+// ---------------------------------------------------------------------------
+
+using ScriptedGeometryCallback = std::function<void(LevelBuilder&)>;
+
+static std::unordered_map<std::string, ScriptedGeometryCallback>& scriptedGeometryRegistry() {
+    static std::unordered_map<std::string, ScriptedGeometryCallback> registry;
+    return registry;
+}
+
+// ---------------------------------------------------------------------------
+// GenericFileScene implementation
+// ---------------------------------------------------------------------------
+
+void GenericFileScene::registerScriptedGeometry(const std::string& levelId,
+                                                 std::function<void(LevelBuilder&)> callback) {
+    scriptedGeometryRegistry()[levelId] = std::move(callback);
+}
 
 GenericFileScene::GenericFileScene(const std::string& scenePath) {
     request_.levelId   = std::filesystem::path(scenePath).stem().string();
@@ -45,6 +66,14 @@ void GenericFileScene::onEnter(Application& app) {
             }
         }
     };
+
+    // Look up scripted geometry from the registry (no hard-coded if-chain)
+    auto it = scriptedGeometryRegistry().find(request_.levelId);
+    if (it != scriptedGeometryRegistry().end()) {
+        request_.buildScriptedGeometry = it->second;
+    } else {
+        request_.buildScriptedGeometry = {};
+    }
 
     LevelLoadArgs args{
         .content = &app.getService<ContentRegistry>(),

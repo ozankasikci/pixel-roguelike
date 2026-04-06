@@ -45,7 +45,6 @@ public:
     nlohmann::json worldToScreen(const nlohmann::json& args) const;
     nlohmann::json camera() const;
     nlohmann::json runtimeCamera() const;
-    nlohmann::json runtimeInteraction() const;
 
 private:
     const EditorSceneDocument& doc_;

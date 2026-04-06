@@ -34,10 +34,6 @@ void SceneRenderPipeline::init() {
 }
 
 void SceneRenderPipeline::shutdown() {
-    if (depthPrePassTex_) {
-        glDeleteTextures(1, &depthPrePassTex_);
-        depthPrePassTex_ = 0;
-    }
     renderer_.reset();
     shadowShader_.reset();
     sceneShader_.reset();
@@ -170,7 +166,9 @@ void SceneRenderPipeline::renderShadowPass(const std::vector<RenderObject>& obje
 
     glEnable(GL_DEPTH_TEST);
     shadowShader_->use();
-    shadowShader_->setFloat("uShadowCasterOffset", 0.0f);  // spot lights don't use caster offset
+    // Spot light passes do not use a caster offset — zero it out so any previous
+    // CSM value left in the uniform does not bleed into spot shadow renders.
+    shadowShader_->setFloat("uShadowCasterOffset", 0.0f);
 
     for (const auto& light : lights) {
         if (light.shadowIndex < 0 || light.shadowIndex >= kMaxShadowedSpotLights) {
@@ -214,23 +212,18 @@ void SceneRenderPipeline::renderShadowPass(const std::vector<RenderObject>& obje
                                        input.postParams ? input.postParams->csmLambda : 0.5f);
 
         shadowShader_->use();
+        // Restore the caster offset for CSM: push shadow geometry 0.18 world-space units
+        // toward the light. This closes coverage gaps at grazing-angle junctions (e.g.
+        // wall top edges meeting the ceiling) that would otherwise appear as bright lines.
         shadowShader_->setVec3("uLightDirection", lighting.sun.direction);
+        shadowShader_->setFloat("uShadowCasterOffset", 0.18f);
         glEnable(GL_POLYGON_OFFSET_FILL);
         glPolygonOffset(1.1f, 4.0f);
-        glEnable(GL_DEPTH_CLAMP);
 
         const auto& csmMatrices = csmShadowMap_.lightSpaceMatrices();
         const int csmRes = csmShadowMap_.resolution();
-        const auto& splitDistances = csmShadowMap_.splitDistances();
 
         for (int cascade = 0; cascade < CascadedShadowMap::kCascadeCount; ++cascade) {
-            // Per-cascade caster offset: scales with cascade texel size so near
-            // cascades get small offset (preserving detail) and far cascades get
-            // proportionally larger offset. Keep this modest so concave corners
-            // do not detach visibly; contact shadows handle the last few centimeters.
-            float cascadeTexelSize = splitDistances[cascade] / static_cast<float>(csmRes);
-            shadowShader_->setFloat("uShadowCasterOffset", cascadeTexelSize * 3.0f);
-
             glBindFramebuffer(GL_FRAMEBUFFER, csmShadowMap_.framebuffer());
             glFramebufferTextureLayer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT,
                                       csmShadowMap_.depthArrayTexture(), 0, cascade);
@@ -252,7 +245,6 @@ void SceneRenderPipeline::renderShadowPass(const std::vector<RenderObject>& obje
             }
         }
 
-        glDisable(GL_DEPTH_CLAMP);
         glDisable(GL_POLYGON_OFFSET_FILL);
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
     }
@@ -275,71 +267,13 @@ void SceneRenderPipeline::renderScenePass(const SceneRenderInput& input,
 
     const LightingEnvironment& lighting = input.lightingEnvironment;
     const float timeSeconds = static_cast<float>(glfwGetTime());
-    const bool csmEnabled = lighting.sun.enabled && lighting.enableShadows;
-    const bool contactShadowsEnabled = csmEnabled;
-
-    if (contactShadowsEnabled) {
-        const int fw = sceneFBO_.width();
-        const int fh = sceneFBO_.height();
-        if (depthPrePassTex_ == 0 || depthPrePassW_ != fw || depthPrePassH_ != fh) {
-            if (depthPrePassTex_ != 0) {
-                glDeleteTextures(1, &depthPrePassTex_);
-            }
-            glGenTextures(1, &depthPrePassTex_);
-            glBindTexture(GL_TEXTURE_2D, depthPrePassTex_);
-            glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT24, fw, fh, 0,
-                         GL_DEPTH_COMPONENT, GL_FLOAT, nullptr);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-            glBindTexture(GL_TEXTURE_2D, 0);
-            depthPrePassW_ = fw;
-            depthPrePassH_ = fh;
-        }
-
-        // Run a z-prepass with the same scene shader so vertex animation and alpha
-        // testing stay perfectly aligned with the shaded pass.
-        sceneShader_->use();
-        sceneShader_->setFloat("uTimeSeconds", timeSeconds);
-        sceneShader_->setInt("uDepthPrePass", 1);
-        sceneShader_->setInt("uEnableContactShadows", 0);
-        glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
-        glDepthMask(GL_TRUE);
-        glDepthFunc(GL_LESS);
-        renderer_->drawScene(*input.objects,
-                             lights,
-                             lighting,
-                             shadowData,
-                             input.viewMatrix,
-                             input.projectionMatrix,
-                             input.cameraPosition);
-
-        glActiveTexture(GL_TEXTURE0 + TextureUnits::kSceneDepth);
-        glBindTexture(GL_TEXTURE_2D, depthPrePassTex_);
-        glCopyTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, 0, 0, fw, fh);
-        glBindTexture(GL_TEXTURE_2D, 0);
-        glActiveTexture(GL_TEXTURE0);
-
-        glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
-        glDepthMask(GL_FALSE);
-        glDepthFunc(GL_EQUAL);
-    } else {
-        glDepthMask(GL_TRUE);
-        glDepthFunc(GL_LESS);
-    }
 
     // Bind CSM depth array texture and set scene shader uniforms for CSM
+    const bool csmEnabled = lighting.sun.enabled && lighting.enableShadows;
     sceneShader_->use();
     sceneShader_->setFloat("uTimeSeconds", timeSeconds);
     sceneShader_->setMat4("uViewMatrix", input.viewMatrix);
-    sceneShader_->setMat4("uProjection", input.projectionMatrix);
     sceneShader_->setInt("uDebugViewMode", input.postParams ? input.postParams->debugViewMode : 0);
-    sceneShader_->setInt("uDepthPrePass", 0);
-    sceneShader_->setInt("uEnableContactShadows", contactShadowsEnabled ? 1 : 0);
-    sceneShader_->setInt("uSceneDepthTex", TextureUnits::kSceneDepth);
-    glActiveTexture(GL_TEXTURE0 + TextureUnits::kSceneDepth);
-    glBindTexture(GL_TEXTURE_2D, contactShadowsEnabled ? depthPrePassTex_ : 0);
     sceneShader_->setInt("uCsmShadowMap", TextureUnits::kCsmShadowMap);
     sceneShader_->setInt("uCsmEnabled", csmEnabled ? 1 : 0);
     sceneShader_->setInt("uCsmCascadeCount", CascadedShadowMap::kCascadeCount);
@@ -406,11 +340,6 @@ void SceneRenderPipeline::renderScenePass(const SceneRenderInput& input,
                           input.projectionMatrix,
                           input.cameraPosition);
 
-    if (contactShadowsEnabled) {
-        glDepthMask(GL_TRUE);
-        glDepthFunc(GL_LESS);
-    }
-
     // Render viewmodel objects with depth-range trick to prevent z-fighting with world geometry
     if (input.viewmodelObjects != nullptr && !input.viewmodelObjects->empty()) {
         glDepthRange(0.0, 0.01);
@@ -426,7 +355,6 @@ void SceneRenderPipeline::renderScenePass(const SceneRenderInput& input,
                               input.cameraPosition);
         glDepthRange(0.0, 1.0);
     }
-
 
     sceneFBO_.unbind();
     glDisable(GL_DEPTH_TEST);

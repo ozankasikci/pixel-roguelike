@@ -197,7 +197,7 @@ Plans:
 
 ### Phase 10: Global Keyboard Shortcuts and Hover Highlight
 
-**Goal:** The editor responds to Delete, Ctrl+D, Escape, and F from any focused panel — viewport, outliner, or inspector — and shows a hover highlight on objects under the cursor before they are clicked
+**Goal:** The editor responds to Delete, Ctrl+D, Escape, and F from any focused panel �� viewport, outliner, or inspector — and shows a hover highlight on objects under the cursor before they are clicked
 **Depends on:** Phase 9
 **Requirements**: SEL-02, SEL-03, OBJ-01, OBJ-02, OBJ-03
 **Success Criteria** (what must be TRUE):
@@ -271,7 +271,7 @@ Plans:
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order: 1 → 1.1 → 2 → 2.1 → 3 → 4 → 5 → 6 → 7 → 8 → 9 → 10 → 11 → 12 → 13 → 14 → 15 → 16 → 17 → 18 → 19
+Phases execute in numeric order: 1 → 1.1 → 2 → 2.1 → 3 → 4 → 5 → 6 → 7 → 8 → 9 → 10 → 11 → 12 → 13 → 14 → 15 → 16 → 17 → 18
 
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
@@ -295,7 +295,6 @@ Phases execute in numeric order: 1 → 1.1 → 2 → 2.1 → 3 → 4 → 5 → 6
 | 16. Trigger & Behavior Authoring | v1.2 | 3/3 | Complete | 2026-04-04 |
 | 17. Unified Collider System | v1.2 | 4/4 | Complete | 2026-04-05 |
 | 18. Maintainability Refactoring | — | 6/6 | Complete    | 2026-04-05 |
-| 19. Refactor SingleDoor to DoorGroup | — | 0/2 | Planning complete | - |
 
 ### Phase 14: improve lighting, reflections, occlusion, and shadow quality
 
@@ -380,22 +379,3 @@ Plans:
 - [x] 18-04-PLAN.md — Visitor pattern: replace 5 switch-on-kind statements with std::visit in EditorSceneDocument.cpp
 - [x] 18-05-PLAN.md — Gap closure: migrate test fixture light format, extract drawTransformSection shared utility
 - [x] 18-06-PLAN.md — Gap closure: extract asset inspector helpers from EditorInspectorPanel.cpp
-
-### Phase 19: Refactor SingleDoor into multi-part group architecture with pivot-based rotation
-
-**Goal:** Replace the monolithic LevelSingleDoorPlacement with a LevelDoorGroupPlacement group containing child mesh placements (frame + leaf with pivot), extract a shared makePivotLeafModel helper to eliminate duplicated pivot math, update parser/serializer for door_group keyword and pivot token, and refactor all editor object model dispatch sites from SingleDoor to DoorGroup
-**Requirements**: None (architecture refactoring phase; not mapped to REQUIREMENTS.md IDs)
-**Depends on:** Phase 18
-**Success Criteria** (what must be TRUE):
-  1. LevelDoorGroupPlacement replaces LevelSingleDoorPlacement as the door data type
-  2. LevelMeshPlacement has an optional pivot field for hinge-based rotation
-  3. Scene files use door_group keyword with child mesh entries (not single_door)
-  4. A single shared makePivotLeafModel helper computes pivot-aware leaf transforms in both runtime and editor
-  5. EditorSceneObjectKind::DoorGroup replaces SingleDoor in all dispatch sites
-  6. DoorGroupInspector shows door behavior properties; MeshInspector shows optional pivot row
-  7. All three executables build, all existing tests pass
-**Plans:** 2 plans
-
-Plans:
-- [ ] 19-01-PLAN.md — Core types, parser/serializer, shared pivot helper, runtime builder, scene migration
-- [ ] 19-02-PLAN.md — Editor document, preview world, selection, inspector, viewport interaction updates

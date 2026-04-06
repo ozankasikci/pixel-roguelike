@@ -35,7 +35,6 @@ bool isViewportSelectableKind(const EditorSelectionHandle& handle, const EditorU
         return ui.showSpawnMarker;
     case EditorSceneObjectKind::Mesh:
     case EditorSceneObjectKind::Archetype:
-    case EditorSceneObjectKind::SingleDoor:
     case EditorSceneObjectKind::Group:
         return true;
     }
@@ -291,7 +290,6 @@ bool applyGizmoToSelectedObject(EditorSceneDocument& document,
         case EditorSceneObjectKind::Collider:
         case EditorSceneObjectKind::ReflectionProbe:
         case EditorSceneObjectKind::Archetype:
-        case EditorSceneObjectKind::SingleDoor:
         case EditorSceneObjectKind::Group:
             model = document.worldTransformMatrix(object->id);
             break;
@@ -344,7 +342,6 @@ bool applyGizmoToSelectedObject(EditorSceneDocument& document,
         case EditorSceneObjectKind::Collider:
         case EditorSceneObjectKind::ReflectionProbe:
         case EditorSceneObjectKind::Archetype:
-        case EditorSceneObjectKind::SingleDoor:
         case EditorSceneObjectKind::Group:
             if (!document.applyWorldTransform(object->id, model)) {
                 return false;
@@ -446,7 +443,6 @@ bool applyGizmoToSelectedObject(EditorSceneDocument& document,
         case EditorSceneObjectKind::Collider:
         case EditorSceneObjectKind::ReflectionProbe:
         case EditorSceneObjectKind::Archetype:
-        case EditorSceneObjectKind::SingleDoor:
         case EditorSceneObjectKind::Group: {
             auto it = multiGizmoState.cachedTransforms.find(id);
             if (it == multiGizmoState.cachedTransforms.end()) continue;
