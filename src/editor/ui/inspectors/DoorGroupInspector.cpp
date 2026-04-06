@@ -56,10 +56,10 @@ void drawDoorGroupInspector(LevelDoorGroupPlacement& dg,
     ImGui::Separator();
     ImGui::TextUnformatted("Door Behavior");
 
-    // Open Angle
+    // Open Angle (negative = opposite direction)
     renderInspectorPropertyRow("Open Angle", [&]() {
         const auto before = document.captureState();
-        bool changed = ImGui::SliderFloat("##value", &dg.openAngle, 0.0f, 180.0f);
+        bool changed = ImGui::DragFloat("##value", &dg.openAngle, 0.5f, -180.0f, 180.0f, "%.1f deg");
         trackItem(before, "Open Angle", changed && ImGui::IsItemDeactivatedAfterEdit());
         return false;
     });

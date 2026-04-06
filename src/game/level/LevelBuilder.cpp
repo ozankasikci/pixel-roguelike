@@ -357,9 +357,9 @@ entt::entity LevelBuilder::addDoorGroup(const LevelDoorGroupPlacement& group, co
     // Attach DoorLeafComponent for swing animation
     DoorLeafComponent doorLeaf;
     doorLeaf.hingePosition = hingeWorldPos;
-    doorLeaf.centerOffsetFromHinge = glm::vec3(0.445f, 0.0f, 0.0f);
+    doorLeaf.centerOffsetFromHinge = -pivot;  // derive from authored pivot, not hardcoded
     doorLeaf.closedScale = leafPlacement->scale;
-    doorLeaf.colliderHalfExtents = glm::vec3(0.445f, 1.01f, 0.05f);
+    doorLeaf.colliderHalfExtents = glm::vec3(std::abs(pivot.x), 1.01f, 0.05f);
     doorLeaf.closedYaw = group.yawDegrees;
     doorLeaf.openYaw = group.yawDegrees - group.openAngle;
     reg.emplace<DoorLeafComponent>(leafEntity, doorLeaf);
@@ -371,9 +371,6 @@ entt::entity LevelBuilder::addDoorGroup(const LevelDoorGroupPlacement& group, co
     // Create door root entity with DoorComponent + InteractableComponent
     // Place at leaf base position so the interact prompt is near the actual door
     auto doorRoot = createTransformEntity(leafBasePos + glm::vec3(0.0f, 1.0f, 0.0f));
-    spdlog::info("addDoorGroup '{}': root={} leaf={} pos=({},{},{}) locked={}",
-        group.name, (uint32_t)doorRoot, (uint32_t)leafEntity,
-        group.position.x, group.position.y, group.position.z, group.locked);
 
     if (group.locked) {
         // Locked door: only InteractableComponent, no DoorComponent

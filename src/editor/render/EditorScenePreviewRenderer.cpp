@@ -11,6 +11,7 @@
 #include "game/components/LightComponent.h"
 #include "game/components/MeshComponent.h"
 #include "game/components/TransformComponent.h"
+#include "game/prefabs/GameplayPrefabs.h"
 #include "game/rendering/MaterialDefinition.h"
 #include "game/rendering/MaterialTextureLibrary.h"
 
@@ -298,6 +299,56 @@ void appendHelperObjects(std::vector<RenderObject>& objects,
                 true,   // unlit
                 1.5f    // lineWidth
             });
+        }
+    }
+
+    // Pivot point visualization for door leaf meshes: small magenta cube at hinge position
+    if (cube != nullptr) {
+        for (const auto& object : document.objects()) {
+            if (object.kind != EditorSceneObjectKind::Mesh) continue;
+            const auto& meshPlacement = std::get<LevelMeshPlacement>(object.payload);
+            if (!meshPlacement.pivot.has_value()) continue;
+
+            auto parentObjId = document.parentObjectId(object.id);
+            const auto* parentObj = document.findObject(parentObjId);
+            if (!parentObj || parentObj->kind != EditorSceneObjectKind::DoorGroup) continue;
+
+            const auto& dg = std::get<LevelDoorGroupPlacement>(parentObj->payload);
+            const glm::vec3 hingePos = computeHingeWorldPos(
+                meshPlacement.position, dg.yawDegrees, meshPlacement.pivot.value());
+
+            // Hinge marker
+            objects.push_back(RenderObject{
+                cube,
+                makeModelMatrix(hingePos, glm::vec3(0.06f)),
+                glm::vec3(1.0f, 0.3f, 0.8f), // magenta
+                materials.resolve("metal_default"),
+                false,  // solid
+                true,   // ignoreDepth
+                true,   // unlit
+                1.0f
+            });
+
+            // Line from hinge toward leaf position
+            const glm::vec3 midpoint = (hingePos + meshPlacement.position) * 0.5f;
+            const float dist = glm::length(meshPlacement.position - hingePos);
+            if (dist > 0.01f) {
+                const glm::vec3 dir = (meshPlacement.position - hingePos) / dist;
+                const float angleY = std::atan2(dir.x, dir.z);
+                glm::mat4 lineModel = glm::translate(glm::mat4(1.0f), midpoint);
+                lineModel = glm::rotate(lineModel, angleY, glm::vec3(0.0f, 1.0f, 0.0f));
+                lineModel = glm::scale(lineModel, glm::vec3(0.02f, 0.02f, dist));
+                objects.push_back(RenderObject{
+                    cube,
+                    lineModel,
+                    glm::vec3(1.0f, 0.3f, 0.8f), // magenta
+                    materials.resolve("metal_default"),
+                    false,  // solid
+                    true,   // ignoreDepth
+                    true,   // unlit
+                    1.0f
+                });
+            }
         }
     }
 }
