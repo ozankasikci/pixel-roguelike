@@ -235,6 +235,36 @@ void EditorPreviewWorld::rebuild(const EditorSceneDocument& document, const Cont
             }
             break;
         }
+        case EditorSceneObjectKind::SingleDoor: {
+            auto placement = std::get<LevelSingleDoorPlacement>(object.payload);
+            glm::vec3 position(0.0f), rotation(0.0f), scale(1.0f);
+            if (decomposeTransformMatrix(document.worldTransformMatrix(object.id), position, rotation, scale)) {
+                placement.rootPosition = position;
+                placement.doorYawDegrees = rotation.y;
+            }
+            // Render frame mesh at rootPosition with doorYawDegrees (matches spawnSingleDoor scale 0.22)
+            constexpr float kDoorScale = 0.22f;
+            builder.addMesh(placement.frameMeshName,
+                            placement.rootPosition,
+                            glm::vec3(kDoorScale),
+                            glm::vec3(0.0f, placement.doorYawDegrees, 0.0f),
+                            placement.frameTint,
+                            placement.frameMaterialId);
+            // Compute hinge position and render door leaf mesh (matches spawnSingleDoor)
+            const float yawRad = glm::radians(placement.doorYawDegrees);
+            const glm::vec3 localHingeOffset(-0.45f, 0.0f, 0.04f);
+            const glm::vec3 hingeWorldPos = placement.rootPosition + glm::vec3(
+                localHingeOffset.x * std::cos(yawRad) - localHingeOffset.z * std::sin(yawRad),
+                0.0f,
+                localHingeOffset.x * std::sin(yawRad) + localHingeOffset.z * std::cos(yawRad));
+            builder.addMesh(placement.doorMeshName,
+                            hingeWorldPos,
+                            glm::vec3(kDoorScale),
+                            glm::vec3(0.0f, placement.doorYawDegrees, 0.0f),
+                            placement.doorTint,
+                            placement.doorMaterialId);
+            break;
+        }
         }
 
         for (std::size_t index = previousCount; index < entities_.size(); ++index) {
@@ -254,12 +284,18 @@ void EditorPreviewWorld::syncMaterials(const EditorSceneDocument& document,
             continue;
         }
         const auto* object = document.findObject(ownerIt->second);
-        if (object == nullptr || object->kind != EditorSceneObjectKind::Mesh) {
+        if (object == nullptr) {
             continue;
         }
-        const auto& placement = std::get<LevelMeshPlacement>(object->payload);
-        mesh.materialId = placement.materialId.empty() ? "stone_default" : placement.materialId;
-        mesh.tint = placement.tint.value_or(glm::vec3(1.0f));
+        if (object->kind == EditorSceneObjectKind::Mesh) {
+            const auto& placement = std::get<LevelMeshPlacement>(object->payload);
+            mesh.materialId = placement.materialId.empty() ? "stone_default" : placement.materialId;
+            mesh.tint = placement.tint.value_or(glm::vec3(1.0f));
+        } else if (object->kind != EditorSceneObjectKind::SingleDoor) {
+            // SingleDoor materials are set during rebuild via builder.addMesh;
+            // other non-mesh kinds don't need material sync.
+            continue;
+        }
     }
 }
 
@@ -350,6 +386,10 @@ void EditorPreviewWorld::syncTransforms(const EditorSceneDocument& document) {
         case EditorSceneObjectKind::PlayerSpawn:
             break;
         case EditorSceneObjectKind::Group:
+            break;
+        case EditorSceneObjectKind::SingleDoor:
+            transform.position = position;
+            transform.rotation.y = rotation.y;
             break;
         }
     }

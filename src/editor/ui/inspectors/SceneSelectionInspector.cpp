@@ -8,6 +8,7 @@
 #include "editor/ui/inspectors/PlayerSpawnInspector.h"
 #include "editor/ui/inspectors/PrefabInspector.h"
 #include "editor/ui/inspectors/ReflectionProbeInspector.h"
+#include "editor/ui/inspectors/SingleDoorInspector.h"
 #include "game/content/ContentRegistry.h"
 #include "game/level/LevelDef.h"
 
@@ -154,6 +155,10 @@ void renderSceneSelectionInspector(EditorSceneDocument& document,
     case EditorSceneObjectKind::Group:
         drawGroupInspector(std::get<LevelGroupNode>(object->payload), document,
                            commandStack, pendingCommand, beforeState);
+        return;
+    case EditorSceneObjectKind::SingleDoor:
+        drawSingleDoorInspector(std::get<LevelSingleDoorPlacement>(object->payload), document,
+                                meshIds, materialIds, commandStack, pendingCommand, beforeState);
         return;
     }
 }

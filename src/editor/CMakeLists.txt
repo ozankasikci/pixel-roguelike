@@ -40,6 +40,7 @@ add_library(editor STATIC
     ui/inspectors/PrefabInspector.cpp
     ui/inspectors/ReflectionProbeInspector.cpp
     ui/inspectors/SceneSelectionInspector.cpp
+    ui/inspectors/SingleDoorInspector.cpp
     viewport/EditorViewportController.cpp
     viewport/EditorViewportInteraction.cpp
     ${CMAKE_SOURCE_DIR}/external/ImGuizmo/ImGuizmo.cpp

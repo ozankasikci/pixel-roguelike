@@ -169,6 +169,7 @@ int selectionPriority(const EditorSelectionHandle& handle) {
     switch (handle.objectKind) {
     case EditorSceneObjectKind::Mesh:
     case EditorSceneObjectKind::Archetype:
+    case EditorSceneObjectKind::SingleDoor:
     case EditorSceneObjectKind::Group:
         return 0;
     case EditorSceneObjectKind::Light:
@@ -218,6 +219,7 @@ std::vector<EditorSelectionHandle> buildEditorSelectionHandles(const EditorScene
         switch (object.kind) {
         case EditorSceneObjectKind::Mesh:
         case EditorSceneObjectKind::Archetype:
+        case EditorSceneObjectKind::SingleDoor:
             if (const auto* bounds = previewWorld.findObjectBounds(object.id)) {
                 handle.shape = EditorSelectionShape::WorldAabb;
                 handle.worldMin = bounds->min;
