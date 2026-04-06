@@ -293,10 +293,11 @@ None yet.
 | 260406-0u4 | Package only used assets by scanning scene and content references | 2026-04-06 | 5ad8797 | [260406-0u4-package-only-used-assets-by-scanning-sce](./quick/260406-0u4-package-only-used-assets-by-scanning-sce/) |
 | 260406-2yj | Fix build settings window shrinking and restore Open Build Folder menu item | 2026-04-06 | 3b7c292 | [260406-2yj-fix-build-settings-window-shrinking-and-](./quick/260406-2yj-fix-build-settings-window-shrinking-and-/) |
 | 260406-pe8 | Fix sky texture loading in packaged builds: resolve paths via resolveProjectPath | 2026-04-06 | 41c3d65 | [260406-pe8-fix-sky-texture-loading-in-packaged-buil](./quick/260406-pe8-fix-sky-texture-loading-in-packaged-buil/) |
+| 260406-tq0 | Fix door gizmo move not applying transform to door entity in editor | 2026-04-06 | 5bbc047 | [260406-tq0-fix-door-gizmo-move-not-applying-transfo](./quick/260406-tq0-fix-door-gizmo-move-not-applying-transfo/) |
 
 ## Session Continuity
 
-Last activity: 2026-04-06 - Completed quick task 260406-pe8: Fix sky texture loading in packaged builds
+Last activity: 2026-04-06 - Completed quick task 260406-tq0: Fix door gizmo move not applying transform to door entity in editor
 Last session: 2026-04-05T03:13:41.712Z
 Stopped at: Completed 18-06-PLAN.md
 Resume file: None
