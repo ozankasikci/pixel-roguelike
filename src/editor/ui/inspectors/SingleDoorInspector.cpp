@@ -113,6 +113,13 @@ void drawSingleDoorInspector(LevelSingleDoorPlacement& door,
             return ImGui::DragFloat("##value", &door.doorYawDegrees, 0.5f, -360.0f, 360.0f, "%.1f");
         }));
 
+    // Hinge pivot
+    itemBefore = document.captureState();
+    trackSceneItem(itemBefore, "Change Hinge Pivot",
+        renderInspectorPropertyRow("Hinge Pivot", [&]() {
+            return editVec3("##value", door.hingePivot);
+        }));
+
     // Open angle
     itemBefore = document.captureState();
     trackSceneItem(itemBefore, "Change Open Angle",

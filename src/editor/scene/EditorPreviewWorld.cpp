@@ -253,7 +253,7 @@ void EditorPreviewWorld::rebuild(const EditorSceneDocument& document, const Cont
                             placement.frameMaterialId);
             // Compute hinge position and render door leaf mesh (matches spawnSingleDoor)
             const float yawRad = glm::radians(placement.doorYawDegrees);
-            const glm::vec3 localHingeOffset(-0.45f, 0.0f, 0.04f);
+            const glm::vec3& localHingeOffset = placement.hingePivot;
             const glm::vec3 hingeWorldPos = placement.rootPosition + glm::vec3(
                 localHingeOffset.x * std::cos(yawRad) - localHingeOffset.z * std::sin(yawRad),
                 0.0f,
@@ -393,10 +393,11 @@ void EditorPreviewWorld::syncTransforms(const EditorSceneDocument& document) {
             break;
         case EditorSceneObjectKind::SingleDoor: {
             constexpr float kDoorScale = 0.22f;
+            const auto& door = std::get<LevelSingleDoorPlacement>(object->payload);
             const float yawRad = glm::radians(rotation.y);
             if (registry_.all_of<EditorDoorLeafTag>(entity)) {
                 // Door leaf: recompute hinge offset from root position
-                const glm::vec3 localHingeOffset(-0.45f, 0.0f, 0.04f);
+                const glm::vec3& localHingeOffset = door.hingePivot;
                 const glm::vec3 hingeWorldPos = position + glm::vec3(
                     localHingeOffset.x * std::cos(yawRad) - localHingeOffset.z * std::sin(yawRad),
                     0.0f,

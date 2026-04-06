@@ -177,7 +177,7 @@ entt::entity spawnSingleDoor(LevelBuilder& builder, const SingleDoorSpawnSpec& s
     // Compute hinge world position by rotating local hinge offset by doorYawDegrees
     // Local hinge offset: left jamb at roughly (-0.45, 0, 0.04) in door-facing space
     const float yawRad = glm::radians(spec.doorYawDegrees);
-    const glm::vec3 localHingeOffset(-0.45f, 0.0f, 0.04f);
+    const glm::vec3& localHingeOffset = spec.hingePivot;
     const glm::vec3 hingeWorldPos = spec.rootPosition + glm::vec3(
         localHingeOffset.x * std::cos(yawRad) - localHingeOffset.z * std::sin(yawRad),
         0.0f,
