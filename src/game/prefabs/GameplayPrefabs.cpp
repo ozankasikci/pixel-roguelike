@@ -161,10 +161,15 @@ entt::entity spawnDoubleDoor(LevelBuilder& builder, const DoubleDoorSpawnSpec& s
 }
 
 entt::entity spawnSingleDoor(LevelBuilder& builder, const SingleDoorSpawnSpec& spec) {
+    // Door/frame mesh scale: 0.22 produces frame height ~2.1m, door leaf ~2.02m.
+    // The prison_wall_door opening is 0.9m x 1.4m in local space; at wall Y-scale 1.5
+    // the world-space opening is 0.9m x 2.1m — matching the frame height.
+    constexpr float kDoorScale = 0.22f;
+
     // Place the door frame (static visual mesh)
     builder.addMesh(spec.frameMeshName,
         spec.rootPosition,
-        glm::vec3(0.21f),
+        glm::vec3(kDoorScale),
         glm::vec3(0.0f, spec.doorYawDegrees, 0.0f),
         spec.frameTint,
         spec.frameMaterialId);
@@ -179,9 +184,9 @@ entt::entity spawnSingleDoor(LevelBuilder& builder, const SingleDoorSpawnSpec& s
         localHingeOffset.x * std::sin(yawRad) + localHingeOffset.z * std::cos(yawRad)
     );
 
-    // Center of door leaf is ~0.42m in the +X direction from hinge (in hinge-local space)
-    // This is the offset used for rotation animation
-    const glm::vec3 centerOffsetFromHinge(0.42f, 0.0f, 0.0f);
+    // Center of door leaf is ~0.445m in the +X direction from hinge (in hinge-local space)
+    // SM_DoorA raw X range ~4.06 units; at scale 0.22 the half-width is ~0.445m
+    const glm::vec3 centerOffsetFromHinge(0.445f, 0.0f, 0.0f);
 
     // Compute initial world position of door leaf center (for StaticCollider)
     const glm::vec3 leafWorldCenter = hingeWorldPos + glm::vec3(
@@ -194,7 +199,7 @@ entt::entity spawnSingleDoor(LevelBuilder& builder, const SingleDoorSpawnSpec& s
     Mesh* leafMesh = builder.mesh(spec.doorMeshName);
     auto leaf = builder.addMesh(leafMesh,
         hingeWorldPos,
-        glm::vec3(0.21f),
+        glm::vec3(kDoorScale),
         glm::vec3(0.0f, spec.doorYawDegrees, 0.0f),
         spec.doorTint,
         spec.doorMaterialId);
@@ -206,11 +211,12 @@ entt::entity spawnSingleDoor(LevelBuilder& builder, const SingleDoorSpawnSpec& s
     auto& registry = builder.registry();
 
     // Attach DoorLeafComponent for swing animation
+    // Collider half-extents: X=half door width ~0.445, Y=half door height ~1.01, Z=depth ~0.05
     DoorLeafComponent doorLeaf;
     doorLeaf.hingePosition = hingeWorldPos;
     doorLeaf.centerOffsetFromHinge = centerOffsetFromHinge;
-    doorLeaf.closedScale = glm::vec3(0.21f);
-    doorLeaf.colliderHalfExtents = glm::vec3(0.42f, 0.96f, 0.05f);
+    doorLeaf.closedScale = glm::vec3(kDoorScale);
+    doorLeaf.colliderHalfExtents = glm::vec3(0.445f, 1.01f, 0.05f);
     doorLeaf.closedYaw = spec.doorYawDegrees;
     doorLeaf.openYaw = spec.doorYawDegrees - spec.openAngle;
     registry.emplace<DoorLeafComponent>(leaf, doorLeaf);
@@ -221,7 +227,7 @@ entt::entity spawnSingleDoor(LevelBuilder& builder, const SingleDoorSpawnSpec& s
     collider.mode = ColliderMode::Solid;
     collider.position = leafWorldCenter;
     collider.rotation = glm::vec3(0.0f, spec.doorYawDegrees, 0.0f);
-    collider.halfExtents = glm::vec3(0.42f, 0.96f, 0.05f);
+    collider.halfExtents = glm::vec3(0.445f, 1.01f, 0.05f);
     registry.emplace<ColliderComponent>(leaf, collider);
 
     // Create the door root entity (interaction trigger point at handle height)

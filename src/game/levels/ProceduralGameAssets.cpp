@@ -298,21 +298,22 @@ std::unique_ptr<Mesh> createPrisonWallDoor() {
         parts.push_back({cube, makeModelMatrix(position, scale, rotation)});
     };
 
-    // Door opening: 0.9m wide, 2.1m tall, bottom at Y=0
-    // Top section: 2.1m to 4.0m (full width)
-    addBox(glm::vec3(0.0f, 3.05f, 0.0f), glm::vec3(1.0f, 0.95f, 0.1f));
+    // Door opening: 0.9m wide, 1.4m tall in local space.
+    // Scene places wall_door panels with Y scale 1.5, so world-space opening = 0.9m x 2.1m.
+    // Top section: 1.4m to 4.0m (full width)
+    addBox(glm::vec3(0.0f, 2.7f, 0.0f), glm::vec3(1.0f, 1.3f, 0.1f));
     // Left section: beside door
-    addBox(glm::vec3(-0.725f, 1.05f, 0.0f), glm::vec3(0.275f, 1.05f, 0.1f));
+    addBox(glm::vec3(-0.725f, 0.7f, 0.0f), glm::vec3(0.275f, 0.7f, 0.1f));
     // Right section: beside door
-    addBox(glm::vec3(0.725f, 1.05f, 0.0f), glm::vec3(0.275f, 1.05f, 0.1f));
+    addBox(glm::vec3(0.725f, 0.7f, 0.0f), glm::vec3(0.275f, 0.7f, 0.1f));
 
     // Steel angle frame insets around the door opening
     // Left jamb (thin L-angle)
-    addBox(glm::vec3(-0.45f, 1.05f, 0.08f), glm::vec3(0.02f, 1.05f, 0.03f));
+    addBox(glm::vec3(-0.45f, 0.7f, 0.08f), glm::vec3(0.02f, 0.7f, 0.03f));
     // Right jamb
-    addBox(glm::vec3(0.45f, 1.05f, 0.08f), glm::vec3(0.02f, 1.05f, 0.03f));
+    addBox(glm::vec3(0.45f, 0.7f, 0.08f), glm::vec3(0.02f, 0.7f, 0.03f));
     // Top lintel
-    addBox(glm::vec3(0.0f, 2.12f, 0.08f), glm::vec3(0.45f, 0.02f, 0.03f));
+    addBox(glm::vec3(0.0f, 1.42f, 0.08f), glm::vec3(0.45f, 0.02f, 0.03f));
 
     RawMeshData merged = mergeMeshes(parts);
     return std::make_unique<Mesh>(merged.positions, merged.normals, merged.uvs, merged.tangents,
