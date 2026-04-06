@@ -64,25 +64,29 @@ glm::mat4 makePivotLeafModel(const glm::vec3& groupWorldPos,
                               const glm::vec3& pivot,
                               const glm::vec3& scale) {
     const float yawRad = glm::radians(groupYawDeg);
+    // Pivot is in mesh-local coords — scale to world units
+    const glm::vec3 scaledPivot = pivot * scale;
     const glm::vec3 hingeWorldPos = groupWorldPos + glm::vec3(
-        pivot.x * std::cos(yawRad) - pivot.z * std::sin(yawRad),
+        scaledPivot.x * std::cos(yawRad) - scaledPivot.z * std::sin(yawRad),
         0.0f,
-        pivot.x * std::sin(yawRad) + pivot.z * std::cos(yawRad));
+        scaledPivot.x * std::sin(yawRad) + scaledPivot.z * std::cos(yawRad));
     glm::mat4 model = glm::translate(glm::mat4(1.0f), hingeWorldPos);
     model = glm::rotate(model, yawRad, glm::vec3(0.0f, 1.0f, 0.0f));
-    model = glm::translate(model, -pivot);
     model = glm::scale(model, scale);
+    model = glm::translate(model, -pivot);
     return model;
 }
 
 glm::vec3 computeHingeWorldPos(const glm::vec3& groupWorldPos,
                                 float groupYawDeg,
-                                const glm::vec3& pivot) {
+                                const glm::vec3& pivot,
+                                const glm::vec3& scale) {
     const float yawRad = glm::radians(groupYawDeg);
+    const glm::vec3 scaledPivot = pivot * scale;
     return groupWorldPos + glm::vec3(
-        pivot.x * std::cos(yawRad) - pivot.z * std::sin(yawRad),
+        scaledPivot.x * std::cos(yawRad) - scaledPivot.z * std::sin(yawRad),
         0.0f,
-        pivot.x * std::sin(yawRad) + pivot.z * std::cos(yawRad));
+        scaledPivot.x * std::sin(yawRad) + scaledPivot.z * std::cos(yawRad));
 }
 
 entt::entity spawnCheckpoint(LevelBuilder& builder, const CheckpointSpawnSpec& spec) {

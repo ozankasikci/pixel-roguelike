@@ -317,33 +317,32 @@ void appendHelperObjects(std::vector<RenderObject>& objects,
 
                 const glm::vec3 leafWorldPos = dg.position + meshPlacement.position;
                 const glm::vec3 hingePos = computeHingeWorldPos(
-                    leafWorldPos, dg.yawDegrees, meshPlacement.pivot.value());
+                    leafWorldPos, dg.yawDegrees, meshPlacement.pivot.value(), meshPlacement.scale);
 
-                // Hinge marker (magenta cube)
+                // Vertical hinge axis: bright green wireframe pole (same style as trigger volumes)
+                const glm::vec3 pivotTint(0.90f, 0.20f, 1.00f);
                 objects.push_back(RenderObject{
                     cube,
-                    makeModelMatrix(hingePos, glm::vec3(0.08f)),
-                    glm::vec3(1.0f, 0.3f, 0.8f),
-                    materials.resolve("metal_default"),
-                    false, true, true, 1.0f
+                    makeModelMatrix(hingePos + glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(0.06f, 2.0f, 0.06f)),
+                    pivotTint,
+                    materials.resolve("stone_default"),
+                    true,   // wireframe — same as trigger volumes
+                    true,   // ignoreDepth
+                    true,   // unlit
+                    2.0f    // lineWidth
                 });
 
-                // Line from hinge to leaf center
-                const float dist = glm::length(leafWorldPos - hingePos);
-                if (dist > 0.01f) {
-                    const glm::vec3 mid = (hingePos + leafWorldPos) * 0.5f;
-                    const glm::vec3 dir = (leafWorldPos - hingePos) / dist;
-                    const float angleY = std::atan2(dir.x, dir.z);
-                    glm::mat4 lineModel = glm::translate(glm::mat4(1.0f), mid);
-                    lineModel = glm::rotate(lineModel, angleY, glm::vec3(0.0f, 1.0f, 0.0f));
-                    lineModel = glm::scale(lineModel, glm::vec3(0.02f, 0.02f, dist));
-                    objects.push_back(RenderObject{
-                        cube, lineModel,
-                        glm::vec3(1.0f, 0.3f, 0.8f),
-                        materials.resolve("metal_default"),
-                        false, true, true, 1.0f
-                    });
-                }
+                // Solid cube at handle height
+                objects.push_back(RenderObject{
+                    cube,
+                    makeModelMatrix(hingePos + glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(0.15f)),
+                    pivotTint,
+                    materials.resolve("stone_default"),
+                    false,  // solid
+                    true,   // ignoreDepth
+                    true,   // unlit
+                    1.0f
+                });
             }
         }
     }

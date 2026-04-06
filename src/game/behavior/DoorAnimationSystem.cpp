@@ -26,8 +26,8 @@ glm::mat4 makeDoorLeafModel(const DoorLeafComponent& leaf, float progress) {
 
     glm::mat4 model = glm::translate(glm::mat4(1.0f), leaf.hingePosition);
     model = glm::rotate(model, glm::radians(yaw), glm::vec3(0.0f, 1.0f, 0.0f));
-    model = glm::translate(model, leaf.centerOffsetFromHinge);
     model = glm::scale(model, leaf.closedScale);
+    model = glm::translate(model, leaf.centerOffsetFromHinge);  // pivot in mesh-local space, applied after scale
     return model;
 }
 
@@ -77,8 +77,8 @@ void DoorAnimationSystem::init(Application& app) {
                 const float yaw = leaf->closedYaw;
                 glm::mat4 model = glm::translate(glm::mat4(1.0f), leaf->hingePosition);
                 model = glm::rotate(model, glm::radians(yaw), glm::vec3(0.0f, 1.0f, 0.0f));
-                model = glm::translate(model, leaf->centerOffsetFromHinge);
                 model = glm::scale(model, leaf->closedScale);
+                model = glm::translate(model, leaf->centerOffsetFromHinge);
                 const glm::vec3 center = glm::vec3(model * glm::vec4(0.0f, 0.0f, 0.0f, 1.0f));
                 mesh->modelOverride = model;
                 mesh->useModelOverride = true;
@@ -95,8 +95,8 @@ void DoorAnimationSystem::init(Application& app) {
                 const float yaw = leaf->closedYaw;
                 glm::mat4 model = glm::translate(glm::mat4(1.0f), leaf->hingePosition);
                 model = glm::rotate(model, glm::radians(yaw), glm::vec3(0.0f, 1.0f, 0.0f));
-                model = glm::translate(model, leaf->centerOffsetFromHinge);
                 model = glm::scale(model, leaf->closedScale);
+                model = glm::translate(model, leaf->centerOffsetFromHinge);
                 const glm::vec3 center = glm::vec3(model * glm::vec4(0.0f, 0.0f, 0.0f, 1.0f));
                 mesh->modelOverride = model;
                 mesh->useModelOverride = true;

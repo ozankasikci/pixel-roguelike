@@ -20,7 +20,8 @@ glm::mat4 makePivotLeafModel(const glm::vec3& groupWorldPos,
 
 glm::vec3 computeHingeWorldPos(const glm::vec3& groupWorldPos,
                                 float groupYawDeg,
-                                const glm::vec3& pivot);
+                                const glm::vec3& pivot,
+                                const glm::vec3& scale = glm::vec3(1.0f));
 
 entt::entity spawnCheckpoint(LevelBuilder& builder, const CheckpointSpawnSpec& spec);
 entt::entity spawnDoubleDoor(LevelBuilder& builder,

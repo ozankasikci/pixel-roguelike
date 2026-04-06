@@ -316,7 +316,7 @@ entt::entity LevelBuilder::addDoorGroup(const LevelDoorGroupPlacement& group, co
     // Use the leaf's resolved position (respects editor edits) for pivot math
     const glm::vec3 leafBasePos = leafPlacement->position;
     const glm::vec3 pivot = leafPlacement->pivot.value();
-    const glm::vec3 hingeWorldPos = computeHingeWorldPos(leafBasePos, group.yawDegrees, pivot);
+    const glm::vec3 hingeWorldPos = computeHingeWorldPos(leafBasePos, group.yawDegrees, pivot, leafPlacement->scale);
     const glm::mat4 leafModel = makePivotLeafModel(leafBasePos, group.yawDegrees, pivot, leafPlacement->scale);
 
     // Spawn the leaf mesh entity
@@ -359,7 +359,7 @@ entt::entity LevelBuilder::addDoorGroup(const LevelDoorGroupPlacement& group, co
     doorLeaf.hingePosition = hingeWorldPos;
     doorLeaf.centerOffsetFromHinge = -pivot;  // derive from authored pivot, not hardcoded
     doorLeaf.closedScale = leafPlacement->scale;
-    doorLeaf.colliderHalfExtents = glm::vec3(std::abs(pivot.x), 1.01f, 0.05f);
+    doorLeaf.colliderHalfExtents = glm::vec3(std::abs(pivot.x) * leafPlacement->scale.x, 1.01f, 0.05f);
     doorLeaf.closedYaw = group.yawDegrees;
     doorLeaf.openYaw = group.yawDegrees - group.openAngle;
     reg.emplace<DoorLeafComponent>(leafEntity, doorLeaf);

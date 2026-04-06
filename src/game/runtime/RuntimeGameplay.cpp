@@ -502,8 +502,8 @@ void updateRuntimeDoorAnimation(entt::registry& registry, float deltaTime) {
                 const float yaw = glm::mix(leaf->closedYaw, leaf->openYaw, eased);
                 glm::mat4 model = glm::translate(glm::mat4(1.0f), leaf->hingePosition);
                 model = glm::rotate(model, glm::radians(yaw), glm::vec3(0.0f, 1.0f, 0.0f));
-                model = glm::translate(model, leaf->centerOffsetFromHinge);
                 model = glm::scale(model, leaf->closedScale);
+                model = glm::translate(model, leaf->centerOffsetFromHinge);
                 mesh->modelOverride = model;
                 mesh->useModelOverride = true;
                 if (collider) {
