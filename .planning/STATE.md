@@ -295,10 +295,11 @@ None yet.
 | 260406-pe8 | Fix sky texture loading in packaged builds: resolve paths via resolveProjectPath | 2026-04-06 | 41c3d65 | [260406-pe8-fix-sky-texture-loading-in-packaged-buil](./quick/260406-pe8-fix-sky-texture-loading-in-packaged-buil/) |
 | 260406-tq0 | Fix door gizmo move not applying transform to door entity in editor | 2026-04-06 | 5bbc047 | [260406-tq0-fix-door-gizmo-move-not-applying-transfo](./quick/260406-tq0-fix-door-gizmo-move-not-applying-transfo/) |
 | 260406-uqb | Add editable hinge pivot point to SingleDoor and fix door rotation | 2026-04-06 | 2b9e111 | [260406-uqb-add-editable-hinge-pivot-point-to-single](./quick/260406-uqb-add-editable-hinge-pivot-point-to-single/) |
+| 260406-v67 | Fix door leaf moving when hinge pivot is changed in inspector | 2026-04-06 | 9a36c03 | [260406-v67-fix-door-leaf-moving-when-hinge-pivot-is](./quick/260406-v67-fix-door-leaf-moving-when-hinge-pivot-is/) |
 
 ## Session Continuity
 
-Last activity: 2026-04-06 - Completed quick task 260406-uqb: Add editable hinge pivot point to SingleDoor
+Last activity: 2026-04-06 - Completed quick task 260406-v67: Fix door leaf moving when hinge pivot is changed
 Last session: 2026-04-05T03:13:41.712Z
 Stopped at: Completed 18-06-PLAN.md
 Resume file: None
