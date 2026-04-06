@@ -251,21 +251,29 @@ void EditorPreviewWorld::rebuild(const EditorSceneDocument& document, const Cont
                             glm::vec3(0.0f, placement.doorYawDegrees, 0.0f),
                             placement.frameTint,
                             placement.frameMaterialId);
-            // Compute hinge position and render door leaf mesh (matches spawnSingleDoor)
+            // Pivot-aware leaf model: T(hinge) * R(yaw) * T(-pivot) * S(scale)
+            // Mesh center stays at rootPosition; changing hingePivot doesn't move the door
             const float yawRad = glm::radians(placement.doorYawDegrees);
-            const glm::vec3& localHingeOffset = placement.hingePivot;
+            const glm::vec3& pivot = placement.hingePivot;
             const glm::vec3 hingeWorldPos = placement.rootPosition + glm::vec3(
-                localHingeOffset.x * std::cos(yawRad) - localHingeOffset.z * std::sin(yawRad),
+                pivot.x * std::cos(yawRad) - pivot.z * std::sin(yawRad),
                 0.0f,
-                localHingeOffset.x * std::sin(yawRad) + localHingeOffset.z * std::cos(yawRad));
+                pivot.x * std::sin(yawRad) + pivot.z * std::cos(yawRad));
+            glm::mat4 leafModel = glm::translate(glm::mat4(1.0f), hingeWorldPos);
+            leafModel = glm::rotate(leafModel, yawRad, glm::vec3(0.0f, 1.0f, 0.0f));
+            leafModel = glm::translate(leafModel, -pivot);
+            leafModel = glm::scale(leafModel, glm::vec3(kDoorScale));
             entt::entity leafEntity = builder.addMesh(placement.doorMeshName,
-                                                       hingeWorldPos,
+                                                       placement.rootPosition,
                                                        glm::vec3(kDoorScale),
                                                        glm::vec3(0.0f, placement.doorYawDegrees, 0.0f),
                                                        placement.doorTint,
                                                        placement.doorMaterialId);
             if (leafEntity != entt::null) {
                 registry_.emplace<EditorDoorLeafTag>(leafEntity);
+                if (auto* mesh = registry_.try_get<MeshComponent>(leafEntity)) {
+                    mesh->modelOverride = leafModel;
+                }
             }
             break;
         }
@@ -396,20 +404,24 @@ void EditorPreviewWorld::syncTransforms(const EditorSceneDocument& document) {
             const auto& door = std::get<LevelSingleDoorPlacement>(object->payload);
             const float yawRad = glm::radians(rotation.y);
             if (registry_.all_of<EditorDoorLeafTag>(entity)) {
-                // Door leaf: recompute hinge offset from root position
-                const glm::vec3& localHingeOffset = door.hingePivot;
+                // Pivot-aware leaf model: T(hinge) * R(yaw) * T(-pivot) * S(scale)
+                // Mesh center stays at rootPosition; changing hingePivot doesn't move the door
+                const glm::vec3& pivot = door.hingePivot;
                 const glm::vec3 hingeWorldPos = position + glm::vec3(
-                    localHingeOffset.x * std::cos(yawRad) - localHingeOffset.z * std::sin(yawRad),
+                    pivot.x * std::cos(yawRad) - pivot.z * std::sin(yawRad),
                     0.0f,
-                    localHingeOffset.x * std::sin(yawRad) + localHingeOffset.z * std::cos(yawRad));
-                transform.position = hingeWorldPos;
+                    pivot.x * std::sin(yawRad) + pivot.z * std::cos(yawRad));
+                glm::mat4 leafModel = glm::translate(glm::mat4(1.0f), hingeWorldPos);
+                leafModel = glm::rotate(leafModel, yawRad, glm::vec3(0.0f, 1.0f, 0.0f));
+                leafModel = glm::translate(leafModel, -pivot);
+                leafModel = glm::scale(leafModel, glm::vec3(kDoorScale));
+                transform.position = position;
                 transform.rotation.y = rotation.y;
                 transform.scale = glm::vec3(kDoorScale);
                 if (registry_.all_of<MeshComponent>(entity)) {
                     auto& mesh = registry_.get<MeshComponent>(entity);
                     if (mesh.useModelOverride) {
-                        mesh.modelOverride = makeModelMatrix(
-                            hingeWorldPos, glm::vec3(kDoorScale), glm::vec3(0.0f, rotation.y, 0.0f));
+                        mesh.modelOverride = leafModel;
                     }
                 }
             } else {
