@@ -1,5 +1,6 @@
 #include "editor/scene/EditorPreviewWorld.h"
 
+#include "engine/core/MathUtils.h"
 #include "engine/core/PathUtils.h"
 #include "engine/rendering/assets/ModelLoader.h"
 #include "game/components/LightComponent.h"
@@ -257,12 +258,15 @@ void EditorPreviewWorld::rebuild(const EditorSceneDocument& document, const Cont
                 localHingeOffset.x * std::cos(yawRad) - localHingeOffset.z * std::sin(yawRad),
                 0.0f,
                 localHingeOffset.x * std::sin(yawRad) + localHingeOffset.z * std::cos(yawRad));
-            builder.addMesh(placement.doorMeshName,
-                            hingeWorldPos,
-                            glm::vec3(kDoorScale),
-                            glm::vec3(0.0f, placement.doorYawDegrees, 0.0f),
-                            placement.doorTint,
-                            placement.doorMaterialId);
+            entt::entity leafEntity = builder.addMesh(placement.doorMeshName,
+                                                       hingeWorldPos,
+                                                       glm::vec3(kDoorScale),
+                                                       glm::vec3(0.0f, placement.doorYawDegrees, 0.0f),
+                                                       placement.doorTint,
+                                                       placement.doorMaterialId);
+            if (leafEntity != entt::null) {
+                registry_.emplace<EditorDoorLeafTag>(leafEntity);
+            }
             break;
         }
         }
@@ -387,10 +391,41 @@ void EditorPreviewWorld::syncTransforms(const EditorSceneDocument& document) {
             break;
         case EditorSceneObjectKind::Group:
             break;
-        case EditorSceneObjectKind::SingleDoor:
-            transform.position = position;
-            transform.rotation.y = rotation.y;
+        case EditorSceneObjectKind::SingleDoor: {
+            constexpr float kDoorScale = 0.22f;
+            const float yawRad = glm::radians(rotation.y);
+            if (registry_.all_of<EditorDoorLeafTag>(entity)) {
+                // Door leaf: recompute hinge offset from root position
+                const glm::vec3 localHingeOffset(-0.45f, 0.0f, 0.04f);
+                const glm::vec3 hingeWorldPos = position + glm::vec3(
+                    localHingeOffset.x * std::cos(yawRad) - localHingeOffset.z * std::sin(yawRad),
+                    0.0f,
+                    localHingeOffset.x * std::sin(yawRad) + localHingeOffset.z * std::cos(yawRad));
+                transform.position = hingeWorldPos;
+                transform.rotation.y = rotation.y;
+                transform.scale = glm::vec3(kDoorScale);
+                if (registry_.all_of<MeshComponent>(entity)) {
+                    auto& mesh = registry_.get<MeshComponent>(entity);
+                    if (mesh.useModelOverride) {
+                        mesh.modelOverride = makeModelMatrix(
+                            hingeWorldPos, glm::vec3(kDoorScale), glm::vec3(0.0f, rotation.y, 0.0f));
+                    }
+                }
+            } else {
+                // Door frame: placed at root position
+                transform.position = position;
+                transform.rotation.y = rotation.y;
+                transform.scale = glm::vec3(kDoorScale);
+                if (registry_.all_of<MeshComponent>(entity)) {
+                    auto& mesh = registry_.get<MeshComponent>(entity);
+                    if (mesh.useModelOverride) {
+                        mesh.modelOverride = makeModelMatrix(
+                            position, glm::vec3(kDoorScale), glm::vec3(0.0f, rotation.y, 0.0f));
+                    }
+                }
+            }
             break;
+        }
         }
     }
 
