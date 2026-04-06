@@ -33,8 +33,8 @@ uniform RenderLight uLights[32];
 uniform int uNumLights;
 uniform sampler2D uLtcMat;    // 64x64 LTC inverse transform matrix LUT
 uniform sampler2D uLtcAmp;    // 64x64 LTC amplitude/Fresnel LUT
-uniform sampler2D uShadowMaps[6];
-uniform mat4 uShadowMatrices[6];
+uniform sampler2D uShadowMaps[5];
+uniform mat4 uShadowMatrices[5];
 uniform int uShadowCount;
 uniform int uEnableShadows;
 uniform float uShadowBias;
@@ -787,8 +787,7 @@ vec2 shadowTexelSize(int shadowIndex) {
     if (shadowIndex == 1) return 1.0 / vec2(textureSize(uShadowMaps[1], 0));
     if (shadowIndex == 2) return 1.0 / vec2(textureSize(uShadowMaps[2], 0));
     if (shadowIndex == 3) return 1.0 / vec2(textureSize(uShadowMaps[3], 0));
-    if (shadowIndex == 4) return 1.0 / vec2(textureSize(uShadowMaps[4], 0));
-    return 1.0 / vec2(textureSize(uShadowMaps[5], 0));
+    return 1.0 / vec2(textureSize(uShadowMaps[4], 0));
 }
 
 float shadowDepthAt(int shadowIndex, vec2 uv) {
@@ -796,8 +795,7 @@ float shadowDepthAt(int shadowIndex, vec2 uv) {
     if (shadowIndex == 1) return texture(uShadowMaps[1], uv).r;
     if (shadowIndex == 2) return texture(uShadowMaps[2], uv).r;
     if (shadowIndex == 3) return texture(uShadowMaps[3], uv).r;
-    if (shadowIndex == 4) return texture(uShadowMaps[4], uv).r;
-    return texture(uShadowMaps[5], uv).r;
+    return texture(uShadowMaps[4], uv).r;
 }
 
 vec4 shadowClipPosition(int shadowIndex) {
@@ -805,8 +803,7 @@ vec4 shadowClipPosition(int shadowIndex) {
     if (shadowIndex == 1) return uShadowMatrices[1] * vec4(vWorldPos, 1.0);
     if (shadowIndex == 2) return uShadowMatrices[2] * vec4(vWorldPos, 1.0);
     if (shadowIndex == 3) return uShadowMatrices[3] * vec4(vWorldPos, 1.0);
-    if (shadowIndex == 4) return uShadowMatrices[4] * vec4(vWorldPos, 1.0);
-    return uShadowMatrices[5] * vec4(vWorldPos, 1.0);
+    return uShadowMatrices[4] * vec4(vWorldPos, 1.0);
 }
 
 const vec2 poissonDisk[16] = vec2[16](

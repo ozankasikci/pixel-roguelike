@@ -11,7 +11,7 @@ enum class LightType {
 };
 
 constexpr int kMaxRenderLights = 32;
-constexpr int kMaxShadowedSpotLights = 6;
+constexpr int kMaxShadowedSpotLights = 5;  // macOS OpenGL 4.1 caps at 16 active samplers
 
 struct DirectionalLightSlot {
     bool enabled = false;

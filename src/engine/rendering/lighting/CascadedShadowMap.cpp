@@ -179,7 +179,7 @@ glm::mat4 CascadedShadowMap::buildCascadeMatrix(const glm::vec3& lightDir,
     // GL_DEPTH_CLAMP (enabled in SceneRenderPipeline) handles casters outside
     // the frustum, so only a small safety margin is needed. Lower zMult gives
     // better depth precision (5x improvement over the previous 10.0).
-    constexpr float zMult = 2.0f;
+    constexpr float zMult = 10.0f;
     if (minZ < 0) { minZ *= zMult; } else { minZ /= zMult; }
     if (maxZ < 0) { maxZ /= zMult; } else { maxZ *= zMult; }
 

@@ -265,45 +265,6 @@ void SceneRenderPipeline::renderScenePass(const SceneRenderInput& input,
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glEnable(GL_DEPTH_TEST);
 
-    // Depth pre-pass: render scene depth using the shadow shader (depth-only),
-    // then copy to a separate texture for screen-space contact shadows.
-    {
-        glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
-        shadowShader_->use();
-        shadowShader_->setMat4("uLightViewProjection",
-                               input.projectionMatrix * input.viewMatrix);
-        for (const auto& object : *input.objects) {
-            if (!object.mesh) continue;
-            shadowShader_->setMat4("uModel", object.modelMatrix);
-            object.mesh->draw();
-        }
-        glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
-
-        // Create or recreate the depth copy texture if needed
-        const int fw = sceneFBO_.width();
-        const int fh = sceneFBO_.height();
-        if (depthPrePassTex_ == 0 || depthPrePassW_ != fw || depthPrePassH_ != fh) {
-            if (depthPrePassTex_ != 0) {
-                glDeleteTextures(1, &depthPrePassTex_);
-            }
-            glGenTextures(1, &depthPrePassTex_);
-            glBindTexture(GL_TEXTURE_2D, depthPrePassTex_);
-            glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT24, fw, fh, 0,
-                         GL_DEPTH_COMPONENT, GL_FLOAT, nullptr);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-            depthPrePassW_ = fw;
-            depthPrePassH_ = fh;
-        }
-        // Copy current FBO depth to the standalone texture
-        glBindTexture(GL_TEXTURE_2D, depthPrePassTex_);
-        glCopyTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, 0, 0, fw, fh);
-        glBindTexture(GL_TEXTURE_2D, 0);
-
-        // Allow the main pass to re-render at the same depth values
-        glDepthFunc(GL_LEQUAL);
-    }
-
     const LightingEnvironment& lighting = input.lightingEnvironment;
     const float timeSeconds = static_cast<float>(glfwGetTime());
 
@@ -314,7 +275,7 @@ void SceneRenderPipeline::renderScenePass(const SceneRenderInput& input,
     sceneShader_->setMat4("uViewMatrix", input.viewMatrix);
     sceneShader_->setMat4("uProjection", input.projectionMatrix);
     sceneShader_->setInt("uDebugViewMode", input.postParams ? input.postParams->debugViewMode : 0);
-    sceneShader_->setInt("uEnableContactShadows", csmEnabled ? 1 : 0);
+    sceneShader_->setInt("uEnableContactShadows", 0);  // TODO: fix depth comparison in traceContactShadow before enabling
     sceneShader_->setInt("uSceneDepthTex", TextureUnits::kSceneDepth);
     glActiveTexture(GL_TEXTURE0 + TextureUnits::kSceneDepth);
     glBindTexture(GL_TEXTURE_2D, depthPrePassTex_);
@@ -400,8 +361,6 @@ void SceneRenderPipeline::renderScenePass(const SceneRenderInput& input,
         glDepthRange(0.0, 1.0);
     }
 
-    // Restore default depth function after depth pre-pass set GL_LEQUAL
-    glDepthFunc(GL_LESS);
 
     sceneFBO_.unbind();
     glDisable(GL_DEPTH_TEST);

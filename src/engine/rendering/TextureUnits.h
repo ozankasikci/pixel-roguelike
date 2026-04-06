@@ -14,8 +14,8 @@ namespace TextureUnits {
     constexpr int kEnvironmentSpecular = 0;
     constexpr int kEnvironmentBrdfLut  = 1;
     constexpr int kReflectionProbeMap  = 2;
-// Shadow map slots (6 shadow lights max, from RenderLight.h kMaxShadowedSpotLights)
-    constexpr int kShadowMap0     = 8;   // through kShadowMap0 + 5 = 13
+// Shadow map slots (5 shadow lights max, from RenderLight.h kMaxShadowedSpotLights)
+    constexpr int kShadowMap0     = 8;   // through kShadowMap0 + 4 = 12
     // LTC area-light lookup tables (bound once per scene pass, sit within shadow range)
     constexpr int kLtcMat         = 10;
     constexpr int kLtcAmp         = 11;
