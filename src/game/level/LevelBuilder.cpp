@@ -313,15 +313,16 @@ entt::entity LevelBuilder::addDoorGroup(const LevelDoorGroupPlacement& group, co
         }
     }
 
-    // Compute pivot-aware leaf model matrix
+    // Use the leaf's resolved position (respects editor edits) for pivot math
+    const glm::vec3 leafBasePos = leafPlacement->position;
     const glm::vec3 pivot = leafPlacement->pivot.value();
-    const glm::vec3 hingeWorldPos = computeHingeWorldPos(group.position, group.yawDegrees, pivot);
-    const glm::mat4 leafModel = makePivotLeafModel(group.position, group.yawDegrees, pivot, leafPlacement->scale);
+    const glm::vec3 hingeWorldPos = computeHingeWorldPos(leafBasePos, group.yawDegrees, pivot);
+    const glm::mat4 leafModel = makePivotLeafModel(leafBasePos, group.yawDegrees, pivot, leafPlacement->scale);
 
     // Spawn the leaf mesh entity
     Mesh* leafMeshPtr = mesh(leafPlacement->meshId);
     auto leafEntity = addMesh(leafMeshPtr,
-        group.position,
+        leafBasePos,
         leafPlacement->scale,
         glm::vec3(0.0f, group.yawDegrees, 0.0f),
         leafPlacement->tint,
@@ -368,7 +369,11 @@ entt::entity LevelBuilder::addDoorGroup(const LevelDoorGroupPlacement& group, co
     }
 
     // Create door root entity with DoorComponent + InteractableComponent
-    auto doorRoot = createTransformEntity(group.position + glm::vec3(0.0f, 1.0f, 0.0f));
+    // Place at leaf base position so the interact prompt is near the actual door
+    auto doorRoot = createTransformEntity(leafBasePos + glm::vec3(0.0f, 1.0f, 0.0f));
+    spdlog::info("addDoorGroup '{}': root={} leaf={} pos=({},{},{}) locked={}",
+        group.name, (uint32_t)doorRoot, (uint32_t)leafEntity,
+        group.position.x, group.position.y, group.position.z, group.locked);
 
     if (group.locked) {
         // Locked door: only InteractableComponent, no DoorComponent
