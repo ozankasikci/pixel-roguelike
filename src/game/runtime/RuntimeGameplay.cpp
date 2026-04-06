@@ -8,6 +8,7 @@
 #include "game/components/DoorComponent.h"
 #include "game/components/DoorLeafComponent.h"
 #include "game/components/MeshComponent.h"
+#include "game/prefabs/GameplayPrefabs.h"
 #include "game/components/CameraComponent.h"
 #include "game/components/CharacterControllerComponent.h"
 #include "game/components/CheckpointComponent.h"
@@ -492,7 +493,7 @@ void updateRuntimeDoorAnimation(entt::registry& registry, float deltaTime) {
 
         door.progress = std::min(1.0f, door.progress + deltaTime / door.openDuration);
 
-        // Animate left leaf
+        // Animate left leaf using the same makePivotLeafModel as editor and static rendering
         if (door.leftLeaf != entt::null) {
             auto* mesh = registry.try_get<MeshComponent>(door.leftLeaf);
             auto* collider = registry.try_get<ColliderComponent>(door.leftLeaf);
@@ -500,10 +501,7 @@ void updateRuntimeDoorAnimation(entt::registry& registry, float deltaTime) {
             if (mesh && leaf) {
                 const float eased = 1.0f - std::pow(1.0f - door.progress, 3.0f);
                 const float yaw = glm::mix(leaf->closedYaw, leaf->openYaw, eased);
-                glm::mat4 model = glm::translate(glm::mat4(1.0f), leaf->hingePosition);
-                model = glm::rotate(model, glm::radians(yaw), glm::vec3(0.0f, 1.0f, 0.0f));
-                model = glm::scale(model, leaf->closedScale);
-                model = glm::translate(model, leaf->centerOffsetFromHinge);
+                const glm::mat4 model = makePivotLeafModel(leaf->basePosition, yaw, leaf->pivot, leaf->closedScale);
                 mesh->modelOverride = model;
                 mesh->useModelOverride = true;
                 if (collider) {

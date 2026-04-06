@@ -47,8 +47,8 @@ entt::entity spawnDoorLeaf(LevelBuilder& builder,
     registry.emplace<ColliderComponent>(leaf, collider);
 
     DoorLeafComponent doorLeaf;
-    doorLeaf.hingePosition = hingePosition;
-    doorLeaf.centerOffsetFromHinge = closedCenter - hingePosition;
+    doorLeaf.basePosition = closedCenter;
+    doorLeaf.pivot = glm::vec3(0.0f);  // legacy double-door path: no pivot offset
     doorLeaf.closedScale = leafScale;
     doorLeaf.colliderHalfExtents = collider.halfExtents;
     doorLeaf.closedYaw = closedYaw;

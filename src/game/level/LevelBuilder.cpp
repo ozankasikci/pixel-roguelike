@@ -354,10 +354,11 @@ entt::entity LevelBuilder::addDoorGroup(const LevelDoorGroupPlacement& group, co
     collider.halfExtents = glm::vec3(0.445f, 1.01f, 0.05f);
     reg.emplace<ColliderComponent>(leafEntity, collider);
 
-    // Attach DoorLeafComponent for swing animation
+    // Attach DoorLeafComponent for swing animation — stores raw inputs,
+    // all rendering uses makePivotLeafModel with interpolated yaw
     DoorLeafComponent doorLeaf;
-    doorLeaf.hingePosition = hingeWorldPos;
-    doorLeaf.centerOffsetFromHinge = -pivot;  // derive from authored pivot, not hardcoded
+    doorLeaf.basePosition = leafBasePos;
+    doorLeaf.pivot = pivot;
     doorLeaf.closedScale = leafPlacement->scale;
     doorLeaf.colliderHalfExtents = glm::vec3(std::abs(pivot.x) * leafPlacement->scale.x, 1.01f, 0.05f);
     doorLeaf.closedYaw = group.yawDegrees;
