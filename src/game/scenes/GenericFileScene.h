@@ -26,6 +26,10 @@ public:
     static void registerScriptedGeometry(const std::string& levelId,
                                           std::function<void(LevelBuilder&)> callback);
 
+    /// Look up a previously registered scripted geometry callback for the given level ID.
+    /// Returns an empty std::function if no callback is registered.
+    static std::function<void(LevelBuilder&)> lookupScriptedGeometry(const std::string& levelId);
+
 private:
     MeshLibrary meshLibrary_;
     std::vector<entt::entity> entities_;

@@ -35,6 +35,14 @@ void GenericFileScene::registerScriptedGeometry(const std::string& levelId,
     scriptedGeometryRegistry()[levelId] = std::move(callback);
 }
 
+std::function<void(LevelBuilder&)> GenericFileScene::lookupScriptedGeometry(const std::string& levelId) {
+    auto it = scriptedGeometryRegistry().find(levelId);
+    if (it != scriptedGeometryRegistry().end()) {
+        return it->second;
+    }
+    return {};
+}
+
 GenericFileScene::GenericFileScene(const std::string& scenePath) {
     request_.levelId   = std::filesystem::path(scenePath).stem().string();
     request_.levelPath = scenePath;
