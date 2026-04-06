@@ -34,6 +34,10 @@ void SceneRenderPipeline::init() {
 }
 
 void SceneRenderPipeline::shutdown() {
+    if (depthPrePassTex_) {
+        glDeleteTextures(1, &depthPrePassTex_);
+        depthPrePassTex_ = 0;
+    }
     renderer_.reset();
     shadowShader_.reset();
     sceneShader_.reset();
@@ -166,9 +170,6 @@ void SceneRenderPipeline::renderShadowPass(const std::vector<RenderObject>& obje
 
     glEnable(GL_DEPTH_TEST);
     shadowShader_->use();
-    // Spot light passes do not use a caster offset — zero it out so any previous
-    // CSM value left in the uniform does not bleed into spot shadow renders.
-    shadowShader_->setFloat("uShadowCasterOffset", 0.0f);
 
     for (const auto& light : lights) {
         if (light.shadowIndex < 0 || light.shadowIndex >= kMaxShadowedSpotLights) {
@@ -212,34 +213,11 @@ void SceneRenderPipeline::renderShadowPass(const std::vector<RenderObject>& obje
                                        input.postParams ? input.postParams->csmLambda : 0.5f);
 
         shadowShader_->use();
-        // CSM junction gap coverage — DUAL MECHANISM. Do NOT remove either part without
-        // understanding why both are required (see debug session csm-white-line-wall-edge.md):
-        //
-        // MECHANISM 1 — Caster-side offset (this file, shadow_depth.vert):
-        //   Pushes shadow-casting geometry 0.06 units toward the light during shadow map
-        //   construction. This closes the coverage gap at wall-CEILING junctions, where
-        //   the wall's top edge texels would otherwise fall outside the shadow map's
-        //   recorded occluder coverage when the sun angle is near-grazing. The value 0.06
-        //   is deliberately small: large values (e.g. 0.18, tried previously) shift the
-        //   entire wall's shadow 0.18 units toward the light, creating a gap at wall-FLOOR
-        //   junctions visible as tessellation-shaped bright triangles from first-person view.
-        //
-        // MECHANISM 2 — Receiver-side normal offset (scene.frag, sampleCsmShadow):
-        //   Shifts the shadow lookup position along the fragment's surface normal before
-        //   cascade projection (biasedWorldPos = fragWorldPos + N * 0.15 * slopeFactor).
-        //   This closes the coverage gap at wall-FLOOR junctions for FLOOR/CEILING surfaces
-        //   (N vertical → lookup pushed deeper into the wall's shadow). It does NOT fix
-        //   wall-CEILING gaps for WALL surfaces (N horizontal → lookup pushed sideways,
-        //   not in the gap direction) — that is why Mechanism 1 is still required.
-        //
-        // WHY THEY REGRESS:
-        //   - Remove Mechanism 1 (caster offset = 0) → wall-ceiling white line returns
-        //   - Remove Mechanism 2 (no normal offset in scene.frag) → floor triangle artifacts
-        //   - Increase Mechanism 1 beyond ~0.08 → floor triangle artifacts even with Mechanism 2
-        shadowShader_->setVec3("uLightDirection", lighting.sun.direction);
-        shadowShader_->setFloat("uShadowCasterOffset", 0.15f);  // See dual-mechanism comment above
+        // Shadow map renders true geometry -- no caster offset. Junction gaps
+        // handled by receiver-side normal offset + contact shadows in scene.frag
         glEnable(GL_POLYGON_OFFSET_FILL);
         glPolygonOffset(1.1f, 4.0f);
+        glEnable(GL_DEPTH_CLAMP);
 
         const auto& csmMatrices = csmShadowMap_.lightSpaceMatrices();
         const int csmRes = csmShadowMap_.resolution();
@@ -266,6 +244,7 @@ void SceneRenderPipeline::renderShadowPass(const std::vector<RenderObject>& obje
             }
         }
 
+        glDisable(GL_DEPTH_CLAMP);
         glDisable(GL_POLYGON_OFFSET_FILL);
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
     }
@@ -286,6 +265,45 @@ void SceneRenderPipeline::renderScenePass(const SceneRenderInput& input,
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glEnable(GL_DEPTH_TEST);
 
+    // Depth pre-pass: render scene depth using the shadow shader (depth-only),
+    // then copy to a separate texture for screen-space contact shadows.
+    {
+        glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
+        shadowShader_->use();
+        shadowShader_->setMat4("uLightViewProjection",
+                               input.projectionMatrix * input.viewMatrix);
+        for (const auto& object : *input.objects) {
+            if (!object.mesh) continue;
+            shadowShader_->setMat4("uModel", object.modelMatrix);
+            object.mesh->draw();
+        }
+        glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
+
+        // Create or recreate the depth copy texture if needed
+        const int fw = sceneFBO_.width();
+        const int fh = sceneFBO_.height();
+        if (depthPrePassTex_ == 0 || depthPrePassW_ != fw || depthPrePassH_ != fh) {
+            if (depthPrePassTex_ != 0) {
+                glDeleteTextures(1, &depthPrePassTex_);
+            }
+            glGenTextures(1, &depthPrePassTex_);
+            glBindTexture(GL_TEXTURE_2D, depthPrePassTex_);
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT24, fw, fh, 0,
+                         GL_DEPTH_COMPONENT, GL_FLOAT, nullptr);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+            depthPrePassW_ = fw;
+            depthPrePassH_ = fh;
+        }
+        // Copy current FBO depth to the standalone texture
+        glBindTexture(GL_TEXTURE_2D, depthPrePassTex_);
+        glCopyTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, 0, 0, fw, fh);
+        glBindTexture(GL_TEXTURE_2D, 0);
+
+        // Allow the main pass to re-render at the same depth values
+        glDepthFunc(GL_LEQUAL);
+    }
+
     const LightingEnvironment& lighting = input.lightingEnvironment;
     const float timeSeconds = static_cast<float>(glfwGetTime());
 
@@ -294,7 +312,12 @@ void SceneRenderPipeline::renderScenePass(const SceneRenderInput& input,
     sceneShader_->use();
     sceneShader_->setFloat("uTimeSeconds", timeSeconds);
     sceneShader_->setMat4("uViewMatrix", input.viewMatrix);
+    sceneShader_->setMat4("uProjection", input.projectionMatrix);
     sceneShader_->setInt("uDebugViewMode", input.postParams ? input.postParams->debugViewMode : 0);
+    sceneShader_->setInt("uEnableContactShadows", csmEnabled ? 1 : 0);
+    sceneShader_->setInt("uSceneDepthTex", TextureUnits::kSceneDepth);
+    glActiveTexture(GL_TEXTURE0 + TextureUnits::kSceneDepth);
+    glBindTexture(GL_TEXTURE_2D, depthPrePassTex_);
     sceneShader_->setInt("uCsmShadowMap", TextureUnits::kCsmShadowMap);
     sceneShader_->setInt("uCsmEnabled", csmEnabled ? 1 : 0);
     sceneShader_->setInt("uCsmCascadeCount", CascadedShadowMap::kCascadeCount);
@@ -376,6 +399,9 @@ void SceneRenderPipeline::renderScenePass(const SceneRenderInput& input,
                               input.cameraPosition);
         glDepthRange(0.0, 1.0);
     }
+
+    // Restore default depth function after depth pre-pass set GL_LEQUAL
+    glDepthFunc(GL_LESS);
 
     sceneFBO_.unbind();
     glDisable(GL_DEPTH_TEST);

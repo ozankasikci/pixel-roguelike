@@ -26,4 +26,6 @@ namespace TextureUnits {
     constexpr int kAoMap          = 15;
     // Cascaded shadow map (directional sun)
     constexpr int kCsmShadowMap   = 16;
+    // Scene depth copy for screen-space contact shadows
+    constexpr int kSceneDepth     = 17;
 } // namespace TextureUnits

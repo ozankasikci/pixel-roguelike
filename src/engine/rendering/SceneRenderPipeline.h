@@ -125,4 +125,10 @@ private:
     LtcData ltcData_;
     std::array<ShadowMap, kMaxShadowedSpotLights> shadowMaps_{};
     CascadedShadowMap csmShadowMap_;
+
+    // Standalone depth texture that receives a copy of the scene depth buffer
+    // before the shading pass, used for screen-space contact shadows.
+    GLuint depthPrePassTex_ = 0;
+    int depthPrePassW_ = 0;
+    int depthPrePassH_ = 0;
 };
