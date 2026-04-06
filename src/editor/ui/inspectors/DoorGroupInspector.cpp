@@ -112,4 +112,6 @@ void drawDoorGroupInspector(LevelDoorGroupPlacement& dg,
             return false;
         });
     }
+
+    endInspectorPropertyTable();
 }
