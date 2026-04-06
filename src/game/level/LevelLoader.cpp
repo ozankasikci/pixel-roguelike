@@ -48,6 +48,9 @@ void LevelLoader::load(const LevelLoadRequest& request, const LevelLoadArgs& arg
     registry.ctx().insert_or_assign(ActiveEnvironmentProfile{request.levelId, level.environmentId, level.environmentProfile});
 
     LevelBuilder builder(context_);
+    if (request.buildScriptedGeometry) {
+        request.buildScriptedGeometry(builder);
+    }
 
     for (const auto& placement : level.meshes) {
         auto entity = builder.addMesh(placement.meshId,
@@ -102,10 +105,6 @@ void LevelLoader::load(const LevelLoadRequest& request, const LevelLoadArgs& arg
             continue;
         }
         (void)spawnGameplayPrefab(builder, instantiateGameplayArchetype(*archetype, placement.position, placement.yawDegrees));
-    }
-
-    for (const auto& placement : level.doors) {
-        builder.addSingleDoor(placement);
     }
 
     // Build NodeIndex from all entities that received a NodeIdComponent

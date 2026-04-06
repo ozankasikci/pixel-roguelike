@@ -26,7 +26,6 @@ void EditorRuntimePreviewSession::rebuild(const EditorSceneDocument& document, C
     LevelLoadRequest request;
     request.levelId = document.scenePath().empty() ? "editor_runtime_preview" : document.scenePath();
     request.levelPath = document.scenePath();
-
     session_.rebuild(document.toLevelDef(), request.levelId, request.levelPath, content, request);
     syncEnvironment(document);
 }
@@ -102,8 +101,6 @@ void EditorRuntimePreviewSession::updateInput(GLFWwindow* window, const ImGuiIO&
         state.setScrollDelta(0.0f);
         return;
     }
-
-    state.setCursorLocked(true);
 
     for (int key = 0; key < InputSystem::kMaxKeys; ++key) {
         const bool pressed = glfwGetKey(window, key) == GLFW_PRESS;

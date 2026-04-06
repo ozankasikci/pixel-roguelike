@@ -9,7 +9,6 @@
 #include "game/components/ReflectionProbeComponent.h"
 #include "game/rendering/RetroPalette.h"
 #include "game/components/TransformComponent.h"
-#include "game/prefabs/GameplayPrefabs.h"
 
 #include "engine/core/MathUtils.h"
 
@@ -275,29 +274,5 @@ void LevelBuilder::attachInteractable(entt::entity entity, const InteractableDec
     }
     ic.interactDistance = decl.distance;
     ic.interactDotThreshold = decl.dotThreshold;
-}
-
-entt::entity LevelBuilder::addSingleDoor(const LevelSingleDoorPlacement& placement) {
-    SingleDoorSpawnSpec spec;
-    spec.doorMeshName = placement.doorMeshName;
-    spec.frameMeshName = placement.frameMeshName;
-    spec.doorMaterialId = placement.doorMaterialId;
-    spec.frameMaterialId = placement.frameMaterialId;
-    spec.rootPosition = placement.rootPosition;
-    spec.doorYawDegrees = placement.doorYawDegrees;
-    spec.openAngle = placement.openAngle;
-    spec.openDuration = placement.openDuration;
-    spec.interactDistance = placement.interactDistance;
-    spec.interactDotThreshold = placement.interactDotThreshold;
-    spec.locked = placement.locked;
-    spec.lockedPrompt = placement.lockedPrompt;
-    spec.doorTint = placement.doorTint;
-    spec.frameTint = placement.frameTint;
-    spec.hingePivot = placement.hingePivot;
-    auto entity = spawnSingleDoor(*this, spec);
-    if (entity != entt::null && !placement.nodeId.empty()) {
-        attachNodeId(entity, placement.nodeId);
-    }
-    return entity;
 }
 

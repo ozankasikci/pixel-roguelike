@@ -41,9 +41,6 @@ LevelDef makeLevelDefFromState(const EditorSceneDocumentState& state) {
         case EditorSceneObjectKind::Group:
             level.groups.push_back(std::get<LevelGroupNode>(object.payload));
             break;
-        case EditorSceneObjectKind::SingleDoor:
-            level.doors.push_back(std::get<LevelSingleDoorPlacement>(object.payload));
-            break;
         }
     }
 

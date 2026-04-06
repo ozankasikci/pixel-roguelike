@@ -61,17 +61,6 @@ int main() {
     measureDoor("SM_DoorC", "assets/packs/QuestDoorsPack/Models/SM_DoorC.fbx");
     measureDoor("SM_DoorD", "assets/packs/QuestDoorsPack/Models/SM_DoorD.fbx");
 
-    printf("\n=== Frame Meshes ===\n\n");
-    measureDoor("SM_FrameA", "assets/packs/QuestDoorsPack/Models/SM_FrameA.fbx");
-    measureDoor("SM_FrameC", "assets/packs/QuestDoorsPack/Models/SM_FrameC.fbx");
-    measureDoor("SM_FrameD", "assets/packs/QuestDoorsPack/Models/SM_FrameD.fbx");
-
-    printf("\n=== Scale Verification ===\n");
-    printf("At scale 0.22:\n");
-    printf("  FrameA: %.3fm wide x %.3fm tall\n", 4.7672f * 0.22f, 9.5702f * 0.22f);
-    printf("  DoorA:  %.3fm wide x %.3fm tall\n", 4.0556f * 0.22f, 9.2150f * 0.22f);
-    printf("  Wall opening (local 1.4m @ Y=1.5): %.3fm wide x %.3fm tall\n", 0.9f, 1.4f * 1.5f);
-
-    printf("\n=== Diagnostic complete ===\n");
+    printf("=== Diagnostic complete ===\n");
     return 0;
 }

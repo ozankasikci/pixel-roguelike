@@ -2,16 +2,15 @@
 gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: Editor UX
-status: Ready to execute
+status: Milestone complete
 stopped_at: Completed 18-06-PLAN.md
-last_updated: "2026-04-06T20:28:15.362Z"
-last_activity: 2026-04-06
+last_updated: "2026-04-05T03:18:31.361Z"
+last_activity: 2026-04-05
 progress:
-  total_phases: 21
+  total_phases: 20
   completed_phases: 16
-  total_plans: 58
+  total_plans: 56
   completed_plans: 51
-  percent: 88
 ---
 
 # Project State
@@ -48,15 +47,6 @@ Plan: Not started
 - Trend: —
 
 *Updated after each plan completion*
-
-### Quick Tasks Completed
-
-| # | Description | Date | Commit | Directory |
-|---|-------------|------|--------|-----------|
-| 260406-4d4 | Implement proper CSM shadow fix: GL_DEPTH_CLAMP, per-cascade normal offset, remove caster-side offset | 2026-04-06 | 9977031 | [260406-4d4-implement-proper-csm-shadow-fix-gl-depth](./quick/260406-4d4-implement-proper-csm-shadow-fix-gl-depth/) |
-| 260406-phj | Extend initial scene with three new rooms and interactable doors | 2026-04-06 | 0f2184e | [260406-phj-extend-initial-scene-with-three-new-room](./quick/260406-phj-extend-initial-scene-with-three-new-room/) |
-| 260406-qdy | Editor-runtime parity: shared scene loading pipeline with scripted geometry | 2026-04-06 | 1ddbc0e | [260406-qdy-editor-runtime-parity-shared-scene-loadi](./quick/260406-qdy-editor-runtime-parity-shared-scene-loadi/) |
-| 260406-qr6 | Remove scripted geometry, native scene doors, fix door gaps | 2026-04-06 | dc98d94 | [260406-qr6-remove-scripted-geometry-define-all-enti](./quick/260406-qr6-remove-scripted-geometry-define-all-enti/) |
 | Phase 01-engine-and-dithering-pipeline P01 | 5 | 2 tasks | 17 files |
 | Phase 01-engine-and-dithering-pipeline P02 | 15 | 3 tasks | 11 files |
 | Phase 01.1-project-restructure-ecs-application-class-modular-engine-game-split P01 | 7 | 2 tasks | 20 files |
@@ -229,7 +219,6 @@ None yet.
 - Phase 16 added: Editor trigger and behavior authoring with save-load fidelity
 - Phase 17 added: Unified collider system with trigger capabilities and scripting support
 - Phase 18 added: Maintainability refactoring for editor UI, serialization, and round-trip fidelity
-- Phase 19 added: Refactor SingleDoor into multi-part group architecture with pivot-based rotation
 
 ### Blockers/Concerns
 
@@ -293,15 +282,10 @@ None yet.
 | 260405-x13 | Fix asset discovery so game works when distributed outside project tree | 2026-04-05 | 8709a66 | [260405-x13-fix-asset-discovery-so-game-works-when-d](./quick/260405-x13-fix-asset-discovery-so-game-works-when-d/) |
 | 260406-04r | Add Package for Sharing button to editor Build menu | 2026-04-06 | c796970 | [260406-04r-add-build-package-button-to-editor-that-](./quick/260406-04r-add-build-package-button-to-editor-that-/) |
 | 260406-0u4 | Package only used assets by scanning scene and content references | 2026-04-06 | 5ad8797 | [260406-0u4-package-only-used-assets-by-scanning-sce](./quick/260406-0u4-package-only-used-assets-by-scanning-sce/) |
-| 260406-2yj | Fix build settings window shrinking and restore Open Build Folder menu item | 2026-04-06 | 3b7c292 | [260406-2yj-fix-build-settings-window-shrinking-and-](./quick/260406-2yj-fix-build-settings-window-shrinking-and-/) |
-| 260406-pe8 | Fix sky texture loading in packaged builds: resolve paths via resolveProjectPath | 2026-04-06 | 41c3d65 | [260406-pe8-fix-sky-texture-loading-in-packaged-buil](./quick/260406-pe8-fix-sky-texture-loading-in-packaged-buil/) |
-| 260406-tq0 | Fix door gizmo move not applying transform to door entity in editor | 2026-04-06 | 5bbc047 | [260406-tq0-fix-door-gizmo-move-not-applying-transfo](./quick/260406-tq0-fix-door-gizmo-move-not-applying-transfo/) |
-| 260406-uqb | Add editable hinge pivot point to SingleDoor and fix door rotation | 2026-04-06 | 2b9e111 | [260406-uqb-add-editable-hinge-pivot-point-to-single](./quick/260406-uqb-add-editable-hinge-pivot-point-to-single/) |
-| 260406-v67 | Fix door leaf moving when hinge pivot is changed in inspector | 2026-04-06 | 9a36c03 | [260406-v67-fix-door-leaf-moving-when-hinge-pivot-is](./quick/260406-v67-fix-door-leaf-moving-when-hinge-pivot-is/) |
 
 ## Session Continuity
 
-Last activity: 2026-04-06
+Last activity: 2026-04-06 - Completed quick task 260406-0u4: Package only used assets by scanning scene and content references
 Last session: 2026-04-05T03:13:41.712Z
 Stopped at: Completed 18-06-PLAN.md
 Resume file: None
