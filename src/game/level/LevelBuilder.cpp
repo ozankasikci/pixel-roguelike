@@ -313,16 +313,15 @@ entt::entity LevelBuilder::addDoorGroup(const LevelDoorGroupPlacement& group, co
         }
     }
 
-    // Use the leaf's resolved position (respects editor edits) for pivot math
-    const glm::vec3 leafBasePos = leafPlacement->position;
+    // group.position IS the hinge — pivot math derives the leaf's visual position from it.
+    // The leaf mesh's own position is irrelevant (always 0,0,0 local).
     const glm::vec3 pivot = leafPlacement->pivot.value();
-    const glm::vec3 hingeWorldPos = computeHingeWorldPos(leafBasePos, group.yawDegrees, pivot, leafPlacement->scale);
-    const glm::mat4 leafModel = makePivotLeafModel(leafBasePos, group.yawDegrees, pivot, leafPlacement->scale);
+    const glm::mat4 leafModel = makePivotLeafModel(group.position, group.yawDegrees, pivot, leafPlacement->scale);
 
     // Spawn the leaf mesh entity
     Mesh* leafMeshPtr = mesh(leafPlacement->meshId);
     auto leafEntity = addMesh(leafMeshPtr,
-        leafBasePos,
+        group.position,
         leafPlacement->scale,
         glm::vec3(0.0f, group.yawDegrees, 0.0f),
         leafPlacement->tint,
@@ -357,7 +356,7 @@ entt::entity LevelBuilder::addDoorGroup(const LevelDoorGroupPlacement& group, co
     // Attach DoorLeafComponent for swing animation — stores raw inputs,
     // all rendering uses makePivotLeafModel with interpolated yaw
     DoorLeafComponent doorLeaf;
-    doorLeaf.basePosition = leafBasePos;
+    doorLeaf.basePosition = group.position;
     doorLeaf.pivot = pivot;
     doorLeaf.closedScale = leafPlacement->scale;
     doorLeaf.colliderHalfExtents = glm::vec3(std::abs(pivot.x) * leafPlacement->scale.x, 1.01f, 0.05f);
@@ -370,8 +369,7 @@ entt::entity LevelBuilder::addDoorGroup(const LevelDoorGroupPlacement& group, co
     }
 
     // Create door root entity with DoorComponent + InteractableComponent
-    // Place at leaf base position so the interact prompt is near the actual door
-    auto doorRoot = createTransformEntity(leafBasePos + glm::vec3(0.0f, 1.0f, 0.0f));
+    auto doorRoot = createTransformEntity(group.position + glm::vec3(0.0f, 1.0f, 0.0f));
 
     if (group.locked) {
         // Locked door: only InteractableComponent, no DoorComponent
