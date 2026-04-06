@@ -5,7 +5,7 @@ milestone_name: Editor UX
 status: Milestone complete
 stopped_at: Completed 18-06-PLAN.md
 last_updated: "2026-04-05T03:18:31.361Z"
-last_activity: 2026-04-05
+last_activity: 2026-04-06
 progress:
   total_phases: 20
   completed_phases: 16
@@ -47,6 +47,12 @@ Plan: Not started
 - Trend: —
 
 *Updated after each plan completion*
+
+### Quick Tasks Completed
+
+| # | Description | Date | Commit | Directory |
+|---|-------------|------|--------|-----------|
+| 260406-4d4 | Implement proper CSM shadow fix: GL_DEPTH_CLAMP, per-cascade normal offset, remove caster-side offset | 2026-04-06 | 9977031 | [260406-4d4-implement-proper-csm-shadow-fix-gl-depth](./quick/260406-4d4-implement-proper-csm-shadow-fix-gl-depth/) |
 | Phase 01-engine-and-dithering-pipeline P01 | 5 | 2 tasks | 17 files |
 | Phase 01-engine-and-dithering-pipeline P02 | 15 | 3 tasks | 11 files |
 | Phase 01.1-project-restructure-ecs-application-class-modular-engine-game-split P01 | 7 | 2 tasks | 20 files |
