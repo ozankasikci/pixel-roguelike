@@ -293,6 +293,7 @@ entt::entity LevelBuilder::addSingleDoor(const LevelSingleDoorPlacement& placeme
     spec.lockedPrompt = placement.lockedPrompt;
     spec.doorTint = placement.doorTint;
     spec.frameTint = placement.frameTint;
+    spec.hingePivot = placement.hingePivot;
     auto entity = spawnSingleDoor(*this, spec);
     if (entity != entt::null && !placement.nodeId.empty()) {
         attachNodeId(entity, placement.nodeId);

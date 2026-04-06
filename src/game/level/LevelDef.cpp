@@ -1031,6 +1031,17 @@ LevelDef loadLevelDef(const std::string& path) {
                     index += 4;
                     continue;
                 }
+                if (tokens[index] == "hinge_pivot") {
+                    if (index + 3 >= tokens.size()) throwParseError(path, lineNumber, "missing hinge_pivot values");
+                    if (!tryParseFloatToken(tokens[index + 1], placement.hingePivot.x))
+                        throwParseError(path, lineNumber, "invalid hinge_pivot x");
+                    if (!tryParseFloatToken(tokens[index + 2], placement.hingePivot.y))
+                        throwParseError(path, lineNumber, "invalid hinge_pivot y");
+                    if (!tryParseFloatToken(tokens[index + 3], placement.hingePivot.z))
+                        throwParseError(path, lineNumber, "invalid hinge_pivot z");
+                    index += 4;
+                    continue;
+                }
                 if (parseNodeMetadata(path, lineNumber, tokens, index,
                                       placement.nodeId, placement.parentNodeId)) {
                     continue;
@@ -1468,6 +1479,9 @@ std::string serializeLevelDef(const LevelDef& data) {
         if (d.frameTint != glm::vec3(1.0f))
             out << " frame_tint " << formatFloat(d.frameTint.r) << ' '
                 << formatFloat(d.frameTint.g) << ' ' << formatFloat(d.frameTint.b);
+        if (d.hingePivot != glm::vec3(-0.45f, 0.0f, 0.04f))
+            out << " hinge_pivot " << formatFloat(d.hingePivot.x) << ' '
+                << formatFloat(d.hingePivot.y) << ' ' << formatFloat(d.hingePivot.z);
         appendNodeMetadata(out, d.nodeId, d.parentNodeId);
         out << '\n';
     }

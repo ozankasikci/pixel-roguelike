@@ -24,6 +24,7 @@ struct SingleDoorSpawnSpec {
     std::string lockedPrompt = "E  This door is locked";
     glm::vec3 doorTint{1.0f};
     glm::vec3 frameTint{1.0f};
+    glm::vec3 hingePivot{-0.45f, 0.0f, 0.04f};
 };
 
 struct CheckpointSpawnSpec {
