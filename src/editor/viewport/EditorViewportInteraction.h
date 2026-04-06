@@ -88,7 +88,8 @@ void refreshSelectionPicker(EditorSelectionPickerState& picker,
                             bool advanceCycle);
 void applySelectionHit(std::vector<std::uint64_t>& selectedIds,
                        const EditorSelectionPickerState& picker,
-                       bool additive);
+                       bool additive,
+                       const EditorSceneDocument& document);
 void renderSelectionPicker(EditorSelectionPickerState& picker,
                            EditorSceneDocument& document,
                            std::vector<std::uint64_t>& selectedIds,

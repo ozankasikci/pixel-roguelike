@@ -36,6 +36,7 @@ bool isViewportSelectableKind(const EditorSelectionHandle& handle, const EditorU
     case EditorSceneObjectKind::Mesh:
     case EditorSceneObjectKind::Archetype:
     case EditorSceneObjectKind::Group:
+    case EditorSceneObjectKind::DoorGroup:
         return true;
     }
     return true;
@@ -206,11 +207,22 @@ void refreshSelectionPicker(EditorSelectionPickerState& picker,
 
 void applySelectionHit(std::vector<std::uint64_t>& selectedIds,
                        const EditorSelectionPickerState& picker,
-                       bool additive) {
+                       bool additive,
+                       const EditorSceneDocument& document) {
     if (picker.hits.empty() || picker.currentIndex >= picker.hits.size()) {
         return;
     }
-    toggleSelection(selectedIds, picker.hits[picker.currentIndex].objectId, additive);
+    std::uint64_t objectId = picker.hits[picker.currentIndex].objectId;
+    // Click-bubbles-to-parent: if clicked object is a Mesh child of a DoorGroup, select the group
+    const auto* clickedObj = document.findObject(objectId);
+    if (clickedObj && clickedObj->kind == EditorSceneObjectKind::Mesh) {
+        const auto parentObjId = document.parentObjectId(objectId);
+        const auto* parentObj = document.findObject(parentObjId);
+        if (parentObj && parentObj->kind == EditorSceneObjectKind::DoorGroup) {
+            objectId = parentObjId;
+        }
+    }
+    toggleSelection(selectedIds, objectId, additive);
 }
 
 void renderSelectionPicker(EditorSelectionPickerState& picker,
@@ -255,7 +267,7 @@ void renderSelectionPicker(EditorSelectionPickerState& picker,
         if (ImGui::Selectable(label.c_str(), picker.currentIndex == index)) {
             picker.currentIndex = index;
             picker.visibleUntilSeconds = nowSeconds + 2.75;
-            applySelectionHit(selectedIds, picker, false);
+            applySelectionHit(selectedIds, picker, false, document);
         }
     }
     if (picker.hits.size() > maxVisible) {
@@ -291,6 +303,7 @@ bool applyGizmoToSelectedObject(EditorSceneDocument& document,
         case EditorSceneObjectKind::ReflectionProbe:
         case EditorSceneObjectKind::Archetype:
         case EditorSceneObjectKind::Group:
+        case EditorSceneObjectKind::DoorGroup:
             model = document.worldTransformMatrix(object->id);
             break;
         case EditorSceneObjectKind::Light: {
@@ -343,6 +356,7 @@ bool applyGizmoToSelectedObject(EditorSceneDocument& document,
         case EditorSceneObjectKind::ReflectionProbe:
         case EditorSceneObjectKind::Archetype:
         case EditorSceneObjectKind::Group:
+        case EditorSceneObjectKind::DoorGroup:
             if (!document.applyWorldTransform(object->id, model)) {
                 return false;
             }
@@ -443,7 +457,8 @@ bool applyGizmoToSelectedObject(EditorSceneDocument& document,
         case EditorSceneObjectKind::Collider:
         case EditorSceneObjectKind::ReflectionProbe:
         case EditorSceneObjectKind::Archetype:
-        case EditorSceneObjectKind::Group: {
+        case EditorSceneObjectKind::Group:
+        case EditorSceneObjectKind::DoorGroup: {
             auto it = multiGizmoState.cachedTransforms.find(id);
             if (it == multiGizmoState.cachedTransforms.end()) continue;
             const glm::mat4 newWorld = before * localDelta * invBefore * it->second;

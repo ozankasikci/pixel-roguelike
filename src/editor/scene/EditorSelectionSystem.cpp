@@ -170,6 +170,7 @@ int selectionPriority(const EditorSelectionHandle& handle) {
     case EditorSceneObjectKind::Mesh:
     case EditorSceneObjectKind::Archetype:
     case EditorSceneObjectKind::Group:
+    case EditorSceneObjectKind::DoorGroup:
         return 0;
     case EditorSceneObjectKind::Light:
         return 1;
@@ -269,6 +270,20 @@ std::vector<EditorSelectionHandle> buildEditorSelectionHandles(const EditorScene
             handle.shape = EditorSelectionShape::Sphere;
             handle.radius = 0.45f;
             handle.anchor = glm::vec3(document.worldTransformMatrix(object.id)[3]);
+            break;
+        case EditorSceneObjectKind::DoorGroup:
+            if (const auto* bounds = previewWorld.findObjectBounds(object.id)) {
+                handle.shape = EditorSelectionShape::WorldAabb;
+                handle.worldMin = bounds->min;
+                handle.worldMax = bounds->max;
+                inflateThinBounds(handle.worldMin, handle.worldMax);
+                handle.anchor = bounds->center();
+                handle.placementSurface = true;
+            } else {
+                handle.shape = EditorSelectionShape::Sphere;
+                handle.radius = 0.5f;
+                handle.anchor = glm::vec3(document.worldTransformMatrix(object.id)[3]);
+            }
             break;
         default:
             handle.shape = EditorSelectionShape::Sphere;

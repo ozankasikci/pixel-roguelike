@@ -1864,7 +1864,7 @@ int main(int argc, char* argv[]) {
                                                io.MousePos,
                                                glfwGetTime(),
                                                hits.size() > 1);
-                        applySelectionHit(selectedIds, selectionPicker, io.KeyShift);
+                        applySelectionHit(selectedIds, selectionPicker, io.KeyShift, document);
                         ui.inspectorContext = EditorInspectorContext::SceneSelection;
                         ui.scrollToSelection = true;
                         if (ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left)) {

@@ -171,6 +171,26 @@ void EditorPreviewWorld::rebuild(const EditorSceneDocument& document, const Cont
                             placement.materialId.empty()
                                 ? std::optional<std::string>{}
                                 : std::optional<std::string>{placement.materialId});
+
+            // If this mesh has a pivot, it's a door leaf — apply pivot-aware model
+            if (placement.pivot.has_value() && !entities_.empty()) {
+                auto parentId = document.parentObjectId(object.id);
+                const auto* parent = document.findObject(parentId);
+                if (parent && parent->kind == EditorSceneObjectKind::DoorGroup) {
+                    const auto& dg = std::get<LevelDoorGroupPlacement>(parent->payload);
+                    glm::vec3 groupPos(0.0f), groupRot(0.0f), groupScl(1.0f);
+                    decomposeTransformMatrix(document.worldTransformMatrix(parentId),
+                                             groupPos, groupRot, groupScl);
+                    const glm::mat4 leafModel = makePivotLeafModel(
+                        groupPos, groupRot.y, placement.pivot.value(), placement.scale);
+                    entt::entity meshEntity = entities_.back();
+                    if (registry_.all_of<MeshComponent>(meshEntity)) {
+                        auto& mesh = registry_.get<MeshComponent>(meshEntity);
+                        mesh.modelOverride = leafModel;
+                        mesh.useModelOverride = true;
+                    }
+                }
+            }
             break;
         }
         case EditorSceneObjectKind::Light: {
@@ -221,6 +241,17 @@ void EditorPreviewWorld::rebuild(const EditorSceneDocument& document, const Cont
             break;
         case EditorSceneObjectKind::Group:
             break;
+        case EditorSceneObjectKind::DoorGroup: {
+            // Door group is a logical container — children are Mesh objects that render themselves.
+            // Create a minimal entity for ownerMap bookkeeping (no visual).
+            auto entity = registry_.create();
+            entities_.push_back(entity);
+            auto& transform = registry_.emplace<TransformComponent>(entity);
+            const auto& dg = std::get<LevelDoorGroupPlacement>(object.payload);
+            transform.position = dg.position;
+            transform.rotation.y = dg.yawDegrees;
+            break;
+        }
         case EditorSceneObjectKind::Archetype: {
             auto placement = std::get<LevelArchetypePlacement>(object.payload);
             glm::vec3 position(0.0f), rotation(0.0f), scale(1.0f);
@@ -313,7 +344,20 @@ void EditorPreviewWorld::syncTransforms(const EditorSceneDocument& document) {
             transform.scale = scale;
             if (registry_.all_of<MeshComponent>(entity)) {
                 auto& mesh = registry_.get<MeshComponent>(entity);
-                if (mesh.useModelOverride) {
+                const auto& placement = std::get<LevelMeshPlacement>(object->payload);
+                if (placement.pivot.has_value()) {
+                    // Recompute pivot-aware model from parent door group
+                    auto parentObjId = document.parentObjectId(object->id);
+                    const auto* parentObj = document.findObject(parentObjId);
+                    if (parentObj && parentObj->kind == EditorSceneObjectKind::DoorGroup) {
+                        glm::vec3 groupPos(0.0f), groupRot(0.0f), groupScl(1.0f);
+                        decomposeTransformMatrix(document.worldTransformMatrix(parentObjId),
+                                                 groupPos, groupRot, groupScl);
+                        mesh.modelOverride = makePivotLeafModel(
+                            groupPos, groupRot.y, placement.pivot.value(), placement.scale);
+                        mesh.useModelOverride = true;
+                    }
+                } else if (mesh.useModelOverride) {
                     mesh.modelOverride = worldMatrix;
                 }
             }
@@ -350,6 +394,10 @@ void EditorPreviewWorld::syncTransforms(const EditorSceneDocument& document) {
         case EditorSceneObjectKind::PlayerSpawn:
             break;
         case EditorSceneObjectKind::Group:
+            break;
+        case EditorSceneObjectKind::DoorGroup:
+            transform.position = position;
+            transform.rotation.y = rotation.y;
             break;
         }
     }
