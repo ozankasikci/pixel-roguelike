@@ -302,54 +302,48 @@ void appendHelperObjects(std::vector<RenderObject>& objects,
         }
     }
 
-    // Pivot point visualization for door leaf meshes: small magenta cube at hinge position
+    // Pivot point visualization: magenta hinge marker for each DoorGroup
     if (cube != nullptr) {
         for (const auto& object : document.objects()) {
-            if (object.kind != EditorSceneObjectKind::Mesh) continue;
-            const auto& meshPlacement = std::get<LevelMeshPlacement>(object.payload);
-            if (!meshPlacement.pivot.has_value()) continue;
+            if (object.kind != EditorSceneObjectKind::DoorGroup) continue;
+            const auto& dg = std::get<LevelDoorGroupPlacement>(object.payload);
 
-            auto parentObjId = document.parentObjectId(object.id);
-            const auto* parentObj = document.findObject(parentObjId);
-            if (!parentObj || parentObj->kind != EditorSceneObjectKind::DoorGroup) continue;
+            // Find child leaf meshes with pivot
+            for (const auto& child : document.objects()) {
+                if (child.kind != EditorSceneObjectKind::Mesh) continue;
+                const auto& meshPlacement = std::get<LevelMeshPlacement>(child.payload);
+                if (!meshPlacement.pivot.has_value()) continue;
+                if (meshPlacement.parentNodeId != dg.nodeId) continue;
 
-            const auto& dg = std::get<LevelDoorGroupPlacement>(parentObj->payload);
-            // Use parent group's world position (child mesh position is local, typically 0,0,0)
-            const glm::vec3 leafWorldPos = dg.position + meshPlacement.position;
-            const glm::vec3 hingePos = computeHingeWorldPos(
-                leafWorldPos, dg.yawDegrees, meshPlacement.pivot.value());
+                const glm::vec3 leafWorldPos = dg.position + meshPlacement.position;
+                const glm::vec3 hingePos = computeHingeWorldPos(
+                    leafWorldPos, dg.yawDegrees, meshPlacement.pivot.value());
 
-            // Hinge marker
-            objects.push_back(RenderObject{
-                cube,
-                makeModelMatrix(hingePos, glm::vec3(0.08f)),
-                glm::vec3(1.0f, 0.3f, 0.8f), // magenta
-                materials.resolve("metal_default"),
-                false,  // solid
-                true,   // ignoreDepth
-                true,   // unlit
-                1.0f
-            });
-
-            // Line from hinge toward leaf center
-            const glm::vec3 midpoint = (hingePos + leafWorldPos) * 0.5f;
-            const float dist = glm::length(leafWorldPos - hingePos);
-            if (dist > 0.01f) {
-                const glm::vec3 dir = (leafWorldPos - hingePos) / dist;
-                const float angleY = std::atan2(dir.x, dir.z);
-                glm::mat4 lineModel = glm::translate(glm::mat4(1.0f), midpoint);
-                lineModel = glm::rotate(lineModel, angleY, glm::vec3(0.0f, 1.0f, 0.0f));
-                lineModel = glm::scale(lineModel, glm::vec3(0.02f, 0.02f, dist));
+                // Hinge marker (magenta cube)
                 objects.push_back(RenderObject{
                     cube,
-                    lineModel,
-                    glm::vec3(1.0f, 0.3f, 0.8f), // magenta
+                    makeModelMatrix(hingePos, glm::vec3(0.08f)),
+                    glm::vec3(1.0f, 0.3f, 0.8f),
                     materials.resolve("metal_default"),
-                    false,  // solid
-                    true,   // ignoreDepth
-                    true,   // unlit
-                    1.0f
+                    false, true, true, 1.0f
                 });
+
+                // Line from hinge to leaf center
+                const float dist = glm::length(leafWorldPos - hingePos);
+                if (dist > 0.01f) {
+                    const glm::vec3 mid = (hingePos + leafWorldPos) * 0.5f;
+                    const glm::vec3 dir = (leafWorldPos - hingePos) / dist;
+                    const float angleY = std::atan2(dir.x, dir.z);
+                    glm::mat4 lineModel = glm::translate(glm::mat4(1.0f), mid);
+                    lineModel = glm::rotate(lineModel, angleY, glm::vec3(0.0f, 1.0f, 0.0f));
+                    lineModel = glm::scale(lineModel, glm::vec3(0.02f, 0.02f, dist));
+                    objects.push_back(RenderObject{
+                        cube, lineModel,
+                        glm::vec3(1.0f, 0.3f, 0.8f),
+                        materials.resolve("metal_default"),
+                        false, true, true, 1.0f
+                    });
+                }
             }
         }
     }
