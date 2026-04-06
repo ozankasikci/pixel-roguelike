@@ -107,6 +107,10 @@ void LevelLoader::load(const LevelLoadRequest& request, const LevelLoadArgs& arg
         (void)spawnGameplayPrefab(builder, instantiateGameplayArchetype(*archetype, placement.position, placement.yawDegrees));
     }
 
+    for (const auto& placement : level.doors) {
+        builder.addSingleDoor(placement);
+    }
+
     // Build NodeIndex from all entities that received a NodeIdComponent
     // This must happen AFTER all placement loops (including scripted geometry)
     {

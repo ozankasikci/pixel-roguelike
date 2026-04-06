@@ -157,6 +157,7 @@ struct LevelNodeRef {
         PlayerSpawn,
         Archetype,
         Group,
+        Door,
     };
 
     Kind kind = Kind::Mesh;
@@ -958,6 +959,89 @@ LevelDef loadLevelDef(const std::string& path) {
             continue;
         }
 
+        if (kind == "single_door") {
+            LevelSingleDoorPlacement placement;
+            if (!(stream >> placement.doorMeshName >> placement.frameMeshName
+                         >> placement.rootPosition.x >> placement.rootPosition.y >> placement.rootPosition.z
+                         >> placement.doorYawDegrees)) {
+                throwParseError(path, lineNumber, "invalid single_door record: missing required fields");
+            }
+            const auto tokens = collectRemainingTokens(stream);
+            for (std::size_t index = 0; index < tokens.size();) {
+                if (tokens[index] == "door_material") {
+                    if (index + 1 >= tokens.size()) throwParseError(path, lineNumber, "missing door_material id");
+                    placement.doorMaterialId = tokens[index + 1];
+                    index += 2;
+                    continue;
+                }
+                if (tokens[index] == "frame_material") {
+                    if (index + 1 >= tokens.size()) throwParseError(path, lineNumber, "missing frame_material id");
+                    placement.frameMaterialId = tokens[index + 1];
+                    index += 2;
+                    continue;
+                }
+                if (tokens[index] == "open_angle") {
+                    if (index + 1 >= tokens.size()) throwParseError(path, lineNumber, "missing open_angle value");
+                    if (!tryParseFloatToken(tokens[index + 1], placement.openAngle))
+                        throwParseError(path, lineNumber, "invalid open_angle value");
+                    index += 2;
+                    continue;
+                }
+                if (tokens[index] == "open_duration") {
+                    if (index + 1 >= tokens.size()) throwParseError(path, lineNumber, "missing open_duration value");
+                    if (!tryParseFloatToken(tokens[index + 1], placement.openDuration))
+                        throwParseError(path, lineNumber, "invalid open_duration value");
+                    index += 2;
+                    continue;
+                }
+                if (tokens[index] == "interact_distance") {
+                    if (index + 1 >= tokens.size()) throwParseError(path, lineNumber, "missing interact_distance value");
+                    if (!tryParseFloatToken(tokens[index + 1], placement.interactDistance))
+                        throwParseError(path, lineNumber, "invalid interact_distance value");
+                    index += 2;
+                    continue;
+                }
+                if (tokens[index] == "interact_dot") {
+                    if (index + 1 >= tokens.size()) throwParseError(path, lineNumber, "missing interact_dot value");
+                    if (!tryParseFloatToken(tokens[index + 1], placement.interactDotThreshold))
+                        throwParseError(path, lineNumber, "invalid interact_dot value");
+                    index += 2;
+                    continue;
+                }
+                if (tokens[index] == "locked") {
+                    placement.locked = true;
+                    index += 1;
+                    continue;
+                }
+                if (tokens[index] == "locked_prompt") {
+                    if (index + 1 >= tokens.size()) throwParseError(path, lineNumber, "missing locked_prompt text");
+                    placement.lockedPrompt = tokens[index + 1];
+                    index += 2;
+                    continue;
+                }
+                if (tokens[index] == "door_tint") {
+                    if (!tryParseVec3Tokens(tokens, index + 1, placement.doorTint))
+                        throwParseError(path, lineNumber, "invalid door_tint values");
+                    index += 4;
+                    continue;
+                }
+                if (tokens[index] == "frame_tint") {
+                    if (!tryParseVec3Tokens(tokens, index + 1, placement.frameTint))
+                        throwParseError(path, lineNumber, "invalid frame_tint values");
+                    index += 4;
+                    continue;
+                }
+                if (parseNodeMetadata(path, lineNumber, tokens, index,
+                                      placement.nodeId, placement.parentNodeId)) {
+                    continue;
+                }
+                throwParseError(path, lineNumber, "invalid single_door parameter '" + tokens[index] + "'");
+            }
+            currentKind = CurrentEntityKind::None;
+            data.doors.push_back(std::move(placement));
+            continue;
+        }
+
         throwParseError(path, lineNumber, "unknown record type '" + kind + "'");
     }
 
@@ -974,6 +1058,7 @@ LevelDef resolveLevelHierarchy(const LevelDef& data) {
                  + data.reflectionProbes.size()
                  + data.archetypes.size()
                  + data.groups.size()
+                 + data.doors.size()
                  + (data.hasPlayerSpawn ? 1u : 0u));
 
     for (std::size_t i = 0; i < data.meshes.size(); ++i) {
@@ -996,6 +1081,9 @@ LevelDef resolveLevelHierarchy(const LevelDef& data) {
     }
     for (std::size_t i = 0; i < data.groups.size(); ++i) {
         refs.push_back(LevelNodeRef{LevelNodeRef::Kind::Group, i, data.groups[i].nodeId, data.groups[i].parentNodeId});
+    }
+    for (std::size_t i = 0; i < data.doors.size(); ++i) {
+        refs.push_back(LevelNodeRef{LevelNodeRef::Kind::Door, i, data.doors[i].nodeId, data.doors[i].parentNodeId});
     }
 
     std::unordered_map<std::string, std::size_t> nodeLookup;
@@ -1045,6 +1133,12 @@ LevelDef resolveLevelHierarchy(const LevelDef& data) {
         case LevelNodeRef::Kind::Group: {
             const auto& placement = data.groups[ref.index];
             return makeTransformMatrix(placement.position, placement.rotation, placement.scale);
+        }
+        case LevelNodeRef::Kind::Door: {
+            const auto& placement = data.doors[ref.index];
+            return makeTransformMatrix(placement.rootPosition,
+                                       glm::vec3(0.0f, placement.doorYawDegrees, 0.0f),
+                                       glm::vec3(1.0f));
         }
         }
         return glm::mat4(1.0f);
@@ -1145,6 +1239,15 @@ LevelDef resolveLevelHierarchy(const LevelDef& data) {
                 placement.position = position;
                 placement.rotation = rotation;
                 placement.scale = glm::max(scale, glm::vec3(0.01f));
+            }
+            break;
+        }
+        case LevelNodeRef::Kind::Door: {
+            auto& placement = resolved.doors[refs[idx].index];
+            glm::vec3 position(0.0f), rotation(0.0f), scale(1.0f);
+            if (decomposeTransformMatrix(worldMatrices[idx], position, rotation, scale)) {
+                placement.rootPosition = position;
+                placement.doorYawDegrees = rotation.y;
             }
             break;
         }
@@ -1334,6 +1437,38 @@ std::string serializeLevelDef(const LevelDef& data) {
             << formatFloat(placement.rotation.y) << ' '
             << formatFloat(placement.rotation.z);
         appendNodeMetadata(out, placement.nodeId, placement.parentNodeId);
+        out << '\n';
+    }
+
+    for (const auto& d : data.doors) {
+        out << "single_door " << d.doorMeshName << ' ' << d.frameMeshName << ' '
+            << formatFloat(d.rootPosition.x) << ' '
+            << formatFloat(d.rootPosition.y) << ' '
+            << formatFloat(d.rootPosition.z) << ' '
+            << formatFloat(d.doorYawDegrees);
+        if (d.doorMaterialId != "qdp_door_a")
+            out << " door_material " << d.doorMaterialId;
+        if (d.frameMaterialId != "stone_default")
+            out << " frame_material " << d.frameMaterialId;
+        if (std::abs(d.openAngle - 90.0f) > 0.0001f)
+            out << " open_angle " << formatFloat(d.openAngle);
+        if (std::abs(d.openDuration - 1.2f) > 0.0001f)
+            out << " open_duration " << formatFloat(d.openDuration);
+        if (std::abs(d.interactDistance - 2.5f) > 0.0001f)
+            out << " interact_distance " << formatFloat(d.interactDistance);
+        if (std::abs(d.interactDotThreshold - 0.55f) > 0.0001f)
+            out << " interact_dot " << formatFloat(d.interactDotThreshold);
+        if (d.locked)
+            out << " locked";
+        if (d.locked && d.lockedPrompt != "E  This door is locked")
+            out << " locked_prompt " << d.lockedPrompt;
+        if (d.doorTint != glm::vec3(1.0f))
+            out << " door_tint " << formatFloat(d.doorTint.r) << ' '
+                << formatFloat(d.doorTint.g) << ' ' << formatFloat(d.doorTint.b);
+        if (d.frameTint != glm::vec3(1.0f))
+            out << " frame_tint " << formatFloat(d.frameTint.r) << ' '
+                << formatFloat(d.frameTint.g) << ' ' << formatFloat(d.frameTint.b);
+        appendNodeMetadata(out, d.nodeId, d.parentNodeId);
         out << '\n';
     }
 

@@ -6,6 +6,7 @@
 #include "game/components/ColliderComponent.h"
 #include "game/level/LevelBuildContext.h"
 #include "game/level/LevelDef.h"
+#include "game/prefabs/GameplayPrefabData.h"
 
 #include <glm/glm.hpp>
 
@@ -52,6 +53,7 @@ public:
                          float outerConeDegrees,
                          bool castsShadows);
     entt::entity addCollider(const LevelColliderPlacement& placement);
+    entt::entity addSingleDoor(const LevelSingleDoorPlacement& placement);
     entt::entity addReflectionProbe(const glm::vec3& position,
                                     const glm::vec3& extents,
                                     float blendDistance,
