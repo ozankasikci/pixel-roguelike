@@ -217,6 +217,9 @@ void RuntimeGameSession::tick(float deltaTime, float aspect) {
     t1 = Clock::now();
     performanceStats_.inventoryMs = elapsedMilliseconds(t0, t1);
 
+    updateRuntimeBehaviors(registry_);
+    updateRuntimeDoorAnimation(registry_, deltaTime);
+
     t0 = t1;
     updateRuntimePlayerMovement(registry_, inputSystem_, physics_, deltaTime);
     t1 = Clock::now();

@@ -36,3 +36,6 @@ void updateRuntimeCamera(entt::registry& registry,
                          const InputSystem& input,
                          float aspect,
                          float deltaTime);
+
+void updateRuntimeBehaviors(entt::registry& registry);
+void updateRuntimeDoorAnimation(entt::registry& registry, float deltaTime);
