@@ -3,8 +3,13 @@
 #include "editor/core/EditorRuntimePreviewSession.h"
 #include "editor/viewport/EditorViewportController.h"
 #include "game/components/CameraComponent.h"
+#include "game/components/ControllableTag.h"
+#include "game/components/DoorComponent.h"
+#include "game/components/InteractableComponent.h"
 #include "game/components/PrimaryCameraTag.h"
 #include "game/components/TransformComponent.h"
+#include "engine/input/InputSystem.h"
+#include <GLFW/glfw3.h>
 
 #include <ImGuizmo.h>
 #include <glm/glm.hpp>
@@ -274,4 +279,64 @@ nlohmann::json EditorInspector::runtimeCamera() const {
     }
 
     return {{"ok", false}, {"error", "Primary runtime camera not found"}};
+}
+
+nlohmann::json EditorInspector::runtimeInteraction() const {
+    if (runtimePreviewSession_ == nullptr) {
+        return {{"ok", false}, {"error", "No runtime preview session"}};
+    }
+    if (!ui_.playPreview) {
+        return {{"ok", false}, {"error", "Play preview not active"}};
+    }
+
+    const auto& reg = runtimePreviewSession_->registry();
+    const auto& input = runtimePreviewSession_->input();
+
+    nlohmann::json result;
+    result["ok"] = true;
+    result["data"] = nlohmann::json::object();
+    result["data"]["captured"] = runtimePreviewSession_->captured();
+    result["data"]["cursor_locked"] = input.isCursorLocked();
+    result["data"]["e_key_pressed"] = input.isKeyPressed(GLFW_KEY_E);
+
+    // Find player
+    auto actorView = reg.view<TransformComponent, CameraComponent, ControllableTag, PrimaryCameraTag>();
+    bool foundActor = false;
+    glm::vec3 actorPos{0.0f};
+    for (auto [entity, transform, camera] : actorView.each()) {
+        actorPos = transform.position;
+        float yawRad = glm::radians(camera.yaw);
+        float pitchRad = glm::radians(camera.pitch);
+        glm::vec3 fwd{std::cos(pitchRad) * std::sin(yawRad), std::sin(pitchRad), std::cos(pitchRad) * std::cos(yawRad)};
+        result["data"]["player"] = {
+            {"position", {{"x", transform.position.x}, {"y", transform.position.y}, {"z", transform.position.z}}},
+            {"forward", {{"x", fwd.x}, {"y", fwd.y}, {"z", fwd.z}}},
+            {"yaw", camera.yaw}, {"pitch", camera.pitch}
+        };
+        foundActor = true;
+        break;
+    }
+    result["data"]["player_found"] = foundActor;
+
+    // List interactables with distance to player
+    nlohmann::json interactables = nlohmann::json::array();
+    auto interView = reg.view<TransformComponent, InteractableComponent>();
+    for (auto [entity, transform, interactable] : interView.each()) {
+        float dist = foundActor ? glm::length(transform.position - actorPos) : -1.0f;
+        bool hasDoor = reg.any_of<DoorComponent>(entity);
+        interactables.push_back({
+            {"entity", static_cast<std::uint32_t>(entity)},
+            {"position", {{"x", transform.position.x}, {"y", transform.position.y}, {"z", transform.position.z}}},
+            {"prompt", interactable.promptText},
+            {"enabled", interactable.enabled},
+            {"distance", interactable.interactDistance},
+            {"dot_threshold", interactable.interactDotThreshold},
+            {"player_distance", dist},
+            {"has_door_component", hasDoor}
+        });
+    }
+    result["data"]["interactables"] = interactables;
+    result["data"]["interactable_count"] = interactables.size();
+
+    return result;
 }

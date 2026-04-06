@@ -103,6 +103,8 @@ void EditorRuntimePreviewSession::updateInput(GLFWwindow* window, const ImGuiIO&
         return;
     }
 
+    state.setCursorLocked(true);
+
     for (int key = 0; key < InputSystem::kMaxKeys; ++key) {
         const bool pressed = glfwGetKey(window, key) == GLFW_PRESS;
         state.setKeyPressed(key, pressed);

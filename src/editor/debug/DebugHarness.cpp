@@ -62,6 +62,11 @@ void DebugHarness::init() {
         return inspector_->playPreviewState();
     });
 
+    registry_.registerCommand("inspect.runtime_interaction", [this](const nlohmann::json& args) {
+        (void)args;
+        return inspector_->runtimeInteraction();
+    });
+
     // Diagnostic inspect commands
     registry_.registerCommand("inspect.imgui_capture", [this](const nlohmann::json& args) {
         (void)args;
@@ -226,6 +231,15 @@ void DebugHarness::init() {
     });
     registry_.registerCommand("command.capture_screenshot", [this](const nlohmann::json& args) {
         return commander_->captureScreenshot(args);
+    });
+
+    registry_.registerCommand("command.force_capture", [this](const nlohmann::json& args) {
+        (void)args;
+        if (runtimePreviewSession_ == nullptr) {
+            return nlohmann::json{{"ok", false}, {"error", "No runtime preview session"}};
+        }
+        runtimePreviewSession_->beginCapture(window_);
+        return nlohmann::json{{"ok", true}, {"captured", runtimePreviewSession_->captured()}};
     });
 
     // --- record.* commands ---

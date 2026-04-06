@@ -1721,6 +1721,10 @@ int main(int argc, char* argv[]) {
         } else if (!ui.pendingScenePath.empty() && !startupViewportHandoffActive) {
             runtimePreviewSession.debugParams().lighting.shadowMapResolutionIndex = ui.shadowResolutionIndex;
             runtimePreviewSession.debugParams().post.debugViewMode = previewModeDebugView(ui.previewMode);
+            // Auto-recapture when play preview is active and window is focused
+            if (!runtimePreviewSession.captured() && glfwGetWindowAttrib(window.handle(), GLFW_FOCUSED)) {
+                runtimePreviewSession.beginCapture(window.handle());
+            }
             runtimePreviewSession.updateInput(window.handle(), io);
             runtimePreviewSession.tick(deltaTime, kRuntimeViewportAspect);
             runtimePreviewSession.syncCursor(window.handle());

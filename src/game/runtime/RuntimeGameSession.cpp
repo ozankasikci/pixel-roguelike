@@ -218,6 +218,10 @@ void RuntimeGameSession::tick(float deltaTime, float aspect) {
     performanceStats_.inventoryMs = elapsedMilliseconds(t0, t1);
 
     t0 = t1;
+    updateRuntimeDoors(registry_, deltaTime);
+    t1 = Clock::now();
+
+    t0 = t1;
     updateRuntimePlayerMovement(registry_, inputSystem_, physics_, deltaTime);
     t1 = Clock::now();
     performanceStats_.movementMs = elapsedMilliseconds(t0, t1);

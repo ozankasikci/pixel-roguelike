@@ -1,6 +1,11 @@
 #include "game/runtime/RuntimeGameplay.h"
 
+#include <spdlog/spdlog.h>
 #include "engine/input/InputSystem.h"
+#include "game/components/ColliderComponent.h"
+#include "game/components/DoorComponent.h"
+#include "game/components/DoorLeafComponent.h"
+#include "game/components/MeshComponent.h"
 #include "engine/physics/PhysicsSystem.h"
 #include "game/components/CameraComponent.h"
 #include "game/components/CharacterControllerComponent.h"
@@ -187,7 +192,27 @@ void updateRuntimeInteraction(entt::registry& registry, const InputSystem& input
         }
     }
 
+    // Debug: log every frame E is pressed regardless of focus
+    if (input.isKeyPressed(GLFW_KEY_E)) {
+        spdlog::info("[INTERACT] E pressed | focused={} | cursorLocked={} | wantsMouse={} | justPressed={}",
+                     focus.focused != entt::null, input.isCursorLocked(), input.wantsCaptureMouse(),
+                     input.isKeyJustPressed(GLFW_KEY_E));
+    }
+
     if (focus.focused == entt::null) {
+        // Debug: if E pressed but no focus, log why
+        if (input.isKeyPressed(GLFW_KEY_E)) {
+            int interactableCount = 0;
+            float closestDist = 999.0f;
+            for (auto [entity, transform, interactable] : interactableView.each()) {
+                interactableCount++;
+                float d = glm::length(transform.position - actorTransform->position);
+                if (d < closestDist) closestDist = d;
+            }
+            spdlog::info("[INTERACT] No focus target! interactables={} closestDist={:.2f} playerPos=({:.2f},{:.2f},{:.2f})",
+                         interactableCount, closestDist,
+                         actorTransform->position.x, actorTransform->position.y, actorTransform->position.z);
+        }
         return;
     }
 
@@ -201,7 +226,8 @@ void updateRuntimeInteraction(entt::registry& registry, const InputSystem& input
         return;
     }
 
-    if (input.isCursorLocked() && !input.wantsCaptureMouse() && input.isKeyJustPressed(GLFW_KEY_E)) {
+    if (!input.wantsCaptureMouse() && input.isKeyJustPressed(GLFW_KEY_E)) {
+        spdlog::info("[INTERACT] ACTIVATING DOOR!");
         focus.activationRequested = true;
     }
 }
@@ -418,5 +444,74 @@ void updateRuntimeCamera(entt::registry& registry,
         cam.pitch = std::clamp(cam.pitch, -89.0f, 89.0f);
         updateRuntimeCameraComponent(transform, cam, aspect);
         break;
+    }
+}
+
+namespace {
+
+void updateDoorLeaf(entt::registry& registry, entt::entity leafEntity, float progress) {
+    if (leafEntity == entt::null) return;
+    auto* mesh = registry.try_get<MeshComponent>(leafEntity);
+    auto* collider = registry.try_get<ColliderComponent>(leafEntity);
+    auto* leaf = registry.try_get<DoorLeafComponent>(leafEntity);
+    if (!mesh || !collider || !leaf) return;
+
+    const float yaw = glm::mix(leaf->closedYaw, leaf->openYaw, progress);
+    glm::mat4 model = glm::translate(glm::mat4(1.0f), leaf->hingePosition);
+    model = glm::rotate(model, glm::radians(yaw), glm::vec3(0.0f, 1.0f, 0.0f));
+    model = glm::translate(model, leaf->centerOffsetFromHinge);
+    model = glm::scale(model, leaf->closedScale);
+    const glm::vec3 center = glm::vec3(model * glm::vec4(0.0f, 0.0f, 0.0f, 1.0f));
+    mesh->modelOverride = model;
+    mesh->useModelOverride = true;
+    collider->position = center;
+    collider->rotation = glm::vec3(0.0f, yaw, 0.0f);
+    collider->halfExtents = leaf->colliderHalfExtents;
+}
+
+} // namespace
+
+void updateRuntimeDoors(entt::registry& registry, float deltaTime) {
+    // Check if player activated a door
+    if (registry.ctx().contains<InteractionFocusState>()) {
+        auto& focus = registry.ctx().get<InteractionFocusState>();
+        if (focus.activationRequested && !focus.activationConsumed && focus.focused != entt::null) {
+            auto* door = registry.try_get<DoorComponent>(focus.focused);
+            if (door != nullptr && !door->opening && !door->opened) {
+                door->opening = true;
+                focus.activationConsumed = true;
+            }
+        }
+    }
+
+    // Animate doors
+    auto doorView = registry.view<TransformComponent, DoorComponent>();
+    for (auto [entity, transform, door] : doorView.each()) {
+        (void)transform;
+        if (door.opening || door.opened) {
+            door.progress = std::min(1.0f, door.progress + deltaTime / door.openDuration);
+            updateDoorLeaf(registry, door.leftLeaf, door.progress);
+            updateDoorLeaf(registry, door.rightLeaf, door.progress);
+
+            if (auto* interactable = registry.try_get<InteractableComponent>(entity)) {
+                interactable->busy = door.opening;
+                interactable->enabled = !door.opened;
+            }
+
+            if (door.progress >= 1.0f) {
+                door.progress = 1.0f;
+                door.opening = false;
+                door.opened = true;
+                if (auto* interactable = registry.try_get<InteractableComponent>(entity)) {
+                    interactable->busy = false;
+                    interactable->enabled = false;
+                }
+            }
+            continue;
+        }
+        if (auto* interactable = registry.try_get<InteractableComponent>(entity)) {
+            interactable->busy = false;
+            interactable->enabled = !door.opened;
+        }
     }
 }
