@@ -55,6 +55,7 @@ Plan: Not started
 | 260406-4d4 | Implement proper CSM shadow fix: GL_DEPTH_CLAMP, per-cascade normal offset, remove caster-side offset | 2026-04-06 | 9977031 | [260406-4d4-implement-proper-csm-shadow-fix-gl-depth](./quick/260406-4d4-implement-proper-csm-shadow-fix-gl-depth/) |
 | 260406-phj | Extend initial scene with three new rooms and interactable doors | 2026-04-06 | 0f2184e | [260406-phj-extend-initial-scene-with-three-new-room](./quick/260406-phj-extend-initial-scene-with-three-new-room/) |
 | 260406-qdy | Editor-runtime parity: shared scene loading pipeline with scripted geometry | 2026-04-06 | 1ddbc0e | [260406-qdy-editor-runtime-parity-shared-scene-loadi](./quick/260406-qdy-editor-runtime-parity-shared-scene-loadi/) |
+| 260406-qr6 | Remove scripted geometry, native scene doors, fix door gaps | 2026-04-06 | dc98d94 | [260406-qr6-remove-scripted-geometry-define-all-enti](./quick/260406-qr6-remove-scripted-geometry-define-all-enti/) |
 | Phase 01-engine-and-dithering-pipeline P01 | 5 | 2 tasks | 17 files |
 | Phase 01-engine-and-dithering-pipeline P02 | 15 | 3 tasks | 11 files |
 | Phase 01.1-project-restructure-ecs-application-class-modular-engine-game-split P01 | 7 | 2 tasks | 20 files |
