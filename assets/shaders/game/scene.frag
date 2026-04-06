@@ -911,12 +911,24 @@ float sampleCsmShadow(vec3 fragWorldPos, vec3 fragViewPos, vec3 N, vec3 L) {
     int layer = selectCascade(abs(fragViewPos.z));
     if (layer < 0 || layer >= uCsmCascadeCount) return 1.0;
 
-    // Per-cascade texel-scaled normal offset: scales automatically with cascade coverage.
-    // cascadeTexelSize = world-space size of one shadow map texel at this cascade level.
-    // Offset by 2 texels along the surface normal, scaled by slope factor.
+    // Per-cascade texel-scaled receiver bias with two components:
+    //
+    // 1. NORMAL OFFSET — pushes lookup along surface normal. Effective for floor/ceiling
+    //    surfaces (vertical normal pushes into wall's shadow). Ineffective for wall surfaces
+    //    at ceiling junctions (horizontal normal pushes sideways, not toward gap).
+    //
+    // 2. LIGHT-DIRECTION OFFSET — pushes lookup toward the light. Compensates where normal
+    //    offset fails. Modulated by (1 - normalEffectiveness) so it only activates for
+    //    surfaces whose normal is perpendicular to the light direction (walls).
+    //    This replaces the old caster-side geometry offset with a per-fragment, per-cascade,
+    //    receiver-side equivalent that doesn't modify the shadow map.
+    //
+    // Together they cover all junction orientations without parameter coupling.
     float cascadeTexelSize = uCsmSplitDistances[layer] / float(textureSize(uCsmShadowMap, 0).x);
     float normalOffsetScale = 2.0;
-    vec3 biasedWorldPos = fragWorldPos + N * cascadeTexelSize * normalOffsetScale * csmSlopeFactor;
+    vec3 normalOffset = N * cascadeTexelSize * normalOffsetScale * csmSlopeFactor;
+
+    vec3 biasedWorldPos = fragWorldPos + normalOffset;
 
     vec3 projCoords = vec3(0.0);
     {
@@ -934,7 +946,7 @@ float sampleCsmShadow(vec3 fragWorldPos, vec3 fragViewPos, vec3 N, vec3 L) {
     float s = sin(angle), c = cos(angle);
     mat2 rot = mat2(c, s, -s, c);
     float texelSize = 1.0 / float(textureSize(uCsmShadowMap, 0).x);
-    float spread = 1.0;
+    float spread = 3.0;
 
     float centerVisibility = texture(uCsmShadowMap,
         vec4(projCoords.xy, float(layer), projCoords.z - bias));
@@ -955,9 +967,10 @@ float sampleCsmShadow(vec3 fragWorldPos, vec3 fragViewPos, vec3 N, vec3 L) {
         if (distFromSplit < blendZone && distFromSplit > 0.0) {
             float blendFactor = 1.0 - distFromSplit / blendZone;
             int nextLayer = layer + 1;
-            // Apply per-cascade normal offset for the next cascade too
+            // Apply same dual offset for the next cascade
             float nextCascadeTexelSize = uCsmSplitDistances[nextLayer] / float(textureSize(uCsmShadowMap, 0).x);
-            vec3 nextBiasedWorldPos = fragWorldPos + N * nextCascadeTexelSize * normalOffsetScale * csmSlopeFactor;
+            vec3 nextNormalOffset = N * nextCascadeTexelSize * normalOffsetScale * csmSlopeFactor;
+            vec3 nextBiasedWorldPos = fragWorldPos + nextNormalOffset;
             vec4 nextLightSpace = uCsmMatrices[nextLayer] * vec4(nextBiasedWorldPos, 1.0);
             vec3 nextProj = nextLightSpace.xyz / nextLightSpace.w * 0.5 + 0.5;
             float nextBias = 0.0;

@@ -170,6 +170,7 @@ void SceneRenderPipeline::renderShadowPass(const std::vector<RenderObject>& obje
 
     glEnable(GL_DEPTH_TEST);
     shadowShader_->use();
+    shadowShader_->setFloat("uShadowCasterOffset", 0.0f);  // spot lights don't use caster offset
 
     for (const auto& light : lights) {
         if (light.shadowIndex < 0 || light.shadowIndex >= kMaxShadowedSpotLights) {
@@ -213,16 +214,22 @@ void SceneRenderPipeline::renderShadowPass(const std::vector<RenderObject>& obje
                                        input.postParams ? input.postParams->csmLambda : 0.5f);
 
         shadowShader_->use();
-        // Shadow map renders true geometry -- no caster offset. Junction gaps
-        // handled by receiver-side normal offset + contact shadows in scene.frag
+        shadowShader_->setVec3("uLightDirection", lighting.sun.direction);
         glEnable(GL_POLYGON_OFFSET_FILL);
         glPolygonOffset(1.1f, 4.0f);
         glEnable(GL_DEPTH_CLAMP);
 
         const auto& csmMatrices = csmShadowMap_.lightSpaceMatrices();
         const int csmRes = csmShadowMap_.resolution();
+        const auto& splitDistances = csmShadowMap_.splitDistances();
 
         for (int cascade = 0; cascade < CascadedShadowMap::kCascadeCount; ++cascade) {
+            // Per-cascade caster offset: scales with cascade texel size so near
+            // cascades get small offset (preserving detail) and far cascades get
+            // proportionally larger offset. 4 texels worth of offset per cascade.
+            float cascadeTexelSize = splitDistances[cascade] / static_cast<float>(csmRes);
+            shadowShader_->setFloat("uShadowCasterOffset", cascadeTexelSize * 4.0f);
+
             glBindFramebuffer(GL_FRAMEBUFFER, csmShadowMap_.framebuffer());
             glFramebufferTextureLayer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT,
                                       csmShadowMap_.depthArrayTexture(), 0, cascade);
