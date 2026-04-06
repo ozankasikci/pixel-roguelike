@@ -283,7 +283,7 @@ None yet.
 | 260405-x13 | Fix asset discovery so game works when distributed outside project tree | 2026-04-05 | 8709a66 | [260405-x13-fix-asset-discovery-so-game-works-when-d](./quick/260405-x13-fix-asset-discovery-so-game-works-when-d/) |
 | 260406-04r | Add Package for Sharing button to editor Build menu | 2026-04-06 | c796970 | [260406-04r-add-build-package-button-to-editor-that-](./quick/260406-04r-add-build-package-button-to-editor-that-/) |
 | 260406-0u4 | Package only used assets by scanning scene and content references | 2026-04-06 | 5ad8797 | [260406-0u4-package-only-used-assets-by-scanning-sce](./quick/260406-0u4-package-only-used-assets-by-scanning-sce/) |
-| 260407-0m2 | Fix door not opening and gizmo-move not applying to door leaf | 2026-04-06 | TBD | [260407-0m2-fix-door-not-opening-and-gizmo-move-not-](./quick/260407-0m2-fix-door-not-opening-and-gizmo-move-not-/) |
+| 260407-0m2 | Fix door not opening and gizmo-move not applying to door leaf | 2026-04-06 | 90cc2e6 | [260407-0m2-fix-door-not-opening-and-gizmo-move-not-](./quick/260407-0m2-fix-door-not-opening-and-gizmo-move-not-/) |
 
 ## Session Continuity
 
