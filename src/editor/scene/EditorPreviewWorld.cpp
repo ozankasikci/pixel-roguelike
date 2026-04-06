@@ -346,7 +346,8 @@ void EditorPreviewWorld::syncTransforms(const EditorSceneDocument& document) {
                 auto& mesh = registry_.get<MeshComponent>(entity);
                 const auto& placement = std::get<LevelMeshPlacement>(object->payload);
                 if (placement.pivot.has_value()) {
-                    // Recompute pivot-aware model from parent door group
+                    // Recompute pivot-aware model using the mesh's own world position
+                    // so gizmo-move on the leaf is reflected visually
                     auto parentObjId = document.parentObjectId(object->id);
                     const auto* parentObj = document.findObject(parentObjId);
                     if (parentObj && parentObj->kind == EditorSceneObjectKind::DoorGroup) {
@@ -354,7 +355,7 @@ void EditorPreviewWorld::syncTransforms(const EditorSceneDocument& document) {
                         decomposeTransformMatrix(document.worldTransformMatrix(parentObjId),
                                                  groupPos, groupRot, groupScl);
                         mesh.modelOverride = makePivotLeafModel(
-                            groupPos, groupRot.y, placement.pivot.value(), placement.scale);
+                            position, groupRot.y, placement.pivot.value(), placement.scale);
                         mesh.useModelOverride = true;
                     }
                 } else if (mesh.useModelOverride) {

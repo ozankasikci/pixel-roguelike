@@ -343,6 +343,16 @@ entt::entity LevelBuilder::addDoorGroup(const LevelDoorGroupPlacement& group, co
         meshComp->useModelOverride = true;
     }
 
+    // Attach ColliderComponent for physics and DoorAnimationSystem
+    const glm::vec3 leafCenter = glm::vec3(leafModel * glm::vec4(0.0f, 0.0f, 0.0f, 1.0f));
+    ColliderComponent collider;
+    collider.shape = ColliderShape::Box;
+    collider.mode = ColliderMode::Solid;
+    collider.position = leafCenter;
+    collider.rotation = glm::vec3(0.0f, group.yawDegrees, 0.0f);
+    collider.halfExtents = glm::vec3(0.445f, 1.01f, 0.05f);
+    reg.emplace<ColliderComponent>(leafEntity, collider);
+
     // Attach DoorLeafComponent for swing animation
     DoorLeafComponent doorLeaf;
     doorLeaf.hingePosition = hingeWorldPos;
