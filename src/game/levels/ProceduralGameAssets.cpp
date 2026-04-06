@@ -229,6 +229,25 @@ std::unique_ptr<Mesh> createPrisonWall() {
                                   merged.indices);
 }
 
+std::unique_ptr<Mesh> createPrisonWallPanel() {
+    auto cube = generateCube(2.0f);
+    std::vector<std::pair<RawMeshData, glm::mat4>> parts;
+
+    auto addBox = [&](const glm::vec3& position,
+                      const glm::vec3& scale,
+                      const glm::vec3& rotation = glm::vec3(0.0f)) {
+        parts.push_back({cube, makeModelMatrix(position, scale, rotation)});
+    };
+
+    // Same 2m x 4m wall module as prison_wall, but the visible interior face
+    // stays on the local Z=0 plane and the thickness extends outward only.
+    addBox(glm::vec3(0.0f, 2.0f, -0.05f), glm::vec3(1.0f, 2.0f, 0.05f));
+
+    RawMeshData merged = mergeMeshes(parts);
+    return std::make_unique<Mesh>(merged.positions, merged.normals, merged.uvs, merged.tangents,
+                                  merged.indices);
+}
+
 std::unique_ptr<Mesh> createPrisonWallWindow() {
     auto cube = generateCube(2.0f);
     auto cylinder = generateCylinder(1.0f, 1.0f, 12);
@@ -833,6 +852,7 @@ void registerProceduralAssets(MeshLibrary& meshLibrary) {
     // Prison assets
     // Architectural walls
     meshLibrary.registerMesh("prison_wall", createPrisonWall());
+    meshLibrary.registerMesh("prison_wall_panel", createPrisonWallPanel());
     meshLibrary.registerMesh("prison_wall_window", createPrisonWallWindow());
     meshLibrary.registerMesh("prison_wall_door", createPrisonWallDoor());
     // Floor, ceiling, baseboard

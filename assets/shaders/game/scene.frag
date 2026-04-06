@@ -47,6 +47,7 @@ uniform float uCsmSplitDistances[3];
 uniform int uCsmCascadeCount;
 uniform int uCsmEnabled;
 uniform int uEnableContactShadows;
+uniform int uDepthPrePass;
 uniform sampler2D uSceneDepthTex;
 uniform mat4 uProjection;
 uniform samplerCube uEnvironmentSpecularMap;
@@ -823,6 +824,33 @@ float hash12(vec2 p) {
     return fract((p3.x + p3.y) * p3.z);
 }
 
+float linearizeDepth(float depthSample) {
+    float ndc = depthSample * 2.0 - 1.0;
+    return -uProjection[3][2] / (ndc + uProjection[2][2]);
+}
+
+float sampleDilatedLinearDepth(vec2 uv) {
+    vec2 texel = 1.0 / vec2(textureSize(uSceneDepthTex, 0));
+    float bestDepth = 1e9;
+
+    float depth0 = texture(uSceneDepthTex, uv).r;
+    if (depth0 < 0.99999) bestDepth = min(bestDepth, linearizeDepth(depth0));
+
+    float depth1 = texture(uSceneDepthTex, uv + vec2(texel.x, 0.0)).r;
+    if (depth1 < 0.99999) bestDepth = min(bestDepth, linearizeDepth(depth1));
+
+    float depth2 = texture(uSceneDepthTex, uv + vec2(-texel.x, 0.0)).r;
+    if (depth2 < 0.99999) bestDepth = min(bestDepth, linearizeDepth(depth2));
+
+    float depth3 = texture(uSceneDepthTex, uv + vec2(0.0, texel.y)).r;
+    if (depth3 < 0.99999) bestDepth = min(bestDepth, linearizeDepth(depth3));
+
+    float depth4 = texture(uSceneDepthTex, uv + vec2(0.0, -texel.y)).r;
+    if (depth4 < 0.99999) bestDepth = min(bestDepth, linearizeDepth(depth4));
+
+    return bestDepth;
+}
+
 int selectCascade(float viewDepth) {
     for (int i = 0; i < uCsmCascadeCount; ++i) {
         if (viewDepth < uCsmSplitDistances[i]) return i;
@@ -863,35 +891,44 @@ vec3 cascadeDebugColor(int layer) {
 float traceContactShadow(vec3 fragViewPos, vec3 towardLight) {
     if (uEnableContactShadows == 0) return 1.0;
 
-    // Ray march from fragment toward light in view space, looking for occluders
     vec3 rayDir = normalize(mat3(uViewMatrix) * towardLight);
-    float stepSize = 0.03;
-    int maxSteps = 16;
-    float maxDist = 0.5;
+    float fade = 1.0 - smoothstep(12.0, 24.0, -fragViewPos.z);
+    if (fade <= 0.0) return 1.0;
 
-    for (int i = 1; i <= maxSteps; i++) {
-        float dist = stepSize * float(i);
+    float rayStart = 0.01;
+    float stepSize = 0.025;
+    float maxDist = 0.6;
+    float bias = 0.005;
+    float thickness = 0.12;
+    int maxSteps = 24;
+    float visibility = 1.0;
+
+    for (int i = 0; i < maxSteps; ++i) {
+        float dist = rayStart + stepSize * float(i);
         if (dist > maxDist) break;
 
         vec3 sampleViewPos = fragViewPos + rayDir * dist;
         vec4 sampleClip = uProjection * vec4(sampleViewPos, 1.0);
+        if (sampleClip.w <= 0.0) break;
+
         vec3 sampleNdc = sampleClip.xyz / sampleClip.w;
+        if (sampleNdc.z <= -1.0 || sampleNdc.z >= 1.0) break;
+
         vec2 sampleUV = sampleNdc.xy * 0.5 + 0.5;
 
-        // Bail if ray leaves screen
         if (sampleUV.x < 0.0 || sampleUV.x > 1.0 || sampleUV.y < 0.0 || sampleUV.y > 1.0)
             break;
 
-        float sceneDepthNdc = texture(uSceneDepthTex, sampleUV).r * 2.0 - 1.0;
-        float sampleDepthNdc = sampleNdc.z;
-
-        // Thickness threshold prevents false occlusion from distant geometry behind
-        float thickness = 0.02;
-        if (sampleDepthNdc > sceneDepthNdc && sampleDepthNdc - sceneDepthNdc < thickness) {
-            return 0.0;
+        float sceneDepth = sampleDilatedLinearDepth(sampleUV);
+        if (sceneDepth > 1e8) continue;
+        float rayDepth = -sampleViewPos.z;
+        if (rayDepth > sceneDepth + bias && rayDepth < sceneDepth + thickness) {
+            visibility = 0.0;
+            break;
         }
     }
-    return 1.0;
+
+    return mix(1.0, visibility, fade);
 }
 
 // Receiver-side normal offset with per-cascade texel scaling.
@@ -1088,10 +1125,36 @@ vec3 sampleLocalProbeSpecular(vec3 N, vec3 V, vec3 F0, float roughness) {
     return iblSpecular * max(uReflectionProbeIntensity, 0.0);
 }
 
+vec3 geometricFaceNormal(vec3 interpolatedNormal) {
+    vec3 faceNormal = cross(dFdx(vWorldPos), dFdy(vWorldPos));
+    float faceNormalLength = length(faceNormal);
+    if (faceNormalLength < 0.0001) {
+        return normalize(interpolatedNormal);
+    }
+    faceNormal /= faceNormalLength;
+    return dot(faceNormal, interpolatedNormal) < 0.0 ? -faceNormal : faceNormal;
+}
+
 void main() {
     vec3 geometricNormal = normalize(vNormal);
-    fragGeomNormal = vec4(geometricNormal * 0.5 + 0.5, 1.0);
+    vec3 shadowGeomNormal = geometricFaceNormal(geometricNormal);
     vec2 uv = materialUv(geometricNormal);
+    if (uDepthPrePass != 0) {
+        if (uUseMaterialMaps != 0 && uMaterialBrickDetail == 0) {
+            vec4 albedoRGBA = (uUseProceduralDetail == 0 && uMaterialUvMode != 0)
+                ? textureNoTile(uAlbedoMap, uv)
+                : texture(uAlbedoMap, uv);
+            if (uAlphaTest != 0 && albedoRGBA.a < uAlphaCutoff) {
+                discard;
+            }
+        }
+        fragColor = vec4(0.0);
+        fragNormal = vec4(0.0);
+        fragGeomNormal = vec4(0.0);
+        return;
+    }
+
+    fragGeomNormal = vec4(geometricNormal * 0.5 + 0.5, 1.0);
     vec4 brickMacro = vec4(0.0);
     if (uMaterialBrickDetail != 0) {
         brickMacro = brickMacroMasks(geometricNormal);
@@ -1277,11 +1340,11 @@ void main() {
                     }
                 }
             }
-            visibility = sampleCsmShadow(vWorldPos, fragViewPos, geometricNormal, L);
+            visibility = sampleCsmShadow(vWorldPos, fragViewPos, shadowGeomNormal, L);
             sunShadowVisibilityDebug = visibility;
             sunShadowValidDebug = true;
         } else if (light.castsShadows != 0 && light.shadowIndex >= 0) {
-            visibility = sampleShadow(light.shadowIndex, geometricNormal, L);
+            visibility = sampleShadow(light.shadowIndex, shadowGeomNormal, L);
         }
 
         vec3 lightContribution = visibility * ((kD * albedo * diffuseRadiance) + (specular * specularRadiance)) * NdotL * materialAo;
