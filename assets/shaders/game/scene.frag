@@ -46,6 +46,9 @@ uniform mat4 uCsmMatrices[3];
 uniform float uCsmSplitDistances[3];
 uniform int uCsmCascadeCount;
 uniform int uCsmEnabled;
+uniform int uEnableContactShadows;
+uniform sampler2D uSceneDepthTex;
+uniform mat4 uProjection;
 uniform samplerCube uEnvironmentSpecularMap;
 uniform sampler2D uEnvironmentBrdfLut;
 uniform int uEnvironmentReflectionsEnabled;
@@ -860,42 +863,74 @@ vec3 cascadeDebugColor(int layer) {
     return vec3(1.0);
 }
 
+float traceContactShadow(vec3 fragViewPos, vec3 towardLight) {
+    if (uEnableContactShadows == 0) return 1.0;
+
+    // Ray march from fragment toward light in view space, looking for occluders
+    vec3 rayDir = normalize(mat3(uViewMatrix) * towardLight);
+    float stepSize = 0.03;
+    int maxSteps = 16;
+    float maxDist = 0.5;
+
+    for (int i = 1; i <= maxSteps; i++) {
+        float dist = stepSize * float(i);
+        if (dist > maxDist) break;
+
+        vec3 sampleViewPos = fragViewPos + rayDir * dist;
+        vec4 sampleClip = uProjection * vec4(sampleViewPos, 1.0);
+        vec3 sampleNdc = sampleClip.xyz / sampleClip.w;
+        vec2 sampleUV = sampleNdc.xy * 0.5 + 0.5;
+
+        // Bail if ray leaves screen
+        if (sampleUV.x < 0.0 || sampleUV.x > 1.0 || sampleUV.y < 0.0 || sampleUV.y > 1.0)
+            break;
+
+        float sceneDepthNdc = texture(uSceneDepthTex, sampleUV).r * 2.0 - 1.0;
+        float sampleDepthNdc = sampleNdc.z;
+
+        // Thickness threshold prevents false occlusion from distant geometry behind
+        float thickness = 0.02;
+        if (sampleDepthNdc > sceneDepthNdc && sampleDepthNdc - sceneDepthNdc < thickness) {
+            return 0.0;
+        }
+    }
+    return 1.0;
+}
+
+// Receiver-side normal offset with per-cascade texel scaling.
+// Offsets the shadow lookup along the geometric normal by a number of shadow texels
+// proportional to the slope angle. This scales automatically with cascade coverage:
+//   Cascade 0 (~20m, 1024 res): offset ~0.04m at max slope
+//   Cascade 1 (~80m, 1024 res): offset ~0.16m at max slope
+// Junction gaps not addressed by normal offset (wall-ceiling with horizontal normals)
+// are handled by screen-space contact shadows below.
 float sampleCsmShadow(vec3 fragWorldPos, vec3 fragViewPos, vec3 N, vec3 L) {
     if (uCsmEnabled == 0) return 1.0;
 
-    // Receiver-side normal offset — MECHANISM 2 of the dual CSM junction gap fix.
-    // Shifts the shadow lookup position along the surface normal before cascade
-    // projection, closing coverage gaps at wall-FLOOR junctions for surfaces whose
-    // normal has a vertical component (floor/ceiling receivers: N * 0.15 pushes the
-    // lookup deeper into the wall's shadow). The offset scales with sin(angle between
-    // N and L) — maximum at grazing angles, zero when facing the light directly.
-    //
-    // IMPORTANT: This does NOT fix wall-CEILING gaps for WALL surfaces (N horizontal
-    // → lookup shifts sideways, not in the gap direction). Wall-ceiling gaps are
-    // handled by MECHANISM 1: the caster-side offset in shadow_depth.vert (0.06 units,
-    // set in SceneRenderPipeline.cpp). Do NOT remove Mechanism 1 thinking this is
-    // sufficient — that causes the wall-ceiling white line artifact to regress.
-    // See debug session .planning/debug/csm-white-line-wall-edge.md for full history.
     float csmNdotL = dot(N, L);
     float csmSlopeFactor = sqrt(1.0 - clamp(csmNdotL * csmNdotL, 0.0, 1.0));
-    vec3 biasedWorldPos = fragWorldPos + N * 0.15 * csmSlopeFactor;
 
-    int layer = 0;
+    // Determine cascade layer first (needed for texel size calculation)
+    int layer = selectCascade(abs(fragViewPos.z));
+    if (layer < 0 || layer >= uCsmCascadeCount) return 1.0;
+
+    // Per-cascade texel-scaled normal offset: scales automatically with cascade coverage.
+    // cascadeTexelSize = world-space size of one shadow map texel at this cascade level.
+    // Offset by 2 texels along the surface normal, scaled by slope factor.
+    float cascadeTexelSize = uCsmSplitDistances[layer] / float(textureSize(uCsmShadowMap, 0).x);
+    float normalOffsetScale = 2.0;
+    vec3 biasedWorldPos = fragWorldPos + N * cascadeTexelSize * normalOffsetScale * csmSlopeFactor;
+
     vec3 projCoords = vec3(0.0);
-    if (!computeCsmProjection(biasedWorldPos, fragViewPos, layer, projCoords)) {
-        return 1.0;
+    {
+        vec4 fragInLightSpace = uCsmMatrices[layer] * vec4(biasedWorldPos, 1.0);
+        projCoords = fragInLightSpace.xyz / fragInLightSpace.w;
+        projCoords = projCoords * 0.5 + 0.5;
     }
     if (!csmUvInBounds(projCoords)) return 1.0;
     if (projCoords.z >= 1.0) return 1.0;
 
-    // Directional shadow bias works in cascade depth space, so it needs to stay much
-    // smaller than the spot-light bias values exposed in the editor. Scale the shared
-    // controls down and use the geometric receiver normal to reduce contact light leaks.
-    float receiverSlope = 1.0 - max(dot(N, L), 0.0);
-    float constantBias = 0.001;
-    float normalBias = 0.002 * receiverSlope;
-    float baseBias = max(constantBias, normalBias);
-    float bias = baseBias / max(uCsmSplitDistances[layer], 0.01);
+    float bias = 0.0;
 
     // 16-tap Poisson PCF matching spot shadow quality
     float angle = hash12(gl_FragCoord.xy) * 6.2831853;
@@ -923,9 +958,12 @@ float sampleCsmShadow(vec3 fragWorldPos, vec3 fragViewPos, vec3 N, vec3 L) {
         if (distFromSplit < blendZone && distFromSplit > 0.0) {
             float blendFactor = 1.0 - distFromSplit / blendZone;
             int nextLayer = layer + 1;
-            vec4 nextLightSpace = uCsmMatrices[nextLayer] * vec4(fragWorldPos, 1.0);
+            // Apply per-cascade normal offset for the next cascade too
+            float nextCascadeTexelSize = uCsmSplitDistances[nextLayer] / float(textureSize(uCsmShadowMap, 0).x);
+            vec3 nextBiasedWorldPos = fragWorldPos + N * nextCascadeTexelSize * normalOffsetScale * csmSlopeFactor;
+            vec4 nextLightSpace = uCsmMatrices[nextLayer] * vec4(nextBiasedWorldPos, 1.0);
             vec3 nextProj = nextLightSpace.xyz / nextLightSpace.w * 0.5 + 0.5;
-            float nextBias = baseBias / max(uCsmSplitDistances[nextLayer], 0.01);
+            float nextBias = 0.0;
             float nextCenterVisibility = texture(uCsmShadowMap,
                 vec4(nextProj.xy, float(nextLayer), nextProj.z - nextBias));
             float nextVisibility = 0.0;
@@ -939,6 +977,11 @@ float sampleCsmShadow(vec3 fragWorldPos, vec3 fragViewPos, vec3 N, vec3 L) {
             visibility = mix(visibility, nextVisibility, blendFactor);
         }
     }
+
+    // Screen-space contact shadows fill junction gaps that normal offset cannot reach
+    // (e.g., wall-ceiling junctions where the wall normal is horizontal).
+    float contactShadow = traceContactShadow(fragViewPos, L);
+    visibility = min(visibility, contactShadow);
 
     return visibility;
 }
