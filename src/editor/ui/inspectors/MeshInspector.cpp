@@ -79,6 +79,19 @@ void drawMeshInspector(LevelMeshPlacement& mesh,
         itemBefore = document.captureState();
         trackSceneItem(itemBefore, "Change Mesh Tint", renderInspectorPropertyRow("Tint", [&]() { return editColor("##value", *mesh.tint); }));
     }
+    // Pivot row — shown for door leaf meshes that have a hinge pivot
+    if (mesh.pivot.has_value()) {
+        itemBefore = document.captureState();
+        const bool pivotChanged = renderInspectorPropertyRow("Pivot", [&]() {
+            glm::vec3 pivotVal = mesh.pivot.value();
+            bool changed = ImGui::DragFloat3("##value", &pivotVal.x, 0.01f);
+            if (changed) {
+                mesh.pivot = pivotVal;
+            }
+            return changed;
+        });
+        trackSceneItem(itemBefore, "Mesh Pivot", pivotChanged && ImGui::IsItemDeactivatedAfterEdit());
+    }
     endInspectorPropertyTable();
 
     // Make Interactable section

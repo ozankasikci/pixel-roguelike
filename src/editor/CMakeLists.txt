@@ -30,6 +30,7 @@ add_library(editor STATIC
     ui/inspectors/AssetInspectorHelpers.cpp
     ui/inspectors/AssetInspectorSession.cpp
     ui/inspectors/ColliderInspector.cpp
+    ui/inspectors/DoorGroupInspector.cpp
     ui/inspectors/EnvironmentInspector.cpp
     ui/inspectors/GroupInspector.cpp
     ui/inspectors/InspectorUtils.cpp
