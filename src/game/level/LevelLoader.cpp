@@ -21,6 +21,7 @@
 #include "engine/core/PathUtils.h"
 
 #include <cassert>
+#include <unordered_set>
 
 LevelLoader::LevelLoader(LevelBuildContext& context)
     : context_(context) {}
@@ -52,7 +53,22 @@ void LevelLoader::load(const LevelLoadRequest& request, const LevelLoadArgs& arg
         request.buildScriptedGeometry(builder);
     }
 
+    // Build set of mesh nodeIds that are children of door groups — these are spawned
+    // by addDoorGroup and must be skipped in the normal mesh loop to avoid double-spawning.
+    std::unordered_set<std::string> doorChildNodeIds;
+    for (const auto& dg : level.doors) {
+        for (const auto& m : level.meshes) {
+            if (m.parentNodeId == dg.nodeId && !m.nodeId.empty()) {
+                doorChildNodeIds.insert(m.nodeId);
+            }
+        }
+    }
+
     for (const auto& placement : level.meshes) {
+        // Skip meshes that belong to door groups (spawned by addDoorGroup)
+        if (!placement.nodeId.empty() && doorChildNodeIds.count(placement.nodeId)) {
+            continue;
+        }
         auto entity = builder.addMesh(placement.meshId,
                                       placement.position,
                                       placement.scale,
@@ -68,6 +84,10 @@ void LevelLoader::load(const LevelLoadRequest& request, const LevelLoadArgs& arg
         if (placement.interactable.has_value()) {
             builder.attachInteractable(entity, *placement.interactable);
         }
+    }
+
+    for (const auto& doorGroup : level.doors) {
+        builder.addDoorGroup(doorGroup, level);
     }
 
     for (const auto& placement : level.lights) {
