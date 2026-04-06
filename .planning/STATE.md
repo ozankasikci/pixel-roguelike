@@ -5,7 +5,7 @@ milestone_name: Editor UX
 status: Milestone complete
 stopped_at: Completed 18-06-PLAN.md
 last_updated: "2026-04-05T03:18:31.361Z"
-last_activity: 2026-04-06
+last_activity: 2026-04-06 - Completed quick task 260406-phj: Extend initial scene with three new rooms and interactable doors
 progress:
   total_phases: 20
   completed_phases: 16
@@ -53,6 +53,7 @@ Plan: Not started
 | # | Description | Date | Commit | Directory |
 |---|-------------|------|--------|-----------|
 | 260406-4d4 | Implement proper CSM shadow fix: GL_DEPTH_CLAMP, per-cascade normal offset, remove caster-side offset | 2026-04-06 | 9977031 | [260406-4d4-implement-proper-csm-shadow-fix-gl-depth](./quick/260406-4d4-implement-proper-csm-shadow-fix-gl-depth/) |
+| 260406-phj | Extend initial scene with three new rooms and interactable doors | 2026-04-06 | 0f2184e | [260406-phj-extend-initial-scene-with-three-new-room](./quick/260406-phj-extend-initial-scene-with-three-new-room/) |
 | Phase 01-engine-and-dithering-pipeline P01 | 5 | 2 tasks | 17 files |
 | Phase 01-engine-and-dithering-pipeline P02 | 15 | 3 tasks | 11 files |
 | Phase 01.1-project-restructure-ecs-application-class-modular-engine-game-split P01 | 7 | 2 tasks | 20 files |
