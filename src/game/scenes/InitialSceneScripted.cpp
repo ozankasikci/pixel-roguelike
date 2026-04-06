@@ -1,10 +1,9 @@
+#include "game/scenes/InitialSceneScripted.h"
 #include "game/scenes/GenericFileScene.h"
 #include "game/level/LevelBuilder.h"
 #include "game/prefabs/GameplayPrefabs.h"
 
-namespace {
-
-static const bool kRegistered = [] {
+void registerInitialSceneScripted() {
     GenericFileScene::registerScriptedGeometry("initial_scene", [](LevelBuilder& builder) {
         // Door A -- wooden door, west wall opening
         // Wall door opening is at (-5.0, 0, 1.0) facing 90deg
@@ -66,7 +65,4 @@ static const bool kRegistered = [] {
             spawnSingleDoor(builder, spec);
         }
     });
-    return true;
-}();
-
-} // namespace
+}
