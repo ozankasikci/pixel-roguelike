@@ -391,13 +391,13 @@ Plans:
 - R5: Right-leaf animation works in editor preview
 - R6: Dead code removed (computeHingeWorldPos), naming cleaned up (DoubleDoor → Door where appropriate)
 **Depends on:** Phase 18
-**Plans:** 3/4 plans executed
+**Plans:** 4/4 plans complete
 
 Plans:
 - [x] 19-01-PLAN.md — New DoorConfigComponent + DoorStateComponent, rename LevelDoorGroupPlacement to LevelDoorPlacement
 - [x] 19-02-PLAN.md — Bidirectional DoorAnimationSystem, BehaviorSystem update, delete updateRuntimeDoorAnimation
 - [x] 19-03-PLAN.md — Delete DoubleDoor prefab spawn path, dead code, ContentRegistry cleanup
-- [ ] 19-04-PLAN.md — DoorGroupInspector leaf display, PrefabInspector cleanup, test updates
+- [x] 19-04-PLAN.md — DoorGroupInspector leaf display, PrefabInspector cleanup, test updates
 
 
 ### Phase 20: Structural hardening — unify triggers, type-safe IDs, action interface refactor, component validation, serialization robustness, editor-game decoupling, lifetime safety, material cycle detection

@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: Editor UX
 status: Ready to execute
-stopped_at: Completed 19-03-PLAN.md
-last_updated: "2026-04-07T16:48:04.796Z"
+stopped_at: Completed 19-04-PLAN.md (editor components and tests)
+last_updated: "2026-04-07T17:21:43.294Z"
 last_activity: 2026-04-07
 progress:
   total_phases: 22
-  completed_phases: 17
+  completed_phases: 18
   total_plans: 62
-  completed_plans: 56
-  percent: 90
+  completed_plans: 57
+  percent: 92
 ---
 
 # Project State
@@ -26,7 +26,7 @@ See: .planning/PROJECT.md (updated 2026-03-23)
 ## Current Position
 
 Phase: 19 (refactor-door-system-to-unify-split-brain-architecture) — EXECUTING
-Plan: 3 of 4
+Plan: 4 of 4
 
 ## Performance Metrics
 
@@ -86,6 +86,7 @@ Plan: 3 of 4
 | Phase 18-maintainability-refactoring-for-editor-ui-serialization-and-round-trip-fidelity P06 | 20 | 1 tasks | 8 files |
 | Phase 19 P02 | 60 | 2 tasks | 20 files |
 | Phase 19 P03 | 451 | 2 tasks | 9 files |
+| Phase 19-refactor-door-system-to-unify-split-brain-architecture P04 | 17m | 3 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -209,6 +210,7 @@ Recent decisions affecting current work:
 - [Phase 19]: LevelBuilder::addDoorGroup rewritten to use self-contained LevelDoorPlacement with hardcoded door_leaf_left mesh
 - [Phase 19]: Removed DoubleDoor spawn path entirely; all doors now defined via .scene door_group entries
 - [Phase 19]: makePivotLeafModel preserved as shared pivot math used by DoorAnimationSystem
+- [Phase 19-refactor-door-system-to-unify-split-brain-architecture]: Leaf mesh section in DoorGroupInspector uses parentNodeId matching (no pivot field in new LevelMeshPlacement)
 
 ### Pending Todos
 
@@ -300,6 +302,6 @@ None yet.
 ## Session Continuity
 
 Last activity: 2026-04-07
-Last session: 2026-04-07T16:48:04.789Z
-Stopped at: Completed 19-03-PLAN.md
+Last session: 2026-04-07T17:21:43.286Z
+Stopped at: Completed 19-04-PLAN.md (editor components and tests)
 Resume file: None
