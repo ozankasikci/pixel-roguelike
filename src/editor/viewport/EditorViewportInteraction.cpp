@@ -296,6 +296,23 @@ bool applyGizmoToSelectedObject(EditorSceneDocument& document,
             return false;
         }
 
+        // If the selected object is a pivot-leaf mesh (Mesh child of DoorGroup with a pivot),
+        // redirect the gizmo to operate on the parent DoorGroup instead.
+        // The leaf's visual position is entirely derived from the DoorGroup position via
+        // makePivotLeafModel — leaf.position has no effect on rendering, so manipulating
+        // the leaf directly would only move the pivot visualization, not the door.
+        // This mirrors the viewport click-bubble in applySelectionHit().
+        if (object->kind == EditorSceneObjectKind::Mesh) {
+            const auto& meshPlacement = std::get<LevelMeshPlacement>(object->payload);
+            if (meshPlacement.pivot.has_value()) {
+                const std::uint64_t parentId = document.parentObjectId(object->id);
+                EditorSceneObject* parentObj = document.findObject(parentId);
+                if (parentObj && parentObj->kind == EditorSceneObjectKind::DoorGroup) {
+                    object = parentObj;
+                }
+            }
+        }
+
         glm::mat4 model(1.0f);
         switch (object->kind) {
         case EditorSceneObjectKind::Mesh:

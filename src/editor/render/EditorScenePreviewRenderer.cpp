@@ -315,9 +315,12 @@ void appendHelperObjects(std::vector<RenderObject>& objects,
                 if (!meshPlacement.pivot.has_value()) continue;
                 if (meshPlacement.parentNodeId != dg.nodeId) continue;
 
-                const glm::vec3 leafWorldPos = dg.position + meshPlacement.position;
+                // The hinge IS the DoorGroup position — meshPlacement.position is always
+                // {0,0,0} for pivot-leaf meshes and must not be added here (the old
+                // dg.position + meshPlacement.position formula caused the pivot marker to
+                // move when the gizmo erroneously wrote to leaf.position).
                 const glm::vec3 hingePos = computeHingeWorldPos(
-                    leafWorldPos, dg.yawDegrees, meshPlacement.pivot.value(), meshPlacement.scale);
+                    dg.position, dg.yawDegrees, meshPlacement.pivot.value(), meshPlacement.scale);
 
                 // Vertical hinge axis: bright green wireframe pole (same style as trigger volumes)
                 const glm::vec3 pivotTint(0.90f, 0.20f, 1.00f);
