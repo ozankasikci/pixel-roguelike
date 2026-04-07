@@ -718,6 +718,12 @@ LevelDef loadLevelDef(const std::string& path) {
                             index += 4;
                             continue;
                         }
+                        if (tokens[index] == "pivot") {
+                            // pivot was removed from LevelMeshPlacement but scene files
+                            // may still contain it — skip keyword + 3 floats
+                            index += 4;
+                            continue;
+                        }
                         if (parseNodeMetadata(path, lineNumber, tokens, index,
                                               placement.nodeId, placement.parentNodeId)) {
                             continue;
