@@ -29,7 +29,7 @@ void updateDoorLeaf(entt::registry& registry, entt::entity entity, float progres
     const float yaw = glm::mix(leaf->closedYaw, leaf->openYaw, eased);
 
     // Single source of truth: makePivotLeafModel with interpolated yaw
-    const glm::mat4 model = makePivotLeafModel(leaf->basePosition, yaw, leaf->pivot, leaf->closedScale);
+    const glm::mat4 model = makePivotLeafModel(leaf->basePosition, leaf->closedYaw, yaw, leaf->pivot, leaf->closedScale);
 
     mesh->modelOverride = model;
     mesh->useModelOverride = true;

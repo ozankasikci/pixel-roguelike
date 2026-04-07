@@ -60,15 +60,20 @@ entt::entity spawnDoorLeaf(LevelBuilder& builder,
 } // namespace
 
 glm::mat4 makePivotLeafModel(const glm::vec3& basePos,
-                              float yawDeg,
+                              float closedYawDeg,
+                              float currentYawDeg,
                               const glm::vec3& pivot,
                               const glm::vec3& scale) {
-    // basePos IS the hinge position. The pivot offset moves the mesh
-    // so that the pivot point sits at basePos. Rotation happens around basePos.
-    // Formula: T(basePos) * R(yaw) * S(scale) * T(-pivot)
+    // When closed (deltaYaw=0), the door aligns exactly with the frame:
+    //   T(basePos) * R(closedYaw) * S(scale)
+    // When opening, the door rotates around the pivot (hinge) in mesh-local space:
+    //   T(basePos) * R(closedYaw) * S(scale) * T(pivot) * R(deltaYaw) * T(-pivot)
+    const float deltaYaw = currentYawDeg - closedYawDeg;
     glm::mat4 model = glm::translate(glm::mat4(1.0f), basePos);
-    model = glm::rotate(model, glm::radians(yawDeg), glm::vec3(0.0f, 1.0f, 0.0f));
+    model = glm::rotate(model, glm::radians(closedYawDeg), glm::vec3(0.0f, 1.0f, 0.0f));
     model = glm::scale(model, scale);
+    model = glm::translate(model, pivot);
+    model = glm::rotate(model, glm::radians(deltaYaw), glm::vec3(0.0f, 1.0f, 0.0f));
     model = glm::translate(model, -pivot);
     return model;
 }

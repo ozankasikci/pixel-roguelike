@@ -316,7 +316,7 @@ entt::entity LevelBuilder::addDoorGroup(const LevelDoorGroupPlacement& group, co
     // group.position IS the hinge — pivot math derives the leaf's visual position from it.
     // The leaf mesh's own position is irrelevant (always 0,0,0 local).
     const glm::vec3 pivot = leafPlacement->pivot.value();
-    const glm::mat4 leafModel = makePivotLeafModel(group.position, group.yawDegrees, pivot, leafPlacement->scale);
+    const glm::mat4 leafModel = makePivotLeafModel(group.position, group.yawDegrees, group.yawDegrees, pivot, leafPlacement->scale);
 
     // Spawn the leaf mesh entity
     Mesh* leafMeshPtr = mesh(leafPlacement->meshId);

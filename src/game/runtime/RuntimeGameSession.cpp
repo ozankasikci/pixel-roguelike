@@ -407,7 +407,7 @@ void RuntimeGameSession::restoreBaselineState() {
                     auto* leafComp = registry_.try_get<DoorLeafComponent>(leaf);
                     if (mesh && leafComp) {
                         mesh->modelOverride = makePivotLeafModel(
-                            leafComp->basePosition, leafComp->closedYaw,
+                            leafComp->basePosition, leafComp->closedYaw, leafComp->closedYaw,
                             leafComp->pivot, leafComp->closedScale);
                         mesh->useModelOverride = true;
                     }

@@ -182,7 +182,7 @@ void EditorPreviewWorld::rebuild(const EditorSceneDocument& document, const Cont
                     decomposeTransformMatrix(document.worldTransformMatrix(parentId),
                                              groupPos, groupRot, groupScl);
                     const glm::mat4 leafModel = makePivotLeafModel(
-                        groupPos, groupRot.y, placement.pivot.value(), placement.scale);
+                        groupPos, groupRot.y, groupRot.y, placement.pivot.value(), placement.scale);
                     entt::entity meshEntity = entities_.back();
                     if (registry_.all_of<MeshComponent>(meshEntity)) {
                         auto& mesh = registry_.get<MeshComponent>(meshEntity);
@@ -357,7 +357,7 @@ void EditorPreviewWorld::syncTransforms(const EditorSceneDocument& document) {
                         decomposeTransformMatrix(document.worldTransformMatrix(parentObjId),
                                                  groupPos, groupRot, groupScl);
                         mesh.modelOverride = makePivotLeafModel(
-                            groupPos, groupRot.y, placement.pivot.value(), placement.scale);
+                            groupPos, groupRot.y, groupRot.y, placement.pivot.value(), placement.scale);
                         mesh.useModelOverride = true;
                     }
                 } else if (mesh.useModelOverride) {
