@@ -295,6 +295,9 @@ Phases execute in numeric order: 1 → 1.1 → 2 → 2.1 → 3 → 4 → 5 → 6
 | 16. Trigger & Behavior Authoring | v1.2 | 3/3 | Complete | 2026-04-04 |
 | 17. Unified Collider System | v1.2 | 4/4 | Complete | 2026-04-05 |
 | 18. Maintainability Refactoring | — | 6/6 | Complete    | 2026-04-05 |
+| 19. Refactor Door System | — | 4/4 | Complete | 2026-04-07 |
+| 20. Structural Hardening | — | 0/? | Not started | - |
+| 21. Feature Module Reorganization | — | 0/? | Not started | - |
 
 ### Phase 14: improve lighting, reflections, occlusion, and shadow quality
 
@@ -409,3 +412,21 @@ Plans:
 
 Plans:
 - [ ] TBD (run /gsd-plan-phase 20 to break down)
+
+### Phase 21: Feature module reorganization — folder-per-feature structure with door module as proof-of-concept
+
+**Goal:** Reorganize the codebase from type-based organization (all components in `components/`, all systems in `systems/`) to feature-based modules (`src/game/modules/door/` owns all door code). Consolidate the door system's 34-file, 7-layer spread into a single self-contained directory. Eliminate duplicated spawn paths, state machine implementations, and pivot math by having one implementation per concern inside the module. Establish the folder-per-feature pattern that future interactive objects (levers, drawers, cameras) will follow.
+**Requirements**: None (architectural reorganization; not mapped to REQUIREMENTS.md IDs)
+**Depends on:** Phase 20
+**Success Criteria** (what must be TRUE):
+  1. All door-related code lives in `src/game/modules/door/` — no door logic remains in `components/`, `systems/`, `prefabs/`, `behavior/`, or scattered editor files
+  2. Door spawning has a single implementation (not duplicated across LevelBuilder, EditorPreviewWorld, and prefabs)
+  3. Door animation/state machine has a single implementation (not split between BehaviorSystem and RuntimeGameplay)
+  4. The editor inspector for doors is part of the door module, not a separate file in `editor/ui/inspectors/`
+  5. Scene serialization for doors is owned by the door module
+  6. All existing tests pass, all three executables build, door behavior is unchanged
+  7. Adding a hypothetical new interactive object would mean creating a new `src/game/modules/<name>/` directory without touching core systems
+**Plans:** 0 plans
+
+Plans:
+- [ ] TBD (run /gsd-plan-phase 21 to break down)
