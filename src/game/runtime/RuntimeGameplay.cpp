@@ -4,9 +4,8 @@
 #include "engine/physics/PhysicsSystem.h"
 #include "game/behavior/ActionTypes.h"
 #include "game/behavior/BehaviorComponent.h"
+#include "game/behavior/BehaviorSystem.h"
 #include "game/behavior/NodeIndex.h"
-#include "game/components/DoorConfigComponent.h"
-#include "game/components/DoorStateComponent.h"
 #include "game/components/ColliderComponent.h"
 #include "game/components/MeshComponent.h"
 #include "game/components/CameraComponent.h"
@@ -447,58 +446,9 @@ void updateRuntimeBehaviors(entt::registry& registry) {
             }
         }
 
-        switch (action.type) {
-        case ActionType::ToggleDoor: {
-            if (target == entt::null) break;
-            auto* config = registry.try_get<DoorConfigComponent>(target);
-            auto* state = registry.try_get<DoorStateComponent>(target);
-            if (!config || !state) break;
-            if (isDoorFullyOpen(*state) || isDoorMoving(*state)) {
-                state->targetState = DoorTargetState::Closed;
-                if (auto* ia = registry.try_get<InteractableComponent>(target)) {
-                    ia->busy = false;
-                    ia->enabled = true;
-                }
-            } else {
-                state->targetState = DoorTargetState::Open;
-                state->progress = 0.0f;
-                const auto* p = std::get_if<DoorActionParams>(&action.params);
-                if (p && p->duration > 0.0f) config->openDuration = p->duration;
-                if (auto* ia = registry.try_get<InteractableComponent>(target)) ia->busy = true;
-                auto lockView = registry.view<PlayerInteractionLockComponent>();
-                for (auto [e, lock] : lockView.each()) {
-                    if (!lock.active) { lock.active = true; lock.remainingTime = config->openDuration * 0.9f; }
-                }
-            }
-            break;
-        }
-        case ActionType::OpenDoor: {
-            if (target == entt::null) break;
-            auto* config = registry.try_get<DoorConfigComponent>(target);
-            auto* state = registry.try_get<DoorStateComponent>(target);
-            if (!config || !state) break;
-            if (isDoorFullyClosed(*state)) {
-                state->targetState = DoorTargetState::Open;
-                state->progress = 0.0f;
-                const auto* p = std::get_if<DoorActionParams>(&action.params);
-                if (p && p->duration > 0.0f) config->openDuration = p->duration;
-                if (auto* ia = registry.try_get<InteractableComponent>(target)) ia->busy = true;
-            }
-            break;
-        }
-        case ActionType::CloseDoor: {
-            if (target == entt::null) break;
-            auto* state = registry.try_get<DoorStateComponent>(target);
-            if (!state) break;
-            state->targetState = DoorTargetState::Closed;
-            if (auto* ia = registry.try_get<InteractableComponent>(target)) {
-                ia->busy = false;
-                ia->enabled = true;
-            }
-            break;
-        }
-        default:
-            break;
+        auto* handler = findBehaviorActionHandler(action.type);
+        if (handler) {
+            (*handler)(registry, focus.focused, target, action);
         }
 
         if (action.fireOnce) action.fired = true;

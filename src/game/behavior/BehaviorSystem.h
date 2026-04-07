@@ -1,14 +1,27 @@
 #pragma once
 
 #include "engine/core/System.h"
+#include "game/behavior/ActionTypes.h"
 
 #include <cstddef>
+#include <functional>
 #include <string>
+#include <unordered_map>
 #include <vector>
 
 // Forward declarations
 struct ActionEntry;
 struct BehaviorComponent;
+
+// Module action handler registration (per D-09)
+// Modules register handlers for their action types at startup.
+// Both BehaviorSystem (Application-based) and RuntimeGameplay (registry-based) use the same handlers.
+using BehaviorActionHandler = std::function<void(entt::registry& registry,
+                                                  entt::entity source,
+                                                  entt::entity target,
+                                                  ActionEntry& action)>;
+void registerBehaviorActionHandler(ActionType type, BehaviorActionHandler handler);
+BehaviorActionHandler* findBehaviorActionHandler(ActionType type);
 
 struct PendingAction {
     float fireTime;
