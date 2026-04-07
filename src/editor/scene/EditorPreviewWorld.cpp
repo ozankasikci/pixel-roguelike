@@ -173,27 +173,8 @@ void EditorPreviewWorld::rebuild(const EditorSceneDocument& document, const Cont
                                 ? std::optional<std::string>{}
                                 : std::optional<std::string>{placement.materialId});
 
-            // If this mesh has a pivot, it's a door leaf — apply pivot-aware model
-            if (placement.pivot.has_value() && !entities_.empty()) {
-                auto parentId = document.parentObjectId(object.id);
-                const auto* parent = document.findObject(parentId);
-                if (parent && parent->kind == EditorSceneObjectKind::DoorGroup) {
-                    const auto& dg = std::get<LevelDoorGroupPlacement>(parent->payload);
-                    glm::vec3 groupPos(0.0f), groupRot(0.0f), groupScl(1.0f);
-                    decomposeTransformMatrix(document.worldTransformMatrix(parentId),
-                                             groupPos, groupRot, groupScl);
-                    entt::entity meshEntity = entities_.back();
-                    if (registry_.all_of<MeshComponent>(meshEntity)) {
-                        auto& mesh = registry_.get<MeshComponent>(meshEntity);
-                        const glm::vec3 mc = mesh.mesh
-                            ? (mesh.mesh->aabbMin() + mesh.mesh->aabbMax()) * 0.5f
-                            : glm::vec3(0.0f);
-                        mesh.modelOverride = makePivotLeafModel(
-                            groupPos, groupRot.y, groupRot.y, placement.pivot.value(), mc, placement.scale);
-                        mesh.useModelOverride = true;
-                    }
-                }
-            }
+            // Door leaves are now spawned via addDoorGroup (LevelDoorPlacement).
+            // Regular mesh objects in the scene no longer carry pivot data.
             break;
         }
         case EditorSceneObjectKind::Light: {
@@ -245,12 +226,11 @@ void EditorPreviewWorld::rebuild(const EditorSceneDocument& document, const Cont
         case EditorSceneObjectKind::Group:
             break;
         case EditorSceneObjectKind::DoorGroup: {
-            // Door group is a logical container — children are Mesh objects that render themselves.
-            // Create a minimal entity for ownerMap bookkeeping (no visual).
+            // Door group is a self-contained placement — spawn it via addDoorGroup.
             auto entity = registry_.create();
             entities_.push_back(entity);
             auto& transform = registry_.emplace<TransformComponent>(entity);
-            const auto& dg = std::get<LevelDoorGroupPlacement>(object.payload);
+            const auto& dg = std::get<LevelDoorPlacement>(object.payload);
             transform.position = dg.position;
             transform.rotation.y = dg.yawDegrees;
             break;
@@ -348,25 +328,7 @@ void EditorPreviewWorld::syncTransforms(const EditorSceneDocument& document) {
             if (registry_.all_of<MeshComponent>(entity)) {
                 auto& mesh = registry_.get<MeshComponent>(entity);
                 const auto& placement = std::get<LevelMeshPlacement>(object->payload);
-                if (placement.pivot.has_value()) {
-                    // Recompute pivot-aware model using the door GROUP's world position as
-                    // the hinge, not the leaf mesh's world position.
-                    // The group position IS the hinge; the leaf's local position is just the
-                    // initial closed-state offset baked into the pivot value.
-                    auto parentObjId = document.parentObjectId(object->id);
-                    const auto* parentObj = document.findObject(parentObjId);
-                    if (parentObj && parentObj->kind == EditorSceneObjectKind::DoorGroup) {
-                        glm::vec3 groupPos(0.0f), groupRot(0.0f), groupScl(1.0f);
-                        decomposeTransformMatrix(document.worldTransformMatrix(parentObjId),
-                                                 groupPos, groupRot, groupScl);
-                        const glm::vec3 mc = mesh.mesh
-                            ? (mesh.mesh->aabbMin() + mesh.mesh->aabbMax()) * 0.5f
-                            : glm::vec3(0.0f);
-                        mesh.modelOverride = makePivotLeafModel(
-                            groupPos, groupRot.y, groupRot.y, placement.pivot.value(), mc, placement.scale);
-                        mesh.useModelOverride = true;
-                    }
-                } else if (mesh.useModelOverride) {
+                if (mesh.useModelOverride) {
                     mesh.modelOverride = worldMatrix;
                 }
             }

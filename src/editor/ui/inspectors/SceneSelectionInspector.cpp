@@ -157,7 +157,7 @@ void renderSceneSelectionInspector(EditorSceneDocument& document,
                            commandStack, pendingCommand, beforeState);
         return;
     case EditorSceneObjectKind::DoorGroup:
-        drawDoorGroupInspector(std::get<LevelDoorGroupPlacement>(object->payload), document,
+        drawDoorGroupInspector(std::get<LevelDoorPlacement>(object->payload), document,
                                commandStack, pendingCommand, beforeState);
         return;
     }

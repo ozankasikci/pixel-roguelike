@@ -3,7 +3,8 @@
 #include "game/behavior/BehaviorComponent.h"
 #include "game/behavior/NodeIdComponent.h"
 #include "game/components/ColliderComponent.h"
-#include "game/components/DoorComponent.h"
+#include "game/components/DoorConfigComponent.h"
+#include "game/components/DoorStateComponent.h"
 #include "game/components/DoorLeafComponent.h"
 #include "game/components/InteractableComponent.h"
 #include "game/components/LightComponent.h"
@@ -279,62 +280,33 @@ void LevelBuilder::attachInteractable(entt::entity entity, const InteractableDec
     ic.interactDotThreshold = decl.dotThreshold;
 }
 
-entt::entity LevelBuilder::addDoorGroup(const LevelDoorGroupPlacement& group, const LevelDef& level) {
-    // Find child meshes belonging to this door group by parentNodeId
-    const LevelMeshPlacement* framePlacement = nullptr;
-    const LevelMeshPlacement* leafPlacement = nullptr;
-    for (const auto& m : level.meshes) {
-        if (m.parentNodeId == group.nodeId) {
-            if (m.pivot.has_value()) {
-                leafPlacement = &m;
-            } else {
-                framePlacement = &m;
-            }
-        }
-    }
+entt::entity LevelBuilder::addDoorGroup(const LevelDoorPlacement& group, const LevelDef& level) {
+    (void)level; // No child mesh lookup -- LevelDoorPlacement is self-contained
 
-    if (!leafPlacement) {
-        spdlog::warn("LevelBuilder::addDoorGroup: no leaf mesh found for door group '{}'", group.name);
-        return entt::null;
-    }
+    // Standard door leaf mesh and geometry parameters.
+    // All doors spawned via door_group use the same leaf mesh and hinge geometry.
+    static constexpr const char* kLeafMeshId = "door_leaf_left";
+    static const glm::vec3 kLeafScale(1.0f);
+    // Local hinge pivot on the door leaf mesh (left-side hinge in mesh space)
+    static const glm::vec3 kLeafPivot(-0.45f, 0.0f, 0.04f);
 
-    // Spawn frame mesh as a normal static mesh (if exists)
-    if (framePlacement) {
-        auto frameEntity = addMesh(framePlacement->meshId,
-            framePlacement->position,
-            framePlacement->scale,
-            framePlacement->rotation,
-            framePlacement->tint,
-            framePlacement->materialId.empty()
-                ? std::optional<std::string>{}
-                : std::optional<std::string>{framePlacement->materialId});
-        if (frameEntity != entt::null && !framePlacement->nodeId.empty()) {
-            attachNodeId(frameEntity, framePlacement->nodeId);
-        }
-    }
-
-    // group.position IS the hinge — pivot math derives the leaf's visual position from it.
-    // The leaf mesh's own position is irrelevant (always 0,0,0 local).
-    const glm::vec3 pivot = leafPlacement->pivot.value();
-    Mesh* leafMeshPtr = mesh(leafPlacement->meshId);
+    Mesh* leafMeshPtr = mesh(kLeafMeshId);
     const glm::vec3 meshCenter = leafMeshPtr
         ? (leafMeshPtr->aabbMin() + leafMeshPtr->aabbMax()) * 0.5f
         : glm::vec3(0.0f);
-    const glm::mat4 leafModel = makePivotLeafModel(group.position, group.yawDegrees, group.yawDegrees, pivot, meshCenter, leafPlacement->scale);
+    const glm::mat4 leafModel = makePivotLeafModel(group.position, group.yawDegrees, group.yawDegrees,
+                                                    kLeafPivot, meshCenter, kLeafScale);
 
     // Spawn the leaf mesh entity
-    auto leafEntity = addMesh(leafMeshPtr,
+    auto leafEntity = addMesh(kLeafMeshId,
         group.position,
-        leafPlacement->scale,
+        kLeafScale,
         glm::vec3(0.0f, group.yawDegrees, 0.0f),
-        leafPlacement->tint,
-        leafPlacement->materialId.empty()
-            ? std::optional<std::string>{}
-            : std::optional<std::string>{leafPlacement->materialId});
+        std::nullopt,
+        std::string("wood_default"));
 
     if (leafEntity == entt::null) {
-        spdlog::warn("LevelBuilder::addDoorGroup: failed to spawn leaf mesh '{}' for door group '{}'",
-                     leafPlacement->meshId, group.name);
+        spdlog::warn("LevelBuilder::addDoorGroup: failed to spawn leaf mesh for door group '{}'", group.name);
         return entt::null;
     }
 
@@ -356,23 +328,18 @@ entt::entity LevelBuilder::addDoorGroup(const LevelDoorGroupPlacement& group, co
     collider.halfExtents = glm::vec3(0.445f, 1.01f, 0.05f);
     reg.emplace<ColliderComponent>(leafEntity, collider);
 
-    // Attach DoorLeafComponent for swing animation — stores raw inputs,
-    // all rendering uses makePivotLeafModel with interpolated yaw
+    // Attach DoorLeafComponent for swing animation
     DoorLeafComponent doorLeaf;
     doorLeaf.basePosition = group.position;
-    doorLeaf.pivot = pivot;
+    doorLeaf.pivot = kLeafPivot;
     doorLeaf.meshCenter = meshCenter;
-    doorLeaf.closedScale = leafPlacement->scale;
-    doorLeaf.colliderHalfExtents = glm::vec3(std::abs(pivot.x) * leafPlacement->scale.x, 1.01f, 0.05f);
+    doorLeaf.closedScale = kLeafScale;
+    doorLeaf.colliderHalfExtents = glm::vec3(std::abs(kLeafPivot.x), 1.01f, 0.05f);
     doorLeaf.closedYaw = group.yawDegrees;
     doorLeaf.openYaw = group.yawDegrees - group.openAngle;
     reg.emplace<DoorLeafComponent>(leafEntity, doorLeaf);
 
-    if (!leafPlacement->nodeId.empty()) {
-        attachNodeId(leafEntity, leafPlacement->nodeId);
-    }
-
-    // Create door root entity with DoorComponent + InteractableComponent
+    // Create door root entity with DoorConfigComponent + DoorStateComponent + InteractableComponent
     auto doorRoot = createTransformEntity(group.position + glm::vec3(0.0f, 1.0f, 0.0f));
 
     if (group.locked) {
@@ -387,13 +354,17 @@ entt::entity LevelBuilder::addDoorGroup(const LevelDoorGroupPlacement& group, co
                 false
             });
     } else {
-        DoorComponent door;
-        door.leftLeaf = leafEntity;
-        door.rightLeaf = entt::null;
-        door.interactDistance = group.interactDistance;
-        door.interactDotThreshold = group.interactDotThreshold;
-        door.openDuration = group.openDuration;
-        reg.emplace<DoorComponent>(doorRoot, door);
+        DoorConfigComponent config;
+        config.leftLeaf = leafEntity;
+        config.rightLeaf = entt::null;
+        config.interactDistance = group.interactDistance;
+        config.interactDotThreshold = group.interactDotThreshold;
+        config.openDuration = group.openDuration;
+        config.openAngle = group.openAngle;
+        config.locked = group.locked;
+        config.lockedPrompt = group.lockedPrompt;
+        reg.emplace<DoorConfigComponent>(doorRoot, config);
+        reg.emplace<DoorStateComponent>(doorRoot);
 
         reg.emplace<InteractableComponent>(doorRoot,
             InteractableComponent{

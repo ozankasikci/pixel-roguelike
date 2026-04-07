@@ -38,4 +38,3 @@ void updateRuntimeCamera(entt::registry& registry,
                          float deltaTime);
 
 void updateRuntimeBehaviors(entt::registry& registry);
-void updateRuntimeDoorAnimation(entt::registry& registry, float deltaTime);

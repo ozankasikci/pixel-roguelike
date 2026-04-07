@@ -9,7 +9,7 @@
 
 #include <cstring>
 
-void drawDoorGroupInspector(LevelDoorGroupPlacement& dg,
+void drawDoorGroupInspector(LevelDoorPlacement& dg,
                              EditorSceneDocument& document,
                              EditorCommandStack& commandStack,
                              EditorPendingCommand& pendingCommand,

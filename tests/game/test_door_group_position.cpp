@@ -76,7 +76,7 @@ int main() {
     // 4. resolveLevelHierarchy preserves group position.
     // ---------------------------------------------------------------------------
     LevelDef rawLevel;
-    LevelDoorGroupPlacement dg;
+    LevelDoorPlacement dg;
     dg.name = "TestDoor";
     dg.position = groupPosition;
     dg.yawDegrees = closedYaw;
@@ -86,17 +86,7 @@ int main() {
     dg.interactDotThreshold = 0.55f;
     dg.nodeId = "n_test_door_group";
 
-    LevelMeshPlacement leafMesh;
-    leafMesh.meshId = "door_leaf";
-    leafMesh.position = glm::vec3(0.0f);
-    leafMesh.scale = leafScale;
-    leafMesh.rotation = glm::vec3(0.0f);
-    leafMesh.pivot = pivot;
-    leafMesh.nodeId = "n_test_door_leaf";
-    leafMesh.parentNodeId = "n_test_door_group";
-
     rawLevel.doors.push_back(dg);
-    rawLevel.meshes.push_back(leafMesh);
 
     const LevelDef level = resolveLevelHierarchy(rawLevel);
     assert(level.doors.size() == 1);

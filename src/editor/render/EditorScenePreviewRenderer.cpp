@@ -11,7 +11,6 @@
 #include "game/components/LightComponent.h"
 #include "game/components/MeshComponent.h"
 #include "game/components/TransformComponent.h"
-#include "game/prefabs/GameplayPrefabs.h"
 #include "game/rendering/MaterialDefinition.h"
 #include "game/rendering/MaterialTextureLibrary.h"
 
@@ -303,50 +302,37 @@ void appendHelperObjects(std::vector<RenderObject>& objects,
     }
 
     // Pivot point visualization: magenta hinge marker for each DoorGroup
+    // The DoorGroup position IS the hinge — no child mesh lookup needed.
     if (cube != nullptr) {
         for (const auto& object : document.objects()) {
             if (object.kind != EditorSceneObjectKind::DoorGroup) continue;
-            const auto& dg = std::get<LevelDoorGroupPlacement>(object.payload);
+            const auto& dg = std::get<LevelDoorPlacement>(object.payload);
+            const glm::vec3 hingePos = dg.position;
 
-            // Find child leaf meshes with pivot
-            for (const auto& child : document.objects()) {
-                if (child.kind != EditorSceneObjectKind::Mesh) continue;
-                const auto& meshPlacement = std::get<LevelMeshPlacement>(child.payload);
-                if (!meshPlacement.pivot.has_value()) continue;
-                if (meshPlacement.parentNodeId != dg.nodeId) continue;
+            // Vertical hinge axis: magenta wireframe pole
+            const glm::vec3 pivotTint(0.90f, 0.20f, 1.00f);
+            objects.push_back(RenderObject{
+                cube,
+                makeModelMatrix(hingePos + glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(0.06f, 2.0f, 0.06f)),
+                pivotTint,
+                materials.resolve("stone_default"),
+                true,   // wireframe — same as trigger volumes
+                true,   // ignoreDepth
+                true,   // unlit
+                2.0f    // lineWidth
+            });
 
-                // The hinge IS the DoorGroup position — meshPlacement.position is always
-                // {0,0,0} for pivot-leaf meshes and must not be added here (the old
-                // dg.position + meshPlacement.position formula caused the pivot marker to
-                // move when the gizmo erroneously wrote to leaf.position).
-                const glm::vec3 hingePos = computeHingeWorldPos(
-                    dg.position, dg.yawDegrees, meshPlacement.pivot.value(), meshPlacement.scale);
-
-                // Vertical hinge axis: bright green wireframe pole (same style as trigger volumes)
-                const glm::vec3 pivotTint(0.90f, 0.20f, 1.00f);
-                objects.push_back(RenderObject{
-                    cube,
-                    makeModelMatrix(hingePos + glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(0.06f, 2.0f, 0.06f)),
-                    pivotTint,
-                    materials.resolve("stone_default"),
-                    true,   // wireframe — same as trigger volumes
-                    true,   // ignoreDepth
-                    true,   // unlit
-                    2.0f    // lineWidth
-                });
-
-                // Solid cube at handle height
-                objects.push_back(RenderObject{
-                    cube,
-                    makeModelMatrix(hingePos + glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(0.15f)),
-                    pivotTint,
-                    materials.resolve("stone_default"),
-                    false,  // solid
-                    true,   // ignoreDepth
-                    true,   // unlit
-                    1.0f
-                });
-            }
+            // Solid cube at handle height
+            objects.push_back(RenderObject{
+                cube,
+                makeModelMatrix(hingePos + glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(0.15f)),
+                pivotTint,
+                materials.resolve("stone_default"),
+                false,  // solid
+                true,   // ignoreDepth
+                true,   // unlit
+                1.0f
+            });
         }
     }
 }

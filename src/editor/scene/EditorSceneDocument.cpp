@@ -218,7 +218,7 @@ std::uint64_t EditorSceneDocument::addGroup(const LevelGroupNode& placement) {
     return addObject(EditorSceneObjectKind::Group, placement);
 }
 
-std::uint64_t EditorSceneDocument::addDoorGroup(const LevelDoorGroupPlacement& placement) {
+std::uint64_t EditorSceneDocument::addDoorGroup(const LevelDoorPlacement& placement) {
     return addObject(EditorSceneObjectKind::DoorGroup, placement);
 }
 
@@ -602,7 +602,7 @@ bool EditorSceneDocument::applyWorldTransform(std::uint64_t id, const glm::mat4&
             p.rotation = rotation;
             p.scale = glm::max(scale, glm::vec3(0.01f));
             return true;
-        } else if constexpr (std::is_same_v<T, LevelDoorGroupPlacement>) {
+        } else if constexpr (std::is_same_v<T, LevelDoorPlacement>) {
             if (!decomposeTransformMatrix(localMatrix, position, rotation, scale)) {
                 return false;
             }
@@ -672,7 +672,7 @@ LevelDef EditorSceneDocument::toLevelDef() const {
                 level.archetypes.push_back(p);
             } else if constexpr (std::is_same_v<T, LevelGroupNode>) {
                 level.groups.push_back(p);
-            } else if constexpr (std::is_same_v<T, LevelDoorGroupPlacement>) {
+            } else if constexpr (std::is_same_v<T, LevelDoorPlacement>) {
                 level.doors.push_back(p);
             } else {
                 static_assert(sizeof(T) == 0, "Unhandled payload type in toLevelDef");
@@ -812,7 +812,7 @@ glm::mat4 EditorSceneDocument::localTransformMatrix(const EditorSceneObject& obj
             return makeTransformMatrix(p.position, glm::vec3(0.0f, p.yawDegrees, 0.0f), glm::vec3(1.0f));
         } else if constexpr (std::is_same_v<T, LevelGroupNode>) {
             return makeTransformMatrix(p.position, p.rotation, p.scale);
-        } else if constexpr (std::is_same_v<T, LevelDoorGroupPlacement>) {
+        } else if constexpr (std::is_same_v<T, LevelDoorPlacement>) {
             return makeTransformMatrix(p.position, glm::vec3(0.0f, p.yawDegrees, 0.0f), glm::vec3(1.0f));
         } else {
             static_assert(sizeof(T) == 0, "Unhandled payload type in localTransformMatrix");
@@ -886,7 +886,7 @@ std::string editorSceneObjectLabel(const EditorSceneObject& object) {
             label << " [" << p.archetypeId << "]";
         } else if constexpr (std::is_same_v<T, LevelGroupNode>) {
             label << " [" << p.name << "]";
-        } else if constexpr (std::is_same_v<T, LevelDoorGroupPlacement>) {
+        } else if constexpr (std::is_same_v<T, LevelDoorPlacement>) {
             label << " [" << p.name << "]";
         }
         // LevelPlayerSpawn: no suffix needed

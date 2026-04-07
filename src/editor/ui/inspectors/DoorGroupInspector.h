@@ -2,13 +2,13 @@
 
 #include <string>
 
-struct LevelDoorGroupPlacement;
+struct LevelDoorPlacement;
 class EditorSceneDocument;
 struct EditorSceneDocumentState;
 class EditorCommandStack;
 struct EditorPendingCommand;
 
-void drawDoorGroupInspector(LevelDoorGroupPlacement& doorGroup,
+void drawDoorGroupInspector(LevelDoorPlacement& doorGroup,
                              EditorSceneDocument& document,
                              EditorCommandStack& commandStack,
                              EditorPendingCommand& pendingCommand,

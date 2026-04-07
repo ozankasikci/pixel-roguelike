@@ -5,10 +5,7 @@
 #include "game/behavior/ActionTypes.h"
 #include "game/behavior/BehaviorComponent.h"
 #include "game/components/ColliderComponent.h"
-#include "game/components/DoorComponent.h"
-#include "game/components/DoorLeafComponent.h"
 #include "game/components/MeshComponent.h"
-#include "game/prefabs/GameplayPrefabs.h"
 #include "game/components/CameraComponent.h"
 #include "game/components/CharacterControllerComponent.h"
 #include "game/components/CheckpointComponent.h"
@@ -429,105 +426,7 @@ void updateRuntimeCamera(entt::registry& registry,
 }
 
 void updateRuntimeBehaviors(entt::registry& registry) {
-    if (!registry.ctx().contains<InteractionFocusState>()) {
-        return;
-    }
-    auto& focus = registry.ctx().get<InteractionFocusState>();
-    if (!focus.activationRequested || focus.activationConsumed || focus.focused == entt::null) {
-        return;
-    }
-
-    auto* behavior = registry.try_get<BehaviorComponent>(focus.focused);
-    if (behavior == nullptr || !behavior->enabled) {
-        return;
-    }
-
-    for (auto& action : behavior->onActivate) {
-        entt::entity target = focus.focused;
-        switch (action.type) {
-        case ActionType::ToggleDoor: {
-            auto* door = registry.try_get<DoorComponent>(target);
-            if (!door) break;
-            if (door->opened || door->opening) {
-                door->opening = false;
-                door->opened = false;
-                door->progress = 0.0f;
-                if (auto* ic = registry.try_get<InteractableComponent>(target)) {
-                    ic->busy = false;
-                    ic->enabled = true;
-                }
-            } else {
-                door->opening = true;
-                door->progress = 0.0f;
-                if (auto* ic = registry.try_get<InteractableComponent>(target)) {
-                    ic->busy = true;
-                }
-            }
-            break;
-        }
-        case ActionType::OpenDoor: {
-            auto* door = registry.try_get<DoorComponent>(target);
-            if (door && !door->opened && !door->opening) {
-                door->opening = true;
-                door->progress = 0.0f;
-                if (auto* ic = registry.try_get<InteractableComponent>(target)) {
-                    ic->busy = true;
-                }
-            }
-            break;
-        }
-        default:
-            break;
-        }
-    }
-    focus.activationConsumed = true;
-}
-
-void updateRuntimeDoorAnimation(entt::registry& registry, float deltaTime) {
-    auto doorView = registry.view<TransformComponent, DoorComponent>();
-    for (auto [entity, transform, door] : doorView.each()) {
-        (void)transform;
-        if (!door.opening && !door.opened) {
-            if (auto* ic = registry.try_get<InteractableComponent>(entity)) {
-                ic->busy = false;
-                ic->enabled = true;
-            }
-            continue;
-        }
-
-        door.progress = std::min(1.0f, door.progress + deltaTime / door.openDuration);
-
-        // Animate left leaf using the same makePivotLeafModel as editor and static rendering
-        if (door.leftLeaf != entt::null) {
-            auto* mesh = registry.try_get<MeshComponent>(door.leftLeaf);
-            auto* collider = registry.try_get<ColliderComponent>(door.leftLeaf);
-            auto* leaf = registry.try_get<DoorLeafComponent>(door.leftLeaf);
-            if (mesh && leaf) {
-                const float eased = 1.0f - std::pow(1.0f - door.progress, 3.0f);
-                const float yaw = glm::mix(leaf->closedYaw, leaf->openYaw, eased);
-                const glm::mat4 model = makePivotLeafModel(leaf->basePosition, leaf->closedYaw, yaw, leaf->pivot, leaf->meshCenter, leaf->closedScale);
-                mesh->modelOverride = model;
-                mesh->useModelOverride = true;
-                if (collider) {
-                    collider->position = glm::vec3(model * glm::vec4(0.0f, 0.0f, 0.0f, 1.0f));
-                    collider->rotation = glm::vec3(0.0f, yaw, 0.0f);
-                }
-            }
-        }
-
-        if (auto* ic = registry.try_get<InteractableComponent>(entity)) {
-            ic->busy = door.opening;
-            ic->enabled = !door.opened;
-        }
-
-        if (door.progress >= 1.0f) {
-            door.progress = 1.0f;
-            door.opening = false;
-            door.opened = true;
-            if (auto* ic = registry.try_get<InteractableComponent>(entity)) {
-                ic->busy = false;
-                ic->enabled = false;
-            }
-        }
-    }
+    (void)registry;
+    // Door action dispatch is handled entirely by BehaviorSystem + DoorAnimationSystem.
+    // This stub is retained for the declaration in RuntimeGameplay.h until that header is cleaned up.
 }

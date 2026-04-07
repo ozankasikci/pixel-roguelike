@@ -1,6 +1,7 @@
 #include "engine/rendering/geometry/MeshLibrary.h"
 #include "game/components/CheckpointComponent.h"
-#include "game/components/DoorComponent.h"
+#include "game/components/DoorConfigComponent.h"
+#include "game/components/DoorStateComponent.h"
 #include "game/components/DoorLeafComponent.h"
 #include "game/components/InteractableComponent.h"
 #include "game/components/LightComponent.h"
@@ -70,29 +71,29 @@ int main() {
     );
     assert(registry.valid(doorRoot));
     assert(entities.size() == 5);
-    assert((registry.all_of<TransformComponent, DoorComponent>(doorRoot)));
+    assert((registry.all_of<TransformComponent, DoorConfigComponent, DoorStateComponent>(doorRoot)));
     assert(registry.get<TransformComponent>(doorRoot).position == doorPlacement.rootPosition);
 
-    const auto& door = registry.get<DoorComponent>(doorRoot);
+    const auto& doorConfig = registry.get<DoorConfigComponent>(doorRoot);
     const auto& doorInteractable = registry.get<InteractableComponent>(doorRoot);
-    assert(registry.valid(door.leftLeaf));
-    assert(registry.valid(door.rightLeaf));
-    assert(door.interactDistance == doorPlacement.interactDistance);
-    assert(door.interactDotThreshold == doorPlacement.interactDotThreshold);
-    assert(door.openDuration == doorPlacement.openDuration);
+    assert(registry.valid(doorConfig.leftLeaf));
+    assert(registry.valid(doorConfig.rightLeaf));
+    assert(doorConfig.interactDistance == doorPlacement.interactDistance);
+    assert(doorConfig.interactDotThreshold == doorPlacement.interactDotThreshold);
+    assert(doorConfig.openDuration == doorPlacement.openDuration);
     assert(doorInteractable.promptText == "E  OPEN HEAVY DOOR");
 
-    // The double-door path places each leaf centered between its hinge and the midpoint.
-    // closedCenter = leftHingePosition + (leafScale.x/2, 0, 0)
+    // spawnDoorLeaf sets basePosition = hingePosition, pivot = closedCenter - hingePosition
     const glm::vec3 expectedLeftCenter  = doorPlacement.leftHingePosition  + glm::vec3(doorPlacement.leafScale.x * 0.5f, 0.0f, 0.0f);
     const glm::vec3 expectedRightCenter = doorPlacement.rightHingePosition - glm::vec3(doorPlacement.leafScale.x * 0.5f, 0.0f, 0.0f);
+    const glm::vec3 expectedLeftPivot   = expectedLeftCenter  - doorPlacement.leftHingePosition;
+    const glm::vec3 expectedRightPivot  = expectedRightCenter - doorPlacement.rightHingePosition;
 
-    const auto& leftLeaf = registry.get<DoorLeafComponent>(door.leftLeaf);
-    const auto& leftCollider = registry.get<ColliderComponent>(door.leftLeaf);
-    const auto& leftMesh = registry.get<MeshComponent>(door.leftLeaf);
-    // basePosition stores the leaf mesh center (used as rotation origin in the legacy pivot=0 path)
-    assert(leftLeaf.basePosition == expectedLeftCenter);
-    assert(leftLeaf.pivot == glm::vec3(0.0f));
+    const auto& leftLeaf = registry.get<DoorLeafComponent>(doorConfig.leftLeaf);
+    const auto& leftCollider = registry.get<ColliderComponent>(doorConfig.leftLeaf);
+    const auto& leftMesh = registry.get<MeshComponent>(doorConfig.leftLeaf);
+    assert(leftLeaf.basePosition == doorPlacement.leftHingePosition);
+    assert(leftLeaf.pivot == expectedLeftPivot);
     assert(leftLeaf.closedScale == doorPlacement.leafScale);
     assert(leftLeaf.closedYaw == doorPlacement.closedYaw);
     assert(leftLeaf.openYaw == doorPlacement.closedYaw - doorPlacement.openAngle);
@@ -100,11 +101,11 @@ int main() {
     assert(leftCollider.halfExtents == doorPlacement.leafScale * 0.5f);
     assert(leftMesh.mesh == leftDoorMesh);
 
-    const auto& rightLeaf = registry.get<DoorLeafComponent>(door.rightLeaf);
-    const auto& rightCollider = registry.get<ColliderComponent>(door.rightLeaf);
-    const auto& rightMesh = registry.get<MeshComponent>(door.rightLeaf);
-    assert(rightLeaf.basePosition == expectedRightCenter);
-    assert(rightLeaf.pivot == glm::vec3(0.0f));
+    const auto& rightLeaf = registry.get<DoorLeafComponent>(doorConfig.rightLeaf);
+    const auto& rightCollider = registry.get<ColliderComponent>(doorConfig.rightLeaf);
+    const auto& rightMesh = registry.get<MeshComponent>(doorConfig.rightLeaf);
+    assert(rightLeaf.basePosition == doorPlacement.rightHingePosition);
+    assert(rightLeaf.pivot == expectedRightPivot);
     assert(rightLeaf.openYaw == doorPlacement.closedYaw + doorPlacement.openAngle);
     assert(rightCollider.position == expectedRightCenter);
     assert(rightMesh.mesh == rightDoorMesh);

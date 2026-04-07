@@ -17,6 +17,7 @@
 #include "game/levels/ProceduralGameAssets.h"
 #include "game/rendering/EnvironmentProfile.h"
 #include "game/rendering/MeshAssetProvider.h"
+#include "game/behavior/DoorAnimationSystem.h"
 #include "game/runtime/RuntimeGameplay.h"
 #include "game/session/RunSession.h"
 #include "game/ui/InteractionFocusState.h"
@@ -206,6 +207,10 @@ void RuntimeGameSession::tick(float deltaTime, float aspect) {
     physics_.update(registry_, deltaTime);
     t1 = Clock::now();
     performanceStats_.physicsMs = elapsedMilliseconds(t0, t1);
+
+    t0 = t1;
+    tickDoorAnimation(registry_, deltaTime);
+    t1 = Clock::now();
 
     ContentRegistry* content = nullptr;
     if (registry_.ctx().contains<ContentRegistry*>()) {
