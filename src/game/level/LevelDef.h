@@ -7,7 +7,9 @@
 
 #include <glm/glm.hpp>
 
+#include <functional>
 #include <optional>
+#include <sstream>
 #include <string>
 #include <vector>
 
@@ -140,3 +142,16 @@ LevelDef loadLevelDef(const std::string& path);
 LevelDef resolveLevelHierarchy(const LevelDef& data);
 std::string serializeLevelDef(const LevelDef& data);
 void saveLevelDef(const std::string& path, const LevelDef& data);
+
+// Module registration API (per D-05, D-06, D-07)
+// Modules register keyword parser and serializer callbacks at startup.
+// LevelDef parser dispatches to registered handlers when it encounters a registered keyword.
+using LevelDefParseCallback = std::function<void(LevelDef& data,
+                                                  const std::string& path,
+                                                  int lineNumber,
+                                                  const std::vector<std::string>& tokens)>;
+using LevelDefSerializeCallback = std::function<void(std::ostringstream& out, const LevelDef& data)>;
+
+void registerLevelDefKeyword(const std::string& keyword,
+                             LevelDefParseCallback parser,
+                             LevelDefSerializeCallback serializer);

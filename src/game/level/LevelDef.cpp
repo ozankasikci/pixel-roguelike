@@ -610,7 +610,23 @@ void serializeBehaviors(std::ostringstream& out, const std::vector<BehaviorDecla
     }
 }
 
+struct LevelDefKeywordHandler {
+    LevelDefParseCallback parser;
+    LevelDefSerializeCallback serializer;
+};
+
+std::unordered_map<std::string, LevelDefKeywordHandler>& keywordRegistry() {
+    static std::unordered_map<std::string, LevelDefKeywordHandler> registry;
+    return registry;
+}
+
 } // namespace
+
+void registerLevelDefKeyword(const std::string& keyword,
+                             LevelDefParseCallback parser,
+                             LevelDefSerializeCallback serializer) {
+    keywordRegistry()[keyword] = {std::move(parser), std::move(serializer)};
+}
 
 LevelDef loadLevelDef(const std::string& path) {
     std::ifstream file(path);
@@ -968,53 +984,15 @@ LevelDef loadLevelDef(const std::string& path) {
             continue;
         }
 
-        if (kind == "door_group") {
-            const auto tokens = collectRemainingTokens(stream);
-            if (tokens.size() < 5) {
-                throwParseError(path, lineNumber, "invalid door_group: need name x y z yaw");
+        // Check registered keyword handlers (module-provided parsers, per D-05)
+        {
+            auto it = keywordRegistry().find(kind);
+            if (it != keywordRegistry().end()) {
+                const auto tokens = collectRemainingTokens(stream);
+                it->second.parser(data, path, lineNumber, tokens);
+                currentKind = CurrentEntityKind::None;
+                continue;
             }
-            LevelDoorPlacement dg;
-            dg.name = tokens[0];
-            try {
-                dg.position = glm::vec3(std::stof(tokens[1]), std::stof(tokens[2]), std::stof(tokens[3]));
-                dg.yawDegrees = std::stof(tokens[4]);
-            } catch (const std::exception&) {
-                throwParseError(path, lineNumber, "invalid door_group position/yaw values");
-            }
-            std::size_t index = 5;
-            while (index < tokens.size()) {
-                if (tokens[index] == "open_angle" && index + 1 < tokens.size()) {
-                    dg.openAngle = std::stof(tokens[index + 1]);
-                    index += 2;
-                } else if (tokens[index] == "open_duration" && index + 1 < tokens.size()) {
-                    dg.openDuration = std::stof(tokens[index + 1]);
-                    index += 2;
-                } else if (tokens[index] == "interact_distance" && index + 1 < tokens.size()) {
-                    dg.interactDistance = std::stof(tokens[index + 1]);
-                    index += 2;
-                } else if (tokens[index] == "interact_dot" && index + 1 < tokens.size()) {
-                    dg.interactDotThreshold = std::stof(tokens[index + 1]);
-                    index += 2;
-                } else if (tokens[index] == "locked") {
-                    dg.locked = true;
-                    ++index;
-                    // Collect remaining tokens as prompt until hitting "node" or "parent"
-                    std::string prompt;
-                    while (index < tokens.size() && tokens[index] != "node" && tokens[index] != "parent") {
-                        if (!prompt.empty()) prompt += ' ';
-                        prompt += tokens[index++];
-                    }
-                    if (!prompt.empty()) dg.lockedPrompt = prompt;
-                } else if (parseNodeMetadata(path, lineNumber, tokens, index,
-                                             dg.nodeId, dg.parentNodeId)) {
-                    // consumed by parseNodeMetadata
-                } else {
-                    ++index; // skip unknown
-                }
-            }
-            currentKind = CurrentEntityKind::None;
-            data.doors.push_back(std::move(dg));
-            continue;
         }
 
         throwParseError(path, lineNumber, "unknown record type '" + kind + "'");
@@ -1419,19 +1397,11 @@ std::string serializeLevelDef(const LevelDef& data) {
         out << '\n';
     }
 
-    for (const auto& dg : data.doors) {
-        out << "door_group " << dg.name << ' '
-            << formatFloat(dg.position.x) << ' '
-            << formatFloat(dg.position.y) << ' '
-            << formatFloat(dg.position.z) << ' '
-            << formatFloat(dg.yawDegrees);
-        if (dg.openAngle != 90.0f) out << " open_angle " << formatFloat(dg.openAngle);
-        if (dg.openDuration != 1.2f) out << " open_duration " << formatFloat(dg.openDuration);
-        if (dg.interactDistance != 2.5f) out << " interact_distance " << formatFloat(dg.interactDistance);
-        if (dg.interactDotThreshold != 0.55f) out << " interact_dot " << formatFloat(dg.interactDotThreshold);
-        if (dg.locked) out << " locked " << dg.lockedPrompt;
-        appendNodeMetadata(out, dg.nodeId, dg.parentNodeId);
-        out << '\n';
+    // Invoke registered serializers (module-provided, per D-07)
+    for (const auto& [keyword, handler] : keywordRegistry()) {
+        if (handler.serializer) {
+            handler.serializer(out, data);
+        }
     }
 
     return out.str();
