@@ -26,7 +26,8 @@ entt::entity spawnDoorGroup(LevelBuilder& builder,
     for (const auto& m : level.meshes) {
         if (m.parentNodeId != group.nodeId) continue;
 
-        auto entity = builder.addMesh(m.meshId, m.position, m.scale, m.rotation, m.tint,
+        const glm::vec3 combinedScale = m.scale * group.scale;
+        auto entity = builder.addMesh(m.meshId, m.position, combinedScale, m.rotation, m.tint,
                                       m.materialId.empty() ? std::optional<std::string>{}
                                                            : std::optional<std::string>{m.materialId});
         if (entity == entt::null) continue;
@@ -49,7 +50,7 @@ entt::entity spawnDoorGroup(LevelBuilder& builder,
                 : glm::vec3(0.0f);
             const glm::mat4 leafModel = makePivotLeafModel(
                 m.position, group.yawDegrees, group.yawDegrees,
-                leafPivot, meshCenter, m.scale);
+                leafPivot, meshCenter, combinedScale);
 
             // Override model matrix for pivot-based rendering
             if (auto* meshComp = reg.try_get<MeshComponent>(entity)) {
@@ -59,12 +60,13 @@ entt::entity spawnDoorGroup(LevelBuilder& builder,
 
             // Attach ColliderComponent for physics
             const glm::vec3 leafCenter = glm::vec3(leafModel * glm::vec4(0.0f, 0.0f, 0.0f, 1.0f));
+            const glm::vec3 leafHalfExtents = glm::vec3(std::abs(leafPivot.x), 1.01f, 0.05f) * group.scale;
             ColliderComponent collider;
             collider.shape = ColliderShape::Box;
             collider.mode = ColliderMode::Solid;
             collider.position = leafCenter;
             collider.rotation = glm::vec3(0.0f, group.yawDegrees, 0.0f);
-            collider.halfExtents = glm::vec3(std::abs(leafPivot.x), 1.01f, 0.05f);
+            collider.halfExtents = leafHalfExtents;
             reg.emplace<ColliderComponent>(entity, collider);
 
             // Attach DoorLeafComponent for swing animation
@@ -72,8 +74,8 @@ entt::entity spawnDoorGroup(LevelBuilder& builder,
             doorLeaf.basePosition = m.position;
             doorLeaf.pivot = leafPivot;
             doorLeaf.meshCenter = meshCenter;
-            doorLeaf.closedScale = m.scale;
-            doorLeaf.colliderHalfExtents = glm::vec3(std::abs(leafPivot.x), 1.01f, 0.05f);
+            doorLeaf.closedScale = combinedScale;
+            doorLeaf.colliderHalfExtents = leafHalfExtents;
             doorLeaf.closedYaw = group.yawDegrees;
             doorLeaf.openYaw = group.yawDegrees - group.openAngle;
             reg.emplace<DoorLeafComponent>(entity, doorLeaf);

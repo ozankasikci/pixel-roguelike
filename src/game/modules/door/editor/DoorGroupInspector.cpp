@@ -45,6 +45,14 @@ void drawDoorGroupInspector(LevelDoorPlacement& dg,
         return false;
     });
 
+    // Scale
+    renderInspectorPropertyRow("Scale", [&]() {
+        const auto before = document.captureState();
+        bool changed = ImGui::DragFloat3("##value", &dg.scale.x, 0.01f, 0.01f, 100.0f);
+        trackItem(before, "Door Group Scale", changed && ImGui::IsItemDeactivatedAfterEdit());
+        return false;
+    });
+
     // Yaw
     renderInspectorPropertyRow("Yaw", [&]() {
         const auto before = document.captureState();

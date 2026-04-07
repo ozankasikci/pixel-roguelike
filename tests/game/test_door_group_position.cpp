@@ -93,5 +93,36 @@ int main() {
     assert(test_support::nearlyEqualVec3(level.doors.front().position, groupPosition));
     assert(test_support::nearlyEqual(level.doors.front().yawDegrees, closedYaw));
 
+    // ---------------------------------------------------------------------------
+    // 5. resolveLevelHierarchy preserves door group scale.
+    // ---------------------------------------------------------------------------
+    {
+        LevelDef rawLevel2;
+        LevelDoorPlacement dg2;
+        dg2.name = "ScaledDoor";
+        dg2.position = glm::vec3(1.0f, 0.0f, 0.0f);
+        dg2.yawDegrees = 0.0f;
+        dg2.scale = glm::vec3(2.0f, 2.0f, 2.0f);
+        dg2.nodeId = "n_scaled_door";
+        rawLevel2.doors.push_back(dg2);
+
+        const LevelDef resolved2 = resolveLevelHierarchy(rawLevel2);
+        assert(resolved2.doors.size() == 1);
+        assert(test_support::nearlyEqualVec3(resolved2.doors.front().scale, glm::vec3(2.0f, 2.0f, 2.0f)));
+    }
+
+    // ---------------------------------------------------------------------------
+    // 6. Scale affects makePivotLeafModel output.
+    // ---------------------------------------------------------------------------
+    {
+        const glm::vec3 pos(0.0f);
+        const glm::vec3 scale1(1.0f);
+        const glm::vec3 scale2(2.0f, 2.0f, 2.0f);
+        const glm::mat4 m1 = makePivotLeafModel(pos, 0.0f, 0.0f, pivot, meshCenter, scale1);
+        const glm::mat4 m2 = makePivotLeafModel(pos, 0.0f, 0.0f, pivot, meshCenter, scale2);
+        // Different scales must produce different models
+        assert(!mat4NearlyEqual(m1, m2));
+    }
+
     return 0;
 }
