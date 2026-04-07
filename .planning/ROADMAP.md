@@ -297,7 +297,7 @@ Phases execute in numeric order: 1 → 1.1 → 2 → 2.1 → 3 → 4 → 5 → 6
 | 18. Maintainability Refactoring | — | 6/6 | Complete    | 2026-04-05 |
 | 19. Refactor Door System | — | 4/4 | Complete | 2026-04-07 |
 | 20. Structural Hardening | — | 0/? | Not started | - |
-| 21. Feature Module Reorganization | — | 0/? | Not started | - |
+| 21. Feature Module Reorganization | — | 0/3 | Not started | - |
 
 ### Phase 14: improve lighting, reflections, occlusion, and shadow quality
 
@@ -426,7 +426,9 @@ Plans:
   5. Scene serialization for doors is owned by the door module
   6. All existing tests pass, all three executables build, door behavior is unchanged
   7. Adding a hypothetical new interactive object would mean creating a new `src/game/modules/<name>/` directory without touching core systems
-**Plans:** 0 plans
+**Plans:** 3 plans
 
 Plans:
-- [ ] TBD (run /gsd-plan-phase 21 to break down)
+- [ ] 21-01-PLAN.md — Create door module directory, populate with all door source files, set up game_module_door CMake target
+- [ ] 21-02-PLAN.md — Build parser/serializer and action handler registration protocols, wire DoorSerializer and DoorActionHandler
+- [ ] 21-03-PLAN.md — Wire registerDoorModule at startup, update include paths, delete old files, update tests, verify build
