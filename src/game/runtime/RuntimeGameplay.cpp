@@ -488,6 +488,10 @@ void updateRuntimeDoorAnimation(entt::registry& registry, float deltaTime) {
     for (auto [entity, transform, door] : doorView.each()) {
         (void)transform;
         if (!door.opening && !door.opened) {
+            if (auto* ic = registry.try_get<InteractableComponent>(entity)) {
+                ic->busy = false;
+                ic->enabled = true;
+            }
             continue;
         }
 
