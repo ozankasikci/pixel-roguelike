@@ -61,3 +61,6 @@ target_link_libraries(game INTERFACE
     game_rendering
     gameplay
 )
+
+# Feature modules (per D-03)
+add_subdirectory(modules/door)
