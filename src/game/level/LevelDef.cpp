@@ -718,15 +718,6 @@ LevelDef loadLevelDef(const std::string& path) {
                             index += 4;
                             continue;
                         }
-                        if (tokens[index] == "pivot") {
-                            glm::vec3 pivot{0.0f};
-                            if (!tryParseVec3Tokens(tokens, index + 1, pivot)) {
-                                throwParseError(path, lineNumber, "invalid mesh pivot");
-                            }
-                            placement.pivot = pivot;
-                            index += 4;
-                            continue;
-                        }
                         if (parseNodeMetadata(path, lineNumber, tokens, index,
                                               placement.nodeId, placement.parentNodeId)) {
                             continue;
@@ -973,7 +964,7 @@ LevelDef loadLevelDef(const std::string& path) {
             if (tokens.size() < 5) {
                 throwParseError(path, lineNumber, "invalid door_group: need name x y z yaw");
             }
-            LevelDoorGroupPlacement dg;
+            LevelDoorPlacement dg;
             dg.name = tokens[0];
             try {
                 dg.position = glm::vec3(std::stof(tokens[1]), std::stof(tokens[2]), std::stof(tokens[3]));
@@ -1258,12 +1249,6 @@ std::string serializeLevelDef(const LevelDef& data) {
                 << formatFloat(placement.tint->r) << ' '
                 << formatFloat(placement.tint->g) << ' '
                 << formatFloat(placement.tint->b);
-        }
-        if (placement.pivot.has_value()) {
-            out << " pivot "
-                << formatFloat(placement.pivot->x) << ' '
-                << formatFloat(placement.pivot->y) << ' '
-                << formatFloat(placement.pivot->z);
         }
         appendNodeMetadata(out, placement.nodeId, placement.parentNodeId);
         out << '\n';
