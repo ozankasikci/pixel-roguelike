@@ -36,8 +36,9 @@ int main() {
     const float     openYaw = 0.0f;  // 90 degrees open
     const glm::vec3 leafScale(0.22f, 0.22f, 0.22f);
     const glm::vec3 pivot(-0.45f, 0.0f, 0.04f);
-    // Approximate AABB center for a typical door mesh (origin at hinge edge)
-    const glm::vec3 meshCenter(-1.97f, 4.58f, -0.1f);
+    // Approximate AABB center for a typical door mesh (origin at hinge edge).
+    // Y is 0 because both door and frame start at Y=0 (floor) — only horizontal centering.
+    const glm::vec3 meshCenter(-1.97f, 0.0f, -0.1f);
 
     // ---------------------------------------------------------------------------
     // 1. When closed, the mesh AABB center maps to groupPosition (frame center).

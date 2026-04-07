@@ -74,10 +74,12 @@ glm::mat4 makePivotLeafModel(const glm::vec3& basePos,
     // When opening, the door rotates around the pivot (hinge) in mesh-local space:
     //   T(basePos) * R(closedYaw) * S * T(-meshCenter) * T(pivot) * R(deltaYaw) * T(-pivot)
     const float deltaYaw = currentYawDeg - closedYawDeg;
+    // Only center horizontally (X/Z). Both door and frame meshes start at Y=0 (floor).
+    const glm::vec3 horizontalCenter(meshCenter.x, 0.0f, meshCenter.z);
     glm::mat4 model = glm::translate(glm::mat4(1.0f), basePos);
     model = glm::rotate(model, glm::radians(closedYawDeg), glm::vec3(0.0f, 1.0f, 0.0f));
     model = glm::scale(model, scale);
-    model = glm::translate(model, -meshCenter);
+    model = glm::translate(model, -horizontalCenter);
     model = glm::translate(model, pivot);
     model = glm::rotate(model, glm::radians(deltaYaw), glm::vec3(0.0f, 1.0f, 0.0f));
     model = glm::translate(model, -pivot);
