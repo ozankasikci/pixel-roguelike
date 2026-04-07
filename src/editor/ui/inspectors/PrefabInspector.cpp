@@ -14,13 +14,10 @@ bool renderPrefabDraftFields(GameplayArchetypeDefinition& prefab) {
         return false;
     }
     dirty |= renderInspectorPropertyRow("Id", [&]() { return editString("##value", prefab.id); });
-    static constexpr const char* kKinds[] = {"checkpoint", "double_door"};
-    int kindIndex = prefab.kind == GameplayArchetypeKind::Checkpoint ? 0 : 1;
-    if (renderInspectorPropertyRow("Type", [&]() { return ImGui::Combo("##value", &kindIndex, kKinds, 2); },
-                                  EditorInspectorFieldKind::Enum)) {
-        prefab.kind = kindIndex == 0 ? GameplayArchetypeKind::Checkpoint : GameplayArchetypeKind::DoubleDoor;
-        dirty = true;
-    }
+    static constexpr const char* kKinds[] = {"checkpoint"};
+    int kindIndex = 0;
+    renderInspectorPropertyRow("Type", [&]() { return ImGui::Combo("##value", &kindIndex, kKinds, 1); },
+                               EditorInspectorFieldKind::Enum);
 
     switch (prefab.kind) {
     case GameplayArchetypeKind::Checkpoint:
@@ -32,19 +29,6 @@ bool renderPrefabDraftFields(GameplayArchetypeDefinition& prefab) {
         dirty |= renderInspectorPropertyRow("Light Color", [&]() { return editColor("##value", prefab.checkpoint.lightColor); });
         dirty |= renderInspectorPropertyRow("Light Radius", [&]() { return ImGui::DragFloat("##value", &prefab.checkpoint.lightRadius, 0.05f, 0.1f, 30.0f, "%.2f"); });
         dirty |= renderInspectorPropertyRow("Light Intensity", [&]() { return ImGui::DragFloat("##value", &prefab.checkpoint.lightIntensity, 0.01f, 0.0f, 10.0f, "%.2f"); });
-        break;
-    case GameplayArchetypeKind::DoubleDoor:
-        dirty |= renderInspectorPropertyRow("Left Leaf Mesh", [&]() { return editString("##value", prefab.doubleDoor.leftLeafMeshName); });
-        dirty |= renderInspectorPropertyRow("Right Leaf Mesh", [&]() { return editString("##value", prefab.doubleDoor.rightLeafMeshName); });
-        dirty |= renderInspectorPropertyRow("Root Position", [&]() { return editVec3("##value", prefab.doubleDoor.rootPosition); });
-        dirty |= renderInspectorPropertyRow("Left Hinge", [&]() { return editVec3("##value", prefab.doubleDoor.leftHingePosition); });
-        dirty |= renderInspectorPropertyRow("Right Hinge", [&]() { return editVec3("##value", prefab.doubleDoor.rightHingePosition); });
-        dirty |= renderInspectorPropertyRow("Leaf Scale", [&]() { return editVec3("##value", prefab.doubleDoor.leafScale, 0.02f); });
-        dirty |= renderInspectorPropertyRow("Closed Yaw", [&]() { return ImGui::DragFloat("##value", &prefab.doubleDoor.closedYaw, 0.5f, -360.0f, 360.0f, "%.1f"); });
-        dirty |= renderInspectorPropertyRow("Open Angle", [&]() { return ImGui::DragFloat("##value", &prefab.doubleDoor.openAngle, 0.5f, 1.0f, 180.0f, "%.1f"); });
-        dirty |= renderInspectorPropertyRow("Interact Distance", [&]() { return ImGui::DragFloat("##value", &prefab.doubleDoor.interactDistance, 0.05f, 0.1f, 20.0f, "%.2f"); });
-        dirty |= renderInspectorPropertyRow("Interact Dot", [&]() { return ImGui::DragFloat("##value", &prefab.doubleDoor.interactDotThreshold, 0.01f, 0.0f, 1.0f, "%.2f"); });
-        dirty |= renderInspectorPropertyRow("Open Duration", [&]() { return ImGui::DragFloat("##value", &prefab.doubleDoor.openDuration, 0.01f, 0.1f, 10.0f, "%.2f"); });
         break;
     }
     endInspectorPropertyTable();

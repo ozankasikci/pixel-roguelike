@@ -249,8 +249,6 @@ GameplayArchetypeDefinition loadGameplayArchetypeAsset(const std::string& path) 
         if (key == "type" && tokens.size() == 2) {
             if (tokens[1] == "checkpoint") {
                 definition.kind = GameplayArchetypeKind::Checkpoint;
-            } else if (tokens[1] == "double_door") {
-                definition.kind = GameplayArchetypeKind::DoubleDoor;
             } else {
                 throwParseError(path, lineNumber, "unknown gameplay archetype type");
             }
@@ -279,13 +277,8 @@ GameplayArchetypeDefinition loadGameplayArchetypeAsset(const std::string& path) 
             continue;
         }
         if (key == "interact" && tokens.size() == 3) {
-            if (definition.kind == GameplayArchetypeKind::Checkpoint) {
-                definition.checkpoint.interactDistance = std::stof(tokens[1]);
-                definition.checkpoint.interactDotThreshold = std::stof(tokens[2]);
-            } else {
-                definition.doubleDoor.interactDistance = std::stof(tokens[1]);
-                definition.doubleDoor.interactDotThreshold = std::stof(tokens[2]);
-            }
+            definition.checkpoint.interactDistance = std::stof(tokens[1]);
+            definition.checkpoint.interactDotThreshold = std::stof(tokens[2]);
             continue;
         }
         if (key == "light_position") {
@@ -303,47 +296,6 @@ GameplayArchetypeDefinition loadGameplayArchetypeAsset(const std::string& path) 
             definition.checkpoint.lightIntensity = std::stof(tokens[2]);
             continue;
         }
-        if (key == "left_leaf_mesh" && tokens.size() == 2) {
-            definition.doubleDoor.leftLeafMeshName = tokens[1];
-            continue;
-        }
-        if (key == "right_leaf_mesh" && tokens.size() == 2) {
-            definition.doubleDoor.rightLeafMeshName = tokens[1];
-            continue;
-        }
-        if (key == "root_position") {
-            requireFloatCount(4);
-            definition.doubleDoor.rootPosition = glm::vec3(std::stof(tokens[1]), std::stof(tokens[2]), std::stof(tokens[3]));
-            continue;
-        }
-        if (key == "left_hinge_position") {
-            requireFloatCount(4);
-            definition.doubleDoor.leftHingePosition = glm::vec3(std::stof(tokens[1]), std::stof(tokens[2]), std::stof(tokens[3]));
-            continue;
-        }
-        if (key == "right_hinge_position") {
-            requireFloatCount(4);
-            definition.doubleDoor.rightHingePosition = glm::vec3(std::stof(tokens[1]), std::stof(tokens[2]), std::stof(tokens[3]));
-            continue;
-        }
-        if (key == "leaf_scale") {
-            requireFloatCount(4);
-            definition.doubleDoor.leafScale = glm::vec3(std::stof(tokens[1]), std::stof(tokens[2]), std::stof(tokens[3]));
-            continue;
-        }
-        if (key == "closed_yaw" && tokens.size() == 2) {
-            definition.doubleDoor.closedYaw = std::stof(tokens[1]);
-            continue;
-        }
-        if (key == "open_angle" && tokens.size() == 2) {
-            definition.doubleDoor.openAngle = std::stof(tokens[1]);
-            continue;
-        }
-        if (key == "open_duration" && tokens.size() == 2) {
-            definition.doubleDoor.openDuration = std::stof(tokens[1]);
-            continue;
-        }
-
         throwParseError(path, lineNumber, "unknown gameplay archetype key");
     }
 
@@ -391,34 +343,8 @@ std::string serializeGameplayArchetypeAsset(const GameplayArchetypeDefinition& d
             << definition.checkpoint.lightRadius << ' '
             << definition.checkpoint.lightIntensity << '\n';
         break;
-    case GameplayArchetypeKind::DoubleDoor:
-        out << "type double_door\n";
-        out << "left_leaf_mesh " << definition.doubleDoor.leftLeafMeshName << '\n';
-        out << "right_leaf_mesh " << definition.doubleDoor.rightLeafMeshName << '\n';
-        out << "root_position "
-            << definition.doubleDoor.rootPosition.x << ' '
-            << definition.doubleDoor.rootPosition.y << ' '
-            << definition.doubleDoor.rootPosition.z << '\n';
-        out << "left_hinge_position "
-            << definition.doubleDoor.leftHingePosition.x << ' '
-            << definition.doubleDoor.leftHingePosition.y << ' '
-            << definition.doubleDoor.leftHingePosition.z << '\n';
-        out << "right_hinge_position "
-            << definition.doubleDoor.rightHingePosition.x << ' '
-            << definition.doubleDoor.rightHingePosition.y << ' '
-            << definition.doubleDoor.rightHingePosition.z << '\n';
-        out << "leaf_scale "
-            << definition.doubleDoor.leafScale.x << ' '
-            << definition.doubleDoor.leafScale.y << ' '
-            << definition.doubleDoor.leafScale.z << '\n';
-        out << "closed_yaw " << definition.doubleDoor.closedYaw << '\n';
-        out << "open_angle " << definition.doubleDoor.openAngle << '\n';
-        out << "interact "
-            << definition.doubleDoor.interactDistance << ' '
-            << definition.doubleDoor.interactDotThreshold << '\n';
-        out << "open_duration " << definition.doubleDoor.openDuration << '\n';
-        break;
     }
+
     return out.str();
 }
 
@@ -442,15 +368,8 @@ GameplayPrefabInstance instantiateGameplayArchetype(const GameplayArchetypeDefin
         instance.checkpoint.respawnPosition = transformPoint(definition.checkpoint.respawnPosition, position, yawDegrees);
         instance.checkpoint.lightPosition = transformPoint(definition.checkpoint.lightPosition, position, yawDegrees);
         break;
-    case GameplayArchetypeKind::DoubleDoor:
-        instance.type = GameplayPrefabType::DoubleDoor;
-        instance.doubleDoor = definition.doubleDoor;
-        instance.doubleDoor.rootPosition = transformPoint(definition.doubleDoor.rootPosition, position, yawDegrees);
-        instance.doubleDoor.leftHingePosition = transformPoint(definition.doubleDoor.leftHingePosition, position, yawDegrees);
-        instance.doubleDoor.rightHingePosition = transformPoint(definition.doubleDoor.rightHingePosition, position, yawDegrees);
-        instance.doubleDoor.closedYaw += yawDegrees;
-        break;
     }
+
     return instance;
 }
 
@@ -481,9 +400,6 @@ void ContentRegistry::loadDefaults() {
 
     auto checkpoint = loadGameplayArchetypeAsset(resolveProjectPath("assets/prefabs/gameplay/checkpoint.prefab"));
     archetypes_.emplace(checkpoint.id, checkpoint);
-
-    auto doubleDoor = loadGameplayArchetypeAsset(resolveProjectPath("assets/prefabs/gameplay/double_door.prefab"));
-    archetypes_.emplace(doubleDoor.id, doubleDoor);
 
     loadMaterialsFromDirectory("assets/materials");
     validateMaterialInheritance();

@@ -58,14 +58,12 @@ struct SkillDefinition {
 
 enum class GameplayArchetypeKind {
     Checkpoint,
-    DoubleDoor,
 };
 
 struct GameplayArchetypeDefinition {
     std::string id;
     GameplayArchetypeKind kind = GameplayArchetypeKind::Checkpoint;
     CheckpointSpawnSpec checkpoint;
-    DoubleDoorSpawnSpec doubleDoor;
 };
 
 class MaterialTextureLibrary;
