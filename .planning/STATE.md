@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: Editor UX
 status: Ready to execute
-stopped_at: Completed 19-02-PLAN.md
-last_updated: "2026-04-07T16:38:19.398Z"
+stopped_at: Completed 19-03-PLAN.md
+last_updated: "2026-04-07T16:48:04.796Z"
 last_activity: 2026-04-07
 progress:
   total_phases: 22
   completed_phases: 17
   total_plans: 62
-  completed_plans: 55
-  percent: 89
+  completed_plans: 56
+  percent: 90
 ---
 
 # Project State
@@ -26,7 +26,7 @@ See: .planning/PROJECT.md (updated 2026-03-23)
 ## Current Position
 
 Phase: 19 (refactor-door-system-to-unify-split-brain-architecture) — EXECUTING
-Plan: 2 of 4
+Plan: 3 of 4
 
 ## Performance Metrics
 
@@ -85,6 +85,7 @@ Plan: 2 of 4
 | Phase 18-maintainability-refactoring-for-editor-ui-serialization-and-round-trip-fidelity P05 | 20 | 2 tasks | 10 files |
 | Phase 18-maintainability-refactoring-for-editor-ui-serialization-and-round-trip-fidelity P06 | 20 | 1 tasks | 8 files |
 | Phase 19 P02 | 60 | 2 tasks | 20 files |
+| Phase 19 P03 | 451 | 2 tasks | 9 files |
 
 ## Accumulated Context
 
@@ -206,6 +207,8 @@ Recent decisions affecting current work:
 - [Phase 19]: tickDoorAnimation free function extracted from DoorAnimationSystem::update so RuntimeGameSession can call it without Application& reference
 - [Phase 19]: updateRuntimeDoorAnimation deleted from RuntimeGameplay — animation consolidated into DoorAnimationSystem
 - [Phase 19]: LevelBuilder::addDoorGroup rewritten to use self-contained LevelDoorPlacement with hardcoded door_leaf_left mesh
+- [Phase 19]: Removed DoubleDoor spawn path entirely; all doors now defined via .scene door_group entries
+- [Phase 19]: makePivotLeafModel preserved as shared pivot math used by DoorAnimationSystem
 
 ### Pending Todos
 
@@ -297,6 +300,6 @@ None yet.
 ## Session Continuity
 
 Last activity: 2026-04-07
-Last session: 2026-04-07T16:38:19.391Z
-Stopped at: Completed 19-02-PLAN.md
+Last session: 2026-04-07T16:48:04.789Z
+Stopped at: Completed 19-03-PLAN.md
 Resume file: None
