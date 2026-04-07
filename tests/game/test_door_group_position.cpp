@@ -36,27 +36,22 @@ int main() {
     const float     openYaw = 0.0f;  // 90 degrees open
     const glm::vec3 leafScale(0.22f, 0.22f, 0.22f);
     const glm::vec3 pivot(-0.45f, 0.0f, 0.04f);
+    // Approximate AABB center for a typical door mesh (origin at hinge edge)
+    const glm::vec3 meshCenter(-1.97f, 4.58f, -0.1f);
 
     // ---------------------------------------------------------------------------
-    // 1. When closed, door model must equal frame model (no gap).
+    // 1. When closed, the mesh AABB center maps to groupPosition (frame center).
     // ---------------------------------------------------------------------------
-    const glm::mat4 closedModel = makePivotLeafModel(groupPosition, closedYaw, closedYaw, pivot, leafScale);
+    const glm::mat4 closedModel = makePivotLeafModel(groupPosition, closedYaw, closedYaw, pivot, meshCenter, leafScale);
 
-    // Frame model: T(basePos) * R(closedYaw) * S(scale)
-    glm::mat4 frameModel = glm::translate(glm::mat4(1.0f), groupPosition);
-    frameModel = glm::rotate(frameModel, glm::radians(closedYaw), glm::vec3(0.0f, 1.0f, 0.0f));
-    frameModel = glm::scale(frameModel, leafScale);
-
-    assert(mat4NearlyEqual(closedModel, frameModel));
-
-    // Mesh center at (0,0,0) maps to groupPosition (same as frame center).
-    const glm::vec3 closedCenter = glm::vec3(closedModel * glm::vec4(0.0f, 0.0f, 0.0f, 1.0f));
-    assert(test_support::nearlyEqualVec3(closedCenter, groupPosition, 0.001f));
+    // The mesh geometric center should land at groupPosition.
+    const glm::vec3 closedMeshCenter = glm::vec3(closedModel * glm::vec4(meshCenter, 1.0f));
+    assert(test_support::nearlyEqualVec3(closedMeshCenter, groupPosition, 0.001f));
 
     // ---------------------------------------------------------------------------
     // 2. When open, door model differs from closed model.
     // ---------------------------------------------------------------------------
-    const glm::mat4 openModel = makePivotLeafModel(groupPosition, closedYaw, openYaw, pivot, leafScale);
+    const glm::mat4 openModel = makePivotLeafModel(groupPosition, closedYaw, openYaw, pivot, meshCenter, leafScale);
     assert(!mat4NearlyEqual(closedModel, openModel));
 
     // The hinge point should be the same in both closed and open states.
@@ -69,10 +64,10 @@ int main() {
     // ---------------------------------------------------------------------------
     {
         const glm::vec3 origin(0.0f);
-        const glm::mat4 m = makePivotLeafModel(origin, 0.0f, 0.0f, pivot, leafScale);
+        const glm::mat4 m = makePivotLeafModel(origin, 0.0f, 0.0f, pivot, meshCenter, leafScale);
 
-        // When closed, mesh center is at origin.
-        const glm::vec3 center = glm::vec3(m * glm::vec4(0.0f, 0.0f, 0.0f, 1.0f));
+        // When closed, mesh geometric center is at origin.
+        const glm::vec3 center = glm::vec3(m * glm::vec4(meshCenter, 1.0f));
         assert(test_support::nearlyEqualVec3(center, origin, 0.001f));
     }
 

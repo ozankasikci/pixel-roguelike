@@ -316,10 +316,13 @@ entt::entity LevelBuilder::addDoorGroup(const LevelDoorGroupPlacement& group, co
     // group.position IS the hinge — pivot math derives the leaf's visual position from it.
     // The leaf mesh's own position is irrelevant (always 0,0,0 local).
     const glm::vec3 pivot = leafPlacement->pivot.value();
-    const glm::mat4 leafModel = makePivotLeafModel(group.position, group.yawDegrees, group.yawDegrees, pivot, leafPlacement->scale);
+    Mesh* leafMeshPtr = mesh(leafPlacement->meshId);
+    const glm::vec3 meshCenter = leafMeshPtr
+        ? (leafMeshPtr->aabbMin() + leafMeshPtr->aabbMax()) * 0.5f
+        : glm::vec3(0.0f);
+    const glm::mat4 leafModel = makePivotLeafModel(group.position, group.yawDegrees, group.yawDegrees, pivot, meshCenter, leafPlacement->scale);
 
     // Spawn the leaf mesh entity
-    Mesh* leafMeshPtr = mesh(leafPlacement->meshId);
     auto leafEntity = addMesh(leafMeshPtr,
         group.position,
         leafPlacement->scale,
@@ -358,6 +361,7 @@ entt::entity LevelBuilder::addDoorGroup(const LevelDoorGroupPlacement& group, co
     DoorLeafComponent doorLeaf;
     doorLeaf.basePosition = group.position;
     doorLeaf.pivot = pivot;
+    doorLeaf.meshCenter = meshCenter;
     doorLeaf.closedScale = leafPlacement->scale;
     doorLeaf.colliderHalfExtents = glm::vec3(std::abs(pivot.x) * leafPlacement->scale.x, 1.01f, 0.05f);
     doorLeaf.closedYaw = group.yawDegrees;

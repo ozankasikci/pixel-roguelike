@@ -501,7 +501,7 @@ void updateRuntimeDoorAnimation(entt::registry& registry, float deltaTime) {
             if (mesh && leaf) {
                 const float eased = 1.0f - std::pow(1.0f - door.progress, 3.0f);
                 const float yaw = glm::mix(leaf->closedYaw, leaf->openYaw, eased);
-                const glm::mat4 model = makePivotLeafModel(leaf->basePosition, leaf->closedYaw, yaw, leaf->pivot, leaf->closedScale);
+                const glm::mat4 model = makePivotLeafModel(leaf->basePosition, leaf->closedYaw, yaw, leaf->pivot, leaf->meshCenter, leaf->closedScale);
                 mesh->modelOverride = model;
                 mesh->useModelOverride = true;
                 if (collider) {

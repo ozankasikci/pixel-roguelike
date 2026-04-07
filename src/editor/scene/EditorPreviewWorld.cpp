@@ -2,6 +2,7 @@
 
 #include "engine/core/PathUtils.h"
 #include "engine/rendering/assets/ModelLoader.h"
+#include "engine/rendering/geometry/Mesh.h"
 #include "game/components/LightComponent.h"
 #include "game/components/MeshComponent.h"
 #include "game/components/ReflectionProbeComponent.h"
@@ -181,12 +182,14 @@ void EditorPreviewWorld::rebuild(const EditorSceneDocument& document, const Cont
                     glm::vec3 groupPos(0.0f), groupRot(0.0f), groupScl(1.0f);
                     decomposeTransformMatrix(document.worldTransformMatrix(parentId),
                                              groupPos, groupRot, groupScl);
-                    const glm::mat4 leafModel = makePivotLeafModel(
-                        groupPos, groupRot.y, groupRot.y, placement.pivot.value(), placement.scale);
                     entt::entity meshEntity = entities_.back();
                     if (registry_.all_of<MeshComponent>(meshEntity)) {
                         auto& mesh = registry_.get<MeshComponent>(meshEntity);
-                        mesh.modelOverride = leafModel;
+                        const glm::vec3 mc = mesh.mesh
+                            ? (mesh.mesh->aabbMin() + mesh.mesh->aabbMax()) * 0.5f
+                            : glm::vec3(0.0f);
+                        mesh.modelOverride = makePivotLeafModel(
+                            groupPos, groupRot.y, groupRot.y, placement.pivot.value(), mc, placement.scale);
                         mesh.useModelOverride = true;
                     }
                 }
@@ -356,8 +359,11 @@ void EditorPreviewWorld::syncTransforms(const EditorSceneDocument& document) {
                         glm::vec3 groupPos(0.0f), groupRot(0.0f), groupScl(1.0f);
                         decomposeTransformMatrix(document.worldTransformMatrix(parentObjId),
                                                  groupPos, groupRot, groupScl);
+                        const glm::vec3 mc = mesh.mesh
+                            ? (mesh.mesh->aabbMin() + mesh.mesh->aabbMax()) * 0.5f
+                            : glm::vec3(0.0f);
                         mesh.modelOverride = makePivotLeafModel(
-                            groupPos, groupRot.y, groupRot.y, placement.pivot.value(), placement.scale);
+                            groupPos, groupRot.y, groupRot.y, placement.pivot.value(), mc, placement.scale);
                         mesh.useModelOverride = true;
                     }
                 } else if (mesh.useModelOverride) {

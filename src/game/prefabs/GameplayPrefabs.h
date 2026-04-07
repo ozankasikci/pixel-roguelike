@@ -21,6 +21,7 @@ glm::mat4 makePivotLeafModel(const glm::vec3& groupWorldPos,
                               float closedYawDeg,
                               float currentYawDeg,
                               const glm::vec3& pivot,
+                              const glm::vec3& meshCenter,
                               const glm::vec3& scale);
 
 glm::vec3 computeHingeWorldPos(const glm::vec3& groupWorldPos,
