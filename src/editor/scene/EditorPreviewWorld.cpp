@@ -7,6 +7,8 @@
 #include "game/components/MeshComponent.h"
 #include "game/components/ReflectionProbeComponent.h"
 #include "game/components/ColliderComponent.h"
+#include "game/components/DoorConfigComponent.h"
+#include "game/components/DoorStateComponent.h"
 #include "game/components/TransformComponent.h"
 #include "game/content/ContentRegistry.h"
 #include "game/level/LevelBuilder.h"
@@ -226,19 +228,28 @@ void EditorPreviewWorld::rebuild(const EditorSceneDocument& document, const Cont
         case EditorSceneObjectKind::Group:
             break;
         case EditorSceneObjectKind::DoorGroup: {
-            // Spawn the full door entity hierarchy via addDoorGroup so that
-            // DoorConfigComponent + DoorStateComponent + DoorLeafComponent entities
-            // exist for DoorAnimationSystem to tick during editor play preview (D-14).
-            auto dg = std::get<LevelDoorPlacement>(object.payload);
+            // Create a transform entity with DoorConfig/DoorState for DoorAnimationSystem
+            // to tick during editor play preview. Do NOT call addDoorGroup — that spawns
+            // a hardcoded door_leaf_left mesh, but the scene's child mesh objects already
+            // provide the actual door visuals (SM_DoorA, SM_FrameA, etc.).
+            const auto& dg = std::get<LevelDoorPlacement>(object.payload);
             glm::vec3 position(0.0f), rotation(0.0f), scale(1.0f);
             if (decomposeTransformMatrix(document.worldTransformMatrix(object.id),
                                          position, rotation, scale)) {
-                dg.position = position;
-                dg.yawDegrees = rotation.y;
             }
-            // addDoorGroup ignores the level parameter (self-contained placement).
-            LevelDef emptyLevel;
-            builder.addDoorGroup(dg, emptyLevel);
+            auto doorRoot = builder.createTransformEntity(
+                position + glm::vec3(0.0f, 1.0f, 0.0f));
+            if (!dg.locked) {
+                DoorConfigComponent config;
+                config.interactDistance = dg.interactDistance;
+                config.interactDotThreshold = dg.interactDotThreshold;
+                config.openDuration = dg.openDuration;
+                config.openAngle = dg.openAngle;
+                config.locked = dg.locked;
+                config.lockedPrompt = dg.lockedPrompt;
+                registry_.emplace<DoorConfigComponent>(doorRoot, config);
+                registry_.emplace<DoorStateComponent>(doorRoot);
+            }
             break;
         }
         case EditorSceneObjectKind::Archetype: {
