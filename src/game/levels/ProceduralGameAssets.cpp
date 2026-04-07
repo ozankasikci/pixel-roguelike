@@ -279,21 +279,32 @@ std::unique_ptr<Mesh> createPrisonWallDoor() {
         parts.push_back({cube, makeModelMatrix(position, scale, rotation)});
     };
 
-    // Door opening: 0.9m wide, 2.1m tall, bottom at Y=0
-    // Top section: 2.1m to 4.0m (full width)
-    addBox(glm::vec3(0.0f, 3.05f, 0.0f), glm::vec3(1.0f, 0.95f, 0.1f));
+    // Door opening sized to match QuestDoorsPack frames at 0.22 scale:
+    //   SM_FrameD: 4.98 wide × 9.68 tall → 1.10m × 2.13m at scale 0.22
+    // Wall Y-scale in scene is 1.5, so unscaled opening height = 2.13/1.5 = 1.42m
+    // Opening width = 1.10m → from -0.55 to +0.55
+    constexpr float kOpeningHalfW = 0.55f;
+    constexpr float kOpeningH     = 1.42f; // unscaled; 2.13m at Y-scale 1.5
+
+    // Top section: above opening to wall top (4.0m unscaled)
+    const float topCenterY = (kOpeningH + 4.0f) * 0.5f;
+    const float topHalfH   = (4.0f - kOpeningH) * 0.5f;
+    addBox(glm::vec3(0.0f, topCenterY, 0.0f), glm::vec3(1.0f, topHalfH, 0.1f));
     // Left section: beside door
-    addBox(glm::vec3(-0.725f, 1.05f, 0.0f), glm::vec3(0.275f, 1.05f, 0.1f));
+    const float sideHalfH = kOpeningH * 0.5f;
+    const float sideCenterX = (1.0f + kOpeningHalfW) * 0.5f;
+    const float sideHalfW = (1.0f - kOpeningHalfW) * 0.5f;
+    addBox(glm::vec3(-sideCenterX, sideHalfH, 0.0f), glm::vec3(sideHalfW, sideHalfH, 0.1f));
     // Right section: beside door
-    addBox(glm::vec3(0.725f, 1.05f, 0.0f), glm::vec3(0.275f, 1.05f, 0.1f));
+    addBox(glm::vec3(sideCenterX, sideHalfH, 0.0f), glm::vec3(sideHalfW, sideHalfH, 0.1f));
 
     // Steel angle frame insets around the door opening
     // Left jamb (thin L-angle)
-    addBox(glm::vec3(-0.45f, 1.05f, 0.08f), glm::vec3(0.02f, 1.05f, 0.03f));
+    addBox(glm::vec3(-kOpeningHalfW, sideHalfH, 0.08f), glm::vec3(0.02f, sideHalfH, 0.03f));
     // Right jamb
-    addBox(glm::vec3(0.45f, 1.05f, 0.08f), glm::vec3(0.02f, 1.05f, 0.03f));
+    addBox(glm::vec3(kOpeningHalfW, sideHalfH, 0.08f), glm::vec3(0.02f, sideHalfH, 0.03f));
     // Top lintel
-    addBox(glm::vec3(0.0f, 2.12f, 0.08f), glm::vec3(0.45f, 0.02f, 0.03f));
+    addBox(glm::vec3(0.0f, kOpeningH + 0.02f, 0.08f), glm::vec3(kOpeningHalfW, 0.02f, 0.03f));
 
     RawMeshData merged = mergeMeshes(parts);
     return std::make_unique<Mesh>(merged.positions, merged.normals, merged.uvs, merged.tangents,
