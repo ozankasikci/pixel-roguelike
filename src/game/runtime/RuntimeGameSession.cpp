@@ -5,10 +5,8 @@
 #include "game/components/CameraComponent.h"
 #include "game/components/CheckpointComponent.h"
 #include "game/components/CharacterControllerComponent.h"
-#include "game/components/DoorComponent.h"
-#include "game/components/DoorLeafComponent.h"
-#include "game/components/MeshComponent.h"
-#include "game/prefabs/GameplayPrefabs.h"
+#include "game/components/DoorConfigComponent.h"
+#include "game/components/DoorStateComponent.h"
 #include "game/components/PlayerInteractionLockComponent.h"
 #include "game/components/PlayerMovementComponent.h"
 #include "game/components/PlayerSpawnComponent.h"
@@ -43,7 +41,7 @@ struct RuntimeMutableSnapshot {
 
     RunSession runSession{};
     PlayerState player{};
-    std::vector<std::pair<entt::entity, DoorComponent>> doors;
+    std::vector<std::pair<entt::entity, DoorStateComponent>> doors;
     std::vector<std::pair<entt::entity, CheckpointComponent>> checkpoints;
 };
 
@@ -220,9 +218,6 @@ void RuntimeGameSession::tick(float deltaTime, float aspect) {
     t1 = Clock::now();
     performanceStats_.inventoryMs = elapsedMilliseconds(t0, t1);
 
-    updateRuntimeBehaviors(registry_);
-    updateRuntimeDoorAnimation(registry_, deltaTime);
-
     t0 = t1;
     updateRuntimePlayerMovement(registry_, inputSystem_, physics_, deltaTime);
     t1 = Clock::now();
@@ -347,9 +342,10 @@ void RuntimeGameSession::captureBaselineState() {
         break;
     }
 
-    auto doorView = registry_.view<DoorComponent>();
-    for (auto [entity, door] : doorView.each()) {
-        baselineSnapshot_->doors.emplace_back(entity, door);
+    auto doorView = registry_.view<DoorConfigComponent, DoorStateComponent>();
+    for (auto [entity, config, state] : doorView.each()) {
+        (void)config;
+        baselineSnapshot_->doors.emplace_back(entity, state);
     }
 
     auto checkpointView = registry_.view<CheckpointComponent>();
@@ -395,24 +391,11 @@ void RuntimeGameSession::restoreBaselineState() {
         }
     }
 
-    for (const auto& [entity, door] : baselineSnapshot_->doors) {
-        if (registry_.valid(entity) && registry_.all_of<DoorComponent>(entity)) {
-            registry_.patch<DoorComponent>(entity, [&](auto& component) {
-                component = door;
+    for (const auto& [entity, state] : baselineSnapshot_->doors) {
+        if (registry_.valid(entity) && registry_.all_of<DoorStateComponent>(entity)) {
+            registry_.patch<DoorStateComponent>(entity, [&](auto& component) {
+                component = state;
             });
-            // Recalculate leaf mesh to closed position
-            for (entt::entity leaf : {door.leftLeaf, door.rightLeaf}) {
-                if (leaf != entt::null && registry_.valid(leaf)) {
-                    auto* mesh = registry_.try_get<MeshComponent>(leaf);
-                    auto* leafComp = registry_.try_get<DoorLeafComponent>(leaf);
-                    if (mesh && leafComp) {
-                        mesh->modelOverride = makePivotLeafModel(
-                            leafComp->basePosition, leafComp->closedYaw, leafComp->closedYaw,
-                            leafComp->pivot, leafComp->meshCenter, leafComp->closedScale);
-                        mesh->useModelOverride = true;
-                    }
-                }
-            }
         }
     }
 
