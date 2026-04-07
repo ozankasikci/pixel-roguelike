@@ -2,12 +2,7 @@
 
 #include "game/level/LevelBuilder.h"
 #include "game/components/CheckpointComponent.h"
-#include "game/components/DoorConfigComponent.h"
-#include "game/components/DoorStateComponent.h"
-#include "game/components/DoorLeafComponent.h"
 #include "game/components/InteractableComponent.h"
-#include "game/rendering/RetroPalette.h"
-#include "game/components/ColliderComponent.h"
 
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
@@ -38,63 +33,6 @@ glm::mat4 makePivotLeafModel(const glm::vec3& basePos,
     model = glm::translate(model, -pivot);
     return model;
 }
-
-glm::vec3 computeHingeWorldPos(const glm::vec3& basePos,
-                                float /*yawDeg*/,
-                                const glm::vec3& /*pivot*/,
-                                const glm::vec3& /*scale*/) {
-    // The hinge IS at basePos — no offset computation needed.
-    return basePos;
-}
-
-namespace {
-
-constexpr glm::vec3 kDoorRomanesqueLeft(0.33f, 0.15f, 0.09f);
-constexpr glm::vec3 kDoorRomanesqueRight(0.26f, 0.11f, 0.07f);
-
-entt::entity spawnDoorLeaf(LevelBuilder& builder,
-                           Mesh* mesh,
-                           const glm::vec3& closedCenter,
-                           const glm::vec3& hingePosition,
-                           const glm::vec3& leafScale,
-                           float closedYaw,
-                           float openYaw,
-                           const glm::vec3& tint) {
-    auto leaf = builder.addMesh(
-        mesh,
-        closedCenter,
-        leafScale,
-        glm::vec3(0.0f),
-        tint,
-        std::string("wood_default")
-    );
-    if (leaf == entt::null) {
-        return entt::null;
-    }
-
-    auto& registry = builder.registry();
-
-    ColliderComponent collider;
-    collider.shape = ColliderShape::Box;
-    collider.mode = ColliderMode::Solid;
-    collider.position = closedCenter;
-    collider.rotation = glm::vec3(0.0f, closedYaw, 0.0f);
-    collider.halfExtents = leafScale * 0.5f;
-    registry.emplace<ColliderComponent>(leaf, collider);
-
-    DoorLeafComponent doorLeaf;
-    doorLeaf.basePosition = hingePosition;
-    doorLeaf.pivot = closedCenter - hingePosition;
-    doorLeaf.meshCenter = glm::vec3(0.0f);
-    doorLeaf.closedScale = leafScale;
-    doorLeaf.colliderHalfExtents = collider.halfExtents;
-    doorLeaf.closedYaw = closedYaw;
-    doorLeaf.openYaw = openYaw;
-    registry.emplace<DoorLeafComponent>(leaf, doorLeaf);
-    return leaf;
-}
-
-} // namespace
 
 entt::entity spawnCheckpoint(LevelBuilder& builder, const CheckpointSpawnSpec& spec) {
     auto checkpointLight = builder.addLight(
@@ -129,82 +67,10 @@ entt::entity spawnCheckpoint(LevelBuilder& builder, const CheckpointSpawnSpec& s
     return checkpoint;
 }
 
-entt::entity spawnDoubleDoor(LevelBuilder& builder,
-                             Mesh* leftDoorMesh,
-                             Mesh* rightDoorMesh,
-                             const DoubleDoorSpawnSpec& spec) {
-    const glm::vec3 leftCenter = spec.leftHingePosition + glm::vec3(spec.leafScale.x * 0.5f, 0.0f, 0.0f);
-    const glm::vec3 rightCenter = spec.rightHingePosition - glm::vec3(spec.leafScale.x * 0.5f, 0.0f, 0.0f);
-
-    auto leftLeaf = spawnDoorLeaf(
-        builder,
-        leftDoorMesh,
-        leftCenter,
-        spec.leftHingePosition,
-        spec.leafScale,
-        spec.closedYaw,
-        spec.closedYaw - spec.openAngle,
-        kDoorRomanesqueLeft
-    );
-    auto rightLeaf = spawnDoorLeaf(
-        builder,
-        rightDoorMesh,
-        rightCenter,
-        spec.rightHingePosition,
-        spec.leafScale,
-        spec.closedYaw,
-        spec.closedYaw + spec.openAngle,
-        kDoorRomanesqueRight
-    );
-
-    if (leftLeaf == entt::null || rightLeaf == entt::null) {
-        return entt::null;
-    }
-
-    auto doorRoot = builder.createTransformEntity(spec.rootPosition);
-    builder.registry().emplace<DoorConfigComponent>(
-        doorRoot,
-        DoorConfigComponent{
-            leftLeaf,
-            rightLeaf,
-            spec.interactDistance,
-            spec.interactDotThreshold,
-            spec.openDuration,
-            spec.openAngle
-        }
-    );
-    builder.registry().emplace<DoorStateComponent>(doorRoot, DoorStateComponent{});
-    builder.registry().emplace<InteractableComponent>(
-        doorRoot,
-        InteractableComponent{
-            "E  OPEN HEAVY DOOR",
-            "OPENING HEAVY DOOR",
-            spec.interactDistance,
-            spec.interactDotThreshold,
-            true,
-            false
-        }
-    );
-    return doorRoot;
-}
-
-entt::entity spawnDoubleDoor(LevelBuilder& builder, const DoubleDoorSpawnSpec& spec) {
-    return spawnDoubleDoor(
-        builder,
-        builder.mesh(spec.leftLeafMeshName),
-        builder.mesh(spec.rightLeafMeshName),
-        spec
-    );
-}
-
-
 entt::entity spawnGameplayPrefab(LevelBuilder& builder, const GameplayPrefabInstance& instance) {
     switch (instance.type) {
     case GameplayPrefabType::Checkpoint:
         return spawnCheckpoint(builder, instance.checkpoint);
-    case GameplayPrefabType::DoubleDoor:
-        return spawnDoubleDoor(builder, instance.doubleDoor);
     }
-
     return entt::null;
 }
