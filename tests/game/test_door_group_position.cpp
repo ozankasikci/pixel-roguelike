@@ -13,7 +13,7 @@
 
 #include "common/TestSupport.h"
 #include "game/level/LevelDef.h"
-#include "game/prefabs/GameplayPrefabs.h"
+#include "game/modules/door/DoorMath.h"
 
 #include <glm/gtc/matrix_transform.hpp>
 #include <cassert>

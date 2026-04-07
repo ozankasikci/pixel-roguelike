@@ -1,5 +1,7 @@
 #pragma once
 
+#include "game/modules/door/DoorActionTypes.h"
+
 #include <glm/glm.hpp>
 #include <string>
 #include <variant>
@@ -22,10 +24,7 @@ enum class ActionType : uint8_t {
     TeleportPlayer,
 };
 
-// Per D-05: typed std::variant for action-specific parameter blocks
-struct DoorActionParams {
-    float duration = 1.2f;
-};
+// DoorActionParams is defined in game/modules/door/DoorActionTypes.h
 
 struct SoundActionParams {
     std::string soundId;

@@ -71,7 +71,7 @@ pixel_roguelike_add_test(test_silos_cloister_level
 
 pixel_roguelike_add_test(test_level_roundtrip
     SOURCES test_level_roundtrip.cpp
-    LIBRARIES game_content
+    LIBRARIES game_content game_module_door
     LABELS game
 )
 
@@ -95,13 +95,13 @@ pixel_roguelike_add_test(test_environment_debug_sync
 
 pixel_roguelike_add_test(test_runtime_game_session
     SOURCES test_runtime_game_session.cpp
-    LIBRARIES gameplay
+    LIBRARIES gameplay game_module_door
     DEFINITIONS ${SILOS_CLOISTER_SCENE_FILE_DEF}
     LABELS game
 )
 
 pixel_roguelike_add_test(test_door_group_position
     SOURCES test_door_group_position.cpp
-    LIBRARIES gameplay
+    LIBRARIES gameplay game_module_door
     LABELS game
 )
