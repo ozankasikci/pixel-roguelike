@@ -85,16 +85,28 @@ void parseDoorGroup(LevelDef& data,
     std::size_t index = 5;
     while (index < tokens.size()) {
         if (tokens[index] == "open_angle" && index + 1 < tokens.size()) {
-            dg.openAngle = std::stof(tokens[index + 1]);
+            float val;
+            if (!tryParseFloatToken(tokens[index + 1], val))
+                throwParseError(path, lineNumber, "invalid open_angle value");
+            dg.openAngle = val;
             index += 2;
         } else if (tokens[index] == "open_duration" && index + 1 < tokens.size()) {
-            dg.openDuration = std::stof(tokens[index + 1]);
+            float val;
+            if (!tryParseFloatToken(tokens[index + 1], val))
+                throwParseError(path, lineNumber, "invalid open_duration value");
+            dg.openDuration = val;
             index += 2;
         } else if (tokens[index] == "interact_distance" && index + 1 < tokens.size()) {
-            dg.interactDistance = std::stof(tokens[index + 1]);
+            float val;
+            if (!tryParseFloatToken(tokens[index + 1], val))
+                throwParseError(path, lineNumber, "invalid interact_distance value");
+            dg.interactDistance = val;
             index += 2;
         } else if (tokens[index] == "interact_dot" && index + 1 < tokens.size()) {
-            dg.interactDotThreshold = std::stof(tokens[index + 1]);
+            float val;
+            if (!tryParseFloatToken(tokens[index + 1], val))
+                throwParseError(path, lineNumber, "invalid interact_dot value");
+            dg.interactDotThreshold = val;
             index += 2;
         } else if (tokens[index] == "locked") {
             dg.locked = true;
