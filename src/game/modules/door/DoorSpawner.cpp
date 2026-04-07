@@ -9,6 +9,7 @@
 #include "game/components/MeshComponent.h"
 #include "game/level/LevelBuilder.h"
 #include "game/level/LevelDef.h"
+#include "engine/rendering/geometry/Mesh.h"
 
 #include <spdlog/spdlog.h>
 
@@ -39,9 +40,13 @@ entt::entity spawnDoorGroup(LevelBuilder& builder,
             leafEntity = entity;
             const glm::vec3 leafPivot = *m.pivot;
 
-            // Scene-defined meshes are already correctly positioned by the artist.
-            // Pass zero meshCenter — the AABB centering is only needed for procedural meshes.
-            const glm::vec3 meshCenter(0.0f);
+            // Compute mesh AABB center so the door's geometric center aligns with the
+            // frame center when closed. Door FBX meshes have their origin at the hinge
+            // edge, not at the geometric center — without this offset there's a visible gap.
+            Mesh* leafMeshPtr = builder.mesh(m.meshId);
+            const glm::vec3 meshCenter = leafMeshPtr
+                ? (leafMeshPtr->aabbMin() + leafMeshPtr->aabbMax()) * 0.5f
+                : glm::vec3(0.0f);
             const glm::mat4 leafModel = makePivotLeafModel(
                 m.position, group.yawDegrees, group.yawDegrees,
                 leafPivot, meshCenter, m.scale);

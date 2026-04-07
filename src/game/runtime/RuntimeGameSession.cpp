@@ -175,6 +175,7 @@ void RuntimeGameSession::resetForPlay() {
     }
 
     restoreBaselineState();
+    resetDoorVisuals(registry_);
     resetTransientRuntimeState();
     initializeRuntimeInteraction(registry_);
     initializeRuntimeInventory(registry_);

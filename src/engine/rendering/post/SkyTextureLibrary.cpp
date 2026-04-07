@@ -1,4 +1,5 @@
 #include "engine/rendering/post/SkyTextureLibrary.h"
+#include "engine/core/PathUtils.h"
 #include "engine/rendering/core/Shader.h"
 
 #include <glm/ext/matrix_clip_space.hpp>
@@ -117,7 +118,8 @@ GLuint SkyTextureLibrary::resolve(std::string_view path) {
     }
 
     Texture2D texture;
-    if (!texture.createRGBA8FromFile(key)) {
+    const std::string resolved = resolveProjectPath(key);
+    if (!texture.createRGBA8FromFile(resolved)) {
         failedPaths_.insert(key);
         spdlog::warn("SkyTextureLibrary: failed to load '{}'", key);
         return transparentFallback_.id();
@@ -159,8 +161,13 @@ GLuint SkyTextureLibrary::resolveCube(const std::array<std::string, 6>& paths) {
         return transparentCubeFallback_.id();
     }
 
+    std::array<std::string, 6> resolvedPaths;
+    for (std::size_t i = 0; i < 6; ++i) {
+        resolvedPaths[i] = resolveProjectPath(paths[i]);
+    }
+
     TextureCube texture;
-    if (!texture.createRGBA8FromFiles(paths)) {
+    if (!texture.createRGBA8FromFiles(resolvedPaths)) {
         failedCubeKeys_.insert(key);
         spdlog::warn("SkyTextureLibrary: failed to load cubemap faces");
         return transparentCubeFallback_.id();

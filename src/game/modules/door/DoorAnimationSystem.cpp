@@ -123,3 +123,12 @@ void DoorAnimationSystem::update(Application& app, float deltaTime) {
 
 void DoorAnimationSystem::shutdown() {
 }
+
+void resetDoorVisuals(entt::registry& registry) {
+    auto doorView = registry.view<DoorConfigComponent, DoorStateComponent>();
+    for (auto [entity, config, state] : doorView.each()) {
+        (void)entity;
+        updateDoorLeaf(registry, config.leftLeaf, state.progress);
+        updateDoorLeaf(registry, config.rightLeaf, state.progress);
+    }
+}
