@@ -379,3 +379,33 @@ Plans:
 - [x] 18-04-PLAN.md — Visitor pattern: replace 5 switch-on-kind statements with std::visit in EditorSceneDocument.cpp
 - [x] 18-05-PLAN.md — Gap closure: migrate test fixture light format, extract drawTransformSection shared utility
 - [x] 18-06-PLAN.md — Gap closure: extract asset inspector helpers from EditorInspectorPanel.cpp
+
+### Phase 19: Refactor door system to unify split-brain architecture
+
+**Goal:** Eliminate the split-brain door architecture by unifying the two spawn paths, two runtime paths, and five data representations into a single coherent system. Fix the right-leaf animation bug, separate config from state in ECS components, and surface leaf/pivot editing in the editor inspector.
+**Requirements**: 
+- R1: Single unified door definition struct replacing LevelDoorGroupPlacement + DoubleDoorSpawnSpec
+- R2: Editor preview uses same DoorAnimationSystem/BehaviorSystem as game executable (no duplicated free functions in RuntimeGameplay.cpp)
+- R3: DoorComponent split into DoorConfigComponent + DoorStateComponent
+- R4: DoorGroupInspector surfaces child leaf meshes, allows adding pivots, warns when no leaf exists
+- R5: Right-leaf animation works in editor preview
+- R6: Dead code removed (computeHingeWorldPos), naming cleaned up (DoubleDoor → Door where appropriate)
+**Depends on:** Phase 18
+**Plans:** 4 plans
+
+Plans:
+- [ ] 19-01-PLAN.md — New DoorConfigComponent + DoorStateComponent, rename LevelDoorGroupPlacement to LevelDoorPlacement
+- [ ] 19-02-PLAN.md — Bidirectional DoorAnimationSystem, BehaviorSystem update, delete updateRuntimeDoorAnimation
+- [ ] 19-03-PLAN.md — Delete DoubleDoor prefab spawn path, dead code, ContentRegistry cleanup
+- [ ] 19-04-PLAN.md — DoorGroupInspector leaf display, PrefabInspector cleanup, test updates
+
+
+### Phase 20: Structural hardening — unify triggers, type-safe IDs, action interface refactor, component validation, serialization robustness, editor-game decoupling, lifetime safety, material cycle detection
+
+**Goal:** [To be planned]
+**Requirements**: TBD
+**Depends on:** Phase 19
+**Plans:** 0 plans
+
+Plans:
+- [ ] TBD (run /gsd-plan-phase 20 to break down)
