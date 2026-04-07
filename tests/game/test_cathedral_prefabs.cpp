@@ -82,23 +82,31 @@ int main() {
     assert(door.openDuration == doorPlacement.openDuration);
     assert(doorInteractable.promptText == "E  OPEN HEAVY DOOR");
 
+    // The double-door path places each leaf centered between its hinge and the midpoint.
+    // closedCenter = leftHingePosition + (leafScale.x/2, 0, 0)
+    const glm::vec3 expectedLeftCenter  = doorPlacement.leftHingePosition  + glm::vec3(doorPlacement.leafScale.x * 0.5f, 0.0f, 0.0f);
+    const glm::vec3 expectedRightCenter = doorPlacement.rightHingePosition - glm::vec3(doorPlacement.leafScale.x * 0.5f, 0.0f, 0.0f);
+
     const auto& leftLeaf = registry.get<DoorLeafComponent>(door.leftLeaf);
     const auto& leftCollider = registry.get<ColliderComponent>(door.leftLeaf);
     const auto& leftMesh = registry.get<MeshComponent>(door.leftLeaf);
-    assert(leftLeaf.hingePosition == doorPlacement.leftHingePosition);
+    // basePosition stores the leaf mesh center (used as rotation origin in the legacy pivot=0 path)
+    assert(leftLeaf.basePosition == expectedLeftCenter);
+    assert(leftLeaf.pivot == glm::vec3(0.0f));
     assert(leftLeaf.closedScale == doorPlacement.leafScale);
     assert(leftLeaf.closedYaw == doorPlacement.closedYaw);
     assert(leftLeaf.openYaw == doorPlacement.closedYaw - doorPlacement.openAngle);
-    assert(leftCollider.position == doorPlacement.leftHingePosition + glm::vec3(doorPlacement.leafScale.x * 0.5f, 0.0f, 0.0f));
+    assert(leftCollider.position == expectedLeftCenter);
     assert(leftCollider.halfExtents == doorPlacement.leafScale * 0.5f);
     assert(leftMesh.mesh == leftDoorMesh);
 
     const auto& rightLeaf = registry.get<DoorLeafComponent>(door.rightLeaf);
     const auto& rightCollider = registry.get<ColliderComponent>(door.rightLeaf);
     const auto& rightMesh = registry.get<MeshComponent>(door.rightLeaf);
-    assert(rightLeaf.hingePosition == doorPlacement.rightHingePosition);
+    assert(rightLeaf.basePosition == expectedRightCenter);
+    assert(rightLeaf.pivot == glm::vec3(0.0f));
     assert(rightLeaf.openYaw == doorPlacement.closedYaw + doorPlacement.openAngle);
-    assert(rightCollider.position == doorPlacement.rightHingePosition - glm::vec3(doorPlacement.leafScale.x * 0.5f, 0.0f, 0.0f));
+    assert(rightCollider.position == expectedRightCenter);
     assert(rightMesh.mesh == rightDoorMesh);
 
     return 0;

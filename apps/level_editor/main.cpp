@@ -1864,7 +1864,7 @@ int main(int argc, char* argv[]) {
                                                io.MousePos,
                                                glfwGetTime(),
                                                hits.size() > 1);
-                        applySelectionHit(selectedIds, selectionPicker, io.KeyShift);
+                        applySelectionHit(selectedIds, selectionPicker, io.KeyShift, document);
                         ui.inspectorContext = EditorInspectorContext::SceneSelection;
                         ui.scrollToSelection = true;
                         if (ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left)) {
@@ -1940,16 +1940,8 @@ int main(int argc, char* argv[]) {
                 }
             } else {
                 runtimePreviewSession.endCapture(window.handle());
-                runtimePreviewSession.resetForPlay();
-                // Reset already applied -- no deferred dirty state needed for gameplay.
-                // Preserve any pending FullWorldRebuild from scene edits made during play,
-                // but clear GameplayStateReset since we just handled it.
-                if (runtimePreviewDirtyState == RuntimePreviewDirtyState::GameplayStateReset
-                    || runtimePreviewDirtyState == RuntimePreviewDirtyState::None) {
-                    runtimePreviewDirtyState = RuntimePreviewDirtyState::None;
-                }
-                // If dirty state is FullWorldRebuild or EnvironmentOnly, leave it --
-                // those still need processing on next play start.
+                runtimePreviewDirtyState = mergeRuntimePreviewDirtyState(runtimePreviewDirtyState,
+                                                                        RuntimePreviewDirtyState::GameplayStateReset);
             }
             playTogglePressed = false;
         }

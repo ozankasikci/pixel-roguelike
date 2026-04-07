@@ -346,8 +346,10 @@ void EditorPreviewWorld::syncTransforms(const EditorSceneDocument& document) {
                 auto& mesh = registry_.get<MeshComponent>(entity);
                 const auto& placement = std::get<LevelMeshPlacement>(object->payload);
                 if (placement.pivot.has_value()) {
-                    // Recompute pivot-aware model using the mesh's own world position
-                    // so gizmo-move on the leaf is reflected visually
+                    // Recompute pivot-aware model using the door GROUP's world position as
+                    // the hinge, not the leaf mesh's world position.
+                    // The group position IS the hinge; the leaf's local position is just the
+                    // initial closed-state offset baked into the pivot value.
                     auto parentObjId = document.parentObjectId(object->id);
                     const auto* parentObj = document.findObject(parentObjId);
                     if (parentObj && parentObj->kind == EditorSceneObjectKind::DoorGroup) {
@@ -355,7 +357,7 @@ void EditorPreviewWorld::syncTransforms(const EditorSceneDocument& document) {
                         decomposeTransformMatrix(document.worldTransformMatrix(parentObjId),
                                                  groupPos, groupRot, groupScl);
                         mesh.modelOverride = makePivotLeafModel(
-                            position, groupRot.y, placement.pivot.value(), placement.scale);
+                            groupPos, groupRot.y, placement.pivot.value(), placement.scale);
                         mesh.useModelOverride = true;
                     }
                 } else if (mesh.useModelOverride) {

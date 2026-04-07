@@ -100,3 +100,9 @@ pixel_roguelike_add_test(test_runtime_game_session
     DEFINITIONS ${SILOS_CLOISTER_SCENE_FILE_DEF}
     LABELS game
 )
+
+pixel_roguelike_add_test(test_door_group_position
+    SOURCES test_door_group_position.cpp
+    LIBRARIES gameplay
+    LABELS game
+)

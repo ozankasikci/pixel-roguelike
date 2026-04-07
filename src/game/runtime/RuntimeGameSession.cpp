@@ -6,6 +6,9 @@
 #include "game/components/CheckpointComponent.h"
 #include "game/components/CharacterControllerComponent.h"
 #include "game/components/DoorComponent.h"
+#include "game/components/DoorLeafComponent.h"
+#include "game/components/MeshComponent.h"
+#include "game/prefabs/GameplayPrefabs.h"
 #include "game/components/PlayerInteractionLockComponent.h"
 #include "game/components/PlayerMovementComponent.h"
 #include "game/components/PlayerSpawnComponent.h"
@@ -397,6 +400,19 @@ void RuntimeGameSession::restoreBaselineState() {
             registry_.patch<DoorComponent>(entity, [&](auto& component) {
                 component = door;
             });
+            // Recalculate leaf mesh to closed position
+            for (entt::entity leaf : {door.leftLeaf, door.rightLeaf}) {
+                if (leaf != entt::null && registry_.valid(leaf)) {
+                    auto* mesh = registry_.try_get<MeshComponent>(leaf);
+                    auto* leafComp = registry_.try_get<DoorLeafComponent>(leaf);
+                    if (mesh && leafComp) {
+                        mesh->modelOverride = makePivotLeafModel(
+                            leafComp->basePosition, leafComp->closedYaw,
+                            leafComp->pivot, leafComp->closedScale);
+                        mesh->useModelOverride = true;
+                    }
+                }
+            }
         }
     }
 
