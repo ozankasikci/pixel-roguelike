@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: Editor UX
 status: Milestone complete
-stopped_at: Completed 18-06-PLAN.md
-last_updated: "2026-04-06T21:21:43.952Z"
-last_activity: 2026-04-06
+stopped_at: Phase 19 context gathered
+last_updated: "2026-04-07T13:40:17.515Z"
+last_activity: "2026-04-07 - Completed quick task 260407-me0: Fix door interaction prompt disappearing after play-stop-play cycle"
 progress:
-  total_phases: 20
-  completed_phases: 16
-  total_plans: 56
-  completed_plans: 51
+  total_phases: 22
+  completed_phases: 17
+  total_plans: 58
+  completed_plans: 53
   percent: 91
 ---
 
@@ -221,6 +221,7 @@ None yet.
 - Phase 17 added: Unified collider system with trigger capabilities and scripting support
 - Phase 18 added: Maintainability refactoring for editor UI, serialization, and round-trip fidelity
 - Phase 19 added: Refactor door system to unify split-brain architecture
+- Phase 20 added: Structural hardening — unify triggers, type-safe IDs, action interface refactor, component validation, serialization robustness, editor-game decoupling, lifetime safety, material cycle detection
 
 ### Blockers/Concerns
 
@@ -292,6 +293,6 @@ None yet.
 ## Session Continuity
 
 Last activity: 2026-04-07 - Completed quick task 260407-me0: Fix door interaction prompt disappearing after play-stop-play cycle
-Last session: 2026-04-05T03:13:41.712Z
-Stopped at: Completed 18-06-PLAN.md
-Resume file: None
+Last session: 2026-04-07T13:40:17.506Z
+Stopped at: Phase 19 context gathered
+Resume file: .planning/phases/19-refactor-door-system-to-unify-split-brain-architecture/19-CONTEXT.md
