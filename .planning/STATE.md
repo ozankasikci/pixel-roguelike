@@ -220,6 +220,7 @@ None yet.
 - Phase 16 added: Editor trigger and behavior authoring with save-load fidelity
 - Phase 17 added: Unified collider system with trigger capabilities and scripting support
 - Phase 18 added: Maintainability refactoring for editor UI, serialization, and round-trip fidelity
+- Phase 19 added: Refactor door system to unify split-brain architecture
 
 ### Blockers/Concerns
 
@@ -286,10 +287,11 @@ None yet.
 | 260407-0m2 | Fix door not opening and gizmo-move not applying to door leaf | 2026-04-06 | 90cc2e6 | [260407-0m2-fix-door-not-opening-and-gizmo-move-not-](./quick/260407-0m2-fix-door-not-opening-and-gizmo-move-not-/) |
 | 260407-1uu | Door editor: open direction control, pivot visualization, fix rotation | 2026-04-06 | f682d65 | [260407-1uu-door-editor-open-direction-control-pivot](./quick/260407-1uu-door-editor-open-direction-control-pivot/) |
 | 260407-4qf | Door open state persists across play sessions - opening a door in play mode stays open after stop/start | 2026-04-07 | 8564440 | [260407-4qf-door-open-state-persists-across-play-ses](./quick/260407-4qf-door-open-state-persists-across-play-ses/) |
+| 260407-me0 | Fix door interaction prompt disappearing after play-stop-play cycle | 2026-04-07 | c1afd64 | [260407-me0-fix-door-interaction-prompt-disappearing](./quick/260407-me0-fix-door-interaction-prompt-disappearing/) |
 
 ## Session Continuity
 
-Last activity: 2026-04-07 - Completed quick task 260407-4qf: Door open state persists across play sessions
+Last activity: 2026-04-07 - Completed quick task 260407-me0: Fix door interaction prompt disappearing after play-stop-play cycle
 Last session: 2026-04-05T03:13:41.712Z
 Stopped at: Completed 18-06-PLAN.md
 Resume file: None
