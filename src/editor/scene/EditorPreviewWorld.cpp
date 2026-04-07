@@ -226,13 +226,19 @@ void EditorPreviewWorld::rebuild(const EditorSceneDocument& document, const Cont
         case EditorSceneObjectKind::Group:
             break;
         case EditorSceneObjectKind::DoorGroup: {
-            // Door group is a self-contained placement — spawn it via addDoorGroup.
-            auto entity = registry_.create();
-            entities_.push_back(entity);
-            auto& transform = registry_.emplace<TransformComponent>(entity);
-            const auto& dg = std::get<LevelDoorPlacement>(object.payload);
-            transform.position = dg.position;
-            transform.rotation.y = dg.yawDegrees;
+            // Spawn the full door entity hierarchy via addDoorGroup so that
+            // DoorConfigComponent + DoorStateComponent + DoorLeafComponent entities
+            // exist for DoorAnimationSystem to tick during editor play preview (D-14).
+            auto dg = std::get<LevelDoorPlacement>(object.payload);
+            glm::vec3 position(0.0f), rotation(0.0f), scale(1.0f);
+            if (decomposeTransformMatrix(document.worldTransformMatrix(object.id),
+                                         position, rotation, scale)) {
+                dg.position = position;
+                dg.yawDegrees = rotation.y;
+            }
+            // addDoorGroup ignores the level parameter (self-contained placement).
+            LevelDef emptyLevel;
+            builder.addDoorGroup(dg, emptyLevel);
             break;
         }
         case EditorSceneObjectKind::Archetype: {
