@@ -114,4 +114,37 @@ void drawDoorGroupInspector(LevelDoorPlacement& dg,
     }
 
     endInspectorPropertyTable();
+
+    ImGui::Separator();
+    ImGui::TextUnformatted("Leaf Meshes");
+    ImGui::Spacing();
+
+    // Find child mesh objects whose parentNodeId matches this door group's nodeId.
+    // These are the leaf mesh objects that will animate when this door swings open.
+    bool foundLeaf = false;
+    if (!dg.nodeId.empty()) {
+        for (const auto& obj : document.objects()) {
+            if (obj.kind != EditorSceneObjectKind::Mesh) {
+                continue;
+            }
+            const auto& meshPlacement = std::get<LevelMeshPlacement>(obj.payload);
+            if (meshPlacement.parentNodeId != dg.nodeId) {
+                continue;
+            }
+
+            foundLeaf = true;
+            ImGui::PushID(static_cast<int>(obj.id));
+            ImGui::Indent();
+            ImGui::TextColored(ImVec4(0.7f, 0.9f, 0.7f, 1.0f), "%s", meshPlacement.meshId.c_str());
+            ImGui::SameLine();
+            ImGui::TextDisabled("(leaf)");
+            ImGui::Unindent();
+            ImGui::PopID();
+        }
+    }
+
+    if (!foundLeaf) {
+        ImGui::TextColored(ImVec4(1.0f, 0.85f, 0.0f, 1.0f),
+                           "No leaf meshes found -- this door won't animate.");
+    }
 }
