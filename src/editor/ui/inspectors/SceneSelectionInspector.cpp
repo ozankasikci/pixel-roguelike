@@ -7,7 +7,7 @@
 #include "editor/ui/inspectors/MeshInspector.h"
 #include "editor/ui/inspectors/PlayerSpawnInspector.h"
 #include "editor/ui/inspectors/PrefabInspector.h"
-#include "editor/ui/inspectors/DoorGroupInspector.h"
+#include "game/modules/door/editor/DoorGroupInspector.h"
 #include "editor/ui/inspectors/ReflectionProbeInspector.h"
 #include "game/content/ContentRegistry.h"
 #include "game/level/LevelDef.h"

@@ -3,17 +3,12 @@
 #include "game/behavior/BehaviorComponent.h"
 #include "game/behavior/NodeIdComponent.h"
 #include "game/components/ColliderComponent.h"
-#include "game/components/DoorConfigComponent.h"
-#include "game/components/DoorStateComponent.h"
-#include "game/components/DoorLeafComponent.h"
 #include "game/components/InteractableComponent.h"
 #include "game/components/LightComponent.h"
 #include "game/components/MeshComponent.h"
 #include "game/components/ReflectionProbeComponent.h"
 #include "game/rendering/RetroPalette.h"
 #include "game/components/TransformComponent.h"
-#include "game/prefabs/GameplayPrefabs.h"
-
 #include "engine/core/MathUtils.h"
 
 #include <glm/gtc/matrix_transform.hpp>
@@ -280,121 +275,4 @@ void LevelBuilder::attachInteractable(entt::entity entity, const InteractableDec
     ic.interactDotThreshold = decl.dotThreshold;
 }
 
-entt::entity LevelBuilder::addDoorGroup(const LevelDoorPlacement& group, const LevelDef& level) {
-    auto& reg = context_.registry;
-
-    // Spawn child meshes that belong to this door group from the scene definition.
-    // LevelLoader skips these in the normal mesh loop, so we must spawn them here.
-    entt::entity leafEntity = entt::null;
-    for (const auto& m : level.meshes) {
-        if (m.parentNodeId != group.nodeId) continue;
-
-        auto entity = addMesh(m.meshId, m.position, m.scale, m.rotation, m.tint,
-                              m.materialId.empty() ? std::optional<std::string>{}
-                                                   : std::optional<std::string>{m.materialId});
-        if (entity == entt::null) continue;
-
-        if (!m.nodeId.empty()) {
-            attachNodeId(entity, m.nodeId);
-        }
-
-        // The child mesh with a pivot is the door leaf (animatable panel)
-        if (m.pivot.has_value()) {
-            leafEntity = entity;
-            const glm::vec3 leafPivot = *m.pivot;
-
-            // Scene-defined meshes are already correctly positioned by the artist.
-            // Pass zero meshCenter — the AABB centering is only needed for procedural meshes.
-            const glm::vec3 meshCenter(0.0f);
-            const glm::mat4 leafModel = makePivotLeafModel(
-                m.position, group.yawDegrees, group.yawDegrees,
-                leafPivot, meshCenter, m.scale);
-
-            // Override model matrix for pivot-based rendering
-            if (auto* meshComp = reg.try_get<MeshComponent>(entity)) {
-                meshComp->modelOverride = leafModel;
-                meshComp->useModelOverride = true;
-            }
-
-            // Attach ColliderComponent for physics
-            const glm::vec3 leafCenter = glm::vec3(leafModel * glm::vec4(0.0f, 0.0f, 0.0f, 1.0f));
-            ColliderComponent collider;
-            collider.shape = ColliderShape::Box;
-            collider.mode = ColliderMode::Solid;
-            collider.position = leafCenter;
-            collider.rotation = glm::vec3(0.0f, group.yawDegrees, 0.0f);
-            collider.halfExtents = glm::vec3(std::abs(leafPivot.x), 1.01f, 0.05f);
-            reg.emplace<ColliderComponent>(entity, collider);
-
-            // Attach DoorLeafComponent for swing animation
-            DoorLeafComponent doorLeaf;
-            doorLeaf.basePosition = m.position;
-            doorLeaf.pivot = leafPivot;
-            doorLeaf.meshCenter = meshCenter;
-            doorLeaf.closedScale = m.scale;
-            doorLeaf.colliderHalfExtents = glm::vec3(std::abs(leafPivot.x), 1.01f, 0.05f);
-            doorLeaf.closedYaw = group.yawDegrees;
-            doorLeaf.openYaw = group.yawDegrees - group.openAngle;
-            reg.emplace<DoorLeafComponent>(entity, doorLeaf);
-        }
-    }
-
-    if (leafEntity == entt::null) {
-        spdlog::warn("LevelBuilder::addDoorGroup: no leaf mesh (with pivot) found for door group '{}'", group.name);
-        return entt::null;
-    }
-
-    // Create door root entity with DoorConfigComponent + DoorStateComponent + InteractableComponent
-    auto doorRoot = createTransformEntity(group.position + glm::vec3(0.0f, 1.0f, 0.0f));
-
-    if (group.locked) {
-        // Locked door: only InteractableComponent, no DoorComponent
-        reg.emplace<InteractableComponent>(doorRoot,
-            InteractableComponent{
-                group.lockedPrompt,
-                "",
-                group.interactDistance,
-                group.interactDotThreshold,
-                true,
-                false
-            });
-    } else {
-        DoorConfigComponent config;
-        config.leftLeaf = leafEntity;
-        config.rightLeaf = entt::null;
-        config.interactDistance = group.interactDistance;
-        config.interactDotThreshold = group.interactDotThreshold;
-        config.openDuration = group.openDuration;
-        config.openAngle = group.openAngle;
-        config.locked = group.locked;
-        config.lockedPrompt = group.lockedPrompt;
-        reg.emplace<DoorConfigComponent>(doorRoot, config);
-        reg.emplace<DoorStateComponent>(doorRoot);
-
-        reg.emplace<InteractableComponent>(doorRoot,
-            InteractableComponent{
-                "E  Open",
-                "",
-                group.interactDistance,
-                group.interactDotThreshold,
-                true,
-                false
-            });
-
-        // BehaviorComponent with ToggleDoor so BehaviorSystem processes the interaction
-        BehaviorComponent behavior;
-        ActionEntry toggleAction;
-        toggleAction.type = ActionType::ToggleDoor;
-        toggleAction.targetNodeId = "self";
-        toggleAction.params = DoorActionParams{group.openDuration};
-        behavior.onActivate.push_back(toggleAction);
-        reg.emplace<BehaviorComponent>(doorRoot, behavior);
-    }
-
-    if (!group.nodeId.empty()) {
-        attachNodeId(doorRoot, group.nodeId);
-    }
-
-    return doorRoot;
-}
 

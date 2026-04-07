@@ -26,6 +26,7 @@
 #include "editor/viewport/EditorViewportInteraction.h"
 #include "game/content/ContentRegistry.h"
 #include "game/level/LevelDef.h"
+#include "game/modules/door/DoorModule.h"
 #include "game/rendering/MaterialDefinition.h"
 #include "game/rendering/MaterialTextureLibrary.h"
 #include "game/session/EquipmentState.h"
@@ -325,6 +326,7 @@ int main(int argc, char* argv[]) {
     ContentRegistry content;
     renderStartupProgress(window, imgui, 0.05f, "Loading content registry", "Reading materials, archetypes, and definitions...");
     content.loadDefaults();
+    registerDoorModule();
 
     MaterialTextureLibrary materialTextures;
     renderStartupProgress(window, imgui, 0.16f, "Preparing materials", "Uploading material texture data...");

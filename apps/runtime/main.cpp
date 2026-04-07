@@ -7,7 +7,8 @@
 #include "engine/physics/PhysicsSystem.h"
 #include "engine/ui/ImGuiLayer.h"
 #include "game/behavior/BehaviorSystem.h"
-#include "game/behavior/DoorAnimationSystem.h"
+#include "game/modules/door/DoorAnimationSystem.h"
+#include "game/modules/door/DoorModule.h"
 #include "game/systems/AudioListenerSystem.h"
 #include "game/systems/InventorySystem.h"
 #include "game/systems/PlayerMovementSystem.h"
@@ -84,6 +85,8 @@ int main(int argc, char* argv[]) {
     }
     app.registry().ctx().insert_or_assign<ContentRegistry*>(&content);
     app.registry().ctx().insert_or_assign<RunSession*>(&app.getService<RunSession>());
+
+    registerDoorModule();
 
     // Register systems by phase so scheduling policy lives in the engine instead of boot order.
     auto& input = app.addSystem<InputSystem>(Application::UpdatePhase::Input);

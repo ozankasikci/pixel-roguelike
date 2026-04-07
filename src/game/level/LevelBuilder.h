@@ -57,8 +57,6 @@ public:
                                     float blendDistance,
                                     float intensity,
                                     bool boxProjection);
-    entt::entity addDoorGroup(const LevelDoorPlacement& group, const LevelDef& level);
-
     // Behavior and trigger attachment methods
     void attachNodeId(entt::entity entity, const std::string& nodeId);
     void attachBehaviors(entt::entity entity, const std::vector<BehaviorDeclaration>& declarations);
