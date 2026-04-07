@@ -1089,7 +1089,7 @@ LevelDef resolveLevelHierarchy(const LevelDef& data) {
         }
         case LevelNodeRef::Kind::DoorGroup: {
             const auto& dg = data.doors[ref.index];
-            return makeTransformMatrix(dg.position, glm::vec3(0.0f, dg.yawDegrees, 0.0f), glm::vec3(1.0f));
+            return makeTransformMatrix(dg.position, glm::vec3(0.0f, dg.yawDegrees, 0.0f), dg.scale);
         }
         }
         return glm::mat4(1.0f);
@@ -1199,6 +1199,7 @@ LevelDef resolveLevelHierarchy(const LevelDef& data) {
             if (decomposeTransformMatrix(worldMatrices[idx], position, rotation, scale)) {
                 dg.position = position;
                 dg.yawDegrees = rotation.y;
+                dg.scale = glm::max(scale, glm::vec3(0.01f));
             }
             break;
         }

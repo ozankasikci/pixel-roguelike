@@ -113,6 +113,7 @@ struct LevelGroupNode {
 struct LevelDoorPlacement {
     std::string name = "Door";
     glm::vec3 position{0.0f};
+    glm::vec3 scale{1.0f};
     float yawDegrees = 0.0f;
     float openAngle = 90.0f;
     float openDuration = 1.2f;

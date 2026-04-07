@@ -108,6 +108,14 @@ void parseDoorGroup(LevelDef& data,
                 throwParseError(path, lineNumber, "invalid interact_dot value");
             dg.interactDotThreshold = val;
             index += 2;
+        } else if (tokens[index] == "scale" && index + 3 < tokens.size()) {
+            float sx, sy, sz;
+            if (!tryParseFloatToken(tokens[index + 1], sx) ||
+                !tryParseFloatToken(tokens[index + 2], sy) ||
+                !tryParseFloatToken(tokens[index + 3], sz))
+                throwParseError(path, lineNumber, "invalid scale values");
+            dg.scale = glm::vec3(sx, sy, sz);
+            index += 4;
         } else if (tokens[index] == "locked") {
             dg.locked = true;
             ++index;
@@ -139,6 +147,9 @@ void serializeDoorGroups(std::ostringstream& out, const LevelDef& data) {
         if (dg.openDuration != 1.2f) out << " open_duration " << formatFloat(dg.openDuration);
         if (dg.interactDistance != 2.5f) out << " interact_distance " << formatFloat(dg.interactDistance);
         if (dg.interactDotThreshold != 0.55f) out << " interact_dot " << formatFloat(dg.interactDotThreshold);
+        if (dg.scale != glm::vec3(1.0f))
+            out << " scale " << formatFloat(dg.scale.x) << ' '
+                << formatFloat(dg.scale.y) << ' ' << formatFloat(dg.scale.z);
         if (dg.locked) out << " locked " << dg.lockedPrompt;
         appendNodeMetadata(out, dg.nodeId, dg.parentNodeId);
         out << '\n';
