@@ -303,10 +303,9 @@ entt::entity LevelBuilder::addDoorGroup(const LevelDoorPlacement& group, const L
             leafEntity = entity;
             const glm::vec3 leafPivot = *m.pivot;
 
-            Mesh* leafMeshPtr = mesh(m.meshId);
-            const glm::vec3 meshCenter = leafMeshPtr
-                ? (leafMeshPtr->aabbMin() + leafMeshPtr->aabbMax()) * 0.5f
-                : glm::vec3(0.0f);
+            // Scene-defined meshes are already correctly positioned by the artist.
+            // Pass zero meshCenter — the AABB centering is only needed for procedural meshes.
+            const glm::vec3 meshCenter(0.0f);
             const glm::mat4 leafModel = makePivotLeafModel(
                 m.position, group.yawDegrees, group.yawDegrees,
                 leafPivot, meshCenter, m.scale);
