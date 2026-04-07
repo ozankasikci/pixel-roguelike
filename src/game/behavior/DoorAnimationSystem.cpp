@@ -9,6 +9,7 @@
 #include "game/components/PlayerInteractionLockComponent.h"
 #include "game/components/ColliderComponent.h"
 #include "game/components/TransformComponent.h"
+#include "game/prefabs/GameplayPrefabs.h"
 
 #include <algorithm>
 #include <cmath>
@@ -22,16 +23,6 @@ float getDoorLeafYaw(const DoorLeafComponent& leaf, float progress) {
     return glm::mix(leaf.closedYaw, leaf.openYaw, eased);
 }
 
-glm::mat4 makeDoorLeafModel(const DoorLeafComponent& leaf, float progress) {
-    const float yaw = getDoorLeafYaw(leaf, progress);
-
-    glm::mat4 model = glm::translate(glm::mat4(1.0f), leaf.hingePosition);
-    model = glm::rotate(model, glm::radians(yaw), glm::vec3(0.0f, 1.0f, 0.0f));
-    model = glm::translate(model, leaf.centerOffsetFromHinge);
-    model = glm::scale(model, leaf.closedScale);
-    return model;
-}
-
 void updateDoorLeaf(entt::registry& registry, entt::entity entity, float progress) {
     auto* mesh = registry.try_get<MeshComponent>(entity);
     auto* collider = registry.try_get<ColliderComponent>(entity);
@@ -41,7 +32,8 @@ void updateDoorLeaf(entt::registry& registry, entt::entity entity, float progres
     }
 
     const float yaw = getDoorLeafYaw(*leaf, progress);
-    const glm::mat4 model = makeDoorLeafModel(*leaf, progress);
+    const glm::mat4 model = makePivotLeafModel(leaf->basePosition, leaf->closedYaw, yaw,
+                                               leaf->pivot, leaf->meshCenter, leaf->closedScale);
     const glm::vec3 center = glm::vec3(model * glm::vec4(0.0f, 0.0f, 0.0f, 1.0f));
 
     mesh->modelOverride = model;
@@ -54,64 +46,7 @@ void updateDoorLeaf(entt::registry& registry, entt::entity entity, float progres
 
 } // namespace
 
-void DoorAnimationSystem::init(Application& app) {
-    auto& registry = app.registry();
-
-    // Initialize player interaction locks to inactive
-    auto lockView = registry.view<PlayerInteractionLockComponent>();
-    for (auto [entity, lock] : lockView.each()) {
-        (void)entity;
-        lock.active = false;
-        lock.remainingTime = 0.0f;
-    }
-
-    // Initialize door leaf positions to closed state (progress=0)
-    auto doorView = registry.view<DoorConfigComponent>();
-    for (auto [entity, door] : doorView.each()) {
-        (void)entity;
-        if (registry.try_get<DoorLeafComponent>(door.leftLeaf) != nullptr) {
-            // updateDoorLeaf at progress 0 initializes the leaf mesh/collider position
-            auto* mesh = registry.try_get<MeshComponent>(door.leftLeaf);
-            auto* collider = registry.try_get<ColliderComponent>(door.leftLeaf);
-            auto* leaf = registry.try_get<DoorLeafComponent>(door.leftLeaf);
-            if (mesh && collider && leaf) {
-                const float yaw = leaf->closedYaw;
-                glm::mat4 model = glm::translate(glm::mat4(1.0f), leaf->hingePosition);
-                model = glm::rotate(model, glm::radians(yaw), glm::vec3(0.0f, 1.0f, 0.0f));
-                model = glm::translate(model, leaf->centerOffsetFromHinge);
-                model = glm::scale(model, leaf->closedScale);
-                const glm::vec3 center = glm::vec3(model * glm::vec4(0.0f, 0.0f, 0.0f, 1.0f));
-                mesh->modelOverride = model;
-                mesh->useModelOverride = true;
-                collider->position = center;
-                collider->rotation = glm::vec3(0.0f, yaw, 0.0f);
-                collider->halfExtents = leaf->colliderHalfExtents;
-            }
-        }
-        if (registry.try_get<DoorLeafComponent>(door.rightLeaf) != nullptr) {
-            auto* mesh = registry.try_get<MeshComponent>(door.rightLeaf);
-            auto* collider = registry.try_get<ColliderComponent>(door.rightLeaf);
-            auto* leaf = registry.try_get<DoorLeafComponent>(door.rightLeaf);
-            if (mesh && collider && leaf) {
-                const float yaw = leaf->closedYaw;
-                glm::mat4 model = glm::translate(glm::mat4(1.0f), leaf->hingePosition);
-                model = glm::rotate(model, glm::radians(yaw), glm::vec3(0.0f, 1.0f, 0.0f));
-                model = glm::translate(model, leaf->centerOffsetFromHinge);
-                model = glm::scale(model, leaf->closedScale);
-                const glm::vec3 center = glm::vec3(model * glm::vec4(0.0f, 0.0f, 0.0f, 1.0f));
-                mesh->modelOverride = model;
-                mesh->useModelOverride = true;
-                collider->position = center;
-                collider->rotation = glm::vec3(0.0f, yaw, 0.0f);
-                collider->halfExtents = leaf->colliderHalfExtents;
-            }
-        }
-    }
-}
-
-void DoorAnimationSystem::update(Application& app, float deltaTime) {
-    auto& registry = app.registry();
-
+void tickDoorAnimation(entt::registry& registry, float deltaTime) {
     // Tick PlayerInteractionLock countdown timer
     auto lockView = registry.view<PlayerInteractionLockComponent>();
     for (auto [entity, lock] : lockView.each()) {
@@ -123,36 +58,69 @@ void DoorAnimationSystem::update(Application& app, float deltaTime) {
         }
     }
 
-    // Animate all doors that are opening (BehaviorSystem sets targetState=Open)
-    // This system does NOT check InteractionFocusState or activationRequested (per D-11)
+    // Animate all doors based on targetState (bidirectional)
     auto doorView = registry.view<TransformComponent, DoorConfigComponent, DoorStateComponent>();
     for (auto [entity, transform, config, state] : doorView.each()) {
         (void)transform;
-        if (isDoorMoving(state) || isDoorFullyOpen(state)) {
-            state.progress = std::min(1.0f, state.progress + deltaTime / config.openDuration);
+
+        if (isDoorMoving(state)) {
+            // Advance or retreat progress based on targetState
+            const float step = deltaTime / config.openDuration;
+            if (state.targetState == DoorTargetState::Open) {
+                state.progress = std::min(1.0f, state.progress + step);
+            } else {
+                state.progress = std::max(0.0f, state.progress - step);
+            }
+
             updateDoorLeaf(registry, config.leftLeaf, state.progress);
             updateDoorLeaf(registry, config.rightLeaf, state.progress);
 
             if (auto* interactable = registry.try_get<InteractableComponent>(entity)) {
                 interactable->busy = isDoorMoving(state);
-                interactable->enabled = !isDoorFullyOpen(state);
+                interactable->enabled = false; // not interactable while moving
             }
 
-            if (state.progress >= 1.0f) {
-                state.progress = 1.0f;
-                state.targetState = DoorTargetState::Open;
+            // Check if reached target
+            if (isDoorFullyOpen(state) || isDoorFullyClosed(state)) {
                 if (auto* interactable = registry.try_get<InteractableComponent>(entity)) {
                     interactable->busy = false;
-                    interactable->enabled = false;
+                    interactable->enabled = !isDoorFullyOpen(state); // re-enable when fully closed
                 }
             }
             continue;
         }
+
+        // Not moving -- set interactable state
         if (auto* interactable = registry.try_get<InteractableComponent>(entity)) {
             interactable->busy = false;
             interactable->enabled = !isDoorFullyOpen(state);
         }
     }
+}
+
+void DoorAnimationSystem::init(Application& app) {
+    auto& registry = app.registry();
+
+    auto lockView = registry.view<PlayerInteractionLockComponent>();
+    for (auto [entity, lock] : lockView.each()) {
+        (void)entity;
+        lock.active = false;
+        lock.remainingTime = 0.0f;
+    }
+
+    // Initialize door leaf positions to closed state
+    auto doorView = registry.view<DoorConfigComponent, DoorStateComponent>();
+    for (auto [entity, config, state] : doorView.each()) {
+        (void)entity;
+        state.progress = 0.0f;
+        state.targetState = DoorTargetState::Closed;
+        updateDoorLeaf(registry, config.leftLeaf, 0.0f);
+        updateDoorLeaf(registry, config.rightLeaf, 0.0f);
+    }
+}
+
+void DoorAnimationSystem::update(Application& app, float deltaTime) {
+    tickDoorAnimation(app.registry(), deltaTime);
 }
 
 void DoorAnimationSystem::shutdown() {

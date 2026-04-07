@@ -9,7 +9,43 @@
 #include "game/rendering/RetroPalette.h"
 #include "game/components/ColliderComponent.h"
 
+#include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
+
+glm::mat4 makePivotLeafModel(const glm::vec3& basePos,
+                              float closedYawDeg,
+                              float currentYawDeg,
+                              const glm::vec3& pivot,
+                              const glm::vec3& meshCenter,
+                              const glm::vec3& scale) {
+    // Door meshes have their origin at the hinge edge, not at the geometric center.
+    // Frame meshes are centered at origin. To align the door within the frame:
+    //   T(-meshCenter) shifts the door so its AABB center is at the origin.
+    //
+    // When closed (deltaYaw=0), the door center aligns with the frame center:
+    //   T(basePos) * R(closedYaw) * S(scale) * T(-meshCenter)
+    // When opening, the door rotates around the pivot (hinge) in mesh-local space:
+    //   T(basePos) * R(closedYaw) * S * T(-meshCenter) * T(pivot) * R(deltaYaw) * T(-pivot)
+    const float deltaYaw = currentYawDeg - closedYawDeg;
+    // Only center horizontally (X/Z). Both door and frame meshes start at Y=0 (floor).
+    const glm::vec3 horizontalCenter(meshCenter.x, 0.0f, meshCenter.z);
+    glm::mat4 model = glm::translate(glm::mat4(1.0f), basePos);
+    model = glm::rotate(model, glm::radians(closedYawDeg), glm::vec3(0.0f, 1.0f, 0.0f));
+    model = glm::scale(model, scale);
+    model = glm::translate(model, -horizontalCenter);
+    model = glm::translate(model, pivot);
+    model = glm::rotate(model, glm::radians(deltaYaw), glm::vec3(0.0f, 1.0f, 0.0f));
+    model = glm::translate(model, -pivot);
+    return model;
+}
+
+glm::vec3 computeHingeWorldPos(const glm::vec3& basePos,
+                                float /*yawDeg*/,
+                                const glm::vec3& /*pivot*/,
+                                const glm::vec3& /*scale*/) {
+    // The hinge IS at basePos — no offset computation needed.
+    return basePos;
+}
 
 namespace {
 
@@ -47,8 +83,9 @@ entt::entity spawnDoorLeaf(LevelBuilder& builder,
     registry.emplace<ColliderComponent>(leaf, collider);
 
     DoorLeafComponent doorLeaf;
-    doorLeaf.hingePosition = hingePosition;
-    doorLeaf.centerOffsetFromHinge = closedCenter - hingePosition;
+    doorLeaf.basePosition = hingePosition;
+    doorLeaf.pivot = closedCenter - hingePosition;
+    doorLeaf.meshCenter = glm::vec3(0.0f);
     doorLeaf.closedScale = leafScale;
     doorLeaf.colliderHalfExtents = collider.halfExtents;
     doorLeaf.closedYaw = closedYaw;
@@ -160,110 +197,6 @@ entt::entity spawnDoubleDoor(LevelBuilder& builder, const DoubleDoorSpawnSpec& s
     );
 }
 
-entt::entity spawnSingleDoor(LevelBuilder& builder, const SingleDoorSpawnSpec& spec) {
-    // Place the door frame (static visual mesh)
-    builder.addMesh(spec.frameMeshName,
-        spec.rootPosition,
-        glm::vec3(0.21f),
-        glm::vec3(0.0f, spec.doorYawDegrees, 0.0f),
-        spec.frameTint,
-        spec.frameMaterialId);
-
-    // Compute hinge world position by rotating local hinge offset by doorYawDegrees
-    // Local hinge offset: left jamb at roughly (-0.45, 0, 0.04) in door-facing space
-    const float yawRad = glm::radians(spec.doorYawDegrees);
-    const glm::vec3 localHingeOffset(-0.45f, 0.0f, 0.04f);
-    const glm::vec3 hingeWorldPos = spec.rootPosition + glm::vec3(
-        localHingeOffset.x * std::cos(yawRad) - localHingeOffset.z * std::sin(yawRad),
-        0.0f,
-        localHingeOffset.x * std::sin(yawRad) + localHingeOffset.z * std::cos(yawRad)
-    );
-
-    // Center of door leaf is ~0.42m in the +X direction from hinge (in hinge-local space)
-    // This is the offset used for rotation animation
-    const glm::vec3 centerOffsetFromHinge(0.42f, 0.0f, 0.0f);
-
-    // Compute initial world position of door leaf center (for StaticCollider)
-    const glm::vec3 leafWorldCenter = hingeWorldPos + glm::vec3(
-        centerOffsetFromHinge.x * std::cos(yawRad),
-        0.0f,
-        centerOffsetFromHinge.x * std::sin(yawRad)
-    );
-
-    // Create the door leaf mesh entity at hinge position (RuntimeGameplay uses hinge + offset)
-    Mesh* leafMesh = builder.mesh(spec.doorMeshName);
-    auto leaf = builder.addMesh(leafMesh,
-        hingeWorldPos,
-        glm::vec3(0.21f),
-        glm::vec3(0.0f, spec.doorYawDegrees, 0.0f),
-        spec.doorTint,
-        spec.doorMaterialId);
-
-    if (leaf == entt::null) {
-        return entt::null;
-    }
-
-    auto& registry = builder.registry();
-
-    // Attach DoorLeafComponent for swing animation
-    DoorLeafComponent doorLeaf;
-    doorLeaf.hingePosition = hingeWorldPos;
-    doorLeaf.centerOffsetFromHinge = centerOffsetFromHinge;
-    doorLeaf.closedScale = glm::vec3(0.21f);
-    doorLeaf.colliderHalfExtents = glm::vec3(0.42f, 0.96f, 0.05f);
-    doorLeaf.closedYaw = spec.doorYawDegrees;
-    doorLeaf.openYaw = spec.doorYawDegrees - spec.openAngle;
-    registry.emplace<DoorLeafComponent>(leaf, doorLeaf);
-
-    // Attach ColliderComponent for physics blocking
-    ColliderComponent collider;
-    collider.shape = ColliderShape::Box;
-    collider.mode = ColliderMode::Solid;
-    collider.position = leafWorldCenter;
-    collider.rotation = glm::vec3(0.0f, spec.doorYawDegrees, 0.0f);
-    collider.halfExtents = glm::vec3(0.42f, 0.96f, 0.05f);
-    registry.emplace<ColliderComponent>(leaf, collider);
-
-    // Create the door root entity (interaction trigger point at handle height)
-    const glm::vec3 rootPos = spec.rootPosition + glm::vec3(0.0f, 1.0f, 0.0f);
-    auto doorRoot = builder.createTransformEntity(rootPos);
-
-    if (spec.locked) {
-        // Locked door: only InteractableComponent, no DoorComponent
-        registry.emplace<InteractableComponent>(doorRoot,
-            InteractableComponent{
-                spec.lockedPrompt,
-                "",
-                spec.interactDistance,
-                spec.interactDotThreshold,
-                true,
-                false
-            });
-    } else {
-        // Openable door
-        registry.emplace<DoorConfigComponent>(doorRoot,
-            DoorConfigComponent{
-                leaf,
-                entt::null,
-                spec.interactDistance,
-                spec.interactDotThreshold,
-                spec.openDuration,
-                spec.openAngle
-            });
-        registry.emplace<DoorStateComponent>(doorRoot, DoorStateComponent{});
-        registry.emplace<InteractableComponent>(doorRoot,
-            InteractableComponent{
-                "E  OPEN DOOR",
-                "OPENING DOOR",
-                spec.interactDistance,
-                spec.interactDotThreshold,
-                true,
-                false
-            });
-    }
-
-    return doorRoot;
-}
 
 entt::entity spawnGameplayPrefab(LevelBuilder& builder, const GameplayPrefabInstance& instance) {
     switch (instance.type) {
