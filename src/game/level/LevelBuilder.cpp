@@ -281,63 +281,69 @@ void LevelBuilder::attachInteractable(entt::entity entity, const InteractableDec
 }
 
 entt::entity LevelBuilder::addDoorGroup(const LevelDoorPlacement& group, const LevelDef& level) {
-    (void)level; // No child mesh lookup -- LevelDoorPlacement is self-contained
-
-    // Standard door leaf mesh and geometry parameters.
-    // All doors spawned via door_group use the same leaf mesh and hinge geometry.
-    static constexpr const char* kLeafMeshId = "door_leaf_left";
-    static const glm::vec3 kLeafScale(1.0f);
-    // Local hinge pivot on the door leaf mesh (left-side hinge in mesh space)
-    static const glm::vec3 kLeafPivot(-0.45f, 0.0f, 0.04f);
-
-    Mesh* leafMeshPtr = mesh(kLeafMeshId);
-    const glm::vec3 meshCenter = leafMeshPtr
-        ? (leafMeshPtr->aabbMin() + leafMeshPtr->aabbMax()) * 0.5f
-        : glm::vec3(0.0f);
-    const glm::mat4 leafModel = makePivotLeafModel(group.position, group.yawDegrees, group.yawDegrees,
-                                                    kLeafPivot, meshCenter, kLeafScale);
-
-    // Spawn the leaf mesh entity
-    auto leafEntity = addMesh(kLeafMeshId,
-        group.position,
-        kLeafScale,
-        glm::vec3(0.0f, group.yawDegrees, 0.0f),
-        std::nullopt,
-        std::string("wood_default"));
-
-    if (leafEntity == entt::null) {
-        spdlog::warn("LevelBuilder::addDoorGroup: failed to spawn leaf mesh for door group '{}'", group.name);
-        return entt::null;
-    }
-
     auto& reg = context_.registry;
 
-    // Override the model matrix for correct pivot-based rendering
-    if (auto* meshComp = reg.try_get<MeshComponent>(leafEntity)) {
-        meshComp->modelOverride = leafModel;
-        meshComp->useModelOverride = true;
+    // Spawn child meshes that belong to this door group from the scene definition.
+    // LevelLoader skips these in the normal mesh loop, so we must spawn them here.
+    entt::entity leafEntity = entt::null;
+    for (const auto& m : level.meshes) {
+        if (m.parentNodeId != group.nodeId) continue;
+
+        auto entity = addMesh(m.meshId, m.position, m.scale, m.rotation, m.tint,
+                              m.materialId.empty() ? std::optional<std::string>{}
+                                                   : std::optional<std::string>{m.materialId});
+        if (entity == entt::null) continue;
+
+        if (!m.nodeId.empty()) {
+            attachNodeId(entity, m.nodeId);
+        }
+
+        // The child mesh with a pivot is the door leaf (animatable panel)
+        if (m.pivot.has_value()) {
+            leafEntity = entity;
+            const glm::vec3 leafPivot = *m.pivot;
+
+            Mesh* leafMeshPtr = mesh(m.meshId);
+            const glm::vec3 meshCenter = leafMeshPtr
+                ? (leafMeshPtr->aabbMin() + leafMeshPtr->aabbMax()) * 0.5f
+                : glm::vec3(0.0f);
+            const glm::mat4 leafModel = makePivotLeafModel(
+                m.position, group.yawDegrees, group.yawDegrees,
+                leafPivot, meshCenter, m.scale);
+
+            // Override model matrix for pivot-based rendering
+            if (auto* meshComp = reg.try_get<MeshComponent>(entity)) {
+                meshComp->modelOverride = leafModel;
+                meshComp->useModelOverride = true;
+            }
+
+            // Attach ColliderComponent for physics
+            const glm::vec3 leafCenter = glm::vec3(leafModel * glm::vec4(0.0f, 0.0f, 0.0f, 1.0f));
+            ColliderComponent collider;
+            collider.shape = ColliderShape::Box;
+            collider.mode = ColliderMode::Solid;
+            collider.position = leafCenter;
+            collider.rotation = glm::vec3(0.0f, group.yawDegrees, 0.0f);
+            collider.halfExtents = glm::vec3(std::abs(leafPivot.x), 1.01f, 0.05f);
+            reg.emplace<ColliderComponent>(entity, collider);
+
+            // Attach DoorLeafComponent for swing animation
+            DoorLeafComponent doorLeaf;
+            doorLeaf.basePosition = m.position;
+            doorLeaf.pivot = leafPivot;
+            doorLeaf.meshCenter = meshCenter;
+            doorLeaf.closedScale = m.scale;
+            doorLeaf.colliderHalfExtents = glm::vec3(std::abs(leafPivot.x), 1.01f, 0.05f);
+            doorLeaf.closedYaw = group.yawDegrees;
+            doorLeaf.openYaw = group.yawDegrees - group.openAngle;
+            reg.emplace<DoorLeafComponent>(entity, doorLeaf);
+        }
     }
 
-    // Attach ColliderComponent for physics and DoorAnimationSystem
-    const glm::vec3 leafCenter = glm::vec3(leafModel * glm::vec4(0.0f, 0.0f, 0.0f, 1.0f));
-    ColliderComponent collider;
-    collider.shape = ColliderShape::Box;
-    collider.mode = ColliderMode::Solid;
-    collider.position = leafCenter;
-    collider.rotation = glm::vec3(0.0f, group.yawDegrees, 0.0f);
-    collider.halfExtents = glm::vec3(0.445f, 1.01f, 0.05f);
-    reg.emplace<ColliderComponent>(leafEntity, collider);
-
-    // Attach DoorLeafComponent for swing animation
-    DoorLeafComponent doorLeaf;
-    doorLeaf.basePosition = group.position;
-    doorLeaf.pivot = kLeafPivot;
-    doorLeaf.meshCenter = meshCenter;
-    doorLeaf.closedScale = kLeafScale;
-    doorLeaf.colliderHalfExtents = glm::vec3(std::abs(kLeafPivot.x), 1.01f, 0.05f);
-    doorLeaf.closedYaw = group.yawDegrees;
-    doorLeaf.openYaw = group.yawDegrees - group.openAngle;
-    reg.emplace<DoorLeafComponent>(leafEntity, doorLeaf);
+    if (leafEntity == entt::null) {
+        spdlog::warn("LevelBuilder::addDoorGroup: no leaf mesh (with pivot) found for door group '{}'", group.name);
+        return entt::null;
+    }
 
     // Create door root entity with DoorConfigComponent + DoorStateComponent + InteractableComponent
     auto doorRoot = createTransformEntity(group.position + glm::vec3(0.0f, 1.0f, 0.0f));

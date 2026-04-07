@@ -54,6 +54,7 @@ struct LevelMeshPlacement {
     std::string parentNodeId;
     std::string materialId;
     std::optional<glm::vec3> tint;
+    std::optional<glm::vec3> pivot;   // hinge pivot for door leaf meshes
     std::vector<BehaviorDeclaration> behaviors;
     std::optional<InteractableDeclaration> interactable;
 };
