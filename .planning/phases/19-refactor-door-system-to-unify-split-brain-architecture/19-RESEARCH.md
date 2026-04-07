@@ -173,8 +173,10 @@ struct DoorStateComponent {
     float progress = 0.0f;         // 0=closed, 1=open
     DoorTargetState targetState = DoorTargetState::Closed;
 };
-// derived helpers: bool isOpening() const { return targetState == Open && progress < 1.0f; }
-//                  bool isOpened() const  { return targetState == Open && progress >= 1.0f; }
+// Free-function helpers (POD rule: no methods on components per CLAUDE.md):
+// inline bool isDoorFullyClosed(const DoorStateComponent& s);
+// inline bool isDoorFullyOpen(const DoorStateComponent& s);
+// inline bool isDoorMoving(const DoorStateComponent& s);
 ```
 
 **`src/game/level/LevelDef.h`** — Replace `LevelDoorGroupPlacement` struct (lines 111-123) and `LevelDef::doors` field. New struct must include all fields from current struct. **Keep `door_group` keyword** (see Scene File Syntax section below).
@@ -304,7 +306,7 @@ Current EditorPreviewWorld DoorGroup case (lines 247-256) creates a minimal enti
 ### Pitfall 5: Bidirectional Progress — InteractableComponent enabled Logic
 
 Current `DoorAnimationSystem::update()` sets `interactable->enabled = !door.opened` (line 107). After bidirectional animation, "opened" is no longer a simple bool. If the door is traveling toward closed at progress=0.5, is it "openable"? The correct logic: `enabled = (targetState == Closed && progress <= 0.0f)` i.e., only interactable when fully closed.
-**Prevention:** Define helper methods on DoorStateComponent: `isFullyClosed()`, `isFullyOpen()`. Use these in DoorAnimationSystem and BehaviorSystem.
+**Prevention:** Define free-function helpers for DoorStateComponent: `isDoorFullyClosed()`, `isDoorFullyOpen()`. Use these in DoorAnimationSystem and BehaviorSystem. (Per CLAUDE.md POD rule, these are free functions, not member methods.)
 
 ### Pitfall 6: ContentRegistry double_door.prefab Load
 
@@ -370,22 +372,25 @@ This phase is C++ source refactoring with no new external dependencies. All requ
 
 ---
 
-## Open Questions
+## Open Questions (RESOLVED)
 
 1. **DoorAnimationSystem + Application coupling**
    - What we know: `DoorAnimationSystem::update(Application& app, float)` requires an `Application&`. `RuntimeGameSession::tick()` would need to pass itself as Application.
    - What's unclear: Does RuntimeGameSession inherit from Application or just aggregate it?
    - Recommendation: Check `RuntimeGameSession.h` class declaration. If it doesn't inherit Application, extract the core tick logic into `tickDoorAnimation(entt::registry&, float)` and have DoorAnimationSystem::update() call it.
+   - **RESOLVED:** RuntimeGameSession does NOT inherit Application. Plan 02 extracts `tickDoorAnimation(entt::registry&, float)` as a free function in DoorAnimationSystem.h. DoorAnimationSystem::update() delegates to it. RuntimeGameSession calls the free function directly.
 
 2. **DoorActionParams after refactor**
    - What we know: `DoorActionParams { float duration }` is used in BehaviorSystem OpenDoor/ToggleDoor to override openDuration. After DoorConfigComponent owns openDuration, the action-level override is redundant.
    - What's unclear: Should openDuration remain overridable per-action, or should BehaviorSystem just use DoorConfigComponent.openDuration?
    - Recommendation: Remove the override behavior — DoorConfigComponent.openDuration is the authoritative value. Simpler and consistent. Keep DoorActionParams struct as empty or remove it if nothing else uses it.
+   - **RESOLVED:** Plan 02 BehaviorSystem reads openDuration from DoorConfigComponent exclusively. DoorActionParams duration field is no longer used for door actions. Struct kept for backward compatibility but duration is ignored.
 
 3. **openAngle field in new struct vs DoorLeafComponent**
    - What we know: `LevelDoorGroupPlacement.openAngle` is used in `LevelBuilder::addDoorGroup()` to compute `doorLeaf.openYaw = group.yawDegrees - group.openAngle`. The open angle is baked into DoorLeafComponent at spawn time.
    - What's unclear: D-07 lists openAngle in DoorConfigComponent. But DoorLeafComponent already encodes openYaw. Is openAngle in DoorConfigComponent redundant with what's already in DoorLeafComponent?
    - Recommendation: Keep openAngle in DoorConfigComponent for inspector display and re-spawn scenarios, but DoorAnimationSystem reads openYaw from DoorLeafComponent. Both fields needed for different purposes.
+   - **RESOLVED:** Plan 01 includes openAngle in DoorConfigComponent per D-07 for inspector display. DoorAnimationSystem reads openYaw from DoorLeafComponent (baked at spawn by LevelBuilder). Both fields serve different purposes and are kept.
 
 ---
 
