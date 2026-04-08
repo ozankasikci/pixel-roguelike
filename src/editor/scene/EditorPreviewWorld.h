@@ -10,6 +10,7 @@
 #include <vector>
 
 class ContentRegistry;
+class LevelBuilder;
 class MaterialTextureLibrary;
 
 struct EditorObjectBounds {
@@ -27,6 +28,10 @@ public:
     EditorPreviewWorld();
 
     void rebuild(const EditorSceneDocument& document, const ContentRegistry& content);
+    void addObjects(const std::vector<std::uint64_t>& objectIds,
+                    const EditorSceneDocument& document,
+                    const ContentRegistry& content);
+    void removeObjects(const std::vector<std::uint64_t>& objectIds);
     void syncMaterials(const EditorSceneDocument& document, const ContentRegistry& content);
     void syncLights(const EditorSceneDocument& document);
     void syncTransforms(const EditorSceneDocument& document);
@@ -46,10 +51,16 @@ private:
     void clearEntities();
     void rebuildBounds();
 
+    void spawnObject(const EditorSceneObject& object,
+                     const EditorSceneDocument& document,
+                     const ContentRegistry& content,
+                     LevelBuilder& builder);
+
     entt::registry registry_;
     MeshLibrary meshLibrary_;
     std::vector<entt::entity> entities_;
     std::unordered_map<entt::entity, std::uint64_t> ownerMap_;
+    std::unordered_map<std::uint64_t, std::vector<entt::entity>> objectEntities_;
     std::unordered_map<std::uint64_t, EditorObjectBounds> objectBounds_;
     EditorObjectBounds sceneBounds_;
 };

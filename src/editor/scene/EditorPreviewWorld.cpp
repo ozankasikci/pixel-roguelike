@@ -137,9 +137,151 @@ void EditorPreviewWorld::reloadMeshAssets() {
     registerDiscoveredMeshAssets(meshLibrary_);
 }
 
+void EditorPreviewWorld::spawnObject(const EditorSceneObject& object,
+                                      const EditorSceneDocument& document,
+                                      const ContentRegistry& content,
+                                      LevelBuilder& builder) {
+    switch (object.kind) {
+    case EditorSceneObjectKind::Mesh: {
+        auto placement = std::get<LevelMeshPlacement>(object.payload);
+        glm::vec3 position(0.0f), rotation(0.0f), scale(1.0f);
+        if (decomposeTransformMatrix(document.worldTransformMatrix(object.id), position, rotation, scale)) {
+            placement.position = position;
+            placement.rotation = rotation;
+            placement.scale = scale;
+        }
+        auto meshEntity = builder.addMesh(placement.meshId,
+                        placement.position,
+                        placement.scale,
+                        placement.rotation,
+                        placement.tint,
+                        placement.materialId.empty()
+                            ? std::optional<std::string>{}
+                            : std::optional<std::string>{placement.materialId});
+
+        // Door leaf meshes have a pivot — apply the same model override that
+        // spawnDoorGroup uses at runtime so edit and play views match exactly.
+        if (placement.pivot.has_value() && meshEntity != entt::null) {
+            // Find the parent door group's world position and yaw.
+            std::uint64_t parentId = document.parentObjectId(object.id);
+            const EditorSceneObject* parentObj = parentId ? document.findObject(parentId) : nullptr;
+            if (parentObj && parentObj->kind == EditorSceneObjectKind::DoorGroup) {
+                const auto& dg = std::get<LevelDoorPlacement>(parentObj->payload);
+                glm::vec3 groupPos(0.0f), groupRot(0.0f), groupScale(1.0f);
+                decomposeTransformMatrix(document.worldTransformMatrix(parentId),
+                                         groupPos, groupRot, groupScale);
+
+                Mesh* leafMeshPtr = builder.mesh(placement.meshId);
+                const glm::vec3 meshCenter = leafMeshPtr
+                    ? (leafMeshPtr->aabbMin() + leafMeshPtr->aabbMax()) * 0.5f
+                    : glm::vec3(0.0f);
+
+                const glm::mat4 leafModel = makePivotLeafModel(
+                    groupPos, dg.yawDegrees, dg.yawDegrees,
+                    *placement.pivot, meshCenter, placement.scale);
+
+                if (auto* meshComp = registry_.try_get<MeshComponent>(meshEntity)) {
+                    meshComp->modelOverride = leafModel;
+                    meshComp->useModelOverride = true;
+                }
+            }
+        }
+        break;
+    }
+    case EditorSceneObjectKind::Light: {
+        const auto& placement = std::get<LevelLightPlacement>(object.payload);
+        builder.addLight(placement.position,
+                         placement.color,
+                         placement.radius,
+                         placement.intensity,
+                         placement.type,
+                         placement.direction,
+                         placement.innerConeDegrees,
+                         placement.outerConeDegrees,
+                         placement.castsShadows);
+        break;
+    }
+    case EditorSceneObjectKind::Collider: {
+        auto placement = std::get<LevelColliderPlacement>(object.payload);
+        glm::vec3 position(0.0f), rotation(0.0f), scale(1.0f);
+        if (decomposeTransformMatrix(document.worldTransformMatrix(object.id), position, rotation, scale)) {
+            placement.position = position;
+            placement.rotation = rotation;
+            if (placement.shape == ColliderShape::Box) {
+                placement.halfExtents = glm::max(scale * 0.5f, glm::vec3(0.001f));
+            } else {
+                placement.radius = std::max(0.001f, (std::abs(scale.x) + std::abs(scale.z)) * 0.25f);
+                placement.halfHeight = std::max(0.001f, std::abs(scale.y) * 0.5f);
+            }
+        }
+        builder.addCollider(placement);
+        break;
+    }
+    case EditorSceneObjectKind::ReflectionProbe: {
+        auto placement = std::get<LevelReflectionProbePlacement>(object.payload);
+        glm::vec3 position(0.0f), rotation(0.0f), scale(1.0f);
+        if (decomposeTransformMatrix(document.worldTransformMatrix(object.id), position, rotation, scale)) {
+            (void)rotation;
+            placement.position = position;
+            placement.extents = glm::max(scale * 0.5f, glm::vec3(0.05f));
+        }
+        builder.addReflectionProbe(placement.position,
+                                   placement.extents,
+                                   placement.blendDistance,
+                                   placement.intensity,
+                                   placement.boxProjection);
+        break;
+    }
+    case EditorSceneObjectKind::PlayerSpawn:
+        break;
+    case EditorSceneObjectKind::Group:
+        break;
+    case EditorSceneObjectKind::DoorGroup: {
+        // Create a transform entity with DoorConfig/DoorState for DoorAnimationSystem
+        // to tick during editor play preview. Do NOT call addDoorGroup — that spawns
+        // a hardcoded door_leaf_left mesh, but the scene's child mesh objects already
+        // provide the actual door visuals (SM_DoorA, SM_FrameA, etc.).
+        const auto& dg = std::get<LevelDoorPlacement>(object.payload);
+        glm::vec3 position(0.0f), rotation(0.0f), scale(1.0f);
+        if (decomposeTransformMatrix(document.worldTransformMatrix(object.id),
+                                     position, rotation, scale)) {
+        }
+        auto doorRoot = builder.createTransformEntity(
+            position + glm::vec3(0.0f, 1.0f, 0.0f));
+        if (!dg.locked) {
+            DoorConfigComponent config;
+            config.interactDistance = dg.interactDistance;
+            config.interactDotThreshold = dg.interactDotThreshold;
+            config.openDuration = dg.openDuration;
+            config.openAngle = dg.openAngle;
+            config.locked = dg.locked;
+            config.lockedPrompt = dg.lockedPrompt;
+            registry_.emplace<DoorConfigComponent>(doorRoot, config);
+            registry_.emplace<DoorStateComponent>(doorRoot);
+        }
+        break;
+    }
+    case EditorSceneObjectKind::Archetype: {
+        auto placement = std::get<LevelArchetypePlacement>(object.payload);
+        glm::vec3 position(0.0f), rotation(0.0f), scale(1.0f);
+        if (decomposeTransformMatrix(document.worldTransformMatrix(object.id), position, rotation, scale)) {
+            placement.position = position;
+            placement.yawDegrees = rotation.y;
+        }
+        if (const auto* archetype = content.findArchetype(placement.archetypeId)) {
+            (void)spawnGameplayPrefab(
+                builder,
+                instantiateGameplayArchetype(*archetype, placement.position, placement.yawDegrees));
+        }
+        break;
+    }
+    }
+}
+
 void EditorPreviewWorld::rebuild(const EditorSceneDocument& document, const ContentRegistry& content) {
     clearEntities();
     ownerMap_.clear();
+    objectEntities_.clear();
     objectBounds_.clear();
     sceneBounds_ = EditorObjectBounds{};
 
@@ -157,148 +299,72 @@ void EditorPreviewWorld::rebuild(const EditorSceneDocument& document, const Cont
     for (const auto& object : document.objects()) {
         const std::size_t previousCount = entities_.size();
 
-        switch (object.kind) {
-        case EditorSceneObjectKind::Mesh: {
-            auto placement = std::get<LevelMeshPlacement>(object.payload);
-            glm::vec3 position(0.0f), rotation(0.0f), scale(1.0f);
-            if (decomposeTransformMatrix(document.worldTransformMatrix(object.id), position, rotation, scale)) {
-                placement.position = position;
-                placement.rotation = rotation;
-                placement.scale = scale;
-            }
-            auto meshEntity = builder.addMesh(placement.meshId,
-                            placement.position,
-                            placement.scale,
-                            placement.rotation,
-                            placement.tint,
-                            placement.materialId.empty()
-                                ? std::optional<std::string>{}
-                                : std::optional<std::string>{placement.materialId});
-
-            // Door leaf meshes have a pivot — apply the same model override that
-            // spawnDoorGroup uses at runtime so edit and play views match exactly.
-            if (placement.pivot.has_value() && meshEntity != entt::null) {
-                // Find the parent door group's world position and yaw.
-                std::uint64_t parentId = document.parentObjectId(object.id);
-                const EditorSceneObject* parentObj = parentId ? document.findObject(parentId) : nullptr;
-                if (parentObj && parentObj->kind == EditorSceneObjectKind::DoorGroup) {
-                    const auto& dg = std::get<LevelDoorPlacement>(parentObj->payload);
-                    glm::vec3 groupPos(0.0f), groupRot(0.0f), groupScale(1.0f);
-                    decomposeTransformMatrix(document.worldTransformMatrix(parentId),
-                                             groupPos, groupRot, groupScale);
-
-                    Mesh* leafMeshPtr = builder.mesh(placement.meshId);
-                    const glm::vec3 meshCenter = leafMeshPtr
-                        ? (leafMeshPtr->aabbMin() + leafMeshPtr->aabbMax()) * 0.5f
-                        : glm::vec3(0.0f);
-
-                    const glm::mat4 leafModel = makePivotLeafModel(
-                        groupPos, dg.yawDegrees, dg.yawDegrees,
-                        *placement.pivot, meshCenter, placement.scale);
-
-                    if (auto* meshComp = registry_.try_get<MeshComponent>(meshEntity)) {
-                        meshComp->modelOverride = leafModel;
-                        meshComp->useModelOverride = true;
-                    }
-                }
-            }
-            break;
-        }
-        case EditorSceneObjectKind::Light: {
-            const auto& placement = std::get<LevelLightPlacement>(object.payload);
-            builder.addLight(placement.position,
-                             placement.color,
-                             placement.radius,
-                             placement.intensity,
-                             placement.type,
-                             placement.direction,
-                             placement.innerConeDegrees,
-                             placement.outerConeDegrees,
-                             placement.castsShadows);
-            break;
-        }
-        case EditorSceneObjectKind::Collider: {
-            auto placement = std::get<LevelColliderPlacement>(object.payload);
-            glm::vec3 position(0.0f), rotation(0.0f), scale(1.0f);
-            if (decomposeTransformMatrix(document.worldTransformMatrix(object.id), position, rotation, scale)) {
-                placement.position = position;
-                placement.rotation = rotation;
-                if (placement.shape == ColliderShape::Box) {
-                    placement.halfExtents = glm::max(scale * 0.5f, glm::vec3(0.001f));
-                } else {
-                    placement.radius = std::max(0.001f, (std::abs(scale.x) + std::abs(scale.z)) * 0.25f);
-                    placement.halfHeight = std::max(0.001f, std::abs(scale.y) * 0.5f);
-                }
-            }
-            builder.addCollider(placement);
-            break;
-        }
-        case EditorSceneObjectKind::ReflectionProbe: {
-            auto placement = std::get<LevelReflectionProbePlacement>(object.payload);
-            glm::vec3 position(0.0f), rotation(0.0f), scale(1.0f);
-            if (decomposeTransformMatrix(document.worldTransformMatrix(object.id), position, rotation, scale)) {
-                (void)rotation;
-                placement.position = position;
-                placement.extents = glm::max(scale * 0.5f, glm::vec3(0.05f));
-            }
-            builder.addReflectionProbe(placement.position,
-                                       placement.extents,
-                                       placement.blendDistance,
-                                       placement.intensity,
-                                       placement.boxProjection);
-            break;
-        }
-        case EditorSceneObjectKind::PlayerSpawn:
-            break;
-        case EditorSceneObjectKind::Group:
-            break;
-        case EditorSceneObjectKind::DoorGroup: {
-            // Create a transform entity with DoorConfig/DoorState for DoorAnimationSystem
-            // to tick during editor play preview. Do NOT call addDoorGroup — that spawns
-            // a hardcoded door_leaf_left mesh, but the scene's child mesh objects already
-            // provide the actual door visuals (SM_DoorA, SM_FrameA, etc.).
-            const auto& dg = std::get<LevelDoorPlacement>(object.payload);
-            glm::vec3 position(0.0f), rotation(0.0f), scale(1.0f);
-            if (decomposeTransformMatrix(document.worldTransformMatrix(object.id),
-                                         position, rotation, scale)) {
-            }
-            auto doorRoot = builder.createTransformEntity(
-                position + glm::vec3(0.0f, 1.0f, 0.0f));
-            if (!dg.locked) {
-                DoorConfigComponent config;
-                config.interactDistance = dg.interactDistance;
-                config.interactDotThreshold = dg.interactDotThreshold;
-                config.openDuration = dg.openDuration;
-                config.openAngle = dg.openAngle;
-                config.locked = dg.locked;
-                config.lockedPrompt = dg.lockedPrompt;
-                registry_.emplace<DoorConfigComponent>(doorRoot, config);
-                registry_.emplace<DoorStateComponent>(doorRoot);
-            }
-            break;
-        }
-        case EditorSceneObjectKind::Archetype: {
-            auto placement = std::get<LevelArchetypePlacement>(object.payload);
-            glm::vec3 position(0.0f), rotation(0.0f), scale(1.0f);
-            if (decomposeTransformMatrix(document.worldTransformMatrix(object.id), position, rotation, scale)) {
-                placement.position = position;
-                placement.yawDegrees = rotation.y;
-            }
-            if (const auto* archetype = content.findArchetype(placement.archetypeId)) {
-                (void)spawnGameplayPrefab(
-                    builder,
-                    instantiateGameplayArchetype(*archetype, placement.position, placement.yawDegrees));
-            }
-            break;
-        }
-        }
+        spawnObject(object, document, content, builder);
 
         for (std::size_t index = previousCount; index < entities_.size(); ++index) {
             ownerMap_[entities_[index]] = object.id;
+            objectEntities_[object.id].push_back(entities_[index]);
         }
     }
 
     rebuildBounds();
+}
+
+void EditorPreviewWorld::addObjects(const std::vector<std::uint64_t>& objectIds,
+                                     const EditorSceneDocument& document,
+                                     const ContentRegistry& content) {
+    LevelBuildContext context{
+        .registry = registry_,
+        .meshLibrary = meshLibrary_,
+        .entities = entities_,
+    };
+    LevelBuilder builder(context);
+
+    for (const std::uint64_t objectId : objectIds) {
+        const EditorSceneObject* object = document.findObject(objectId);
+        if (object == nullptr) {
+            continue;
+        }
+        const std::size_t previousCount = entities_.size();
+
+        spawnObject(*object, document, content, builder);
+
+        for (std::size_t index = previousCount; index < entities_.size(); ++index) {
+            ownerMap_[entities_[index]] = objectId;
+            objectEntities_[objectId].push_back(entities_[index]);
+        }
+    }
+
+    rebuildBounds();
+}
+
+void EditorPreviewWorld::removeObjects(const std::vector<std::uint64_t>& objectIds) {
+    for (const std::uint64_t objectId : objectIds) {
+        auto entitiesIt = objectEntities_.find(objectId);
+        if (entitiesIt == objectEntities_.end()) {
+            continue;
+        }
+
+        for (entt::entity entity : entitiesIt->second) {
+            ownerMap_.erase(entity);
+            auto entityIt = std::find(entities_.begin(), entities_.end(), entity);
+            if (entityIt != entities_.end()) {
+                entities_.erase(entityIt);
+            }
+            if (registry_.valid(entity)) {
+                registry_.destroy(entity);
+            }
+        }
+
+        objectEntities_.erase(entitiesIt);
+        objectBounds_.erase(objectId);
+    }
+
+    // Recompute scene bounds from remaining objectBounds_ entries
+    sceneBounds_ = EditorObjectBounds{};
+    for (const auto& [id, bounds] : objectBounds_) {
+        sceneBounds_.expand(bounds);
+    }
 }
 
 void EditorPreviewWorld::syncMaterials(const EditorSceneDocument& document,
@@ -445,6 +511,7 @@ void EditorPreviewWorld::clearEntities() {
         }
     }
     entities_.clear();
+    objectEntities_.clear();
 
     auto& ctx = registry_.ctx();
     if (ctx.contains<MeshAssetProvider>()) {
