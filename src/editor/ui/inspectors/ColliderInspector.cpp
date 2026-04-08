@@ -44,6 +44,18 @@ void drawColliderInspector(LevelColliderPlacement& collider,
         commandStack.pushDocumentStateCommand("Change Collider Mode", before, document.captureState(), document);
     }
 
+    // Kinematic checkbox (only meaningful for Solid or SolidAndTrigger modes)
+    if (collider.mode != ColliderMode::Trigger) {
+        auto kinBefore = document.captureState();
+        if (ImGui::Checkbox("Kinematic", &collider.kinematic)) {
+            document.markSceneDirty();
+            commandStack.pushDocumentStateCommand("Toggle Kinematic", kinBefore, document.captureState(), document);
+        }
+        if (ImGui::IsItemHovered()) {
+            ImGui::SetTooltip("When enabled, this collider follows its parent mesh transform (e.g. door leaves)");
+        }
+    }
+
     // Position + Rotation
     drawTransformSection(collider.position, collider.rotation,
                          "Position", "Rotation",
