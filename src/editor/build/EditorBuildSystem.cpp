@@ -1,4 +1,5 @@
 #include "editor/build/EditorBuildSystem.h"
+#include "engine/core/PathUtils.h"
 
 #ifndef _WIN32
 #include <fcntl.h>
@@ -106,6 +107,10 @@ static void spawnProcess(EditorBuildState& state, std::vector<std::string> argSt
     if (pid == 0) {
         // --- Child process ---
         setpgid(0, 0);  // New process group so SIGTERM reaches all subprocesses (D-14)
+        // Ensure cmake runs from the project root so relative paths (build dir, assets) work
+        if (chdir(resolveProjectPath(".").c_str()) != 0) {
+            _exit(1);
+        }
         dup2(pipefd[1], STDOUT_FILENO);
         dup2(pipefd[1], STDERR_FILENO);
         close(pipefd[0]);
@@ -309,7 +314,7 @@ void launchGame(const EditorBuildConfig& config, const std::string& scenePath) {
 #endif // _WIN32
 
 // ---------------------------------------------------------------------------
-// collectUsedAssets
+// collectUsedAssets (with optional scene filter)
 // ---------------------------------------------------------------------------
 
 namespace fs = std::filesystem;
@@ -339,12 +344,25 @@ static std::vector<fs::path> findFiles(const fs::path& dir, const std::string& e
     return result;
 }
 
-AssetManifest collectUsedAssets() {
+// ---------------------------------------------------------------------------
+// listBuildableScenes
+// ---------------------------------------------------------------------------
+
+std::vector<std::string> listBuildableScenes() {
+    std::vector<std::string> scenes;
+    for (const auto& path : findFiles(resolveProjectPath("assets/scenes"), ".scene")) {
+        scenes.push_back(path.filename().string());
+    }
+    std::sort(scenes.begin(), scenes.end());
+    return scenes;
+}
+
+AssetManifest collectUsedAssets(const std::vector<std::string>& sceneFilter) {
     AssetManifest manifest;
     std::set<std::string> neededMeshIds;
 
     // 1. Collect texture paths from material files
-    for (const auto& matFile : findFiles("assets/materials", ".material")) {
+    for (const auto& matFile : findFiles(resolveProjectPath("assets/materials"), ".material")) {
         std::ifstream in(matFile);
         std::string line;
         while (std::getline(in, line)) {
@@ -361,7 +379,7 @@ AssetManifest collectUsedAssets() {
     }
 
     // 2. Collect sky/cloud asset paths from environment files
-    auto envDirs = {"assets/defs/environments", "assets/environments"};
+    std::vector<std::string> envDirs = {resolveProjectPath("assets/defs/environments"), resolveProjectPath("assets/environments")};
     for (const auto& dir : envDirs) {
         for (const auto& envFile : findFiles(dir, ".environment")) {
             std::ifstream in(envFile);
@@ -391,8 +409,14 @@ AssetManifest collectUsedAssets() {
         }
     }
 
-    // 3. Collect mesh IDs from scene files
-    for (const auto& sceneFile : findFiles("assets/scenes", ".scene")) {
+    // 3. Collect mesh IDs from scene files (filtered if sceneFilter is non-empty)
+    for (const auto& sceneFile : findFiles(resolveProjectPath("assets/scenes"), ".scene")) {
+        if (!sceneFilter.empty()) {
+            const std::string filename = sceneFile.filename().string();
+            if (std::find(sceneFilter.begin(), sceneFilter.end(), filename) == sceneFilter.end()) {
+                continue;
+            }
+        }
         std::ifstream in(sceneFile);
         std::string line;
         while (std::getline(in, line)) {
@@ -408,7 +432,7 @@ AssetManifest collectUsedAssets() {
     }
 
     // 4. Collect mesh IDs from prefab files
-    for (const auto& prefabFile : findFiles("assets/prefabs", ".prefab", true)) {
+    for (const auto& prefabFile : findFiles(resolveProjectPath("assets/prefabs"), ".prefab", true)) {
         std::ifstream in(prefabFile);
         std::string line;
         while (std::getline(in, line)) {
@@ -426,7 +450,7 @@ AssetManifest collectUsedAssets() {
     // 5. Collect mesh IDs from def files (.weapon, .enemy, .item, .skill)
     auto defExts = {".weapon", ".enemy", ".item", ".skill"};
     for (const auto& ext : defExts) {
-        for (const auto& defFile : findFiles("assets/defs", ext, true)) {
+        for (const auto& defFile : findFiles(resolveProjectPath("assets/defs"), ext, true)) {
             std::ifstream in(defFile);
             std::string line;
             while (std::getline(in, line)) {
@@ -443,8 +467,9 @@ AssetManifest collectUsedAssets() {
     }
 
     // 6. Resolve mesh IDs to file paths using ModelLoader
-    auto meshesDiscovered = ModelLoader::discoverProjectAssets("assets/meshes", fs::current_path());
-    auto packsDiscovered = ModelLoader::discoverProjectAssets("assets/packs", fs::current_path());
+    fs::path projectDir = resolveProjectPath(".");
+    auto meshesDiscovered = ModelLoader::discoverProjectAssets(resolveProjectPath("assets/meshes"), projectDir);
+    auto packsDiscovered = ModelLoader::discoverProjectAssets(resolveProjectPath("assets/packs"), projectDir);
 
     // Merge both lists
     std::vector<DiscoveredModelAsset> allAssets;
@@ -525,10 +550,9 @@ bool packageGame(const EditorBuildConfig& config, const std::string& outputDir,
     fs::create_directories(outAssets, ec);
 
     // --- Always-copy directories (small, all needed) ---
-    auto alwaysCopyDirs = {"shaders", "defs", "prefabs", "materials", "scenes", "fonts",
-                           "environments"};
+    auto alwaysCopyDirs = {"shaders", "defs", "prefabs", "materials", "fonts", "environments"};
     for (const auto& subdir : alwaysCopyDirs) {
-        fs::path src = fs::path("assets") / subdir;
+        fs::path src = fs::path(resolveProjectPath("assets")) / subdir;
         fs::path dst = outAssets / subdir;
         if (fs::exists(src, ec)) {
             fs::copy(src, dst, fs::copy_options::recursive | fs::copy_options::overwrite_existing,
@@ -543,13 +567,46 @@ bool packageGame(const EditorBuildConfig& config, const std::string& outputDir,
     }
 
     // --- Copy project.cfg if it exists ---
-    if (fs::exists("assets/project.cfg", ec)) {
-        fs::copy_file("assets/project.cfg", outAssets / "project.cfg",
-                      fs::copy_options::overwrite_existing, ec);
+    {
+        std::string cfgPath = resolveProjectPath("assets/project.cfg");
+        if (fs::exists(cfgPath, ec)) {
+            fs::copy_file(cfgPath, outAssets / "project.cfg",
+                          fs::copy_options::overwrite_existing, ec);
+        }
+    }
+
+    // --- Copy scenes selectively ---
+    {
+        auto allScenes = listBuildableScenes();
+        const std::vector<std::string>& scenesToCopy =
+            config.buildScenes.empty() ? allScenes : config.buildScenes;
+
+        int includedCount = static_cast<int>(scenesToCopy.size());
+        int totalCount    = static_cast<int>(allScenes.size());
+
+        if (includedCount == 0) {
+            log.addLine("Package: warning — no scenes selected, package will contain no scenes",
+                        BuildLineKind::Warning);
+        } else {
+            char sceneMsg[128];
+            std::snprintf(sceneMsg, sizeof(sceneMsg), "Package: including %d of %d scenes",
+                          includedCount, totalCount);
+            log.addLine(sceneMsg, BuildLineKind::Normal);
+        }
+
+        fs::path scenesOut = outAssets / "scenes";
+        fs::create_directories(scenesOut, ec);
+        for (const auto& sceneName : scenesToCopy) {
+            fs::path src = fs::path(resolveProjectPath("assets/scenes")) / sceneName;
+            if (fs::exists(src, ec)) {
+                fs::copy_file(src, scenesOut / sceneName,
+                              fs::copy_options::overwrite_existing, ec);
+            }
+        }
     }
 
     // --- Collect and copy referenced assets ---
-    AssetManifest manifest = collectUsedAssets();
+    AssetManifest manifest = collectUsedAssets(config.buildScenes);
 
     int fileCount = 0;
     uintmax_t totalBytes = 0;
@@ -558,10 +615,11 @@ bool packageGame(const EditorBuildConfig& config, const std::string& outputDir,
         try {
             fs::path dest = fs::path(outputDir) / relPath;
             fs::create_directories(dest.parent_path(), ec);
-            if (fs::exists(relPath)) {
-                fs::copy_file(relPath, dest, fs::copy_options::overwrite_existing, ec);
+            std::string absPath = resolveProjectPath(relPath);
+            if (fs::exists(absPath)) {
+                fs::copy_file(absPath, dest, fs::copy_options::overwrite_existing, ec);
                 if (!ec) {
-                    totalBytes += fs::file_size(relPath);
+                    totalBytes += fs::file_size(absPath);
                     ++fileCount;
                 } else {
                     std::string msg =
@@ -617,7 +675,7 @@ bool packageGame(const EditorBuildConfig& config, const std::string& outputDir,
 // ---------------------------------------------------------------------------
 
 bool needsConfigure(const EditorBuildConfig& config) {
-    return !std::filesystem::exists(config.buildDir + "/CMakeCache.txt");
+    return !std::filesystem::exists(resolveProjectPath(config.buildDir + "/CMakeCache.txt"));
 }
 
 // ---------------------------------------------------------------------------
@@ -625,7 +683,7 @@ bool needsConfigure(const EditorBuildConfig& config) {
 // ---------------------------------------------------------------------------
 
 std::string gameBinaryPath(const EditorBuildConfig& config) {
-    return config.buildDir + "/apps/runtime/pixel-roguelike";
+    return resolveProjectPath(config.buildDir + "/apps/runtime/pixel-roguelike");
 }
 
 // ---------------------------------------------------------------------------
@@ -643,6 +701,8 @@ void loadBuildConfig(EditorBuildConfig& config, const std::string& path) {
             config.buildDir = buf;
         } else if (std::sscanf(line.c_str(), "build_config=%511s", buf) == 1) {
             config.buildConfig = buf;
+        } else if (line.rfind("build_scene=", 0) == 0) {
+            config.buildScenes.push_back(line.substr(12));
         }
     }
 }
@@ -655,4 +715,7 @@ void saveBuildConfig(const EditorBuildConfig& config, const std::string& path) {
     }
     file << "build_dir=" << config.buildDir << "\n";
     file << "build_config=" << config.buildConfig << "\n";
+    for (const auto& scene : config.buildScenes) {
+        file << "build_scene=" << scene << "\n";
+    }
 }

@@ -69,6 +69,7 @@ struct BuildOutputLog {
 struct EditorBuildConfig {
     std::string buildDir    = "build";  // configurable build directory
     std::string buildConfig = "Debug";  // Debug / Release / RelWithDebInfo
+    std::vector<std::string> buildScenes;  // scene filenames included in build (empty = all)
 };
 
 // ---------------------------------------------------------------------------
@@ -126,8 +127,12 @@ struct AssetManifest {
     std::set<std::string> meshFiles;     // e.g. "assets/packs/.../SM_Wall.fbx"
 };
 
+/// List all .scene files in assets/scenes/ (sorted alphabetically by filename).
+std::vector<std::string> listBuildableScenes();
+
 /// Scan scene/material/environment/prefab/def files to build a manifest of referenced assets.
-AssetManifest collectUsedAssets();
+/// If sceneFilter is non-empty, only scan the listed scene filenames; otherwise scan all scenes.
+AssetManifest collectUsedAssets(const std::vector<std::string>& sceneFilter = {});
 
 /// Package the game binary and referenced assets into outputDir.
 bool packageGame(const EditorBuildConfig& config, const std::string& outputDir,

@@ -285,8 +285,6 @@ mesh inst_hvac_vent -16.0 8.0 -4.95 1.0 1.0 1.0 0.0 0.0 0.0 material metal_defau
 mesh inst_hvac_vent -16.0 8.0 8.95 1.0 1.0 1.0 0.0 180.0 0.0 material metal_default tint 0.55 0.53 0.5 node n_cr_hvac02 parent n_room2_props
 mesh inst_smoke_detector -12.0 9.97 2.0 1.0 1.0 1.0 0.0 0.0 0.0 material stone_default tint 0.92 0.9 0.88 node n_cr_smoke01 parent n_room2_props
 mesh inst_smoke_detector -20.0 9.97 2.0 1.0 1.0 1.0 0.0 0.0 0.0 material stone_default tint 0.92 0.9 0.88 node n_cr_smoke02 parent n_room2_props
-mesh SM_CableA -10.0 0.1 -4.8 1.0 1.0 1.0 0.0 0.0 0.0 material metal_default tint 0.3 0.28 0.25 node n_cr_cable01 parent n_room2_props
-mesh SM_CableA -14.0 0.1 -4.8 1.0 1.0 1.0 0.0 0.0 0.0 material metal_default tint 0.3 0.28 0.25 node n_cr_cable02 parent n_room2_props
 mesh SM_Wall -7.094803 2.0 -0.340786 0.01 0.032 0.01 0.0 -89.999985 0.0 material inst_beige_wall tint 1.0 1.0 1.0 node node_349 parent n_room2_wall_right
 mesh SM_Wall -7.094803 0.0 -0.340786 0.01 0.01 0.01 0.0 -89.999985 0.0 material concrete_wall tint 0.83 0.79 0.71 node node_350 parent n_room2_wall_right
 mesh SM_Wall -6.998707 2.0 1.563745 0.01 0.032 0.01 0.0 -89.999985 0.0 material inst_beige_wall tint 1.0 1.0 1.0 node node_351 parent n_room2_wall_right
@@ -334,14 +332,14 @@ group Lighting 0.0 0.0 0.0 1.0 1.0 1.0 0.0 0.0 0.0 node n_room1_lighting parent 
 group Props 0.0 0.0 0.0 1.0 1.0 1.0 0.0 0.0 0.0 node n_room1_props parent n_room1
 group Doors 0.0 0.0 0.0 1.0 1.0 1.0 0.0 0.0 0.0 node n_room1_doors parent n_room1
 group Colliders 0.0 0.0 0.0 1.0 1.0 1.0 0.0 0.0 0.0 node n_room1_colliders parent n_room1
-group Room2 1.00132 0.0 0.0 1.0 1.0 1.0 -0.0 0.0 -0.0 node n_room2
+group Room2 0.534577 0.0 3.419284 1.0 1.0 1.0 -0.0 0.0 -0.0 node n_room2
 group Floor 0.0 0.0 0.0 1.0 1.0 1.0 0.0 0.0 0.0 node n_room2_floor parent n_room2
-group Ceiling 1.008094 0.0 0.0 1.0 1.0 1.0 -0.0 0.0 -0.0 node n_room2_ceiling parent n_room2
+group Ceiling 0.0 0.0 0.0 1.0 1.0 1.0 0.0 0.0 0.0 node n_room2_ceiling parent n_room2
 group Walls 0.0 0.0 0.0 1.0 1.0 1.0 0.0 0.0 0.0 node n_room2_walls parent n_room2
-group BackWall 0.0 0.0 1.055917 1.0 1.0 1.0 -0.0 0.0 -0.0 node n_room2_wall_back parent n_room2_walls
-group FrontWall 2.279287 0.0 -1.124708 1.0 1.0 1.0 -0.0 0.0 -0.0 node n_room2_wall_front parent n_room2_walls
-group LeftWall 1.16213 0.0 0.0 1.0 1.0 1.0 -0.0 0.0 -0.0 node n_room2_wall_left parent n_room2_walls
-group RightWall 0.953242 0.0 2.081202 1.0 1.0 1.535993 -0.0 0.0 -0.0 node n_room2_wall_right parent n_room2_walls
+group BackWall 0.0 0.0 0.0 1.0 1.0 1.0 0.0 0.0 0.0 node n_room2_wall_back parent n_room2_walls
+group FrontWall 0.0 0.0 0.0 1.0 1.0 1.0 0.0 0.0 0.0 node n_room2_wall_front parent n_room2_walls
+group LeftWall 0.0 0.0 0.0 1.0 1.0 1.0 0.0 0.0 0.0 node n_room2_wall_left parent n_room2_walls
+group RightWall 0.0 0.0 0.0 1.0 1.0 1.0 0.0 0.0 0.0 node n_room2_wall_right parent n_room2_walls
 group Lighting 0.0 0.0 0.0 1.0 1.0 1.0 0.0 0.0 0.0 node n_room2_lighting parent n_room2
 group Furniture 0.0 0.0 0.0 1.0 1.0 1.0 0.0 0.0 0.0 node n_room2_furniture parent n_room2
 group Props 0.0 0.0 0.0 1.0 1.0 1.0 0.0 0.0 0.0 node n_room2_props parent n_room2
