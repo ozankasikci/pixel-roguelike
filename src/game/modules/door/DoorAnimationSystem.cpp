@@ -1,38 +1,31 @@
 #include "game/modules/door/DoorAnimationSystem.h"
 
 #include "engine/core/Application.h"
-#include "game/modules/door/DoorComponents.h"
-#include "game/modules/door/DoorMath.h"
 #include "game/components/InteractableComponent.h"
-#include "game/components/MeshComponent.h"
+#include "game/components/PivotTransformComponent.h"
 #include "game/components/PlayerInteractionLockComponent.h"
 #include "game/components/TransformComponent.h"
+#include "game/modules/door/DoorComponents.h"
 
 #include <algorithm>
 #include <cmath>
 #include <glm/glm.hpp>
-#include <glm/gtc/matrix_transform.hpp>
 
 namespace {
 
-float getDoorLeafYaw(const DoorLeafComponent& leaf, float progress) {
+float getDoorLeafYaw(const DoorLeafComponent& leaf, const PivotTransformComponent& pivot,
+                     float progress) {
     const float eased = 1.0f - std::pow(1.0f - progress, 3.0f);
-    return glm::mix(leaf.closedYaw, leaf.openYaw, eased);
+    return glm::mix(pivot.closedYawDeg, leaf.openYaw, eased);
 }
 
 void updateDoorLeaf(entt::registry& registry, entt::entity entity, float progress) {
-    auto* mesh = registry.try_get<MeshComponent>(entity);
     auto* leaf = registry.try_get<DoorLeafComponent>(entity);
-    if (!mesh || !leaf) {
+    auto* pivot = registry.try_get<PivotTransformComponent>(entity);
+    if (!leaf || !pivot) {
         return;
     }
-
-    const float yaw = getDoorLeafYaw(*leaf, progress);
-    const glm::mat4 model = makePivotLeafModel(leaf->basePosition, leaf->closedYaw, yaw,
-                                               leaf->pivot, leaf->meshCenter, leaf->closedScale);
-
-    mesh->modelOverride = model;
-    mesh->useModelOverride = true;
+    pivot->currentYawDeg = getDoorLeafYaw(*leaf, *pivot, progress);
 }
 
 } // namespace
@@ -99,14 +92,18 @@ void DoorAnimationSystem::init(Application& app) {
         lock.remainingTime = 0.0f;
     }
 
-    // Initialize door leaf positions to closed state
+    // Initialize door leaf pivots to closed state
     auto doorView = registry.view<DoorConfigComponent, DoorStateComponent>();
     for (auto [entity, config, state] : doorView.each()) {
         (void)entity;
         state.progress = 0.0f;
         state.targetState = DoorTargetState::Closed;
-        updateDoorLeaf(registry, config.leftLeaf, 0.0f);
-        updateDoorLeaf(registry, config.rightLeaf, 0.0f);
+        if (auto* pivot = registry.try_get<PivotTransformComponent>(config.leftLeaf)) {
+            pivot->currentYawDeg = pivot->closedYawDeg;
+        }
+        if (auto* pivot = registry.try_get<PivotTransformComponent>(config.rightLeaf)) {
+            pivot->currentYawDeg = pivot->closedYawDeg;
+        }
     }
 }
 

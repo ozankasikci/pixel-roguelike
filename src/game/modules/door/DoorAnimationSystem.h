@@ -14,5 +14,5 @@ public:
 void tickDoorAnimation(entt::registry& registry, float deltaTime);
 
 // Reset all doors to closed state and sync leaf visuals.
-// Call after restoring baseline state to ensure modelOverride matches DoorStateComponent.
+// Call after restoring baseline state to ensure PivotTransformComponent.currentYawDeg matches DoorStateComponent.
 void resetDoorVisuals(entt::registry& registry);
