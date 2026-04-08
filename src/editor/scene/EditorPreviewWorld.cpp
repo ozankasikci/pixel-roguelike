@@ -466,6 +466,7 @@ void EditorPreviewWorld::syncTransforms(const EditorSceneDocument& document) {
         case EditorSceneObjectKind::DoorGroup:
             transform.position = position;
             transform.rotation.y = rotation.y;
+            transform.scale = scale;
             break;
         }
     }

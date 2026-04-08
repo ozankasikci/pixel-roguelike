@@ -608,6 +608,7 @@ bool EditorSceneDocument::applyWorldTransform(std::uint64_t id, const glm::mat4&
             }
             p.position = position;
             p.yawDegrees = rotation.y;
+            p.scale = glm::max(scale, glm::vec3(0.01f));
             return true;
         } else {
             static_assert(sizeof(T) == 0, "Unhandled payload type in applyWorldTransform");
@@ -813,7 +814,7 @@ glm::mat4 EditorSceneDocument::localTransformMatrix(const EditorSceneObject& obj
         } else if constexpr (std::is_same_v<T, LevelGroupNode>) {
             return makeTransformMatrix(p.position, p.rotation, p.scale);
         } else if constexpr (std::is_same_v<T, LevelDoorPlacement>) {
-            return makeTransformMatrix(p.position, glm::vec3(0.0f, p.yawDegrees, 0.0f), glm::vec3(1.0f));
+            return makeTransformMatrix(p.position, glm::vec3(0.0f, p.yawDegrees, 0.0f), p.scale);
         } else {
             static_assert(sizeof(T) == 0, "Unhandled payload type in localTransformMatrix");
         }
