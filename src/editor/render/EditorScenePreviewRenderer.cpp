@@ -10,7 +10,9 @@
 #include "game/components/ColliderComponent.h"
 #include "game/components/LightComponent.h"
 #include "game/components/MeshComponent.h"
+#include "game/components/PivotTransformComponent.h"
 #include "game/components/TransformComponent.h"
+#include "game/modules/door/DoorMath.h"
 #include "game/rendering/MaterialDefinition.h"
 #include "game/rendering/MaterialTextureLibrary.h"
 
@@ -114,9 +116,17 @@ std::vector<RenderObject> collectRenderObjects(const EditorPreviewWorld& world,
         if (ownerIt != world.ownerMap().end() && isSelected(selectedIds, ownerIt->second)) {
             tint = glm::min(tint * 1.20f + glm::vec3(0.08f, 0.08f, 0.02f), glm::vec3(1.4f));
         }
+        const glm::mat4 modelMatrix = [&]() -> glm::mat4 {
+            if (const auto* pivot = world.registry().try_get<PivotTransformComponent>(entity)) {
+                return makePivotLeafModel(transform.position, pivot->closedYawDeg,
+                                           pivot->currentYawDeg, pivot->pivot,
+                                           pivot->meshCenter, pivot->scale);
+            }
+            return transform.modelMatrix();
+        }();
         objects.push_back(RenderObject{
             mesh.mesh,
-            mesh.useModelOverride ? mesh.modelOverride : transform.modelMatrix(),
+            modelMatrix,
             tint,
             materials.resolve(mesh.materialId)
         });
