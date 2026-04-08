@@ -1,5 +1,6 @@
 #include "game/level/LevelLoader.h"
 
+#include "engine/ecs/HierarchyComponents.h"
 #include "game/behavior/NodeIdComponent.h"
 #include "game/behavior/NodeIndex.h"
 #include "game/content/ContentRegistry.h"
@@ -163,6 +164,28 @@ void LevelLoader::load(const LevelLoadRequest& request, const LevelLoadArgs& arg
                              pending.parentNodeId);
             }
         }
+    }
+
+    // Third pass: build runtime parent-child hierarchy from parentNodeId
+    {
+        const auto& nodeIndex = registry.ctx().get<NodeIndex>();
+
+        auto linkParent = [&](const std::string& nodeId, const std::string& parentNodeId) {
+            if (nodeId.empty() || parentNodeId.empty()) return;
+            entt::entity child = nodeIndex.resolve(nodeId);
+            entt::entity parent = nodeIndex.resolve(parentNodeId);
+            if (child == entt::null || parent == entt::null) return;
+            if (registry.all_of<ParentComponent>(child)) return; // already linked
+            registry.emplace<ParentComponent>(child, ParentComponent{parent});
+            auto& children = registry.get_or_emplace<ChildrenComponent>(parent);
+            children.children.push_back(child);
+        };
+
+        for (const auto& m : level.meshes) linkParent(m.nodeId, m.parentNodeId);
+        for (const auto& l : level.lights) linkParent(l.nodeId, l.parentNodeId);
+        for (const auto& c : level.colliders) linkParent(c.nodeId, c.parentNodeId);
+        for (const auto& r : level.reflectionProbes) linkParent(r.nodeId, r.parentNodeId);
+        for (const auto& a : level.archetypes) linkParent(a.nodeId, a.parentNodeId);
     }
 
     if (session.currentLevelId != request.levelId) {
