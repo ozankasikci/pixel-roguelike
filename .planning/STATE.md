@@ -298,10 +298,11 @@ None yet.
 | 260407-1uu | Door editor: open direction control, pivot visualization, fix rotation | 2026-04-06 | f682d65 | [260407-1uu-door-editor-open-direction-control-pivot](./quick/260407-1uu-door-editor-open-direction-control-pivot/) |
 | 260407-4qf | Door open state persists across play sessions - opening a door in play mode stays open after stop/start | 2026-04-07 | 8564440 | [260407-4qf-door-open-state-persists-across-play-ses](./quick/260407-4qf-door-open-state-persists-across-play-ses/) |
 | 260407-me0 | Fix door interaction prompt disappearing after play-stop-play cycle | 2026-04-07 | c1afd64 | [260407-me0-fix-door-interaction-prompt-disappearing](./quick/260407-me0-fix-door-interaction-prompt-disappearing/) |
+| 260408-3p5 | Investigate and fix door scale — doors ignore scale changes in editor | 2026-04-07 | 25df7f7 | [260408-3p5-investigate-and-fix-door-scale-doors-ign](./quick/260408-3p5-investigate-and-fix-door-scale-doors-ign/) |
 
 ## Session Continuity
 
-Last activity: 2026-04-07
+Last activity: 2026-04-07 - Completed quick task 260408-3p5: Investigate and fix door scale — doors ignore scale changes in editor
 Last session: 2026-04-07T19:50:03.642Z
 Stopped at: Phase 21 context gathered
 Resume file: .planning/phases/21-feature-module-reorganization-folder-per-feature-structure-with-door-module-as-proof-of-concept/21-CONTEXT.md
