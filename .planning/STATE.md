@@ -304,10 +304,13 @@ None yet.
 | 260408-q6e | Make gizmo scaling reaction 50% faster | 2026-04-08 | a3eddd3 | [260408-q6e-make-gizmo-scaling-reaction-50-faster](./quick/260408-q6e-make-gizmo-scaling-reaction-50-faster/) |
 | 260408-r43 | Minimize editor freezes on structural scene changes | 2026-04-08 | b413382 | [260408-r43-minimize-editor-freezes-on-structural-sc](./quick/260408-r43-minimize-editor-freezes-on-structural-sc/) |
 | 260408-xaz | Fix viewport-to-hierarchy sync: persist ancestor expansion in expandedOutlinerIds when scrollToSelection triggers | 2026-04-08 | 08d7b7d | [260408-xaz-fix-viewport-to-hierarchy-sync-persist-a](./quick/260408-xaz-fix-viewport-to-hierarchy-sync-persist-a/) |
+| 260408-uf2 | Fix door scaling in editor - 3 bugs where scale is ignored for doors | 2026-04-08 | c41d8c8 | [260408-uf2-fix-door-scaling-in-editor-3-bugs-where-](./quick/260408-uf2-fix-door-scaling-in-editor-3-bugs-where-/) |
+| 260408-v1a | Add control room behind Door A - 18x14x10m institutional operations center | 2026-04-08 | 06e9895 | [260408-v1a-add-control-room-behind-door-a-18x14x10m](./quick/260408-v1a-add-control-room-behind-door-a-18x14x10m/) |
+| 260408-x9w | Implement kinematic door colliders with KinematicColliderSystem | 2026-04-08 | e5d1eb5 | [260408-x9w-implement-kinematic-door-colliders-with-](./quick/260408-x9w-implement-kinematic-door-colliders-with-/) |
 
 ## Session Continuity
 
-Last activity: 2026-04-08 - Completed quick task 260408-xaz: Fix viewport-to-hierarchy sync
+Last activity: 2026-04-08 - Completed quick task 260408-x9w: Implement kinematic door colliders with KinematicColliderSystem
 Last session: 2026-04-08T16:40:04.187Z
 Stopped at: Completed quick/260408-r43-PLAN.md
 Resume file: None
