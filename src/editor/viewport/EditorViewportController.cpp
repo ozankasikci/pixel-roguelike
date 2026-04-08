@@ -19,6 +19,7 @@ constexpr float kPanSensitivity = 0.0025f;
 constexpr float kDollySensitivity = 0.02f;
 constexpr float kMinOrbitDistance = 0.5f;
 constexpr float kDefaultOrbitDistance = 6.0f;
+constexpr float kScaleAmplification = 1.5f;
 
 bool altPressed(GLFWwindow* window, const ImGuiIO& io) {
     return io.KeyAlt
@@ -262,13 +263,25 @@ bool manipulateEditorGizmo(const EditorViewportState& viewport,
     ImGuizmo::MODE gizmoMode =
         (tool == EditorTransformTool::Rotate) ? ImGuizmo::WORLD : ImGuizmo::LOCAL;
 
+    glm::mat4 originalMatrix = modelMatrix;
+    glm::mat4 deltaMatrix(1.0f);
     ImGuizmo::Manipulate(&view[0][0],
                          &projection[0][0],
                          operation,
                          gizmoMode,
                          &modelMatrix[0][0],
-                         nullptr,
+                         &deltaMatrix[0][0],
                          snappingEnabled ? snap : nullptr);
+
+    if (tool == EditorTransformTool::Scale && ImGuizmo::IsUsing()) {
+        // Extract scale from the delta matrix (diagonal elements for uniform/axis scale)
+        glm::vec3 scaleDelta(deltaMatrix[0][0], deltaMatrix[1][1], deltaMatrix[2][2]);
+        // Amplify: shift delta away from 1.0, multiply, shift back
+        glm::vec3 amplified = (scaleDelta - glm::vec3(1.0f)) * kScaleAmplification + glm::vec3(1.0f);
+        // Rebuild: apply amplified scale delta to the original matrix
+        modelMatrix = glm::scale(originalMatrix, amplified);
+    }
+
     return ImGuizmo::IsUsing();
 }
 
