@@ -11,6 +11,7 @@
 #include "game/components/PlayerTag.h"
 #include "game/components/TransformComponent.h"
 #include "game/content/ContentRegistry.h"
+#include "game/modules/checkpoint/CheckpointModule.h"
 #include "game/rendering/EnvironmentDebugSync.h"
 #include "game/ui/InventoryMenuState.h"
 
@@ -37,6 +38,7 @@ bool nearlyEqualVec3(const glm::vec3& a, const glm::vec3& b) {
 int main() {
     Window window(320, 200, "test_editor_runtime_preview");
 
+    registerCheckpointModule();
     ContentRegistry content;
     content.loadDefaults();
 

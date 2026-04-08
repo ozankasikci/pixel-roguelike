@@ -1,10 +1,12 @@
 #include "game/level/LevelDef.h"
 #include "game/components/ColliderComponent.h"
+#include "game/modules/checkpoint/CheckpointModule.h"
 
 #include <algorithm>
 #include <cassert>
 
 int main() {
+    registerCheckpointModule();
     const auto data = loadLevelDef(CATHEDRAL_SCENE_FILE);
 
     assert(data.environmentProfile == EnvironmentProfile::Default);
@@ -18,7 +20,8 @@ int main() {
         return c.shape == ColliderShape::Cylinder;
     }) == 14);
     assert(data.hasPlayerSpawn);
-    assert(data.archetypes.size() == 2);
+    assert(data.archetypes.size() == 1);
+    assert(data.checkpoints.size() == 1);
 
     assert(data.meshes.front().meshId == "plane");
     assert(data.meshes[2].position == glm::vec3(0.0f, 9.0f, -6.5f));
@@ -43,7 +46,7 @@ int main() {
     assert(data.meshes.back().meshId == "arch");
     assert(data.playerSpawn.position == glm::vec3(0.0f, 1.6f, 5.4f));
     assert(data.playerSpawn.fallRespawnY == -8.0f);
-    assert(data.archetypes.front().archetypeId == "checkpoint_shrine");
-    assert(data.archetypes.back().archetypeId == "cathedral_double_door");
+    assert(data.archetypes.front().archetypeId == "cathedral_double_door");
+    assert(data.checkpoints.front().name == "shrine");
     return 0;
 }

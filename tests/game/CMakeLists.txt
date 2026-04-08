@@ -24,7 +24,7 @@ set(CONTENT_REGISTRY_FILE_DEFS
 
 pixel_roguelike_add_test(test_level_def
     SOURCES test_level_def.cpp
-    LIBRARIES game_content
+    LIBRARIES game_content game_module_checkpoint
     DEFINITIONS ${CATHEDRAL_SCENE_FILE_DEF}
     LABELS game
 )
@@ -64,7 +64,7 @@ pixel_roguelike_add_test(test_material_definitions
 
 pixel_roguelike_add_test(test_silos_cloister_level
     SOURCES test_silos_cloister_level.cpp
-    LIBRARIES game_content
+    LIBRARIES game_content game_module_checkpoint
     DEFINITIONS ${SILOS_CLOISTER_SCENE_FILE_DEF}
     LABELS game
 )
