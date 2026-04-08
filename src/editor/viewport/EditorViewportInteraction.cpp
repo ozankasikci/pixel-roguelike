@@ -37,6 +37,7 @@ bool isViewportSelectableKind(const EditorSelectionHandle& handle, const EditorU
     case EditorSceneObjectKind::Archetype:
     case EditorSceneObjectKind::Group:
     case EditorSceneObjectKind::DoorGroup:
+    case EditorSceneObjectKind::Checkpoint:
         return true;
     }
     return true;
@@ -305,6 +306,7 @@ bool applyGizmoToSelectedObject(EditorSceneDocument& document,
         case EditorSceneObjectKind::Archetype:
         case EditorSceneObjectKind::Group:
         case EditorSceneObjectKind::DoorGroup:
+        case EditorSceneObjectKind::Checkpoint:
             model = document.worldTransformMatrix(object->id);
             break;
         case EditorSceneObjectKind::Light: {
@@ -358,6 +360,7 @@ bool applyGizmoToSelectedObject(EditorSceneDocument& document,
         case EditorSceneObjectKind::Archetype:
         case EditorSceneObjectKind::Group:
         case EditorSceneObjectKind::DoorGroup:
+        case EditorSceneObjectKind::Checkpoint:
             if (!document.applyWorldTransform(object->id, model)) {
                 return false;
             }
@@ -459,7 +462,8 @@ bool applyGizmoToSelectedObject(EditorSceneDocument& document,
         case EditorSceneObjectKind::ReflectionProbe:
         case EditorSceneObjectKind::Archetype:
         case EditorSceneObjectKind::Group:
-        case EditorSceneObjectKind::DoorGroup: {
+        case EditorSceneObjectKind::DoorGroup:
+        case EditorSceneObjectKind::Checkpoint: {
             auto it = multiGizmoState.cachedTransforms.find(id);
             if (it == multiGizmoState.cachedTransforms.end()) continue;
             const glm::mat4 newWorld = before * localDelta * invBefore * it->second;

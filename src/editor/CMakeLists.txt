@@ -30,6 +30,7 @@ add_library(editor STATIC
     ui/inspectors/AssetInspectorHelpers.cpp
     ui/inspectors/AssetInspectorSession.cpp
     ui/inspectors/ColliderInspector.cpp
+    ${CMAKE_SOURCE_DIR}/src/game/modules/checkpoint/editor/CheckpointInspector.cpp
     ${CMAKE_SOURCE_DIR}/src/game/modules/door/editor/DoorGroupInspector.cpp
     ui/inspectors/EnvironmentInspector.cpp
     ui/inspectors/GroupInspector.cpp
