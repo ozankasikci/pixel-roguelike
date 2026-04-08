@@ -320,7 +320,7 @@ collider box solid -16.0 5.0 9.0 9.0 5.0 0.1 node n_cr_col_north parent n_room2_
 collider box solid -25.0 5.0 2.0 0.1 5.0 7.0 node n_cr_col_west parent n_room2_colliders
 collider box solid -7.0 5.0 -2.5 0.1 5.0 2.5 node n_cr_col_east_s parent n_room2_colliders
 collider box solid -7.0 5.0 5.5 0.1 5.0 3.5 node n_cr_col_east_n parent n_room2_colliders
-collider box solid -0.079656 5.314772 0.0 2.152569 4.261704 0.584384 node node_353 parent n_doorA_leaf
+collider box solid -0.079656 5.287961 0.0 3.435865 5.015478 0.584384 rotation -180.0 -0.0 0.0 node node_353 parent n_doorA_leaf kinematic
 player_spawn 0.0 1.0 -0.5 -2.0 node n_spawn parent n_room1
 group Room1 0.0 0.0 0.0 1.0 1.0 1.0 0.0 0.0 0.0 node n_room1
 group Floor 0.0 0.0 0.0 1.0 1.0 1.0 0.0 0.0 0.0 node n_room1_floor parent n_room1

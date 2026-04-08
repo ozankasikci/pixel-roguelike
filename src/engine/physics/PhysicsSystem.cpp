@@ -326,7 +326,7 @@ void PhysicsSystem::update(entt::registry& registry, float deltaTime) {
                     toJoltR(collider.position),
                     toJoltQuat(collider.rotation),
                     collider.kinematic ? JPH::EMotionType::Kinematic : JPH::EMotionType::Static,
-                    collider.kinematic ? Layers::MOVING : Layers::NON_MOVING
+                    Layers::NON_MOVING
                 );
                 JPH::BodyID bodyId = bodyInterface.CreateAndAddBody(
                     bodySettings,
@@ -382,7 +382,7 @@ void PhysicsSystem::update(entt::registry& registry, float deltaTime) {
                     toJoltR(collider.position),
                     toJoltQuat(collider.rotation),
                     collider.kinematic ? JPH::EMotionType::Kinematic : JPH::EMotionType::Static,
-                    collider.kinematic ? Layers::MOVING : Layers::NON_MOVING
+                    Layers::NON_MOVING
                 );
                 JPH::BodyID solidId = bodyInterface.CreateAndAddBody(
                     solidSettings,
