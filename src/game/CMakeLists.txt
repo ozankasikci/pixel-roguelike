@@ -39,6 +39,7 @@ add_library(gameplay STATIC
     systems/CheckpointSystem.cpp
     systems/InteractionSystem.cpp
     systems/InventorySystem.cpp
+    systems/KinematicColliderSystem.cpp
     systems/PlayerMovementSystem.cpp
     systems/RenderSystem.cpp
     ui/GameOverlays.cpp

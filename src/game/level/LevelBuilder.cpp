@@ -205,6 +205,7 @@ entt::entity LevelBuilder::addCollider(const LevelColliderPlacement& placement) 
     collider.radius = placement.radius;
     collider.halfHeight = placement.halfHeight;
     collider.fireOnce = placement.fireOnce;
+    collider.kinematic = placement.kinematic;
     collider.enabled = true;
     context_.registry.emplace<ColliderComponent>(entity, collider);
 

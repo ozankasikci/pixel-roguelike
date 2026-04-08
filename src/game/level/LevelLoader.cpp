@@ -13,6 +13,7 @@
 #include "game/components/CameraComponent.h"
 #include "game/components/CharacterControllerComponent.h"
 #include "game/components/ControllableTag.h"
+#include "game/components/KinematicLinkComponent.h"
 #include "game/components/MeshComponent.h"
 #include "game/components/PlayerInteractionLockComponent.h"
 #include "game/components/PlayerMovementComponent.h"
@@ -23,6 +24,7 @@
 
 #include <cassert>
 #include <unordered_set>
+#include <spdlog/spdlog.h>
 
 LevelLoader::LevelLoader(LevelBuildContext& context)
     : context_(context) {}
@@ -107,8 +109,15 @@ void LevelLoader::load(const LevelLoadRequest& request, const LevelLoadArgs& arg
         }
     }
 
+    // Collect kinematic colliders that need parent linking (resolved after NodeIndex is built)
+    struct KinematicPending { entt::entity entity; std::string parentNodeId; };
+    std::vector<KinematicPending> kinematicPending;
+
     for (const auto& placement : level.colliders) {
-        builder.addCollider(placement);
+        auto entity = builder.addCollider(placement);
+        if (placement.kinematic && !placement.parentNodeId.empty()) {
+            kinematicPending.push_back({entity, placement.parentNodeId});
+        }
     }
 
     for (const auto& placement : level.reflectionProbes) {
@@ -138,6 +147,22 @@ void LevelLoader::load(const LevelLoadRequest& request, const LevelLoadArgs& arg
             nodeIndex.add(nodeComp.nodeId, entity);
         }
         registry.ctx().insert_or_assign<NodeIndex>(std::move(nodeIndex));
+    }
+
+    // Second pass: link kinematic colliders to their parent mesh entities
+    {
+        const auto& nodeIndex = registry.ctx().get<NodeIndex>();
+        for (const auto& pending : kinematicPending) {
+            if (pending.entity == entt::null) continue;
+            entt::entity parent = nodeIndex.resolve(pending.parentNodeId);
+            if (parent != entt::null && registry.all_of<MeshComponent>(parent)) {
+                registry.emplace<KinematicLinkComponent>(pending.entity,
+                    KinematicLinkComponent{parent});
+            } else {
+                spdlog::warn("LevelLoader: kinematic collider parent '{}' not found or has no MeshComponent",
+                             pending.parentNodeId);
+            }
+        }
     }
 
     if (session.currentLevelId != request.levelId) {

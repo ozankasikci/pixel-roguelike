@@ -17,6 +17,7 @@
 #include "game/rendering/EnvironmentProfile.h"
 #include "game/rendering/MeshAssetProvider.h"
 #include "game/modules/door/DoorAnimationSystem.h"
+#include "game/systems/KinematicColliderSystem.h"
 #include "game/runtime/RuntimeGameplay.h"
 #include "game/session/RunSession.h"
 #include "game/ui/InteractionFocusState.h"
@@ -212,6 +213,7 @@ void RuntimeGameSession::tick(float deltaTime, float aspect) {
     t0 = t1;
     updateRuntimeBehaviors(registry_);
     tickDoorAnimation(registry_, deltaTime);
+    tickKinematicColliders(registry_, physics_);
     t1 = Clock::now();
 
     ContentRegistry* content = nullptr;
