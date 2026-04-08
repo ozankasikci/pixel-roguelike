@@ -146,6 +146,26 @@ void drawDoorGroupInspector(LevelDoorPlacement& dg,
             ImGui::TextColored(ImVec4(0.7f, 0.9f, 0.7f, 1.0f), "%s", meshPlacement.meshId.c_str());
             ImGui::SameLine();
             ImGui::TextDisabled("(leaf)");
+
+            // Pivot editing — mesh-local hinge point
+            EditorSceneObject* mutableObj = document.findObject(obj.id);
+            if (mutableObj) {
+                auto& mutableMesh = std::get<LevelMeshPlacement>(mutableObj->payload);
+                glm::vec3 pivotVal = mutableMesh.pivot.value_or(glm::vec3(0.0f));
+
+                ImGui::PushID("pivot");
+                ImGui::TextDisabled("Pivot (mesh-local hinge)");
+                const auto pivotBefore = document.captureState();
+                bool pivotChanged = ImGui::DragFloat3("##pivot", &pivotVal.x, 0.01f);
+                if (pivotChanged) {
+                    mutableMesh.pivot = pivotVal;
+                    document.markSceneDirty();
+                }
+                trackItem(pivotBefore, "Door Leaf Pivot",
+                          pivotChanged && ImGui::IsItemDeactivatedAfterEdit());
+                ImGui::PopID();
+            }
+
             ImGui::Unindent();
             ImGui::PopID();
         }

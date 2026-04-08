@@ -301,38 +301,84 @@ void appendHelperObjects(std::vector<RenderObject>& objects,
         }
     }
 
-    // Pivot point visualization: magenta hinge marker for each DoorGroup
-    // The DoorGroup position IS the hinge — no child mesh lookup needed.
+    // Pivot point visualization: magenta hinge marker at the actual computed
+    // hinge position for each DoorGroup leaf mesh. Uses the same partial
+    // transform chain as DoorMath: T(groupPos) * R(closedYaw) * S * T(-hCenter) * T(pivot).
     if (cube != nullptr) {
         for (const auto& object : document.objects()) {
             if (object.kind != EditorSceneObjectKind::DoorGroup) continue;
             const auto& dg = std::get<LevelDoorPlacement>(object.payload);
-            const glm::vec3 hingePos = dg.position;
-
-            // Vertical hinge axis: magenta wireframe pole
             const glm::vec3 pivotTint(0.90f, 0.20f, 1.00f);
-            objects.push_back(RenderObject{
-                cube,
-                makeModelMatrix(hingePos + glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(0.06f, 2.0f, 0.06f)),
-                pivotTint,
-                materials.resolve("stone_default"),
-                true,   // wireframe — same as trigger volumes
-                true,   // ignoreDepth
-                true,   // unlit
-                2.0f    // lineWidth
-            });
 
-            // Solid cube at handle height
-            objects.push_back(RenderObject{
-                cube,
-                makeModelMatrix(hingePos + glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(0.15f)),
-                pivotTint,
-                materials.resolve("stone_default"),
-                false,  // solid
-                true,   // ignoreDepth
-                true,   // unlit
-                1.0f
-            });
+            bool foundLeaf = false;
+            if (!dg.nodeId.empty()) {
+                for (const auto& childObj : document.objects()) {
+                    if (childObj.kind != EditorSceneObjectKind::Mesh) continue;
+                    const auto& mesh = std::get<LevelMeshPlacement>(childObj.payload);
+                    if (mesh.parentNodeId != dg.nodeId) continue;
+                    if (!mesh.pivot.has_value()) continue;
+
+                    foundLeaf = true;
+                    const glm::vec3 pivot = *mesh.pivot;
+
+                    Mesh* leafMesh = world.meshLibrary().get(mesh.meshId);
+                    const glm::vec3 meshCenter = leafMesh
+                        ? (leafMesh->aabbMin() + leafMesh->aabbMax()) * 0.5f
+                        : glm::vec3(0.0f);
+                    const glm::vec3 horizontalCenter(meshCenter.x, 0.0f, meshCenter.z);
+
+                    // Compute world-space hinge: T(groupPos) * R(yaw) * S * T(-hCenter + pivot)
+                    glm::mat4 hingeWorld = glm::translate(glm::mat4(1.0f), dg.position);
+                    hingeWorld = glm::rotate(hingeWorld, glm::radians(dg.yawDegrees),
+                                             glm::vec3(0.0f, 1.0f, 0.0f));
+                    hingeWorld = glm::scale(hingeWorld, dg.scale);
+                    hingeWorld = glm::translate(hingeWorld, -horizontalCenter + pivot);
+
+                    const glm::vec3 hingePos = glm::vec3(hingeWorld * glm::vec4(0.0f, 0.0f, 0.0f, 1.0f));
+
+                    // Vertical hinge axis: magenta wireframe pole
+                    objects.push_back(RenderObject{
+                        cube,
+                        makeModelMatrix(hingePos + glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(0.06f, 2.0f, 0.06f)),
+                        pivotTint,
+                        materials.resolve("stone_default"),
+                        true,   // wireframe
+                        true,   // ignoreDepth
+                        true,   // unlit
+                        2.0f    // lineWidth
+                    });
+
+                    // Solid cube at handle height
+                    objects.push_back(RenderObject{
+                        cube,
+                        makeModelMatrix(hingePos + glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(0.15f)),
+                        pivotTint,
+                        materials.resolve("stone_default"),
+                        false,  // solid
+                        true,   // ignoreDepth
+                        true,   // unlit
+                        1.0f
+                    });
+                }
+            }
+
+            // Fallback: no leaf meshes found, show marker at door group position
+            if (!foundLeaf) {
+                objects.push_back(RenderObject{
+                    cube,
+                    makeModelMatrix(dg.position + glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(0.06f, 2.0f, 0.06f)),
+                    pivotTint,
+                    materials.resolve("stone_default"),
+                    true, true, true, 2.0f
+                });
+                objects.push_back(RenderObject{
+                    cube,
+                    makeModelMatrix(dg.position + glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(0.15f)),
+                    pivotTint,
+                    materials.resolve("stone_default"),
+                    false, true, true, 1.0f
+                });
+            }
         }
     }
 }
