@@ -6,7 +6,6 @@
 #include "game/components/InteractableComponent.h"
 #include "game/components/MeshComponent.h"
 #include "game/components/PlayerInteractionLockComponent.h"
-#include "game/components/ColliderComponent.h"
 #include "game/components/TransformComponent.h"
 
 #include <algorithm>
@@ -23,23 +22,17 @@ float getDoorLeafYaw(const DoorLeafComponent& leaf, float progress) {
 
 void updateDoorLeaf(entt::registry& registry, entt::entity entity, float progress) {
     auto* mesh = registry.try_get<MeshComponent>(entity);
-    auto* collider = registry.try_get<ColliderComponent>(entity);
     auto* leaf = registry.try_get<DoorLeafComponent>(entity);
-    if (!mesh || !collider || !leaf) {
+    if (!mesh || !leaf) {
         return;
     }
 
     const float yaw = getDoorLeafYaw(*leaf, progress);
     const glm::mat4 model = makePivotLeafModel(leaf->basePosition, leaf->closedYaw, yaw,
                                                leaf->pivot, leaf->meshCenter, leaf->closedScale);
-    const glm::vec3 center = glm::vec3(model * glm::vec4(0.0f, 0.0f, 0.0f, 1.0f));
 
     mesh->modelOverride = model;
     mesh->useModelOverride = true;
-
-    collider->position = center;
-    collider->rotation = glm::vec3(0.0f, yaw, 0.0f);
-    collider->halfExtents = leaf->colliderHalfExtents;
 }
 
 } // namespace

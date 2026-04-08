@@ -8,6 +8,7 @@
 #include "game/components/ReflectionProbeComponent.h"
 #include "game/components/ColliderComponent.h"
 #include "game/modules/door/DoorComponents.h"
+#include "game/modules/door/DoorMath.h"
 #include "game/components/TransformComponent.h"
 #include "game/content/ContentRegistry.h"
 #include "game/level/LevelBuilder.h"
@@ -165,7 +166,7 @@ void EditorPreviewWorld::rebuild(const EditorSceneDocument& document, const Cont
                 placement.rotation = rotation;
                 placement.scale = scale;
             }
-            builder.addMesh(placement.meshId,
+            auto meshEntity = builder.addMesh(placement.meshId,
                             placement.position,
                             placement.scale,
                             placement.rotation,
@@ -174,8 +175,33 @@ void EditorPreviewWorld::rebuild(const EditorSceneDocument& document, const Cont
                                 ? std::optional<std::string>{}
                                 : std::optional<std::string>{placement.materialId});
 
-            // Door leaves are now spawned via addDoorGroup (LevelDoorPlacement).
-            // Regular mesh objects in the scene no longer carry pivot data.
+            // Door leaf meshes have a pivot — apply the same model override that
+            // spawnDoorGroup uses at runtime so edit and play views match exactly.
+            if (placement.pivot.has_value() && meshEntity != entt::null) {
+                // Find the parent door group's world position and yaw.
+                std::uint64_t parentId = document.parentObjectId(object.id);
+                const EditorSceneObject* parentObj = parentId ? document.findObject(parentId) : nullptr;
+                if (parentObj && parentObj->kind == EditorSceneObjectKind::DoorGroup) {
+                    const auto& dg = std::get<LevelDoorPlacement>(parentObj->payload);
+                    glm::vec3 groupPos(0.0f), groupRot(0.0f), groupScale(1.0f);
+                    decomposeTransformMatrix(document.worldTransformMatrix(parentId),
+                                             groupPos, groupRot, groupScale);
+
+                    Mesh* leafMeshPtr = builder.mesh(placement.meshId);
+                    const glm::vec3 meshCenter = leafMeshPtr
+                        ? (leafMeshPtr->aabbMin() + leafMeshPtr->aabbMax()) * 0.5f
+                        : glm::vec3(0.0f);
+
+                    const glm::mat4 leafModel = makePivotLeafModel(
+                        groupPos, dg.yawDegrees, dg.yawDegrees,
+                        *placement.pivot, meshCenter, placement.scale);
+
+                    if (auto* meshComp = registry_.try_get<MeshComponent>(meshEntity)) {
+                        meshComp->modelOverride = leafModel;
+                        meshComp->useModelOverride = true;
+                    }
+                }
+            }
             break;
         }
         case EditorSceneObjectKind::Light: {
@@ -337,18 +363,38 @@ void EditorPreviewWorld::syncTransforms(const EditorSceneDocument& document) {
         const glm::mat4 worldMatrix = document.worldTransformMatrix(object->id);
 
         switch (object->kind) {
-        case EditorSceneObjectKind::Mesh:
+        case EditorSceneObjectKind::Mesh: {
             transform.position = position;
             transform.rotation = rotation;
             transform.scale = scale;
             if (registry_.all_of<MeshComponent>(entity)) {
-                auto& mesh = registry_.get<MeshComponent>(entity);
+                auto& meshComp = registry_.get<MeshComponent>(entity);
                 const auto& placement = std::get<LevelMeshPlacement>(object->payload);
-                if (mesh.useModelOverride) {
-                    mesh.modelOverride = worldMatrix;
+                if (placement.pivot.has_value()) {
+                    // Door leaf — recompute pivot model from parent door group,
+                    // not the raw world matrix (which would shift the door).
+                    std::uint64_t parentId = document.parentObjectId(object->id);
+                    const EditorSceneObject* parentObj = parentId
+                        ? document.findObject(parentId) : nullptr;
+                    if (parentObj && parentObj->kind == EditorSceneObjectKind::DoorGroup) {
+                        const auto& dg = std::get<LevelDoorPlacement>(parentObj->payload);
+                        glm::vec3 groupPos(0.0f), groupRot(0.0f), groupScale(1.0f);
+                        decomposeTransformMatrix(document.worldTransformMatrix(parentId),
+                                                 groupPos, groupRot, groupScale);
+                        const glm::vec3 meshCenter = meshComp.mesh
+                            ? (meshComp.mesh->aabbMin() + meshComp.mesh->aabbMax()) * 0.5f
+                            : glm::vec3(0.0f);
+                        meshComp.modelOverride = makePivotLeafModel(
+                            groupPos, dg.yawDegrees, dg.yawDegrees,
+                            *placement.pivot, meshCenter, placement.scale);
+                        meshComp.useModelOverride = true;
+                    }
+                } else if (meshComp.useModelOverride) {
+                    meshComp.modelOverride = worldMatrix;
                 }
             }
             break;
+        }
         case EditorSceneObjectKind::Collider: {
             transform.position = position;
             transform.rotation = rotation;

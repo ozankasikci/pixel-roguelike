@@ -4,7 +4,6 @@
 #include "game/modules/door/DoorMath.h"
 #include "game/behavior/ActionTypes.h"
 #include "game/behavior/BehaviorComponent.h"
-#include "game/components/ColliderComponent.h"
 #include "game/components/InteractableComponent.h"
 #include "game/components/MeshComponent.h"
 #include "game/level/LevelBuilder.h"
@@ -26,8 +25,9 @@ entt::entity spawnDoorGroup(LevelBuilder& builder,
     for (const auto& m : level.meshes) {
         if (m.parentNodeId != group.nodeId) continue;
 
-        const glm::vec3 combinedScale = m.scale * group.scale;
-        auto entity = builder.addMesh(m.meshId, m.position, combinedScale, m.rotation, m.tint,
+        // m.scale already includes group.scale from resolveLevelHierarchy —
+        // the parent door group's transform is baked into child mesh transforms.
+        auto entity = builder.addMesh(m.meshId, m.position, m.scale, m.rotation, m.tint,
                                       m.materialId.empty() ? std::optional<std::string>{}
                                                            : std::optional<std::string>{m.materialId});
         if (entity == entt::null) continue;
@@ -50,7 +50,7 @@ entt::entity spawnDoorGroup(LevelBuilder& builder,
                 : glm::vec3(0.0f);
             const glm::mat4 leafModel = makePivotLeafModel(
                 m.position, group.yawDegrees, group.yawDegrees,
-                leafPivot, meshCenter, combinedScale);
+                leafPivot, meshCenter, m.scale);
 
             // Override model matrix for pivot-based rendering
             if (auto* meshComp = reg.try_get<MeshComponent>(entity)) {
@@ -58,27 +58,12 @@ entt::entity spawnDoorGroup(LevelBuilder& builder,
                 meshComp->useModelOverride = true;
             }
 
-            // Attach ColliderComponent for physics
-            const glm::vec3 leafCenter = glm::vec3(leafModel * glm::vec4(0.0f, 0.0f, 0.0f, 1.0f));
-            constexpr float kMinHalfExtent = 0.05f; // Jolt convex radius minimum
-            const glm::vec3 leafHalfExtents = glm::max(
-                glm::vec3(std::abs(leafPivot.x), 1.01f, 0.05f) * group.scale,
-                glm::vec3(kMinHalfExtent));
-            ColliderComponent collider;
-            collider.shape = ColliderShape::Box;
-            collider.mode = ColliderMode::Solid;
-            collider.position = leafCenter;
-            collider.rotation = glm::vec3(0.0f, group.yawDegrees, 0.0f);
-            collider.halfExtents = leafHalfExtents;
-            reg.emplace<ColliderComponent>(entity, collider);
-
             // Attach DoorLeafComponent for swing animation
             DoorLeafComponent doorLeaf;
             doorLeaf.basePosition = m.position;
             doorLeaf.pivot = leafPivot;
             doorLeaf.meshCenter = meshCenter;
-            doorLeaf.closedScale = combinedScale;
-            doorLeaf.colliderHalfExtents = leafHalfExtents;
+            doorLeaf.closedScale = m.scale;
             doorLeaf.closedYaw = group.yawDegrees;
             doorLeaf.openYaw = group.yawDegrees - group.openAngle;
             reg.emplace<DoorLeafComponent>(entity, doorLeaf);
