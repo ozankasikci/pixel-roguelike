@@ -1,7 +1,6 @@
 #pragma once
 #include <glm/glm.hpp>
 #include <cstdint>
-#include <string>
 
 enum class ColliderShape : uint8_t { Box, Sphere, Cylinder, Capsule };
 enum class ColliderMode  : uint8_t { Solid, Trigger, SolidAndTrigger };
@@ -19,5 +18,4 @@ struct ColliderComponent {
     bool playerInside = false;
     bool pendingEnter = false;
     bool pendingExit  = false;
-    std::string parentNodeId;  // scene-file parent node (for linking colliders to door leaves)
 };

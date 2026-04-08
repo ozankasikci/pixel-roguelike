@@ -1,10 +1,11 @@
 #include "game/modules/door/DoorSpawner.h"
 
 #include "game/modules/door/DoorComponents.h"
+#include "game/modules/door/DoorMath.h"
 #include "game/behavior/ActionTypes.h"
 #include "game/behavior/BehaviorComponent.h"
 #include "game/components/InteractableComponent.h"
-#include "game/components/PivotTransformComponent.h"
+#include "game/components/MeshComponent.h"
 #include "game/level/LevelBuilder.h"
 #include "game/level/LevelDef.h"
 #include "engine/rendering/geometry/Mesh.h"
@@ -40,22 +41,30 @@ entt::entity spawnDoorGroup(LevelBuilder& builder,
             leafEntity = entity;
             const glm::vec3 leafPivot = *m.pivot;
 
+            // Compute mesh AABB center so the door's geometric center aligns with the
+            // frame center when closed. Door FBX meshes have their origin at the hinge
+            // edge, not at the geometric center — without this offset there's a visible gap.
             Mesh* leafMeshPtr = builder.mesh(m.meshId);
             const glm::vec3 meshCenter = leafMeshPtr
                 ? (leafMeshPtr->aabbMin() + leafMeshPtr->aabbMax()) * 0.5f
                 : glm::vec3(0.0f);
+            const glm::mat4 leafModel = makePivotLeafModel(
+                m.position, group.yawDegrees, group.yawDegrees,
+                leafPivot, meshCenter, m.scale);
 
-            // Attach PivotTransformComponent — renderer computes model matrix from this
-            PivotTransformComponent pivotComp;
-            pivotComp.pivot = leafPivot;
-            pivotComp.meshCenter = meshCenter;
-            pivotComp.scale = m.scale;
-            pivotComp.closedYawDeg = group.yawDegrees;
-            pivotComp.currentYawDeg = group.yawDegrees;
-            reg.emplace<PivotTransformComponent>(entity, pivotComp);
+            // Override model matrix for pivot-based rendering
+            if (auto* meshComp = reg.try_get<MeshComponent>(entity)) {
+                meshComp->modelOverride = leafModel;
+                meshComp->useModelOverride = true;
+            }
 
-            // DoorLeafComponent now only stores the open yaw target
+            // Attach DoorLeafComponent for swing animation
             DoorLeafComponent doorLeaf;
+            doorLeaf.basePosition = m.position;
+            doorLeaf.pivot = leafPivot;
+            doorLeaf.meshCenter = meshCenter;
+            doorLeaf.closedScale = m.scale;
+            doorLeaf.closedYaw = group.yawDegrees;
             doorLeaf.openYaw = group.yawDegrees - group.openAngle;
             reg.emplace<DoorLeafComponent>(entity, doorLeaf);
         }

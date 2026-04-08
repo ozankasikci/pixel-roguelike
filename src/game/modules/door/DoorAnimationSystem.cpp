@@ -1,53 +1,38 @@
 #include "game/modules/door/DoorAnimationSystem.h"
 
 #include "engine/core/Application.h"
-#include "game/behavior/NodeIdComponent.h"
-#include "game/components/ColliderComponent.h"
-#include "game/components/InteractableComponent.h"
-#include "game/components/PivotTransformComponent.h"
-#include "game/components/PlayerInteractionLockComponent.h"
-#include "game/components/TransformComponent.h"
 #include "game/modules/door/DoorComponents.h"
 #include "game/modules/door/DoorMath.h"
+#include "game/components/InteractableComponent.h"
+#include "game/components/MeshComponent.h"
+#include "game/components/PlayerInteractionLockComponent.h"
+#include "game/components/TransformComponent.h"
 
 #include <algorithm>
 #include <cmath>
 #include <glm/glm.hpp>
-#include <glm/gtc/matrix_inverse.hpp>
+#include <glm/gtc/matrix_transform.hpp>
 
 namespace {
 
-float getDoorLeafYaw(const DoorLeafComponent& leaf, const PivotTransformComponent& pivot,
-                     float progress) {
+float getDoorLeafYaw(const DoorLeafComponent& leaf, float progress) {
     const float eased = 1.0f - std::pow(1.0f - progress, 3.0f);
-    return glm::mix(pivot.closedYawDeg, leaf.openYaw, eased);
+    return glm::mix(leaf.closedYaw, leaf.openYaw, eased);
 }
 
 void updateDoorLeaf(entt::registry& registry, entt::entity entity, float progress) {
+    auto* mesh = registry.try_get<MeshComponent>(entity);
     auto* leaf = registry.try_get<DoorLeafComponent>(entity);
-    auto* pivot = registry.try_get<PivotTransformComponent>(entity);
-    if (!leaf || !pivot) {
+    if (!mesh || !leaf) {
         return;
     }
 
-    pivot->currentYawDeg = getDoorLeafYaw(*leaf, *pivot, progress);
+    const float yaw = getDoorLeafYaw(*leaf, progress);
+    const glm::mat4 model = makePivotLeafModel(leaf->basePosition, leaf->closedYaw, yaw,
+                                               leaf->pivot, leaf->meshCenter, leaf->closedScale);
 
-    // Sync physics collider position with animated leaf
-    if (leaf->colliderEntity != entt::null) {
-        auto* collider = registry.try_get<ColliderComponent>(leaf->colliderEntity);
-        if (collider) {
-            auto* transform = registry.try_get<TransformComponent>(entity);
-            if (transform) {
-                const glm::mat4 model = makePivotLeafModel(
-                    transform->position, pivot->closedYawDeg,
-                    pivot->currentYawDeg, pivot->pivot,
-                    pivot->meshCenter, pivot->scale);
-                const glm::vec4 worldPos = model * glm::vec4(leaf->colliderLocalOffset, 1.0f);
-                collider->position = glm::vec3(worldPos);
-                collider->rotation = glm::vec3(0.0f, pivot->currentYawDeg, 0.0f);
-            }
-        }
-    }
+    mesh->modelOverride = model;
+    mesh->useModelOverride = true;
 }
 
 } // namespace
@@ -114,18 +99,14 @@ void DoorAnimationSystem::init(Application& app) {
         lock.remainingTime = 0.0f;
     }
 
-    // Initialize door leaf pivots to closed state
+    // Initialize door leaf positions to closed state
     auto doorView = registry.view<DoorConfigComponent, DoorStateComponent>();
     for (auto [entity, config, state] : doorView.each()) {
         (void)entity;
         state.progress = 0.0f;
         state.targetState = DoorTargetState::Closed;
-        if (auto* pivot = registry.try_get<PivotTransformComponent>(config.leftLeaf)) {
-            pivot->currentYawDeg = pivot->closedYawDeg;
-        }
-        if (auto* pivot = registry.try_get<PivotTransformComponent>(config.rightLeaf)) {
-            pivot->currentYawDeg = pivot->closedYawDeg;
-        }
+        updateDoorLeaf(registry, config.leftLeaf, 0.0f);
+        updateDoorLeaf(registry, config.rightLeaf, 0.0f);
     }
 }
 
@@ -142,30 +123,5 @@ void resetDoorVisuals(entt::registry& registry) {
         (void)entity;
         updateDoorLeaf(registry, config.leftLeaf, state.progress);
         updateDoorLeaf(registry, config.rightLeaf, state.progress);
-    }
-}
-
-void linkDoorLeafColliders(entt::registry& registry) {
-    auto leafView = registry.view<DoorLeafComponent, PivotTransformComponent, NodeIdComponent>();
-    auto colliderView = registry.view<ColliderComponent>();
-
-    for (auto [leafEntity, leaf, pivot, leafNodeId] : leafView.each()) {
-        for (auto [colliderEntity, collider] : colliderView.each()) {
-            if (collider.parentNodeId.empty()) continue;
-            if (collider.parentNodeId != leafNodeId.nodeId) continue;
-
-            leaf.colliderEntity = colliderEntity;
-
-            // Compute collider position in leaf's local space using the closed-state model
-            const glm::mat4 closedModel = makePivotLeafModel(
-                registry.get<TransformComponent>(leafEntity).position,
-                pivot.closedYawDeg, pivot.closedYawDeg,
-                pivot.pivot, pivot.meshCenter, pivot.scale);
-            const glm::mat4 closedModelInv = glm::inverse(closedModel);
-            const glm::vec4 localPos = closedModelInv * glm::vec4(collider.position, 1.0f);
-            leaf.colliderLocalOffset = glm::vec3(localPos);
-
-            break; // One collider per leaf
-        }
     }
 }

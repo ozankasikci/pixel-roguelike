@@ -83,8 +83,226 @@ collider box solid 0.0 6.05 2.0 5.0 0.05 4.0 node n_col_ceil
 collider box solid 0.0 3.0 -2.0 5.0 3.0 0.1 node n_col_south
 collider box solid 0.0 3.0 6.0 5.0 3.0 0.1 node n_col_north
 collider box solid 5.0 3.0 2.0 0.1 3.0 4.0 node n_col_east
-collider box solid -5.0 3.0 2.0 0.1 3.0 4.0 node n_col_west
+collider box solid -5.0 3.0 -1.0 0.1 3.0 1.0 node n_col_west_s
+collider box solid -5.0 3.0 4.0 0.1 3.0 2.0 node n_col_west_n
 player_spawn 0.0 1.0 -0.5 -2.0 node n_spawn
-door_group DoorA -5.0 0.0 1.0 89.999985 scale 1.019494 1.019494 1.019494 node n_doorA_group
+door_group DoorA -5.0 0.0 1.0 90.0 node n_doorA_group
 door_group DoorB 0.0 0.0 6.0 180.0 open_duration 1.8 node n_doorB_group
 door_group DoorC 5.0 0.0 3.0 -90.0 open_duration 1.0 node n_doorC_group
+
+# --- Control Room (18x14x10m): X:-7 to -25, Z:-5 to +9, Y:0 to 10 ---
+
+# Floor tiles (SM_Floor 0.008 0.008 0.008, inst_glossy_floor, 9 cols x 7 rows = 63 tiles)
+mesh SM_Floor -8.0 0.0 -4.0 0.008 0.008 0.008 0.0 0.0 0.0 material inst_glossy_floor tint 1.0 1.0 1.0 node n_cr_f01
+mesh SM_Floor -10.0 0.0 -4.0 0.008 0.008 0.008 0.0 0.0 0.0 material inst_glossy_floor tint 1.01 1.01 1.0 node n_cr_f02
+mesh SM_Floor -12.0 0.0 -4.0 0.008 0.008 0.008 0.0 0.0 0.0 material inst_glossy_floor tint 1.0 1.0 1.0 node n_cr_f03
+mesh SM_Floor -14.0 0.0 -4.0 0.008 0.008 0.008 0.0 0.0 0.0 material inst_glossy_floor tint 1.01 1.01 1.0 node n_cr_f04
+mesh SM_Floor -16.0 0.0 -4.0 0.008 0.008 0.008 0.0 0.0 0.0 material inst_glossy_floor tint 1.0 1.0 1.0 node n_cr_f05
+mesh SM_Floor -18.0 0.0 -4.0 0.008 0.008 0.008 0.0 0.0 0.0 material inst_glossy_floor tint 1.01 1.01 1.0 node n_cr_f06
+mesh SM_Floor -20.0 0.0 -4.0 0.008 0.008 0.008 0.0 0.0 0.0 material inst_glossy_floor tint 1.0 1.0 1.0 node n_cr_f07
+mesh SM_Floor -22.0 0.0 -4.0 0.008 0.008 0.008 0.0 0.0 0.0 material inst_glossy_floor tint 1.01 1.01 1.0 node n_cr_f08
+mesh SM_Floor -24.0 0.0 -4.0 0.008 0.008 0.008 0.0 0.0 0.0 material inst_glossy_floor tint 1.0 1.0 1.0 node n_cr_f09
+mesh SM_Floor -8.0 0.0 -2.0 0.008 0.008 0.008 0.0 0.0 0.0 material inst_glossy_floor tint 1.01 1.01 1.0 node n_cr_f10
+mesh SM_Floor -10.0 0.0 -2.0 0.008 0.008 0.008 0.0 0.0 0.0 material inst_glossy_floor tint 1.0 1.0 1.0 node n_cr_f11
+mesh SM_Floor -12.0 0.0 -2.0 0.008 0.008 0.008 0.0 0.0 0.0 material inst_glossy_floor tint 1.01 1.01 1.0 node n_cr_f12
+mesh SM_Floor -14.0 0.0 -2.0 0.008 0.008 0.008 0.0 0.0 0.0 material inst_glossy_floor tint 1.0 1.0 1.0 node n_cr_f13
+mesh SM_Floor -16.0 0.0 -2.0 0.008 0.008 0.008 0.0 0.0 0.0 material inst_glossy_floor tint 1.01 1.01 1.0 node n_cr_f14
+mesh SM_Floor -18.0 0.0 -2.0 0.008 0.008 0.008 0.0 0.0 0.0 material inst_glossy_floor tint 1.0 1.0 1.0 node n_cr_f15
+mesh SM_Floor -20.0 0.0 -2.0 0.008 0.008 0.008 0.0 0.0 0.0 material inst_glossy_floor tint 1.01 1.01 1.0 node n_cr_f16
+mesh SM_Floor -22.0 0.0 -2.0 0.008 0.008 0.008 0.0 0.0 0.0 material inst_glossy_floor tint 1.0 1.0 1.0 node n_cr_f17
+mesh SM_Floor -24.0 0.0 -2.0 0.008 0.008 0.008 0.0 0.0 0.0 material inst_glossy_floor tint 1.01 1.01 1.0 node n_cr_f18
+mesh SM_Floor -8.0 0.0 0.0 0.008 0.008 0.008 0.0 0.0 0.0 material inst_glossy_floor tint 1.0 1.0 1.0 node n_cr_f19
+mesh SM_Floor -10.0 0.0 0.0 0.008 0.008 0.008 0.0 0.0 0.0 material inst_glossy_floor tint 1.01 1.01 1.0 node n_cr_f20
+mesh SM_Floor -12.0 0.0 0.0 0.008 0.008 0.008 0.0 0.0 0.0 material inst_glossy_floor tint 1.0 1.0 1.0 node n_cr_f21
+mesh SM_Floor -14.0 0.0 0.0 0.008 0.008 0.008 0.0 0.0 0.0 material inst_glossy_floor tint 1.01 1.01 1.0 node n_cr_f22
+mesh SM_Floor -16.0 0.0 0.0 0.008 0.008 0.008 0.0 0.0 0.0 material inst_glossy_floor tint 1.0 1.0 1.0 node n_cr_f23
+mesh SM_Floor -18.0 0.0 0.0 0.008 0.008 0.008 0.0 0.0 0.0 material inst_glossy_floor tint 1.01 1.01 1.0 node n_cr_f24
+mesh SM_Floor -20.0 0.0 0.0 0.008 0.008 0.008 0.0 0.0 0.0 material inst_glossy_floor tint 1.0 1.0 1.0 node n_cr_f25
+mesh SM_Floor -22.0 0.0 0.0 0.008 0.008 0.008 0.0 0.0 0.0 material inst_glossy_floor tint 1.01 1.01 1.0 node n_cr_f26
+mesh SM_Floor -24.0 0.0 0.0 0.008 0.008 0.008 0.0 0.0 0.0 material inst_glossy_floor tint 1.0 1.0 1.0 node n_cr_f27
+mesh SM_Floor -8.0 0.0 2.0 0.008 0.008 0.008 0.0 0.0 0.0 material inst_glossy_floor tint 1.01 1.01 1.0 node n_cr_f28
+mesh SM_Floor -10.0 0.0 2.0 0.008 0.008 0.008 0.0 0.0 0.0 material inst_glossy_floor tint 1.0 1.0 1.0 node n_cr_f29
+mesh SM_Floor -12.0 0.0 2.0 0.008 0.008 0.008 0.0 0.0 0.0 material inst_glossy_floor tint 1.01 1.01 1.0 node n_cr_f30
+mesh SM_Floor -14.0 0.0 2.0 0.008 0.008 0.008 0.0 0.0 0.0 material inst_glossy_floor tint 1.0 1.0 1.0 node n_cr_f31
+mesh SM_Floor -16.0 0.0 2.0 0.008 0.008 0.008 0.0 0.0 0.0 material inst_glossy_floor tint 1.01 1.01 1.0 node n_cr_f32
+mesh SM_Floor -18.0 0.0 2.0 0.008 0.008 0.008 0.0 0.0 0.0 material inst_glossy_floor tint 1.0 1.0 1.0 node n_cr_f33
+mesh SM_Floor -20.0 0.0 2.0 0.008 0.008 0.008 0.0 0.0 0.0 material inst_glossy_floor tint 1.01 1.01 1.0 node n_cr_f34
+mesh SM_Floor -22.0 0.0 2.0 0.008 0.008 0.008 0.0 0.0 0.0 material inst_glossy_floor tint 1.0 1.0 1.0 node n_cr_f35
+mesh SM_Floor -24.0 0.0 2.0 0.008 0.008 0.008 0.0 0.0 0.0 material inst_glossy_floor tint 1.01 1.01 1.0 node n_cr_f36
+mesh SM_Floor -8.0 0.0 4.0 0.008 0.008 0.008 0.0 0.0 0.0 material inst_glossy_floor tint 1.0 1.0 1.0 node n_cr_f37
+mesh SM_Floor -10.0 0.0 4.0 0.008 0.008 0.008 0.0 0.0 0.0 material inst_glossy_floor tint 1.01 1.01 1.0 node n_cr_f38
+mesh SM_Floor -12.0 0.0 4.0 0.008 0.008 0.008 0.0 0.0 0.0 material inst_glossy_floor tint 1.0 1.0 1.0 node n_cr_f39
+mesh SM_Floor -14.0 0.0 4.0 0.008 0.008 0.008 0.0 0.0 0.0 material inst_glossy_floor tint 1.01 1.01 1.0 node n_cr_f40
+mesh SM_Floor -16.0 0.0 4.0 0.008 0.008 0.008 0.0 0.0 0.0 material inst_glossy_floor tint 1.0 1.0 1.0 node n_cr_f41
+mesh SM_Floor -18.0 0.0 4.0 0.008 0.008 0.008 0.0 0.0 0.0 material inst_glossy_floor tint 1.01 1.01 1.0 node n_cr_f42
+mesh SM_Floor -20.0 0.0 4.0 0.008 0.008 0.008 0.0 0.0 0.0 material inst_glossy_floor tint 1.0 1.0 1.0 node n_cr_f43
+mesh SM_Floor -22.0 0.0 4.0 0.008 0.008 0.008 0.0 0.0 0.0 material inst_glossy_floor tint 1.01 1.01 1.0 node n_cr_f44
+mesh SM_Floor -24.0 0.0 4.0 0.008 0.008 0.008 0.0 0.0 0.0 material inst_glossy_floor tint 1.0 1.0 1.0 node n_cr_f45
+mesh SM_Floor -8.0 0.0 6.0 0.008 0.008 0.008 0.0 0.0 0.0 material inst_glossy_floor tint 1.01 1.01 1.0 node n_cr_f46
+mesh SM_Floor -10.0 0.0 6.0 0.008 0.008 0.008 0.0 0.0 0.0 material inst_glossy_floor tint 1.0 1.0 1.0 node n_cr_f47
+mesh SM_Floor -12.0 0.0 6.0 0.008 0.008 0.008 0.0 0.0 0.0 material inst_glossy_floor tint 1.01 1.01 1.0 node n_cr_f48
+mesh SM_Floor -14.0 0.0 6.0 0.008 0.008 0.008 0.0 0.0 0.0 material inst_glossy_floor tint 1.0 1.0 1.0 node n_cr_f49
+mesh SM_Floor -16.0 0.0 6.0 0.008 0.008 0.008 0.0 0.0 0.0 material inst_glossy_floor tint 1.01 1.01 1.0 node n_cr_f50
+mesh SM_Floor -18.0 0.0 6.0 0.008 0.008 0.008 0.0 0.0 0.0 material inst_glossy_floor tint 1.0 1.0 1.0 node n_cr_f51
+mesh SM_Floor -20.0 0.0 6.0 0.008 0.008 0.008 0.0 0.0 0.0 material inst_glossy_floor tint 1.01 1.01 1.0 node n_cr_f52
+mesh SM_Floor -22.0 0.0 6.0 0.008 0.008 0.008 0.0 0.0 0.0 material inst_glossy_floor tint 1.0 1.0 1.0 node n_cr_f53
+mesh SM_Floor -24.0 0.0 6.0 0.008 0.008 0.008 0.0 0.0 0.0 material inst_glossy_floor tint 1.01 1.01 1.0 node n_cr_f54
+mesh SM_Floor -8.0 0.0 8.0 0.008 0.008 0.008 0.0 0.0 0.0 material inst_glossy_floor tint 1.0 1.0 1.0 node n_cr_f55
+mesh SM_Floor -10.0 0.0 8.0 0.008 0.008 0.008 0.0 0.0 0.0 material inst_glossy_floor tint 1.01 1.01 1.0 node n_cr_f56
+mesh SM_Floor -12.0 0.0 8.0 0.008 0.008 0.008 0.0 0.0 0.0 material inst_glossy_floor tint 1.0 1.0 1.0 node n_cr_f57
+mesh SM_Floor -14.0 0.0 8.0 0.008 0.008 0.008 0.0 0.0 0.0 material inst_glossy_floor tint 1.01 1.01 1.0 node n_cr_f58
+mesh SM_Floor -16.0 0.0 8.0 0.008 0.008 0.008 0.0 0.0 0.0 material inst_glossy_floor tint 1.0 1.0 1.0 node n_cr_f59
+mesh SM_Floor -18.0 0.0 8.0 0.008 0.008 0.008 0.0 0.0 0.0 material inst_glossy_floor tint 1.01 1.01 1.0 node n_cr_f60
+mesh SM_Floor -20.0 0.0 8.0 0.008 0.008 0.008 0.0 0.0 0.0 material inst_glossy_floor tint 1.0 1.0 1.0 node n_cr_f61
+mesh SM_Floor -22.0 0.0 8.0 0.008 0.008 0.008 0.0 0.0 0.0 material inst_glossy_floor tint 1.01 1.01 1.0 node n_cr_f62
+mesh SM_Floor -24.0 0.0 8.0 0.008 0.008 0.008 0.0 0.0 0.0 material inst_glossy_floor tint 1.0 1.0 1.0 node n_cr_f63
+
+# Ceiling tiles (prison_ceiling 1.0 1.0 1.0, ceiling_default, Y=10.0, 9x7=63 tiles)
+mesh prison_ceiling -8.0 10.0 -4.0 1.0 1.0 1.0 0.0 0.0 0.0 material ceiling_default tint 0.94 0.92 0.88 node n_cr_c01
+mesh prison_ceiling -10.0 10.0 -4.0 1.0 1.0 1.0 0.0 0.0 0.0 material ceiling_default tint 0.93 0.91 0.87 node n_cr_c02
+mesh prison_ceiling -12.0 10.0 -4.0 1.0 1.0 1.0 0.0 0.0 0.0 material ceiling_default tint 0.94 0.92 0.88 node n_cr_c03
+mesh prison_ceiling -14.0 10.0 -4.0 1.0 1.0 1.0 0.0 0.0 0.0 material ceiling_default tint 0.93 0.91 0.87 node n_cr_c04
+mesh prison_ceiling -16.0 10.0 -4.0 1.0 1.0 1.0 0.0 0.0 0.0 material ceiling_default tint 0.94 0.92 0.88 node n_cr_c05
+mesh prison_ceiling -18.0 10.0 -4.0 1.0 1.0 1.0 0.0 0.0 0.0 material ceiling_default tint 0.93 0.91 0.87 node n_cr_c06
+mesh prison_ceiling -20.0 10.0 -4.0 1.0 1.0 1.0 0.0 0.0 0.0 material ceiling_default tint 0.94 0.92 0.88 node n_cr_c07
+mesh prison_ceiling -22.0 10.0 -4.0 1.0 1.0 1.0 0.0 0.0 0.0 material ceiling_default tint 0.93 0.91 0.87 node n_cr_c08
+mesh prison_ceiling -24.0 10.0 -4.0 1.0 1.0 1.0 0.0 0.0 0.0 material ceiling_default tint 0.94 0.92 0.88 node n_cr_c09
+mesh prison_ceiling -8.0 10.0 -2.0 1.0 1.0 1.0 0.0 0.0 0.0 material ceiling_default tint 0.93 0.91 0.87 node n_cr_c10
+mesh prison_ceiling -10.0 10.0 -2.0 1.0 1.0 1.0 0.0 0.0 0.0 material ceiling_default tint 0.94 0.92 0.88 node n_cr_c11
+mesh prison_ceiling -12.0 10.0 -2.0 1.0 1.0 1.0 0.0 0.0 0.0 material ceiling_default tint 0.93 0.91 0.87 node n_cr_c12
+mesh prison_ceiling -14.0 10.0 -2.0 1.0 1.0 1.0 0.0 0.0 0.0 material ceiling_default tint 0.94 0.92 0.88 node n_cr_c13
+mesh prison_ceiling -16.0 10.0 -2.0 1.0 1.0 1.0 0.0 0.0 0.0 material ceiling_default tint 0.93 0.91 0.87 node n_cr_c14
+mesh prison_ceiling -18.0 10.0 -2.0 1.0 1.0 1.0 0.0 0.0 0.0 material ceiling_default tint 0.94 0.92 0.88 node n_cr_c15
+mesh prison_ceiling -20.0 10.0 -2.0 1.0 1.0 1.0 0.0 0.0 0.0 material ceiling_default tint 0.93 0.91 0.87 node n_cr_c16
+mesh prison_ceiling -22.0 10.0 -2.0 1.0 1.0 1.0 0.0 0.0 0.0 material ceiling_default tint 0.94 0.92 0.88 node n_cr_c17
+mesh prison_ceiling -24.0 10.0 -2.0 1.0 1.0 1.0 0.0 0.0 0.0 material ceiling_default tint 0.93 0.91 0.87 node n_cr_c18
+mesh prison_ceiling -8.0 10.0 0.0 1.0 1.0 1.0 0.0 0.0 0.0 material ceiling_default tint 0.94 0.92 0.88 node n_cr_c19
+mesh prison_ceiling -10.0 10.0 0.0 1.0 1.0 1.0 0.0 0.0 0.0 material ceiling_default tint 0.93 0.91 0.87 node n_cr_c20
+mesh prison_ceiling -12.0 10.0 0.0 1.0 1.0 1.0 0.0 0.0 0.0 material ceiling_default tint 0.94 0.92 0.88 node n_cr_c21
+mesh prison_ceiling -14.0 10.0 0.0 1.0 1.0 1.0 0.0 0.0 0.0 material ceiling_default tint 0.93 0.91 0.87 node n_cr_c22
+mesh prison_ceiling -16.0 10.0 0.0 1.0 1.0 1.0 0.0 0.0 0.0 material ceiling_default tint 0.94 0.92 0.88 node n_cr_c23
+mesh prison_ceiling -18.0 10.0 0.0 1.0 1.0 1.0 0.0 0.0 0.0 material ceiling_default tint 0.93 0.91 0.87 node n_cr_c24
+mesh prison_ceiling -20.0 10.0 0.0 1.0 1.0 1.0 0.0 0.0 0.0 material ceiling_default tint 0.94 0.92 0.88 node n_cr_c25
+mesh prison_ceiling -22.0 10.0 0.0 1.0 1.0 1.0 0.0 0.0 0.0 material ceiling_default tint 0.93 0.91 0.87 node n_cr_c26
+mesh prison_ceiling -24.0 10.0 0.0 1.0 1.0 1.0 0.0 0.0 0.0 material ceiling_default tint 0.94 0.92 0.88 node n_cr_c27
+mesh prison_ceiling -8.0 10.0 2.0 1.0 1.0 1.0 0.0 0.0 0.0 material ceiling_default tint 0.93 0.91 0.87 node n_cr_c28
+mesh prison_ceiling -10.0 10.0 2.0 1.0 1.0 1.0 0.0 0.0 0.0 material ceiling_default tint 0.94 0.92 0.88 node n_cr_c29
+mesh prison_ceiling -12.0 10.0 2.0 1.0 1.0 1.0 0.0 0.0 0.0 material ceiling_default tint 0.93 0.91 0.87 node n_cr_c30
+mesh prison_ceiling -14.0 10.0 2.0 1.0 1.0 1.0 0.0 0.0 0.0 material ceiling_default tint 0.94 0.92 0.88 node n_cr_c31
+mesh prison_ceiling -16.0 10.0 2.0 1.0 1.0 1.0 0.0 0.0 0.0 material ceiling_default tint 0.93 0.91 0.87 node n_cr_c32
+mesh prison_ceiling -18.0 10.0 2.0 1.0 1.0 1.0 0.0 0.0 0.0 material ceiling_default tint 0.94 0.92 0.88 node n_cr_c33
+mesh prison_ceiling -20.0 10.0 2.0 1.0 1.0 1.0 0.0 0.0 0.0 material ceiling_default tint 0.93 0.91 0.87 node n_cr_c34
+mesh prison_ceiling -22.0 10.0 2.0 1.0 1.0 1.0 0.0 0.0 0.0 material ceiling_default tint 0.94 0.92 0.88 node n_cr_c35
+mesh prison_ceiling -24.0 10.0 2.0 1.0 1.0 1.0 0.0 0.0 0.0 material ceiling_default tint 0.93 0.91 0.87 node n_cr_c36
+mesh prison_ceiling -8.0 10.0 4.0 1.0 1.0 1.0 0.0 0.0 0.0 material ceiling_default tint 0.94 0.92 0.88 node n_cr_c37
+mesh prison_ceiling -10.0 10.0 4.0 1.0 1.0 1.0 0.0 0.0 0.0 material ceiling_default tint 0.93 0.91 0.87 node n_cr_c38
+mesh prison_ceiling -12.0 10.0 4.0 1.0 1.0 1.0 0.0 0.0 0.0 material ceiling_default tint 0.94 0.92 0.88 node n_cr_c39
+mesh prison_ceiling -14.0 10.0 4.0 1.0 1.0 1.0 0.0 0.0 0.0 material ceiling_default tint 0.93 0.91 0.87 node n_cr_c40
+mesh prison_ceiling -16.0 10.0 4.0 1.0 1.0 1.0 0.0 0.0 0.0 material ceiling_default tint 0.94 0.92 0.88 node n_cr_c41
+mesh prison_ceiling -18.0 10.0 4.0 1.0 1.0 1.0 0.0 0.0 0.0 material ceiling_default tint 0.93 0.91 0.87 node n_cr_c42
+mesh prison_ceiling -20.0 10.0 4.0 1.0 1.0 1.0 0.0 0.0 0.0 material ceiling_default tint 0.94 0.92 0.88 node n_cr_c43
+mesh prison_ceiling -22.0 10.0 4.0 1.0 1.0 1.0 0.0 0.0 0.0 material ceiling_default tint 0.93 0.91 0.87 node n_cr_c44
+mesh prison_ceiling -24.0 10.0 4.0 1.0 1.0 1.0 0.0 0.0 0.0 material ceiling_default tint 0.94 0.92 0.88 node n_cr_c45
+mesh prison_ceiling -8.0 10.0 6.0 1.0 1.0 1.0 0.0 0.0 0.0 material ceiling_default tint 0.93 0.91 0.87 node n_cr_c46
+mesh prison_ceiling -10.0 10.0 6.0 1.0 1.0 1.0 0.0 0.0 0.0 material ceiling_default tint 0.94 0.92 0.88 node n_cr_c47
+mesh prison_ceiling -12.0 10.0 6.0 1.0 1.0 1.0 0.0 0.0 0.0 material ceiling_default tint 0.93 0.91 0.87 node n_cr_c48
+mesh prison_ceiling -14.0 10.0 6.0 1.0 1.0 1.0 0.0 0.0 0.0 material ceiling_default tint 0.94 0.92 0.88 node n_cr_c49
+mesh prison_ceiling -16.0 10.0 6.0 1.0 1.0 1.0 0.0 0.0 0.0 material ceiling_default tint 0.93 0.91 0.87 node n_cr_c50
+mesh prison_ceiling -18.0 10.0 6.0 1.0 1.0 1.0 0.0 0.0 0.0 material ceiling_default tint 0.94 0.92 0.88 node n_cr_c51
+mesh prison_ceiling -20.0 10.0 6.0 1.0 1.0 1.0 0.0 0.0 0.0 material ceiling_default tint 0.93 0.91 0.87 node n_cr_c52
+mesh prison_ceiling -22.0 10.0 6.0 1.0 1.0 1.0 0.0 0.0 0.0 material ceiling_default tint 0.94 0.92 0.88 node n_cr_c53
+mesh prison_ceiling -24.0 10.0 6.0 1.0 1.0 1.0 0.0 0.0 0.0 material ceiling_default tint 0.93 0.91 0.87 node n_cr_c54
+mesh prison_ceiling -8.0 10.0 8.0 1.0 1.0 1.0 0.0 0.0 0.0 material ceiling_default tint 0.94 0.92 0.88 node n_cr_c55
+mesh prison_ceiling -10.0 10.0 8.0 1.0 1.0 1.0 0.0 0.0 0.0 material ceiling_default tint 0.93 0.91 0.87 node n_cr_c56
+mesh prison_ceiling -12.0 10.0 8.0 1.0 1.0 1.0 0.0 0.0 0.0 material ceiling_default tint 0.94 0.92 0.88 node n_cr_c57
+mesh prison_ceiling -14.0 10.0 8.0 1.0 1.0 1.0 0.0 0.0 0.0 material ceiling_default tint 0.93 0.91 0.87 node n_cr_c58
+mesh prison_ceiling -16.0 10.0 8.0 1.0 1.0 1.0 0.0 0.0 0.0 material ceiling_default tint 0.94 0.92 0.88 node n_cr_c59
+mesh prison_ceiling -18.0 10.0 8.0 1.0 1.0 1.0 0.0 0.0 0.0 material ceiling_default tint 0.93 0.91 0.87 node n_cr_c60
+mesh prison_ceiling -20.0 10.0 8.0 1.0 1.0 1.0 0.0 0.0 0.0 material ceiling_default tint 0.94 0.92 0.88 node n_cr_c61
+mesh prison_ceiling -22.0 10.0 8.0 1.0 1.0 1.0 0.0 0.0 0.0 material ceiling_default tint 0.93 0.91 0.87 node n_cr_c62
+mesh prison_ceiling -24.0 10.0 8.0 1.0 1.0 1.0 0.0 0.0 0.0 material ceiling_default tint 0.94 0.92 0.88 node n_cr_c63
+
+# South wall dado (SM_Wall 0.008 0.008 0.008, ~2m, Z=-5, facing north, rot 0 0 0)
+mesh SM_Wall -8.0 0.0 -5.0 0.008 0.008 0.008 0.0 0.0 0.0 material concrete_wall tint 0.82 0.78 0.7 node n_cr_wsd01
+mesh SM_Wall -10.0 0.0 -5.0 0.008 0.008 0.008 0.0 0.0 0.0 material concrete_wall tint 0.83 0.79 0.71 node n_cr_wsd02
+mesh SM_Wall -12.0 0.0 -5.0 0.008 0.008 0.008 0.0 0.0 0.0 material concrete_wall tint 0.82 0.78 0.7 node n_cr_wsd03
+mesh SM_Wall -14.0 0.0 -5.0 0.008 0.008 0.008 0.0 0.0 0.0 material concrete_wall tint 0.83 0.79 0.71 node n_cr_wsd04
+mesh SM_Wall -16.0 0.0 -5.0 0.008 0.008 0.008 0.0 0.0 0.0 material concrete_wall tint 0.82 0.78 0.7 node n_cr_wsd05
+mesh SM_Wall -18.0 0.0 -5.0 0.008 0.008 0.008 0.0 0.0 0.0 material concrete_wall tint 0.83 0.79 0.71 node n_cr_wsd06
+mesh SM_Wall -20.0 0.0 -5.0 0.008 0.008 0.008 0.0 0.0 0.0 material concrete_wall tint 0.82 0.78 0.7 node n_cr_wsd07
+mesh SM_Wall -22.0 0.0 -5.0 0.008 0.008 0.008 0.0 0.0 0.0 material concrete_wall tint 0.83 0.79 0.71 node n_cr_wsd08
+mesh SM_Wall -24.0 0.0 -5.0 0.008 0.008 0.008 0.0 0.0 0.0 material concrete_wall tint 0.82 0.78 0.7 node n_cr_wsd09
+
+# North wall dado (Z=+9, facing south, rot 0 180 0)
+mesh SM_Wall -8.0 0.0 9.0 0.008 0.008 0.008 0.0 180.0 0.0 material concrete_wall tint 0.82 0.78 0.7 node n_cr_wnd01
+mesh SM_Wall -10.0 0.0 9.0 0.008 0.008 0.008 0.0 180.0 0.0 material concrete_wall tint 0.83 0.79 0.71 node n_cr_wnd02
+mesh SM_Wall -12.0 0.0 9.0 0.008 0.008 0.008 0.0 180.0 0.0 material concrete_wall tint 0.82 0.78 0.7 node n_cr_wnd03
+mesh SM_Wall -14.0 0.0 9.0 0.008 0.008 0.008 0.0 180.0 0.0 material concrete_wall tint 0.83 0.79 0.71 node n_cr_wnd04
+mesh SM_Wall -16.0 0.0 9.0 0.008 0.008 0.008 0.0 180.0 0.0 material concrete_wall tint 0.82 0.78 0.7 node n_cr_wnd05
+mesh SM_Wall -18.0 0.0 9.0 0.008 0.008 0.008 0.0 180.0 0.0 material concrete_wall tint 0.83 0.79 0.71 node n_cr_wnd06
+mesh SM_Wall -20.0 0.0 9.0 0.008 0.008 0.008 0.0 180.0 0.0 material concrete_wall tint 0.82 0.78 0.7 node n_cr_wnd07
+mesh SM_Wall -22.0 0.0 9.0 0.008 0.008 0.008 0.0 180.0 0.0 material concrete_wall tint 0.83 0.79 0.71 node n_cr_wnd08
+mesh SM_Wall -24.0 0.0 9.0 0.008 0.008 0.008 0.0 180.0 0.0 material concrete_wall tint 0.82 0.78 0.7 node n_cr_wnd09
+
+# East wall dado (X=-7, facing west, rot 0 -90 0, gap at Z=0 and Z=2 for door passage)
+mesh SM_Wall -7.0 0.0 -4.0 0.008 0.008 0.008 0.0 -90.0 0.0 material concrete_wall tint 0.82 0.78 0.7 node n_cr_wed01
+mesh SM_Wall -7.0 0.0 -2.0 0.008 0.008 0.008 0.0 -90.0 0.0 material concrete_wall tint 0.83 0.79 0.71 node n_cr_wed02
+mesh SM_Wall -7.0 0.0 4.0 0.008 0.008 0.008 0.0 -90.0 0.0 material concrete_wall tint 0.82 0.78 0.7 node n_cr_wed03
+mesh SM_Wall -7.0 0.0 6.0 0.008 0.008 0.008 0.0 -90.0 0.0 material concrete_wall tint 0.83 0.79 0.71 node n_cr_wed04
+mesh SM_Wall -7.0 0.0 8.0 0.008 0.008 0.008 0.0 -90.0 0.0 material concrete_wall tint 0.82 0.78 0.7 node n_cr_wed05
+
+# West wall dado (X=-25, facing east, rot 0 90 0)
+mesh SM_Wall -25.0 0.0 -4.0 0.008 0.008 0.008 0.0 90.0 0.0 material concrete_wall tint 0.82 0.78 0.7 node n_cr_wwd01
+mesh SM_Wall -25.0 0.0 -2.0 0.008 0.008 0.008 0.0 90.0 0.0 material concrete_wall tint 0.83 0.79 0.71 node n_cr_wwd02
+mesh SM_Wall -25.0 0.0 0.0 0.008 0.008 0.008 0.0 90.0 0.0 material concrete_wall tint 0.82 0.78 0.7 node n_cr_wwd03
+mesh SM_Wall -25.0 0.0 2.0 0.008 0.008 0.008 0.0 90.0 0.0 material concrete_wall tint 0.83 0.79 0.71 node n_cr_wwd04
+mesh SM_Wall -25.0 0.0 4.0 0.008 0.008 0.008 0.0 90.0 0.0 material concrete_wall tint 0.82 0.78 0.7 node n_cr_wwd05
+mesh SM_Wall -25.0 0.0 6.0 0.008 0.008 0.008 0.0 90.0 0.0 material concrete_wall tint 0.83 0.79 0.71 node n_cr_wwd06
+mesh SM_Wall -25.0 0.0 8.0 0.008 0.008 0.008 0.0 90.0 0.0 material concrete_wall tint 0.82 0.78 0.7 node n_cr_wwd07
+
+# South wall upper (SM_Wall 0.008 0.032 0.008, ~8m, Y=2, inst_beige_wall, rot 0 0 0)
+mesh SM_Wall -8.0 2.0 -5.0 0.008 0.032 0.008 0.0 0.0 0.0 material inst_beige_wall tint 1.0 1.0 1.0 node n_cr_wsu01
+mesh SM_Wall -10.0 2.0 -5.0 0.008 0.032 0.008 0.0 0.0 0.0 material inst_beige_wall tint 1.0 1.0 1.0 node n_cr_wsu02
+mesh SM_Wall -12.0 2.0 -5.0 0.008 0.032 0.008 0.0 0.0 0.0 material inst_beige_wall tint 1.0 1.0 1.0 node n_cr_wsu03
+mesh SM_Wall -14.0 2.0 -5.0 0.008 0.032 0.008 0.0 0.0 0.0 material inst_beige_wall tint 1.0 1.0 1.0 node n_cr_wsu04
+mesh SM_Wall -16.0 2.0 -5.0 0.008 0.032 0.008 0.0 0.0 0.0 material inst_beige_wall tint 1.0 1.0 1.0 node n_cr_wsu05
+mesh SM_Wall -18.0 2.0 -5.0 0.008 0.032 0.008 0.0 0.0 0.0 material inst_beige_wall tint 1.0 1.0 1.0 node n_cr_wsu06
+mesh SM_Wall -20.0 2.0 -5.0 0.008 0.032 0.008 0.0 0.0 0.0 material inst_beige_wall tint 1.0 1.0 1.0 node n_cr_wsu07
+mesh SM_Wall -22.0 2.0 -5.0 0.008 0.032 0.008 0.0 0.0 0.0 material inst_beige_wall tint 1.0 1.0 1.0 node n_cr_wsu08
+mesh SM_Wall -24.0 2.0 -5.0 0.008 0.032 0.008 0.0 0.0 0.0 material inst_beige_wall tint 1.0 1.0 1.0 node n_cr_wsu09
+
+# North wall upper (Y=2, rot 0 180 0)
+mesh SM_Wall -8.0 2.0 9.0 0.008 0.032 0.008 0.0 180.0 0.0 material inst_beige_wall tint 1.0 1.0 1.0 node n_cr_wnu01
+mesh SM_Wall -10.0 2.0 9.0 0.008 0.032 0.008 0.0 180.0 0.0 material inst_beige_wall tint 1.0 1.0 1.0 node n_cr_wnu02
+mesh SM_Wall -12.0 2.0 9.0 0.008 0.032 0.008 0.0 180.0 0.0 material inst_beige_wall tint 1.0 1.0 1.0 node n_cr_wnu03
+mesh SM_Wall -14.0 2.0 9.0 0.008 0.032 0.008 0.0 180.0 0.0 material inst_beige_wall tint 1.0 1.0 1.0 node n_cr_wnu04
+mesh SM_Wall -16.0 2.0 9.0 0.008 0.032 0.008 0.0 180.0 0.0 material inst_beige_wall tint 1.0 1.0 1.0 node n_cr_wnu05
+mesh SM_Wall -18.0 2.0 9.0 0.008 0.032 0.008 0.0 180.0 0.0 material inst_beige_wall tint 1.0 1.0 1.0 node n_cr_wnu06
+mesh SM_Wall -20.0 2.0 9.0 0.008 0.032 0.008 0.0 180.0 0.0 material inst_beige_wall tint 1.0 1.0 1.0 node n_cr_wnu07
+mesh SM_Wall -22.0 2.0 9.0 0.008 0.032 0.008 0.0 180.0 0.0 material inst_beige_wall tint 1.0 1.0 1.0 node n_cr_wnu08
+mesh SM_Wall -24.0 2.0 9.0 0.008 0.032 0.008 0.0 180.0 0.0 material inst_beige_wall tint 1.0 1.0 1.0 node n_cr_wnu09
+
+# East wall upper (X=-7, Y=2, rot 0 -90 0, same gap at Z=0 and Z=2)
+mesh SM_Wall -7.0 2.0 -4.0 0.008 0.032 0.008 0.0 -90.0 0.0 material inst_beige_wall tint 1.0 1.0 1.0 node n_cr_weu01
+mesh SM_Wall -7.0 2.0 -2.0 0.008 0.032 0.008 0.0 -90.0 0.0 material inst_beige_wall tint 1.0 1.0 1.0 node n_cr_weu02
+mesh SM_Wall -7.0 2.0 4.0 0.008 0.032 0.008 0.0 -90.0 0.0 material inst_beige_wall tint 1.0 1.0 1.0 node n_cr_weu03
+mesh SM_Wall -7.0 2.0 6.0 0.008 0.032 0.008 0.0 -90.0 0.0 material inst_beige_wall tint 1.0 1.0 1.0 node n_cr_weu04
+mesh SM_Wall -7.0 2.0 8.0 0.008 0.032 0.008 0.0 -90.0 0.0 material inst_beige_wall tint 1.0 1.0 1.0 node n_cr_weu05
+
+# West wall upper (X=-25, Y=2, rot 0 90 0)
+mesh SM_Wall -25.0 2.0 -4.0 0.008 0.032 0.008 0.0 90.0 0.0 material inst_beige_wall tint 1.0 1.0 1.0 node n_cr_wwu01
+mesh SM_Wall -25.0 2.0 -2.0 0.008 0.032 0.008 0.0 90.0 0.0 material inst_beige_wall tint 1.0 1.0 1.0 node n_cr_wwu02
+mesh SM_Wall -25.0 2.0 0.0 0.008 0.032 0.008 0.0 90.0 0.0 material inst_beige_wall tint 1.0 1.0 1.0 node n_cr_wwu03
+mesh SM_Wall -25.0 2.0 2.0 0.008 0.032 0.008 0.0 90.0 0.0 material inst_beige_wall tint 1.0 1.0 1.0 node n_cr_wwu04
+mesh SM_Wall -25.0 2.0 4.0 0.008 0.032 0.008 0.0 90.0 0.0 material inst_beige_wall tint 1.0 1.0 1.0 node n_cr_wwu05
+mesh SM_Wall -25.0 2.0 6.0 0.008 0.032 0.008 0.0 90.0 0.0 material inst_beige_wall tint 1.0 1.0 1.0 node n_cr_wwu06
+mesh SM_Wall -25.0 2.0 8.0 0.008 0.032 0.008 0.0 90.0 0.0 material inst_beige_wall tint 1.0 1.0 1.0 node n_cr_wwu07
+
+# Control room colliders
+collider box solid -16.0 -0.05 2.0 9.0 0.05 7.0 node n_cr_col_floor
+collider box solid -16.0 10.05 2.0 9.0 0.05 7.0 node n_cr_col_ceil
+collider box solid -16.0 5.0 -5.0 9.0 5.0 0.1 node n_cr_col_south
+collider box solid -16.0 5.0 9.0 9.0 5.0 0.1 node n_cr_col_north
+collider box solid -25.0 5.0 2.0 0.1 5.0 7.0 node n_cr_col_west
+collider box solid -7.0 5.0 -2.5 0.1 5.0 2.5 node n_cr_col_east_s
+collider box solid -7.0 5.0 5.5 0.1 5.0 3.5 node n_cr_col_east_n

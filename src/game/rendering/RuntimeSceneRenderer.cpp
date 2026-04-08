@@ -8,10 +8,8 @@
 #include "game/components/MeshComponent.h"
 #include "game/components/PrimaryCameraTag.h"
 #include "game/components/ReflectionProbeComponent.h"
-#include "game/components/PivotTransformComponent.h"
 #include "game/components/TransformComponent.h"
 #include "game/components/ViewmodelComponent.h"
-#include "game/modules/door/DoorMath.h"
 #include "game/content/ContentRegistry.h"
 #include "game/rendering/MeshAssetProvider.h"
 #include "game/rendering/RuntimeCameraMath.h"
@@ -129,14 +127,7 @@ void RuntimeSceneRenderer::collectSceneObjects(entt::registry& registry,
             continue;
         }
 
-        glm::mat4 model;
-        if (const auto* pivot = registry.try_get<PivotTransformComponent>(entity)) {
-            model = makePivotLeafModel(transform.position, pivot->closedYawDeg,
-                                        pivot->currentYawDeg, pivot->pivot,
-                                        pivot->meshCenter, pivot->scale);
-        } else {
-            model = transform.modelMatrix();
-        }
+        const glm::mat4 model = mesh.useModelOverride ? mesh.modelOverride : transform.modelMatrix();
         out.push_back({
             mesh.mesh,
             model,

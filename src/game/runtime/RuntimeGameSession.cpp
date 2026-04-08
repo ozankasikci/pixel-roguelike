@@ -157,7 +157,6 @@ void RuntimeGameSession::rebuild(const LevelDef& level,
     initializeRuntimeInteraction(registry_);
     initializeRuntimeInventory(registry_);
     initializeRuntimeCheckpoints(registry_);
-    linkDoorLeafColliders(registry_);
     physics_.update(registry_, 0.0f);
     captureBaselineState();
     performanceStats_.rebuildMs = elapsedMilliseconds(start, Clock::now());
