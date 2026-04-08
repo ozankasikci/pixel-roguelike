@@ -22,11 +22,11 @@ void setCursorCapture(GLFWwindow* window, bool captured) {
 
 } // namespace
 
-void EditorRuntimePreviewSession::rebuild(const EditorSceneDocument& document, ContentRegistry& content) {
+void EditorRuntimePreviewSession::rebuild(const EditorSceneDocument& document, ContentRegistry& content, bool contentChanged) {
     LevelLoadRequest request;
     request.levelId = document.scenePath().empty() ? "editor_runtime_preview" : document.scenePath();
     request.levelPath = document.scenePath();
-    session_.rebuild(document.toLevelDef(), request.levelId, request.levelPath, content, request);
+    session_.rebuild(document.toLevelDef(), request.levelId, request.levelPath, content, request, contentChanged);
     syncEnvironment(document);
 }
 

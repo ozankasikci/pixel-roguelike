@@ -48,7 +48,8 @@ public:
                  const std::string& levelId,
                  const std::string& levelPath,
                  ContentRegistry& content,
-                 const LevelLoadRequest& request = {});
+                 const LevelLoadRequest& request = {},
+                 bool contentChanged = false);
     void clear();
     void resetForPlay();
     void tick(float deltaTime, float aspect);

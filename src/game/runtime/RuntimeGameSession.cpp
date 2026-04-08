@@ -126,12 +126,13 @@ void RuntimeGameSession::rebuild(const LevelDef& level,
                                  const std::string& levelId,
                                  const std::string& levelPath,
                                  ContentRegistry& content,
-                                 const LevelLoadRequest& request) {
+                                 const LevelLoadRequest& request,
+                                 bool contentChanged) {
     const Clock::time_point start = Clock::now();
     performanceStats_.resetForPlayMs = 0.0;
     content_ = &content;
     ensureInitialized();
-    if (rendererInitialized_) {
+    if (rendererInitialized_ && contentChanged) {
         renderer_.reloadContent(content);
     }
     clearEntities();
