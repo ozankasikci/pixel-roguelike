@@ -60,7 +60,10 @@ entt::entity spawnDoorGroup(LevelBuilder& builder,
 
             // Attach ColliderComponent for physics
             const glm::vec3 leafCenter = glm::vec3(leafModel * glm::vec4(0.0f, 0.0f, 0.0f, 1.0f));
-            const glm::vec3 leafHalfExtents = glm::vec3(std::abs(leafPivot.x), 1.01f, 0.05f) * group.scale;
+            constexpr float kMinHalfExtent = 0.05f; // Jolt convex radius minimum
+            const glm::vec3 leafHalfExtents = glm::max(
+                glm::vec3(std::abs(leafPivot.x), 1.01f, 0.05f) * group.scale,
+                glm::vec3(kMinHalfExtent));
             ColliderComponent collider;
             collider.shape = ColliderShape::Box;
             collider.mode = ColliderMode::Solid;
