@@ -299,6 +299,7 @@ None yet.
 | 260407-4qf | Door open state persists across play sessions - opening a door in play mode stays open after stop/start | 2026-04-07 | 8564440 | [260407-4qf-door-open-state-persists-across-play-ses](./quick/260407-4qf-door-open-state-persists-across-play-ses/) |
 | 260407-me0 | Fix door interaction prompt disappearing after play-stop-play cycle | 2026-04-07 | c1afd64 | [260407-me0-fix-door-interaction-prompt-disappearing](./quick/260407-me0-fix-door-interaction-prompt-disappearing/) |
 | 260408-3p5 | Investigate and fix door scale — doors ignore scale changes in editor | 2026-04-07 | 25df7f7 | [260408-3p5-investigate-and-fix-door-scale-doors-ign](./quick/260408-3p5-investigate-and-fix-door-scale-doors-ign/) |
+| 260408-3p5b | Fix door scale crash — clamp collider half-extents above Jolt convex radius | 2026-04-07 | 868448d | [260408-3p5-investigate-and-fix-door-scale-doors-ign](./quick/260408-3p5-investigate-and-fix-door-scale-doors-ign/) |
 
 ## Session Continuity
 
