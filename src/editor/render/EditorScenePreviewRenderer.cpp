@@ -328,10 +328,13 @@ void appendHelperObjects(std::vector<RenderObject>& objects,
                     const glm::vec3 horizontalCenter(meshCenter.x, 0.0f, meshCenter.z);
 
                     // Compute world-space hinge: T(groupPos) * R(yaw) * S * T(-hCenter + pivot)
+                    // Document stores pre-resolved local values, so combine mesh + group scale
+                    // to match what resolveLevelHierarchy produces for the spawner.
+                    const glm::vec3 combinedScale = mesh.scale * dg.scale;
                     glm::mat4 hingeWorld = glm::translate(glm::mat4(1.0f), dg.position);
                     hingeWorld = glm::rotate(hingeWorld, glm::radians(dg.yawDegrees),
                                              glm::vec3(0.0f, 1.0f, 0.0f));
-                    hingeWorld = glm::scale(hingeWorld, dg.scale);
+                    hingeWorld = glm::scale(hingeWorld, combinedScale);
                     hingeWorld = glm::translate(hingeWorld, -horizontalCenter + pivot);
 
                     const glm::vec3 hingePos = glm::vec3(hingeWorld * glm::vec4(0.0f, 0.0f, 0.0f, 1.0f));
