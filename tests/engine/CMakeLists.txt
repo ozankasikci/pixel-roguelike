@@ -33,3 +33,9 @@ pixel_roguelike_add_test(test_game_registry
     LIBRARIES engine_core
     LABELS engine
 )
+
+pixel_roguelike_add_test(test_entity_active_state
+    SOURCES test_entity_active_state.cpp
+    LIBRARIES engine_core
+    LABELS engine
+)
