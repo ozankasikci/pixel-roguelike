@@ -306,3 +306,63 @@ collider box solid -16.0 5.0 9.0 9.0 5.0 0.1 node n_cr_col_north
 collider box solid -25.0 5.0 2.0 0.1 5.0 7.0 node n_cr_col_west
 collider box solid -7.0 5.0 -2.5 0.1 5.0 2.5 node n_cr_col_east_s
 collider box solid -7.0 5.0 5.5 0.1 5.0 3.5 node n_cr_col_east_n
+
+# Control room ceiling light panels (Y=9.99)
+mesh ceiling_light_panel -11.0 9.99 0.0 1.0 1.0 1.0 0.0 0.0 0.0 material stone_default tint 0.98 0.96 0.9 node n_cr_clp01
+mesh ceiling_light_panel -16.0 9.99 0.0 1.0 1.0 1.0 0.0 0.0 0.0 material stone_default tint 0.98 0.96 0.9 node n_cr_clp02
+mesh ceiling_light_panel -21.0 9.99 0.0 1.0 1.0 1.0 0.0 0.0 0.0 material stone_default tint 0.98 0.96 0.9 node n_cr_clp03
+mesh ceiling_light_panel -11.0 9.99 4.0 1.0 1.0 1.0 0.0 0.0 0.0 material stone_default tint 0.98 0.96 0.9 node n_cr_clp04
+mesh ceiling_light_panel -16.0 9.99 4.0 1.0 1.0 1.0 0.0 0.0 0.0 material stone_default tint 0.98 0.96 0.9 node n_cr_clp05
+mesh ceiling_light_panel -21.0 9.99 4.0 1.0 1.0 1.0 0.0 0.0 0.0 material stone_default tint 0.98 0.96 0.9 node n_cr_clp06
+
+# Control room main ceiling lights (Y=9.7)
+light point -11.0 9.7 0.0 1.0 0.97 0.88 10.0 4.0 node n_cr_l01
+light point -16.0 9.7 0.0 1.0 0.97 0.88 10.0 4.0 node n_cr_l02
+light point -21.0 9.7 0.0 1.0 0.97 0.88 10.0 4.0 node n_cr_l03
+light point -11.0 9.7 4.0 1.0 0.97 0.88 10.0 4.0 node n_cr_l04
+light point -16.0 9.7 4.0 1.0 0.97 0.88 10.0 4.0 node n_cr_l05
+light point -21.0 9.7 4.0 1.0 0.97 0.88 10.0 4.0 node n_cr_l06
+
+# Accent lights
+light point -8.0 3.0 1.0 1.0 0.97 0.88 6.0 2.5 node n_cr_l_entry
+light point -23.0 3.0 2.0 1.0 0.92 0.75 5.0 2.0 node n_cr_l_warden
+
+# Central desk cluster (prison_desk, wood_default, 4 desks with chairs)
+mesh prison_desk -15.0 0.0 0.0 1.0 1.0 1.0 0.0 -90.0 0.0 material wood_default tint 0.55 0.4 0.22 node n_cr_desk01
+mesh prison_desk -17.0 0.0 0.0 1.0 1.0 1.0 0.0 -90.0 0.0 material wood_default tint 0.55 0.4 0.22 node n_cr_desk02
+mesh prison_desk -15.0 0.0 3.0 1.0 1.0 1.0 0.0 -90.0 0.0 material wood_default tint 0.55 0.4 0.22 node n_cr_desk03
+mesh prison_desk -17.0 0.0 3.0 1.0 1.0 1.0 0.0 -90.0 0.0 material wood_default tint 0.55 0.4 0.22 node n_cr_desk04
+mesh prison_chair -14.0 0.0 0.0 1.0 1.0 1.0 0.0 90.0 0.0 material wood_default tint 0.5 0.38 0.24 node n_cr_chair01
+mesh prison_chair -18.0 0.0 0.0 1.0 1.0 1.0 0.0 -90.0 0.0 material wood_default tint 0.5 0.38 0.24 node n_cr_chair02
+mesh prison_chair -14.0 0.0 3.0 1.0 1.0 1.0 0.0 90.0 0.0 material wood_default tint 0.5 0.38 0.24 node n_cr_chair03
+mesh prison_chair -18.0 0.0 3.0 1.0 1.0 1.0 0.0 -90.0 0.0 material wood_default tint 0.5 0.38 0.24 node n_cr_chair04
+
+# Warden's desk at far west end
+mesh prison_desk -23.0 0.0 2.0 1.0 1.0 1.0 0.0 -90.0 0.0 material wood_default tint 0.55 0.4 0.22 node n_cr_desk_w
+mesh warden_chair -22.0 0.0 2.0 1.0 1.0 1.0 0.0 90.0 0.0 material wood_default tint 0.5 0.38 0.24 node n_cr_chair_w
+mesh prison_cabinet -24.5 0.0 2.0 1.0 1.0 1.0 0.0 90.0 0.0 material metal_default tint 0.55 0.53 0.5 node n_cr_cab_w
+
+# North wall cabinets (Z=8.5, facing south, rot 0 180 0)
+mesh prison_cabinet -10.0 0.0 8.5 1.0 1.0 1.0 0.0 180.0 0.0 material metal_default tint 0.55 0.53 0.5 node n_cr_cab01
+mesh prison_cabinet -13.0 0.0 8.5 1.0 1.0 1.0 0.0 180.0 0.0 material metal_default tint 0.55 0.53 0.5 node n_cr_cab02
+mesh prison_cabinet -16.0 0.0 8.5 1.0 1.0 1.0 0.0 180.0 0.0 material metal_default tint 0.55 0.53 0.5 node n_cr_cab03
+mesh prison_cabinet -19.0 0.0 8.5 1.0 1.0 1.0 0.0 180.0 0.0 material metal_default tint 0.55 0.53 0.5 node n_cr_cab04
+
+# South wall shelves (Z=-4.5, facing north, rot 0 0 0, Y=1.6)
+mesh prison_shelf -12.0 1.6 -4.5 1.0 1.0 1.0 0.0 0.0 0.0 material metal_default tint 0.5 0.48 0.44 node n_cr_shelf01
+mesh prison_shelf -16.0 1.6 -4.5 1.0 1.0 1.0 0.0 0.0 0.0 material metal_default tint 0.5 0.48 0.44 node n_cr_shelf02
+mesh prison_shelf -20.0 1.6 -4.5 1.0 1.0 1.0 0.0 0.0 0.0 material metal_default tint 0.5 0.48 0.44 node n_cr_shelf03
+
+# HVAC vents on upper walls
+mesh inst_hvac_vent -16.0 8.0 -4.95 1.0 1.0 1.0 0.0 0.0 0.0 material metal_default tint 0.55 0.53 0.5 node n_cr_hvac01
+mesh inst_hvac_vent -16.0 8.0 8.95 1.0 1.0 1.0 0.0 180.0 0.0 material metal_default tint 0.55 0.53 0.5 node n_cr_hvac02
+
+# Smoke detectors on ceiling
+mesh inst_smoke_detector -12.0 9.97 2.0 1.0 1.0 1.0 0.0 0.0 0.0 material stone_default tint 0.92 0.9 0.88 node n_cr_smoke01
+mesh inst_smoke_detector -20.0 9.97 2.0 1.0 1.0 1.0 0.0 0.0 0.0 material stone_default tint 0.92 0.9 0.88 node n_cr_smoke02
+
+# Cable details
+mesh SM_CableA -10.0 0.1 -4.8 1.0 1.0 1.0 0.0 0.0 0.0 material metal_default tint 0.3 0.28 0.25 node n_cr_cable01
+mesh SM_CableA -14.0 0.1 -4.8 1.0 1.0 1.0 0.0 0.0 0.0 material metal_default tint 0.3 0.28 0.25 node n_cr_cable02
+mesh SM_CableB -24.8 0.1 0.0 1.0 1.0 1.0 0.0 0.0 0.0 material metal_default tint 0.3 0.28 0.25 node n_cr_cable03
+mesh SM_CableB -24.8 0.1 4.0 1.0 1.0 1.0 0.0 0.0 0.0 material metal_default tint 0.3 0.28 0.25 node n_cr_cable04
