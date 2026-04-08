@@ -47,10 +47,7 @@ inline bool isDoorMoving(const DoorStateComponent& s) {
 // DoorLeafComponent  — per-leaf swing animation data
 // ---------------------------------------------------------------------------
 struct DoorLeafComponent {
-    glm::vec3 basePosition{0.0f};   // world position of the door group
-    glm::vec3 pivot{0.0f};          // mesh-local hinge offset
-    glm::vec3 meshCenter{0.0f};     // AABB center of the door mesh (for frame alignment)
-    glm::vec3 closedScale{1.0f};    // mesh scale
-    float closedYaw = 0.0f;         // group yaw in degrees
-    float openYaw = 0.0f;           // target yaw when open
+    float openYaw = 0.0f;           // Target yaw when fully open
+    entt::entity colliderEntity = entt::null;  // Linked collider (set at init)
+    glm::vec3 colliderLocalOffset{0.0f};       // Collider position in leaf local space
 };
