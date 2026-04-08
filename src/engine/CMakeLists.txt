@@ -4,6 +4,7 @@ add_library(engine_core STATIC
     core/PathUtils.cpp
     core/ProjectConfig.cpp
     core/Time.cpp
+    ecs/EntityActiveState.cpp
 )
 target_include_directories(engine_core PUBLIC ${CMAKE_SOURCE_DIR}/src)
 target_link_libraries(engine_core PUBLIC glad_gl glfw spdlog::spdlog EnTT::EnTT)
