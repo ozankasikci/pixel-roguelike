@@ -5,7 +5,7 @@ milestone_name: Editor UX
 status: Ready to execute
 stopped_at: Phase 21 context gathered
 last_updated: "2026-04-07T20:12:54.171Z"
-last_activity: 2026-04-07
+last_activity: 2026-04-08
 progress:
   total_phases: 23
   completed_phases: 18
@@ -301,6 +301,7 @@ None yet.
 | 260408-3p5 | Investigate and fix door scale — doors ignore scale changes in editor | 2026-04-07 | 25df7f7 | [260408-3p5-investigate-and-fix-door-scale-doors-ign](./quick/260408-3p5-investigate-and-fix-door-scale-doors-ign/) |
 | 260408-3p5b | Fix door scale crash — clamp collider half-extents above Jolt convex radius | 2026-04-07 | 868448d | [260408-3p5-investigate-and-fix-door-scale-doors-ign](./quick/260408-3p5-investigate-and-fix-door-scale-doors-ign/) |
 | 260408-592 | Add pivot editing to DoorGroupInspector + fix hinge marker visualization | 2026-04-08 | 34aa7d0 | [260408-592-fix-door-hinge-rotation-doors-don-t-rota](./quick/260408-592-fix-door-hinge-rotation-doors-don-t-rota/) |
+| 260408-q6e | Make gizmo scaling reaction 50% faster | 2026-04-08 | a3eddd3 | [260408-q6e-make-gizmo-scaling-reaction-50-faster](./quick/260408-q6e-make-gizmo-scaling-reaction-50-faster/) |
 
 ## Session Continuity
 
