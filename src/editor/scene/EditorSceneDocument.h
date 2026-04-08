@@ -20,7 +20,6 @@ enum class EditorSceneObjectKind {
     Archetype,
     Group,
     DoorGroup,
-    Checkpoint,
 };
 
 using EditorSceneObjectPayload = std::variant<
@@ -31,8 +30,7 @@ using EditorSceneObjectPayload = std::variant<
     LevelPlayerSpawn,
     LevelArchetypePlacement,
     LevelGroupNode,
-    LevelDoorPlacement,
-    LevelCheckpointPlacement>;
+    LevelDoorPlacement>;
 
 struct EditorSceneObject {
     std::uint64_t id = 0;
@@ -82,7 +80,6 @@ public:
     std::uint64_t addArchetype(const LevelArchetypePlacement& placement);
     std::uint64_t addGroup(const LevelGroupNode& placement);
     std::uint64_t addDoorGroup(const LevelDoorPlacement& placement);
-    std::uint64_t addCheckpoint(const LevelCheckpointPlacement& placement);
     std::uint64_t duplicateObject(std::uint64_t id);
     void eraseObjects(const std::vector<std::uint64_t>& ids);
     std::uint64_t parentObjectId(std::uint64_t id) const;

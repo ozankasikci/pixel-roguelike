@@ -1,12 +1,10 @@
 #include "game/level/LevelDef.h"
 #include "game/components/ColliderComponent.h"
-#include "game/modules/checkpoint/CheckpointModule.h"
 
 #include <algorithm>
 #include <cassert>
 
 int main() {
-    registerCheckpointModule();
     const auto data = loadLevelDef(SILOS_CLOISTER_SCENE_FILE);
 
     assert(data.environmentProfile == EnvironmentProfile::Default);
@@ -30,8 +28,9 @@ int main() {
     assert(std::count_if(data.colliders.begin(), data.colliders.end(), [](const LevelColliderPlacement& c) {
         return c.shape == ColliderShape::Cylinder;
     }) >= 18);
-    assert(data.checkpoints.size() == 1);
-    assert(data.checkpoints.front().name == "shrine");
+    assert(std::any_of(data.archetypes.begin(), data.archetypes.end(), [](const LevelArchetypePlacement& archetype) {
+        return archetype.archetypeId == "checkpoint_shrine";
+    }));
 
     return 0;
 }

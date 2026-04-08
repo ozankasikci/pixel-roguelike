@@ -188,8 +188,7 @@ void BehaviorSystem::executeAction(Application& app, entt::entity source, Action
     switch (action.type) {
     case ActionType::OpenDoor:
     case ActionType::CloseDoor:
-    case ActionType::ToggleDoor:
-    case ActionType::ActivateCheckpoint: {
+    case ActionType::ToggleDoor: {
         auto* handler = findBehaviorActionHandler(action.type);
         if (handler) {
             (*handler)(registry, source, target, action);

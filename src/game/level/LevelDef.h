@@ -42,6 +42,7 @@ struct LevelColliderPlacement {
     float     radius     = 1.0f;
     float     halfHeight = 1.0f;
     bool      fireOnce   = false;
+    bool      kinematic  = false;
     std::string nodeId;
     std::string parentNodeId;
     std::vector<BehaviorDeclaration> behaviors;
@@ -125,20 +126,6 @@ struct LevelDoorPlacement {
     std::string parentNodeId;
 };
 
-struct LevelCheckpointPlacement {
-    std::string name = "Checkpoint";
-    glm::vec3 position{0.0f};
-    glm::vec3 respawnPosition{0.0f};
-    float interactDistance = 2.4f;
-    float interactDotThreshold = 0.55f;
-    glm::vec3 lightOffset{0.0f, 0.65f, -1.0f};
-    glm::vec3 lightColor{1.0f, 0.7f, 0.42f};
-    float lightRadius = 7.0f;
-    float lightIntensity = 8.05f;
-    std::string nodeId;
-    std::string parentNodeId;
-};
-
 struct LevelDef {
     std::string environmentId = "neutral";
     EnvironmentProfile environmentProfile = EnvironmentProfile::Default;
@@ -151,7 +138,6 @@ struct LevelDef {
     std::vector<LevelArchetypePlacement> archetypes;
     std::vector<LevelGroupNode> groups;
     std::vector<LevelDoorPlacement> doors;
-    std::vector<LevelCheckpointPlacement> checkpoints;
 };
 
 LevelDef loadLevelDef(const std::string& path);

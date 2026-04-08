@@ -314,7 +314,6 @@ std::vector<std::uint64_t> renderOutliner(EditorSceneDocument& document,
             std::uint64_t ancestorId = document.parentObjectId(selId);
             while (ancestorId != 0) {
                 expandForScroll.insert(ancestorId);
-                ui.expandedOutlinerIds.insert(ancestorId);
                 ancestorId = document.parentObjectId(ancestorId);
             }
         }

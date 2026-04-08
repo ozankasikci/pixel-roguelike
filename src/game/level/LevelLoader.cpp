@@ -4,7 +4,6 @@
 #include "game/behavior/NodeIndex.h"
 #include "game/content/ContentRegistry.h"
 #include "game/level/LevelBuilder.h"
-#include "game/modules/checkpoint/CheckpointSpawner.h"
 #include "game/modules/door/DoorSpawner.h"
 #include "game/prefabs/GameplayPrefabs.h"
 #include "game/rendering/EnvironmentProfile.h"
@@ -90,10 +89,6 @@ void LevelLoader::load(const LevelLoadRequest& request, const LevelLoadArgs& arg
 
     for (const auto& doorGroup : level.doors) {
         spawnDoorGroup(builder, doorGroup, level);
-    }
-
-    for (const auto& checkpointPlacement : level.checkpoints) {
-        spawnCheckpointEntity(builder, checkpointPlacement);
     }
 
     for (const auto& placement : level.lights) {

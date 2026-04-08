@@ -122,4 +122,4 @@ collider cylinder solid 6.8 1.8 -2.59 0.4 1.8
 collider cylinder solid 6.8 1.8 2.59 0.4 1.8
 collider cylinder solid 6.8 1.8 7.76 0.4 1.8
 player_spawn 0.0 1.6 10.1 -6.0
-checkpoint shrine 9.0 1.3 0.0 respawn 11.5 1.6 0.0
+archetype_instance checkpoint_shrine 9.0 0.0 0.0 -90.0

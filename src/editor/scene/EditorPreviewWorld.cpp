@@ -7,7 +7,6 @@
 #include "game/components/MeshComponent.h"
 #include "game/components/ReflectionProbeComponent.h"
 #include "game/components/ColliderComponent.h"
-#include "game/components/CheckpointComponent.h"
 #include "game/modules/door/DoorComponents.h"
 #include "game/modules/door/DoorMath.h"
 #include "game/components/TransformComponent.h"
@@ -276,22 +275,6 @@ void EditorPreviewWorld::spawnObject(const EditorSceneObject& object,
         }
         break;
     }
-    case EditorSceneObjectKind::Checkpoint: {
-        auto cp = std::get<LevelCheckpointPlacement>(object.payload);
-        glm::vec3 position(0.0f), rotation(0.0f), scale(1.0f);
-        if (decomposeTransformMatrix(document.worldTransformMatrix(object.id), position, rotation, scale)) {
-            cp.position = position;
-        }
-        auto lightEntity = builder.addLight(
-            cp.position + cp.lightOffset,
-            cp.lightColor,
-            cp.lightRadius,
-            cp.lightIntensity);
-        auto root = builder.createTransformEntity(cp.position);
-        registry_.emplace<CheckpointComponent>(root,
-            CheckpointComponent{cp.respawnPosition, cp.interactDistance, cp.interactDotThreshold, false, lightEntity});
-        break;
-    }
     }
 }
 
@@ -514,9 +497,6 @@ void EditorPreviewWorld::syncTransforms(const EditorSceneDocument& document) {
         case EditorSceneObjectKind::DoorGroup:
             transform.position = position;
             transform.rotation.y = rotation.y;
-            break;
-        case EditorSceneObjectKind::Checkpoint:
-            transform.position = position;
             break;
         }
     }
