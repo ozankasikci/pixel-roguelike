@@ -8,12 +8,12 @@
 #include "engine/ui/ImGuiLayer.h"
 #include "game/behavior/BehaviorSystem.h"
 #include "game/modules/door/DoorAnimationSystem.h"
-#include "game/modules/checkpoint/CheckpointModule.h"
 #include "game/modules/door/DoorModule.h"
 #include "game/systems/AudioListenerSystem.h"
 #include "game/systems/InventorySystem.h"
 #include "game/systems/PlayerMovementSystem.h"
 #include "game/systems/CameraSystem.h"
+#include "game/systems/CheckpointSystem.h"
 #include "game/systems/InteractionSystem.h"
 #include "game/systems/RenderSystem.h"
 #include "game/scenes/GenericFileScene.h"
@@ -87,11 +87,11 @@ int main(int argc, char* argv[]) {
     app.registry().ctx().insert_or_assign<RunSession*>(&app.getService<RunSession>());
 
     registerDoorModule();
-    registerCheckpointModule();
 
     // Register systems by phase so scheduling policy lives in the engine instead of boot order.
     auto& input = app.addSystem<InputSystem>(Application::UpdatePhase::Input);
     auto& interaction = app.addSystem<InteractionSystem>(Application::UpdatePhase::Interaction, input);
+    auto& checkpoints = app.addSystem<CheckpointSystem>(Application::UpdatePhase::Interaction);
     auto& physics = app.addSystem<PhysicsSystem>(Application::UpdatePhase::Physics);
     auto& audio = app.addSystem<AudioSystem>(Application::UpdatePhase::Gameplay);
     app.emplaceService<AudioSystem*>(&audio);
@@ -103,6 +103,7 @@ int main(int argc, char* argv[]) {
     auto& movement = app.addSystem<PlayerMovementSystem>(Application::UpdatePhase::Gameplay, input, physics);
     auto& camera = app.addSystem<CameraSystem>(Application::UpdatePhase::Camera, input);
     auto& render = app.addSystem<RenderSystem>(Application::UpdatePhase::Render, input);
+    (void)checkpoints;
     (void)behaviors;
     (void)doorAnim;
     (void)interaction;

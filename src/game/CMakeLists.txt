@@ -36,8 +36,10 @@ add_library(gameplay STATIC
     session/EquipmentState.cpp
     systems/AudioListenerSystem.cpp
     systems/CameraSystem.cpp
+    systems/CheckpointSystem.cpp
     systems/InteractionSystem.cpp
     systems/InventorySystem.cpp
+    systems/KinematicColliderSystem.cpp
     systems/PlayerMovementSystem.cpp
     systems/RenderSystem.cpp
     ui/GameOverlays.cpp
@@ -62,4 +64,3 @@ target_link_libraries(game INTERFACE
 
 # Feature modules (per D-03)
 add_subdirectory(modules/door)
-add_subdirectory(modules/checkpoint)

@@ -24,6 +24,9 @@ public:
     void update(entt::registry& registry, float deltaTime);
     void shutdownRuntime();
 
+    // Kinematic body API (used by KinematicColliderSystem)
+    void moveKinematicBody(entt::entity entity, const glm::vec3& position, const glm::vec3& rotation);
+
     // Character controller API (used by gameplay systems)
     void setCharacterVelocity(entt::entity entity, const glm::vec3& velocity);
     void updateCharacter(entt::entity entity, float deltaTime, const glm::vec3& gravity);

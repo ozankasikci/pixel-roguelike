@@ -30,7 +30,6 @@ add_library(editor STATIC
     ui/inspectors/AssetInspectorHelpers.cpp
     ui/inspectors/AssetInspectorSession.cpp
     ui/inspectors/ColliderInspector.cpp
-    ${CMAKE_SOURCE_DIR}/src/game/modules/checkpoint/editor/CheckpointInspector.cpp
     ${CMAKE_SOURCE_DIR}/src/game/modules/door/editor/DoorGroupInspector.cpp
     ui/inspectors/EnvironmentInspector.cpp
     ui/inspectors/GroupInspector.cpp
@@ -51,4 +50,4 @@ target_include_directories(editor PUBLIC
     ${CMAKE_SOURCE_DIR}/external
     ${CMAKE_SOURCE_DIR}/external/ImGuizmo
 )
-target_link_libraries(editor PUBLIC gameplay game_module_checkpoint game_module_door nlohmann_json::nlohmann_json)
+target_link_libraries(editor PUBLIC gameplay game_module_door nlohmann_json::nlohmann_json)

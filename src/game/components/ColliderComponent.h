@@ -18,4 +18,5 @@ struct ColliderComponent {
     bool playerInside = false;
     bool pendingEnter = false;
     bool pendingExit  = false;
+    bool kinematic    = false;
 };

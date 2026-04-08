@@ -325,10 +325,12 @@ void PhysicsSystem::update(entt::registry& registry, float deltaTime) {
                     shape,
                     toJoltR(collider.position),
                     toJoltQuat(collider.rotation),
-                    JPH::EMotionType::Static,
-                    Layers::NON_MOVING
+                    collider.kinematic ? JPH::EMotionType::Kinematic : JPH::EMotionType::Static,
+                    collider.kinematic ? Layers::MOVING : Layers::NON_MOVING
                 );
-                JPH::BodyID bodyId = bodyInterface.CreateAndAddBody(bodySettings, JPH::EActivation::DontActivate);
+                JPH::BodyID bodyId = bodyInterface.CreateAndAddBody(
+                    bodySettings,
+                    collider.kinematic ? JPH::EActivation::Activate : JPH::EActivation::DontActivate);
                 if (bodyId.IsInvalid()) {
                     spdlog::warn("PhysicsSystem: CreateAndAddBody (solid) returned invalid BodyID for entity {}",
                                  static_cast<uint32_t>(entity));
@@ -337,7 +339,7 @@ void PhysicsSystem::update(entt::registry& registry, float deltaTime) {
                 impl_->staticBodies.emplace(entity, Impl::StaticBodyBinding{bodyId});
             }
             auto found = impl_->staticBodies.find(entity);
-            if (found != impl_->staticBodies.end()) {
+            if (found != impl_->staticBodies.end() && !collider.kinematic) {
                 bodyInterface.SetPositionAndRotation(
                     found->second.bodyId,
                     toJoltR(collider.position),
@@ -379,10 +381,12 @@ void PhysicsSystem::update(entt::registry& registry, float deltaTime) {
                     shape,
                     toJoltR(collider.position),
                     toJoltQuat(collider.rotation),
-                    JPH::EMotionType::Static,
-                    Layers::NON_MOVING
+                    collider.kinematic ? JPH::EMotionType::Kinematic : JPH::EMotionType::Static,
+                    collider.kinematic ? Layers::MOVING : Layers::NON_MOVING
                 );
-                JPH::BodyID solidId = bodyInterface.CreateAndAddBody(solidSettings, JPH::EActivation::DontActivate);
+                JPH::BodyID solidId = bodyInterface.CreateAndAddBody(
+                    solidSettings,
+                    collider.kinematic ? JPH::EActivation::Activate : JPH::EActivation::DontActivate);
                 if (solidId.IsInvalid()) {
                     spdlog::warn("PhysicsSystem: CreateAndAddBody (dual-solid) returned invalid BodyID for entity {}",
                                  static_cast<uint32_t>(entity));
@@ -412,7 +416,7 @@ void PhysicsSystem::update(entt::registry& registry, float deltaTime) {
                 impl_->sensorListener.sensorBodyToEntity.emplace(sensorId, entity);
             }
             auto found = impl_->dualBodies.find(entity);
-            if (found != impl_->dualBodies.end()) {
+            if (found != impl_->dualBodies.end() && !collider.kinematic) {
                 bodyInterface.SetPositionAndRotation(
                     found->second.solidBodyId,
                     toJoltR(collider.position),
@@ -629,5 +633,37 @@ GroundState PhysicsSystem::getCharacterGroundState(entt::entity entity) const {
             return GroundState::OnSteepGround;
         default:
             return GroundState::InAir;
+    }
+}
+
+void PhysicsSystem::moveKinematicBody(entt::entity entity, const glm::vec3& position, const glm::vec3& rotation) {
+    if (!impl_ || !impl_->physicsSystem) return;
+    auto& bodyInterface = impl_->physicsSystem->GetBodyInterface();
+
+    // Check staticBodies map (Solid mode kinematic bodies live here)
+    auto staticIt = impl_->staticBodies.find(entity);
+    if (staticIt != impl_->staticBodies.end()) {
+        bodyInterface.MoveKinematic(
+            staticIt->second.bodyId,
+            toJoltR(position),
+            toJoltQuat(rotation),
+            impl_->fixedTimeStep);
+        return;
+    }
+
+    // Check dualBodies map (SolidAndTrigger mode kinematic bodies)
+    auto dualIt = impl_->dualBodies.find(entity);
+    if (dualIt != impl_->dualBodies.end()) {
+        bodyInterface.MoveKinematic(
+            dualIt->second.solidBodyId,
+            toJoltR(position),
+            toJoltQuat(rotation),
+            impl_->fixedTimeStep);
+        bodyInterface.SetPositionAndRotation(
+            dualIt->second.sensorBodyId,
+            toJoltR(position),
+            toJoltQuat(rotation),
+            JPH::EActivation::Activate);
+        return;
     }
 }

@@ -83,9 +83,6 @@ void EditorSceneDocument::loadFromSceneFile(const std::string& scenePath, const 
     for (const auto& door : level.doors) {
         addDoorGroup(door);
     }
-    for (const auto& checkpoint : level.checkpoints) {
-        addCheckpoint(checkpoint);
-    }
 
     sceneDirty_ = false;
     environmentDirty_ = false;
@@ -225,9 +222,6 @@ std::uint64_t EditorSceneDocument::addDoorGroup(const LevelDoorPlacement& placem
     return addObject(EditorSceneObjectKind::DoorGroup, placement);
 }
 
-std::uint64_t EditorSceneDocument::addCheckpoint(const LevelCheckpointPlacement& placement) {
-    return addObject(EditorSceneObjectKind::Checkpoint, placement);
-}
 
 std::uint64_t EditorSceneDocument::parentObjectId(std::uint64_t id) const {
     const EditorSceneObject* object = findObject(id);
@@ -279,8 +273,7 @@ bool EditorSceneDocument::supportsParenting(std::uint64_t id) const {
         || object->kind == EditorSceneObjectKind::Collider
         || object->kind == EditorSceneObjectKind::Archetype
         || object->kind == EditorSceneObjectKind::Group
-        || object->kind == EditorSceneObjectKind::DoorGroup
-        || object->kind == EditorSceneObjectKind::Checkpoint;
+        || object->kind == EditorSceneObjectKind::DoorGroup;
 }
 
 bool EditorSceneDocument::canSetParent(std::uint64_t childId, std::uint64_t parentId) const {
@@ -616,9 +609,6 @@ bool EditorSceneDocument::applyWorldTransform(std::uint64_t id, const glm::mat4&
             p.position = position;
             p.yawDegrees = rotation.y;
             return true;
-        } else if constexpr (std::is_same_v<T, LevelCheckpointPlacement>) {
-            p.position = glm::vec3(localMatrix[3]);
-            return true;
         } else {
             static_assert(sizeof(T) == 0, "Unhandled payload type in applyWorldTransform");
         }
@@ -684,8 +674,6 @@ LevelDef EditorSceneDocument::toLevelDef() const {
                 level.groups.push_back(p);
             } else if constexpr (std::is_same_v<T, LevelDoorPlacement>) {
                 level.doors.push_back(p);
-            } else if constexpr (std::is_same_v<T, LevelCheckpointPlacement>) {
-                level.checkpoints.push_back(p);
             } else {
                 static_assert(sizeof(T) == 0, "Unhandled payload type in toLevelDef");
             }
@@ -826,8 +814,6 @@ glm::mat4 EditorSceneDocument::localTransformMatrix(const EditorSceneObject& obj
             return makeTransformMatrix(p.position, p.rotation, p.scale);
         } else if constexpr (std::is_same_v<T, LevelDoorPlacement>) {
             return makeTransformMatrix(p.position, glm::vec3(0.0f, p.yawDegrees, 0.0f), glm::vec3(1.0f));
-        } else if constexpr (std::is_same_v<T, LevelCheckpointPlacement>) {
-            return makeTransformMatrix(p.position, glm::vec3(0.0f), glm::vec3(1.0f));
         } else {
             static_assert(sizeof(T) == 0, "Unhandled payload type in localTransformMatrix");
         }
@@ -868,8 +854,6 @@ const char* editorSceneObjectKindName(EditorSceneObjectKind kind) {
         return "Group";
     case EditorSceneObjectKind::DoorGroup:
         return "Door Group";
-    case EditorSceneObjectKind::Checkpoint:
-        return "Checkpoint";
     }
     return "Object";
 }
@@ -903,8 +887,6 @@ std::string editorSceneObjectLabel(const EditorSceneObject& object) {
         } else if constexpr (std::is_same_v<T, LevelGroupNode>) {
             label << " [" << p.name << "]";
         } else if constexpr (std::is_same_v<T, LevelDoorPlacement>) {
-            label << " [" << p.name << "]";
-        } else if constexpr (std::is_same_v<T, LevelCheckpointPlacement>) {
             label << " [" << p.name << "]";
         }
         // LevelPlayerSpawn: no suffix needed

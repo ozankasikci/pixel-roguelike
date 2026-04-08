@@ -11,6 +11,10 @@ struct RuntimeInventoryCaptureState {
     bool openedByMenu = false;
 };
 
+struct RuntimeCheckpointFeedbackState {
+    float messageTimer = 0.0f;
+};
+
 void initializeRuntimeInteraction(entt::registry& registry);
 void updateRuntimeInteraction(entt::registry& registry, const InputSystem& input);
 
@@ -19,6 +23,9 @@ void updateRuntimeInventory(entt::registry& registry,
                             InputSystem& input,
                             RunSession& session,
                             const ContentRegistry& content);
+
+void initializeRuntimeCheckpoints(entt::registry& registry);
+void updateRuntimeCheckpoints(entt::registry& registry, float deltaTime, RunSession& session);
 
 void updateRuntimePlayerMovement(entt::registry& registry,
                                  const InputSystem& input,
