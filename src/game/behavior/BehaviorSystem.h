@@ -1,6 +1,7 @@
 #pragma once
 
 #include "engine/core/System.h"
+#include "engine/ecs/GameRegistry.h"
 #include "game/behavior/ActionTypes.h"
 
 #include <cstddef>
@@ -16,7 +17,7 @@ struct BehaviorComponent;
 // Module action handler registration (per D-09)
 // Modules register handlers for their action types at startup.
 // Both BehaviorSystem (Application-based) and RuntimeGameplay (registry-based) use the same handlers.
-using BehaviorActionHandler = std::function<void(entt::registry& registry,
+using BehaviorActionHandler = std::function<void(GameRegistry& registry,
                                                   entt::entity source,
                                                   entt::entity target,
                                                   ActionEntry& action)>;

@@ -1,5 +1,6 @@
 #pragma once
 
+#include "engine/ecs/GameRegistry.h"
 #include "engine/rendering/SceneRenderPipeline.h"
 #include "engine/ui/ImGuiLayer.h"
 #include "game/rendering/EnvironmentDebugSync.h"
@@ -19,9 +20,9 @@ public:
     void init(const ContentRegistry& content);
     void shutdown();
     void reloadContent(const ContentRegistry& content);
-    std::size_t prewarmMaterialResources(entt::registry& registry);
+    std::size_t prewarmMaterialResources(GameRegistry& registry);
 
-    void render(entt::registry& registry,
+    void render(GameRegistry& registry,
                 DebugParams& params,
                 float deltaTime,
                 int internalWidth,
@@ -48,17 +49,17 @@ private:
         float moveSpeed = 3.0f;
     };
 
-    CameraState captureCamera(entt::registry& registry, float aspect) const;
-    void collectSceneObjects(entt::registry& registry,
+    CameraState captureCamera(GameRegistry& registry, float aspect) const;
+    void collectSceneObjects(GameRegistry& registry,
                              std::vector<RenderObject>& out) const;
-    void collectViewmodelObjects(entt::registry& registry,
+    void collectViewmodelObjects(GameRegistry& registry,
                                  const CameraState& camera,
                                  float deltaTime,
                                  std::vector<RenderObject>& out) const;
-    void collectLights(entt::registry& registry,
+    void collectLights(GameRegistry& registry,
                        const DebugParams& params,
                        std::vector<RenderLight>& out) const;
-    void collectReflectionProbes(entt::registry& registry,
+    void collectReflectionProbes(GameRegistry& registry,
                                  std::vector<RenderReflectionProbeInput>& out) const;
     void updateDebugParams(DebugParams& params,
                            const CameraState& camera,

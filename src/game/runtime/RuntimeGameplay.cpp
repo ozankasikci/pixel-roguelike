@@ -71,7 +71,7 @@ bool inventoryTogglePressed(const InputSystem& input) {
         || input.wasCharacterTyped(0x0131);
 }
 
-InventoryMenuState& ensureMenuState(entt::registry& registry) {
+InventoryMenuState& ensureMenuState(GameRegistry& registry) {
     auto& ctx = registry.ctx();
     if (!ctx.contains<InventoryMenuState>()) {
         ctx.emplace<InventoryMenuState>();
@@ -79,7 +79,7 @@ InventoryMenuState& ensureMenuState(entt::registry& registry) {
     return ctx.get<InventoryMenuState>();
 }
 
-RuntimeInventoryCaptureState& ensureInventoryCaptureState(entt::registry& registry) {
+RuntimeInventoryCaptureState& ensureInventoryCaptureState(GameRegistry& registry) {
     auto& ctx = registry.ctx();
     if (!ctx.contains<RuntimeInventoryCaptureState>()) {
         ctx.emplace<RuntimeInventoryCaptureState>();
@@ -87,7 +87,7 @@ RuntimeInventoryCaptureState& ensureInventoryCaptureState(entt::registry& regist
     return ctx.get<RuntimeInventoryCaptureState>();
 }
 
-RuntimeCheckpointFeedbackState& ensureCheckpointFeedbackState(entt::registry& registry) {
+RuntimeCheckpointFeedbackState& ensureCheckpointFeedbackState(GameRegistry& registry) {
     auto& ctx = registry.ctx();
     if (!ctx.contains<RuntimeCheckpointFeedbackState>()) {
         ctx.emplace<RuntimeCheckpointFeedbackState>();
@@ -95,7 +95,7 @@ RuntimeCheckpointFeedbackState& ensureCheckpointFeedbackState(entt::registry& re
     return ctx.get<RuntimeCheckpointFeedbackState>();
 }
 
-bool hasPlayerEntity(entt::registry& registry) {
+bool hasPlayerEntity(GameRegistry& registry) {
     auto view = registry.view<PlayerTag>();
     for (auto entity : view) {
         (void)entity;
@@ -120,7 +120,7 @@ void clampSelection(RunSession& session, InventoryMenuState& menu) {
 
 } // namespace
 
-void initializeRuntimeInteraction(entt::registry& registry) {
+void initializeRuntimeInteraction(GameRegistry& registry) {
     auto& ctx = registry.ctx();
     if (!ctx.contains<InteractionPromptState>()) {
         ctx.emplace<InteractionPromptState>();
@@ -130,7 +130,7 @@ void initializeRuntimeInteraction(entt::registry& registry) {
     }
 }
 
-void updateRuntimeInteraction(entt::registry& registry, const InputSystem& input) {
+void updateRuntimeInteraction(GameRegistry& registry, const InputSystem& input) {
     auto& ctx = registry.ctx();
     initializeRuntimeInteraction(registry);
 
@@ -212,12 +212,12 @@ void updateRuntimeInteraction(entt::registry& registry, const InputSystem& input
     }
 }
 
-void initializeRuntimeInventory(entt::registry& registry) {
+void initializeRuntimeInventory(GameRegistry& registry) {
     (void)ensureMenuState(registry);
     (void)ensureInventoryCaptureState(registry);
 }
 
-void updateRuntimeInventory(entt::registry& registry,
+void updateRuntimeInventory(GameRegistry& registry,
                             InputSystem& input,
                             RunSession& session,
                             const ContentRegistry& content) {
@@ -270,11 +270,11 @@ void updateRuntimeInventory(entt::registry& registry,
     menu.pendingWeaponId.clear();
 }
 
-void initializeRuntimeCheckpoints(entt::registry& registry) {
+void initializeRuntimeCheckpoints(GameRegistry& registry) {
     (void)ensureCheckpointFeedbackState(registry);
 }
 
-void updateRuntimeCheckpoints(entt::registry& registry, float deltaTime, RunSession& session) {
+void updateRuntimeCheckpoints(GameRegistry& registry, float deltaTime, RunSession& session) {
     auto& ctx = registry.ctx();
     if (!ctx.contains<InteractionFocusState>()) {
         ctx.emplace<InteractionFocusState>();
@@ -314,7 +314,7 @@ void updateRuntimeCheckpoints(entt::registry& registry, float deltaTime, RunSess
 
 }
 
-void updateRuntimePlayerMovement(entt::registry& registry,
+void updateRuntimePlayerMovement(GameRegistry& registry,
                                  const InputSystem& input,
                                  PhysicsSystem& physics,
                                  float deltaTime) {
@@ -403,7 +403,7 @@ void updateRuntimePlayerMovement(entt::registry& registry,
     }
 }
 
-void updateRuntimeCamera(entt::registry& registry,
+void updateRuntimeCamera(GameRegistry& registry,
                          const InputSystem& input,
                          float aspect,
                          float deltaTime) {
@@ -427,7 +427,7 @@ void updateRuntimeCamera(entt::registry& registry,
     }
 }
 
-void updateRuntimeBehaviors(entt::registry& registry) {
+void updateRuntimeBehaviors(GameRegistry& registry) {
     auto& ctx = registry.ctx();
     if (!ctx.contains<InteractionFocusState>()) return;
     auto& focus = ctx.get<InteractionFocusState>();

@@ -3,7 +3,7 @@
 #include "engine/rendering/geometry/Renderer.h"
 #include "game/level/LevelDef.h"
 
-#include <entt/entt.hpp>
+#include "engine/ecs/GameRegistry.h"
 
 #include <array>
 #include <cstdint>
@@ -18,7 +18,7 @@ class ContentRegistry;
 
 struct EnvironmentDefinition;
 
-std::vector<RenderLight> collectLights(const entt::registry& registry,
+std::vector<RenderLight> collectLights(const GameRegistry& registry,
                                        const EnvironmentDefinition& environment);
 
 std::vector<RenderObject> collectRenderObjects(const EditorPreviewWorld& world,

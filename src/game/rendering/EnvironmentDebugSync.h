@@ -1,9 +1,8 @@
 #pragma once
 
+#include "engine/ecs/GameRegistry.h"
 #include "engine/ui/ImGuiLayer.h"
 #include "game/rendering/EnvironmentDefinition.h"
-
-#include <entt/entt.hpp>
 
 #include <string>
 
@@ -34,7 +33,7 @@ void applyEnvironmentProfile(DebugParams& params,
 void applyEnvironmentDefinition(DebugParams& params,
                                 const EnvironmentDefinition& definition,
                                 bool preserveDebugOverrides);
-void syncEnvironmentFromRegistry(entt::registry& registry,
+void syncEnvironmentFromRegistry(GameRegistry& registry,
                                  DebugParams& params,
                                  RuntimeEnvironmentSyncState* syncState = nullptr,
                                  bool preserveDebugOverrides = false);

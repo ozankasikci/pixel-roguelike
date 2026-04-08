@@ -2,12 +2,12 @@
 #include "game/rendering/EnvironmentDefinition.h"
 #include "common/TestSupport.h"
 
-#include <entt/entt.hpp>
+#include "engine/ecs/GameRegistry.h"
 
 #include <cassert>
 
 int main() {
-    entt::registry registry;
+    GameRegistry registry;
 
     DebugParams params;
     params.post.enableEdges = true;

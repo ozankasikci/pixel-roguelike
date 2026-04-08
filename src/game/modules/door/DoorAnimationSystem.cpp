@@ -20,7 +20,7 @@ float getDoorLeafYaw(const DoorLeafComponent& leaf, float progress) {
     return glm::mix(leaf.closedYaw, leaf.openYaw, eased);
 }
 
-void updateDoorLeaf(entt::registry& registry, entt::entity entity, float progress) {
+void updateDoorLeaf(GameRegistry& registry, entt::entity entity, float progress) {
     auto* mesh = registry.try_get<MeshComponent>(entity);
     auto* leaf = registry.try_get<DoorLeafComponent>(entity);
     if (!mesh || !leaf) {
@@ -37,7 +37,7 @@ void updateDoorLeaf(entt::registry& registry, entt::entity entity, float progres
 
 } // namespace
 
-void tickDoorAnimation(entt::registry& registry, float deltaTime) {
+void tickDoorAnimation(GameRegistry& registry, float deltaTime) {
     // Tick PlayerInteractionLock countdown timer
     auto lockView = registry.view<PlayerInteractionLockComponent>();
     for (auto [entity, lock] : lockView.each()) {
@@ -117,7 +117,7 @@ void DoorAnimationSystem::update(Application& app, float deltaTime) {
 void DoorAnimationSystem::shutdown() {
 }
 
-void resetDoorVisuals(entt::registry& registry) {
+void resetDoorVisuals(GameRegistry& registry) {
     auto doorView = registry.view<DoorConfigComponent, DoorStateComponent>();
     for (auto [entity, config, state] : doorView.each()) {
         (void)entity;

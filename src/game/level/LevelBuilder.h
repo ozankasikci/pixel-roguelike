@@ -18,7 +18,7 @@ class LevelBuilder {
 public:
     explicit LevelBuilder(LevelBuildContext& context);
 
-    entt::registry& registry() const { return context_.registry; }
+    GameRegistry& registry() const { return context_.registry; }
     entt::entity createEntity();
     entt::entity createTransformEntity(const glm::vec3& position,
                                        const glm::vec3& rotation = glm::vec3(0.0f),

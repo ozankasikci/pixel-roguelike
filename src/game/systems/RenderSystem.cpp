@@ -46,7 +46,7 @@ void RenderSystem::init(Application& app) {
     applyEnvironmentProfile(debugParams_, EnvironmentProfile::Default, true);
 }
 
-InteractionPromptState& RenderSystem::ensurePromptState(entt::registry& registry) const {
+InteractionPromptState& RenderSystem::ensurePromptState(GameRegistry& registry) const {
     auto& ctx = registry.ctx();
     if (!ctx.contains<InteractionPromptState>()) {
         ctx.emplace<InteractionPromptState>();
@@ -55,7 +55,7 @@ InteractionPromptState& RenderSystem::ensurePromptState(entt::registry& registry
 }
 
 void RenderSystem::renderOverlays(Application& app,
-                                  entt::registry& registry,
+                                  GameRegistry& registry,
                                   std::vector<RenderLight>& lights,
                                   InteractionPromptState& prompt) {
     const bool inventoryOpen = registry.ctx().contains<InventoryMenuState>()

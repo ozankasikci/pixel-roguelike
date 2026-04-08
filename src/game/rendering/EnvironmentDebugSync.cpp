@@ -98,7 +98,7 @@ void applyEnvironmentProfile(DebugParams& params,
     applyEnvironmentSettings(params, makeEnvironmentRenderSettings(profile), preserveDebugOverrides);
 }
 
-void syncEnvironmentFromRegistry(entt::registry& registry,
+void syncEnvironmentFromRegistry(GameRegistry& registry,
                                  DebugParams& params,
                                  RuntimeEnvironmentSyncState* syncState,
                                  bool preserveDebugOverrides) {

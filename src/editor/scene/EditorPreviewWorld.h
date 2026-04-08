@@ -37,8 +37,8 @@ public:
     void syncTransforms(const EditorSceneDocument& document);
     void reloadMeshAssets();
 
-    entt::registry& registry() { return registry_; }
-    const entt::registry& registry() const { return registry_; }
+    GameRegistry& registry() { return registry_; }
+    const GameRegistry& registry() const { return registry_; }
     MeshLibrary& meshLibrary() { return meshLibrary_; }
     const MeshLibrary& meshLibrary() const { return meshLibrary_; }
 
@@ -56,7 +56,7 @@ private:
                      const ContentRegistry& content,
                      LevelBuilder& builder);
 
-    entt::registry registry_;
+    GameRegistry registry_;
     MeshLibrary meshLibrary_;
     std::vector<entt::entity> entities_;
     std::unordered_map<entt::entity, std::uint64_t> ownerMap_;

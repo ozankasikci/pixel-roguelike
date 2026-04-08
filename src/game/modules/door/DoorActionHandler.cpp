@@ -5,7 +5,7 @@
 #include "game/components/InteractableComponent.h"
 #include "game/components/PlayerInteractionLockComponent.h"
 
-void handleDoorAction(entt::registry& registry,
+void handleDoorAction(GameRegistry& registry,
                       entt::entity /*source*/,
                       entt::entity target,
                       ActionEntry& action) {
@@ -26,13 +26,12 @@ void handleDoorAction(entt::registry& registry,
                 interactable->busy = true;
             }
             // Lock player during door open animation
-            auto lockView = registry.view<PlayerInteractionLockComponent>();
-            if (!lockView.empty()) {
-                auto& lock = lockView.get<PlayerInteractionLockComponent>(lockView.front());
+            for (auto [lockEntity, lock] : registry.view<PlayerInteractionLockComponent>().each()) {
                 if (!lock.active) {
                     lock.active = true;
                     lock.remainingTime = config->openDuration * 0.9f;
                 }
+                break;
             }
         }
         break;
@@ -73,13 +72,12 @@ void handleDoorAction(entt::registry& registry,
             if (auto* interactable = registry.try_get<InteractableComponent>(target)) {
                 interactable->busy = true;
             }
-            auto lockView = registry.view<PlayerInteractionLockComponent>();
-            if (!lockView.empty()) {
-                auto& lock = lockView.get<PlayerInteractionLockComponent>(lockView.front());
+            for (auto [lockEntity, lock] : registry.view<PlayerInteractionLockComponent>().each()) {
                 if (!lock.active) {
                     lock.active = true;
                     lock.remainingTime = config->openDuration * 0.9f;
                 }
+                break;
             }
         }
         break;

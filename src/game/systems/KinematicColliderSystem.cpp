@@ -9,7 +9,7 @@
 #include <glm/gtx/matrix_decompose.hpp>
 #include <glm/gtc/quaternion.hpp>
 
-void tickKinematicColliders(entt::registry& registry, PhysicsSystem& physics) {
+void tickKinematicColliders(GameRegistry& registry, PhysicsSystem& physics) {
     auto view = registry.view<ColliderComponent, KinematicLinkComponent>();
     for (auto [entity, collider, link] : view.each()) {
         if (link.parentMesh == entt::null) continue;

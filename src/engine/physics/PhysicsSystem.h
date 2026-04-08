@@ -1,7 +1,7 @@
 #pragma once
 #include "engine/core/System.h"
+#include "engine/ecs/GameRegistry.h"
 #include <entt/entity/fwd.hpp>
-#include <entt/entt.hpp>
 #include <glm/glm.hpp>
 #include <memory>
 
@@ -20,8 +20,8 @@ public:
     void update(Application& app, float deltaTime) override;
     void shutdown() override;
 
-    void init(entt::registry& registry);
-    void update(entt::registry& registry, float deltaTime);
+    void init(GameRegistry& registry);
+    void update(GameRegistry& registry, float deltaTime);
     void shutdownRuntime();
 
     // Kinematic body API (used by KinematicColliderSystem)

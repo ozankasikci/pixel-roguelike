@@ -86,7 +86,7 @@ void RuntimeSceneRenderer::reloadContent(const ContentRegistry& content) {
     materialTextureLibrary_.init(content);
 }
 
-std::size_t RuntimeSceneRenderer::prewarmMaterialResources(entt::registry& registry) {
+std::size_t RuntimeSceneRenderer::prewarmMaterialResources(GameRegistry& registry) {
     std::unordered_set<std::string> warmedMaterials;
     auto meshView = registry.view<MeshComponent>();
     for (auto [entity, mesh] : meshView.each()) {
@@ -98,7 +98,7 @@ std::size_t RuntimeSceneRenderer::prewarmMaterialResources(entt::registry& regis
     return warmedMaterials.size();
 }
 
-RuntimeSceneRenderer::CameraState RuntimeSceneRenderer::captureCamera(entt::registry& registry, float aspect) const {
+RuntimeSceneRenderer::CameraState RuntimeSceneRenderer::captureCamera(GameRegistry& registry, float aspect) const {
     const RuntimeCameraState captured = capturePrimaryRuntimeCamera(registry, aspect);
     return CameraState{
         captured.position,
@@ -111,7 +111,7 @@ RuntimeSceneRenderer::CameraState RuntimeSceneRenderer::captureCamera(entt::regi
     };
 }
 
-void RuntimeSceneRenderer::collectSceneObjects(entt::registry& registry,
+void RuntimeSceneRenderer::collectSceneObjects(GameRegistry& registry,
                                                std::vector<RenderObject>& out) const {
     out.clear();
     MeshAssetProvider* provider = registry.ctx().contains<MeshAssetProvider>()
@@ -137,7 +137,7 @@ void RuntimeSceneRenderer::collectSceneObjects(entt::registry& registry,
     }
 }
 
-void RuntimeSceneRenderer::collectViewmodelObjects(entt::registry& registry,
+void RuntimeSceneRenderer::collectViewmodelObjects(GameRegistry& registry,
                                                     const CameraState& camera,
                                                     float deltaTime,
                                                     std::vector<RenderObject>& out) const {
@@ -179,7 +179,7 @@ void RuntimeSceneRenderer::collectViewmodelObjects(entt::registry& registry,
     }
 }
 
-void RuntimeSceneRenderer::collectLights(entt::registry& registry,
+void RuntimeSceneRenderer::collectLights(GameRegistry& registry,
                                           const DebugParams& params,
                                           std::vector<RenderLight>& out) const {
     std::vector<RenderLight>& lights = out;
@@ -279,7 +279,7 @@ void RuntimeSceneRenderer::collectLights(entt::registry& registry,
     }
 }
 
-void RuntimeSceneRenderer::collectReflectionProbes(entt::registry& registry,
+void RuntimeSceneRenderer::collectReflectionProbes(GameRegistry& registry,
                                                     std::vector<RenderReflectionProbeInput>& out) const {
     out.clear();
 
@@ -310,7 +310,7 @@ void RuntimeSceneRenderer::updateDebugParams(DebugParams& params,
     params.drawCalls = static_cast<int>(drawCalls);
 }
 
-void RuntimeSceneRenderer::render(entt::registry& registry,
+void RuntimeSceneRenderer::render(GameRegistry& registry,
                                   DebugParams& params,
                                   float deltaTime,
                                   int internalWidth,

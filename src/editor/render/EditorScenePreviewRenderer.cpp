@@ -76,13 +76,13 @@ glm::mat4 buildShadowMatrix(const RenderLight& light) {
 
 } // namespace
 
-std::vector<RenderLight> collectLights(const entt::registry& registry,
+std::vector<RenderLight> collectLights(const GameRegistry& registry,
                                        const EnvironmentDefinition& environment) {
     std::vector<RenderLight> lights;
     appendDirectionalLight(lights, environment.lighting.sun, glm::vec3(0.0f, -1.0f, 0.0f));
     appendDirectionalLight(lights, environment.lighting.fill, glm::vec3(0.0f, -1.0f, 0.0f));
 
-    auto lightView = registry.view<TransformComponent, LightComponent>();
+    auto lightView = registry.viewAll<TransformComponent, LightComponent>();
     for (auto [entity, transform, light] : lightView.each()) {
         RenderLight renderLight;
         renderLight.type = light.type;

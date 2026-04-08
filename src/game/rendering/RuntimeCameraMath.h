@@ -2,7 +2,7 @@
 
 #include <glm/glm.hpp>
 
-#include <entt/entt.hpp>
+#include "engine/ecs/GameRegistry.h"
 
 struct CameraComponent;
 struct TransformComponent;
@@ -21,5 +21,5 @@ void updateRuntimeCameraComponent(TransformComponent& transform,
                                   CameraComponent& camera,
                                   float aspect);
 
-RuntimeCameraState capturePrimaryRuntimeCamera(entt::registry& registry,
+RuntimeCameraState capturePrimaryRuntimeCamera(GameRegistry& registry,
                                                float aspect);

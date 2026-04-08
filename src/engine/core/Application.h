@@ -7,8 +7,8 @@
 #include <typeindex>
 #include <unordered_map>
 #include <vector>
-#include <entt/entt.hpp>
 #include "engine/core/Window.h"
+#include "engine/ecs/GameRegistry.h"
 #include "engine/core/EventBus.h"
 #include "engine/core/Time.h"
 
@@ -49,7 +49,7 @@ public:
 
     // Accessors (per D-06)
     Window& window() { return window_; }
-    entt::registry& registry() { return registry_; }
+    GameRegistry& registry() { return registry_; }
     EventBus& eventBus() { return eventBus_; }
     const Time& time() const { return time_; }
     float deltaTime() const { return time_.deltaTime(); }
@@ -104,7 +104,7 @@ public:
 
 private:
     Window window_;
-    entt::registry registry_;
+    GameRegistry registry_;
     EventBus eventBus_;
     Time time_;
     std::unordered_map<std::type_index, std::any> services_;

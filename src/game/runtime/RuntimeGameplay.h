@@ -1,6 +1,6 @@
 #pragma once
 
-#include <entt/entity/fwd.hpp>
+#include "engine/ecs/GameRegistry.h"
 
 class ContentRegistry;
 class InputSystem;
@@ -15,26 +15,26 @@ struct RuntimeCheckpointFeedbackState {
     float messageTimer = 0.0f;
 };
 
-void initializeRuntimeInteraction(entt::registry& registry);
-void updateRuntimeInteraction(entt::registry& registry, const InputSystem& input);
+void initializeRuntimeInteraction(GameRegistry& registry);
+void updateRuntimeInteraction(GameRegistry& registry, const InputSystem& input);
 
-void initializeRuntimeInventory(entt::registry& registry);
-void updateRuntimeInventory(entt::registry& registry,
+void initializeRuntimeInventory(GameRegistry& registry);
+void updateRuntimeInventory(GameRegistry& registry,
                             InputSystem& input,
                             RunSession& session,
                             const ContentRegistry& content);
 
-void initializeRuntimeCheckpoints(entt::registry& registry);
-void updateRuntimeCheckpoints(entt::registry& registry, float deltaTime, RunSession& session);
+void initializeRuntimeCheckpoints(GameRegistry& registry);
+void updateRuntimeCheckpoints(GameRegistry& registry, float deltaTime, RunSession& session);
 
-void updateRuntimePlayerMovement(entt::registry& registry,
+void updateRuntimePlayerMovement(GameRegistry& registry,
                                  const InputSystem& input,
                                  PhysicsSystem& physics,
                                  float deltaTime);
 
-void updateRuntimeCamera(entt::registry& registry,
+void updateRuntimeCamera(GameRegistry& registry,
                          const InputSystem& input,
                          float aspect,
                          float deltaTime);
 
-void updateRuntimeBehaviors(entt::registry& registry);
+void updateRuntimeBehaviors(GameRegistry& registry);

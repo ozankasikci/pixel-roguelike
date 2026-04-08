@@ -229,7 +229,7 @@ void PhysicsSystem::init(Application& app) {
     init(app.registry());
 }
 
-void PhysicsSystem::init(entt::registry& registry) {
+void PhysicsSystem::init(GameRegistry& registry) {
     // 1. Initialize Jolt runtime
     JPH::RegisterDefaultAllocator();
     JPH::Factory::sInstance = new JPH::Factory();
@@ -265,7 +265,7 @@ void PhysicsSystem::update(Application& app, float deltaTime) {
     update(app.registry(), deltaTime);
 }
 
-void PhysicsSystem::update(entt::registry& registry, float deltaTime) {
+void PhysicsSystem::update(GameRegistry& registry, float deltaTime) {
     if (!impl_ || !impl_->physicsSystem) return;
 
     auto& bodyInterface = impl_->physicsSystem->GetBodyInterface();

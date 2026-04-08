@@ -1,7 +1,7 @@
 #pragma once
 
 #include "engine/core/System.h"
-#include <entt/entt.hpp>
+#include "engine/ecs/GameRegistry.h"
 
 class DoorAnimationSystem : public System {
 public:
@@ -11,8 +11,8 @@ public:
 };
 
 // Free function for contexts without Application& (e.g. RuntimeGameSession)
-void tickDoorAnimation(entt::registry& registry, float deltaTime);
+void tickDoorAnimation(GameRegistry& registry, float deltaTime);
 
 // Reset all doors to closed state and sync leaf visuals.
 // Call after restoring baseline state to ensure modelOverride matches DoorStateComponent.
-void resetDoorVisuals(entt::registry& registry);
+void resetDoorVisuals(GameRegistry& registry);

@@ -39,7 +39,7 @@ void updateRuntimeCameraComponent(TransformComponent& transform,
                                                camera.farPlane);
 }
 
-RuntimeCameraState capturePrimaryRuntimeCamera(entt::registry& registry,
+RuntimeCameraState capturePrimaryRuntimeCamera(GameRegistry& registry,
                                                float aspect) {
     RuntimeCameraState state;
 

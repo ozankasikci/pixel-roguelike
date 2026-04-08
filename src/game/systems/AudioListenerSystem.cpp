@@ -14,7 +14,7 @@ AudioSystem& audioSystem(Application& app) {
     return *app.getService<AudioSystem*>();
 }
 
-void updateAudioListener(entt::registry& registry, AudioSystem& audio) {
+void updateAudioListener(GameRegistry& registry, AudioSystem& audio) {
     auto view = registry.view<PrimaryCameraTag, TransformComponent>();
     for (auto [entity, transform] : view.each()) {
         // Compute forward and up vectors from euler rotation (matches CameraSystem pattern)

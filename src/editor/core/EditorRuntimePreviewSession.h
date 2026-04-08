@@ -2,7 +2,6 @@
 
 #include "game/runtime/RuntimeGameSession.h"
 
-#include <entt/entt.hpp>
 #include <glm/vec2.hpp>
 
 #include <string>
@@ -40,8 +39,8 @@ public:
     void syncCursor(GLFWwindow* window);
     bool captured() const { return captured_; }
 
-    entt::registry& registry() { return session_.registry(); }
-    const entt::registry& registry() const { return session_.registry(); }
+    GameRegistry& registry() { return session_.registry(); }
+    const GameRegistry& registry() const { return session_.registry(); }
     MeshLibrary& meshLibrary() { return session_.meshLibrary(); }
     const MeshLibrary& meshLibrary() const { return session_.meshLibrary(); }
     DebugParams& debugParams() { return session_.debugParams(); }

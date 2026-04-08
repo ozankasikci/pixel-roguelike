@@ -11,7 +11,7 @@
 #include "game/runtime/RuntimeGameplay.h"
 #include "game/session/RunSession.h"
 
-#include <entt/entt.hpp>
+#include "engine/ecs/GameRegistry.h"
 
 #include <memory>
 #include <string>
@@ -67,8 +67,8 @@ public:
                                     int outputHeight,
                                     GLuint targetFramebuffer = 0);
 
-    entt::registry& registry() { return registry_; }
-    const entt::registry& registry() const { return registry_; }
+    GameRegistry& registry() { return registry_; }
+    const GameRegistry& registry() const { return registry_; }
     MeshLibrary& meshLibrary() { return meshLibrary_; }
     const MeshLibrary& meshLibrary() const { return meshLibrary_; }
     RunSession& runSession() { return runSession_; }
@@ -88,7 +88,7 @@ private:
     void resetTransientRuntimeState();
     void clearEntities();
 
-    entt::registry registry_;
+    GameRegistry registry_;
     MeshLibrary meshLibrary_;
     std::vector<entt::entity> entities_;
     RunSession runSession_;

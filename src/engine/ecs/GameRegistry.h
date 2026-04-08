@@ -73,6 +73,11 @@ public:
     template<typename... T>
     std::size_t remove(entt::entity e) { return registry_.remove<T...>(e); }
 
+    template<typename T, typename... Func>
+    T& patch(entt::entity e, Func&&... func) {
+        return registry_.patch<T>(e, std::forward<Func>(func)...);
+    }
+
     // --- Context variables ---
 
     auto& ctx() { return registry_.ctx(); }

@@ -15,13 +15,14 @@
 #include "game/session/RunSession.h"
 #include "game/ui/InventoryMenuState.h"
 
+#include "engine/ecs/GameRegistry.h"
+
 #include <GLFW/glfw3.h>
-#include <entt/entt.hpp>
 
 #include <cassert>
 
 int main() {
-    entt::registry registry;
+    GameRegistry registry;
 
     auto ground = registry.create();
     ColliderComponent groundCollider;

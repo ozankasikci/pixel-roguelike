@@ -1,7 +1,7 @@
 #pragma once
 #include "engine/core/System.h"
 
-#include <entt/entity/fwd.hpp>
+#include "engine/ecs/GameRegistry.h"
 
 class Application;
 class AudioSystem;
@@ -12,7 +12,7 @@ class AudioSystem;
 AudioSystem& audioSystem(Application& app);
 
 // Free-function to sync audio listener position from PrimaryCameraTag entity (per D-15).
-void updateAudioListener(entt::registry& registry, AudioSystem& audio);
+void updateAudioListener(GameRegistry& registry, AudioSystem& audio);
 
 // System wrapper for registration via addSystem (matches PlayerMovementSystem/CameraSystem pattern).
 // Holds a reference to AudioSystem obtained from Application's system lifecycle.

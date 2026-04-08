@@ -9,7 +9,7 @@
 #include <cassert>
 
 int main() {
-    entt::registry registry;
+    GameRegistry registry;
     MeshLibrary meshLibrary;
     std::vector<entt::entity> entities;
     LevelBuildContext context{registry, meshLibrary, entities};

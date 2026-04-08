@@ -25,9 +25,9 @@ public:
     void enableAutoScreenshot(const std::string& path, int delayFrames = 10);
 
 private:
-    InteractionPromptState& ensurePromptState(entt::registry& registry) const;
+    InteractionPromptState& ensurePromptState(GameRegistry& registry) const;
     void renderOverlays(Application& app,
-                        entt::registry& registry,
+                        GameRegistry& registry,
                         std::vector<RenderLight>& lights,
                         InteractionPromptState& prompt);
     void handleResolutionChange();

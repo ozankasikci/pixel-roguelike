@@ -1,7 +1,7 @@
 #pragma once
 
-#include <entt/entt.hpp>
+#include "engine/ecs/GameRegistry.h"
 
 class PhysicsSystem;
 
-void tickKinematicColliders(entt::registry& registry, PhysicsSystem& physics);
+void tickKinematicColliders(GameRegistry& registry, PhysicsSystem& physics);
