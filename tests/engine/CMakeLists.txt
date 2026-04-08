@@ -27,3 +27,9 @@ pixel_roguelike_add_test(test_questdoor_scale
     LIBRARIES engine_rendering
     LABELS engine
 )
+
+pixel_roguelike_add_test(test_game_registry
+    SOURCES test_game_registry.cpp
+    LIBRARIES engine_core
+    LABELS engine
+)

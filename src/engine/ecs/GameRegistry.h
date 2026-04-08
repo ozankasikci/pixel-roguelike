@@ -38,7 +38,7 @@ public:
     // --- Component access ---
 
     template<typename T, typename... Args>
-    T& emplace(entt::entity e, Args&&... args) {
+    decltype(auto) emplace(entt::entity e, Args&&... args) {
         return registry_.emplace<T>(e, std::forward<Args>(args)...);
     }
 
