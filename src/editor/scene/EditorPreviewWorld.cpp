@@ -428,6 +428,9 @@ void EditorPreviewWorld::syncTransforms(const EditorSceneDocument& document) {
             transform.position = position;
             transform.rotation = rotation;
             transform.scale = scale;
+            if (auto* pivot = registry_.try_get<PivotTransformComponent>(entity)) {
+                pivot->scale = scale;
+            }
             break;
         }
         case EditorSceneObjectKind::Collider: {

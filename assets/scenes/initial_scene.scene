@@ -85,6 +85,6 @@ collider box solid 0.0 3.0 6.0 5.0 3.0 0.1 node n_col_north
 collider box solid 5.0 3.0 2.0 0.1 3.0 4.0 node n_col_east
 collider box solid -5.0 3.0 2.0 0.1 3.0 4.0 node n_col_west
 player_spawn 0.0 1.0 -0.5 -2.0 node n_spawn
-door_group DoorA -5.0 0.0 1.0 90.0 node n_doorA_group
+door_group DoorA -5.0 0.0 1.0 89.999985 scale 1.019494 1.019494 1.019494 node n_doorA_group
 door_group DoorB 0.0 0.0 6.0 180.0 open_duration 1.8 node n_doorB_group
 door_group DoorC 5.0 0.0 3.0 -90.0 open_duration 1.0 node n_doorC_group
