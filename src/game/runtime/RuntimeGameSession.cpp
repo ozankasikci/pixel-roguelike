@@ -5,6 +5,8 @@
 #include "game/components/CameraComponent.h"
 #include "game/components/CheckpointComponent.h"
 #include "game/components/CharacterControllerComponent.h"
+#include "game/modules/checkpoint/CheckpointFeedbackState.h"
+#include "game/modules/checkpoint/CheckpointSystem.h"
 #include "game/modules/door/DoorComponents.h"
 #include "game/components/PlayerInteractionLockComponent.h"
 #include "game/components/PlayerMovementComponent.h"
@@ -156,7 +158,7 @@ void RuntimeGameSession::rebuild(const LevelDef& level,
 
     initializeRuntimeInteraction(registry_);
     initializeRuntimeInventory(registry_);
-    initializeRuntimeCheckpoints(registry_);
+    initializeCheckpointFeedback(registry_);
     physics_.update(registry_, 0.0f);
     captureBaselineState();
     performanceStats_.rebuildMs = elapsedMilliseconds(start, Clock::now());
@@ -180,8 +182,8 @@ void RuntimeGameSession::resetForPlay() {
     resetTransientRuntimeState();
     initializeRuntimeInteraction(registry_);
     initializeRuntimeInventory(registry_);
-    initializeRuntimeCheckpoints(registry_);
-    updateRuntimeCheckpoints(registry_, 0.0f, runSession_);
+    initializeCheckpointFeedback(registry_);
+    tickCheckpointFeedback(registry_, 0.0f);
     physics_.update(registry_, 0.0f);
 
     performanceStats_.resetForPlayMs = elapsedMilliseconds(start, Clock::now());
@@ -200,7 +202,7 @@ void RuntimeGameSession::tick(float deltaTime, float aspect) {
     performanceStats_.interactionMs = elapsedMilliseconds(t0, t1);
 
     t0 = t1;
-    updateRuntimeCheckpoints(registry_, deltaTime, runSession_);
+    tickCheckpointFeedback(registry_, deltaTime);
     t1 = Clock::now();
     performanceStats_.checkpointsMs = elapsedMilliseconds(t0, t1);
 

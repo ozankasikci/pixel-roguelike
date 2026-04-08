@@ -50,4 +50,4 @@ target_include_directories(editor PUBLIC
     ${CMAKE_SOURCE_DIR}/external
     ${CMAKE_SOURCE_DIR}/external/ImGuizmo
 )
-target_link_libraries(editor PUBLIC gameplay game_module_door nlohmann_json::nlohmann_json)
+target_link_libraries(editor PUBLIC gameplay game_module_checkpoint game_module_door nlohmann_json::nlohmann_json)

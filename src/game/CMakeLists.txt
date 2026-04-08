@@ -36,7 +36,6 @@ add_library(gameplay STATIC
     session/EquipmentState.cpp
     systems/AudioListenerSystem.cpp
     systems/CameraSystem.cpp
-    systems/CheckpointSystem.cpp
     systems/InteractionSystem.cpp
     systems/InventorySystem.cpp
     systems/PlayerMovementSystem.cpp

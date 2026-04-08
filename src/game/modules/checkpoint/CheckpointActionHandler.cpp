@@ -5,7 +5,7 @@
 #include "game/components/InteractableComponent.h"
 #include "game/components/PlayerSpawnComponent.h"
 #include "game/components/PlayerTag.h"
-#include "game/runtime/RuntimeGameplay.h"
+#include "game/modules/checkpoint/CheckpointFeedbackState.h"
 
 void handleCheckpointAction(entt::registry& registry,
                             entt::entity /*source*/,

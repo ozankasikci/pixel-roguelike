@@ -10,10 +10,8 @@
 #include "game/components/MeshComponent.h"
 #include "game/components/CameraComponent.h"
 #include "game/components/CharacterControllerComponent.h"
-#include "game/components/CheckpointComponent.h"
 #include "game/components/ControllableTag.h"
 #include "game/components/InteractableComponent.h"
-#include "game/components/LightComponent.h"
 #include "game/components/PlayerInteractionLockComponent.h"
 #include "game/components/PlayerMovementComponent.h"
 #include "game/components/PlayerSpawnComponent.h"
@@ -85,14 +83,6 @@ RuntimeInventoryCaptureState& ensureInventoryCaptureState(entt::registry& regist
         ctx.emplace<RuntimeInventoryCaptureState>();
     }
     return ctx.get<RuntimeInventoryCaptureState>();
-}
-
-RuntimeCheckpointFeedbackState& ensureCheckpointFeedbackState(entt::registry& registry) {
-    auto& ctx = registry.ctx();
-    if (!ctx.contains<RuntimeCheckpointFeedbackState>()) {
-        ctx.emplace<RuntimeCheckpointFeedbackState>();
-    }
-    return ctx.get<RuntimeCheckpointFeedbackState>();
 }
 
 bool hasPlayerEntity(entt::registry& registry) {
@@ -268,50 +258,6 @@ void updateRuntimeInventory(entt::registry& registry,
 
     menu.pendingAction = InventoryMenuState::PendingActionType::None;
     menu.pendingWeaponId.clear();
-}
-
-void initializeRuntimeCheckpoints(entt::registry& registry) {
-    (void)ensureCheckpointFeedbackState(registry);
-}
-
-void updateRuntimeCheckpoints(entt::registry& registry, float deltaTime, RunSession& session) {
-    auto& ctx = registry.ctx();
-    if (!ctx.contains<InteractionFocusState>()) {
-        ctx.emplace<InteractionFocusState>();
-    }
-    auto& focus = ctx.get<InteractionFocusState>();
-    auto& feedback = ensureCheckpointFeedbackState(registry);
-
-    if (feedback.messageTimer > 0.0f) {
-        feedback.messageTimer = std::max(0.0f, feedback.messageTimer - deltaTime);
-    }
-
-    PlayerSpawnComponent* playerSpawn = nullptr;
-    auto playerView = registry.view<PlayerSpawnComponent>();
-    for (auto [entity, spawn] : playerView.each()) {
-        (void)entity;
-        playerSpawn = &spawn;
-        break;
-    }
-
-    if (!playerSpawn) {
-        return;
-    }
-
-    auto checkpointView = registry.view<TransformComponent, CheckpointComponent>();
-    for (auto [entity, transform, checkpoint] : checkpointView.each()) {
-        (void)transform;
-        if (auto* light = registry.try_get<LightComponent>(checkpoint.lightEntity)) {
-            light->intensity = checkpoint.active ? 2.2f : 1.15f;
-            light->radius = checkpoint.active ? 10.0f : 7.0f;
-        }
-        if (auto* interactable = registry.try_get<InteractableComponent>(entity)) {
-            interactable->promptText = checkpoint.active ? "RESPAWN ATTUNED" : "E  KINDLE CHECKPOINT";
-            interactable->busyText = "CHECKPOINT KINDLED";
-            interactable->busy = checkpoint.active && feedback.messageTimer > 0.0f;
-        }
-    }
-
 }
 
 void updateRuntimePlayerMovement(entt::registry& registry,

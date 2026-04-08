@@ -4,7 +4,7 @@
 #include "game/components/InteractableComponent.h"
 #include "game/components/LightComponent.h"
 #include "game/components/TransformComponent.h"
-#include "game/runtime/RuntimeGameplay.h"
+#include "game/modules/checkpoint/CheckpointFeedbackState.h"
 
 #include <algorithm>
 

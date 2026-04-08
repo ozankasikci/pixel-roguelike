@@ -158,6 +158,7 @@ struct LevelNodeRef {
         Archetype,
         Group,
         DoorGroup,
+        Checkpoint,
     };
 
     Kind kind = Kind::Mesh;
@@ -1020,6 +1021,7 @@ LevelDef resolveLevelHierarchy(const LevelDef& data) {
                  + data.archetypes.size()
                  + data.groups.size()
                  + data.doors.size()
+                 + data.checkpoints.size()
                  + (data.hasPlayerSpawn ? 1u : 0u));
 
     for (std::size_t i = 0; i < data.meshes.size(); ++i) {
@@ -1045,6 +1047,9 @@ LevelDef resolveLevelHierarchy(const LevelDef& data) {
     }
     for (std::size_t i = 0; i < data.doors.size(); ++i) {
         refs.push_back(LevelNodeRef{LevelNodeRef::Kind::DoorGroup, i, data.doors[i].nodeId, data.doors[i].parentNodeId});
+    }
+    for (std::size_t i = 0; i < data.checkpoints.size(); ++i) {
+        refs.push_back(LevelNodeRef{LevelNodeRef::Kind::Checkpoint, i, data.checkpoints[i].nodeId, data.checkpoints[i].parentNodeId});
     }
 
     std::unordered_map<std::string, std::size_t> nodeLookup;
@@ -1098,6 +1103,10 @@ LevelDef resolveLevelHierarchy(const LevelDef& data) {
         case LevelNodeRef::Kind::DoorGroup: {
             const auto& dg = data.doors[ref.index];
             return makeTransformMatrix(dg.position, glm::vec3(0.0f, dg.yawDegrees, 0.0f), dg.scale);
+        }
+        case LevelNodeRef::Kind::Checkpoint: {
+            const auto& cp = data.checkpoints[ref.index];
+            return makeTransformMatrix(cp.position, glm::vec3(0.0f), glm::vec3(1.0f));
         }
         }
         return glm::mat4(1.0f);
@@ -1209,6 +1218,11 @@ LevelDef resolveLevelHierarchy(const LevelDef& data) {
                 dg.yawDegrees = rotation.y;
                 dg.scale = glm::max(scale, glm::vec3(0.01f));
             }
+            break;
+        }
+        case LevelNodeRef::Kind::Checkpoint: {
+            auto& cp = resolved.checkpoints[refs[idx].index];
+            cp.position = glm::vec3(worldMatrices[idx][3]);
             break;
         }
         }
