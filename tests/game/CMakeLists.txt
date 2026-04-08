@@ -105,3 +105,9 @@ pixel_roguelike_add_test(test_door_group_position
     LIBRARIES gameplay game_module_door
     LABELS game
 )
+
+pixel_roguelike_add_test(test_entity_hierarchy
+    SOURCES test_entity_hierarchy.cpp
+    LIBRARIES engine_core gameplay
+    LABELS game
+)
