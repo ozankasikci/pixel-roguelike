@@ -1,5 +1,6 @@
 #pragma once
 
+#include "game/modules/checkpoint/CheckpointActionTypes.h"
 #include "game/modules/door/DoorActionTypes.h"
 
 #include <glm/glm.hpp>
@@ -22,6 +23,7 @@ enum class ActionType : uint8_t {
     LockPlayer,
     UnlockPlayer,
     TeleportPlayer,
+    ActivateCheckpoint,
 };
 
 // DoorActionParams is defined in game/modules/door/DoorActionTypes.h

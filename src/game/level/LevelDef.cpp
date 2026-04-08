@@ -185,6 +185,7 @@ ActionType parseActionTypeName(const std::string& path, int lineNumber, const st
     if (name == "lock_player")     return ActionType::LockPlayer;
     if (name == "unlock_player")   return ActionType::UnlockPlayer;
     if (name == "teleport_player") return ActionType::TeleportPlayer;
+    if (name == "activate_checkpoint") return ActionType::ActivateCheckpoint;
     throwParseError(path, lineNumber, "unknown action type '" + name + "'");
     return ActionType::Delay; // unreachable
 }
@@ -398,6 +399,9 @@ ActionEntry parseActionEntry(const std::string& path,
     case ActionType::TeleportPlayer:
         entry.params = TeleportPlayerParams{};
         break;
+    case ActionType::ActivateCheckpoint:
+        entry.params = DelayActionParams{};  // no custom params; use placeholder
+        break;
     }
 
     for (std::size_t i = startIndex; i < tokens.size();) {
@@ -459,6 +463,9 @@ ActionEntry parseActionEntry(const std::string& path,
             break;
         case ActionType::TeleportPlayer:
             parseTeleportPlayerParams(std::get<TeleportPlayerParams>(entry.params), path, lineNumber, tokens, i);
+            break;
+        case ActionType::ActivateCheckpoint:
+            ++i; // skip unknown token
             break;
         }
     }
@@ -553,6 +560,7 @@ const char* actionTypeName(ActionType type) {
     case ActionType::LockPlayer:     return "lock_player";
     case ActionType::UnlockPlayer:   return "unlock_player";
     case ActionType::TeleportPlayer: return "teleport_player";
+    case ActionType::ActivateCheckpoint: return "activate_checkpoint";
     }
     return "delay";
 }
