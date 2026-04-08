@@ -102,8 +102,8 @@ int main() {
     const auto& rebuiltMesh = preview.registry().get<MeshComponent>(movedMeshEntity);
     assert(rebuiltMesh.materialId == "wood_default");
     assert(nearlyEqualVec3(rebuiltMesh.tint, updatedMeshTint));
-    assert(rebuiltMesh.useModelOverride);
-    assert(nearlyEqualVec3(glm::vec3(rebuiltMesh.modelOverride[3]), updatedMeshPosition));
+    const auto& rebuiltTransform = preview.registry().get<TransformComponent>(movedMeshEntity);
+    assert(nearlyEqualVec3(rebuiltTransform.position, updatedMeshPosition));
 
     auto playerView = preview.registry().view<TransformComponent,
                                               CameraComponent,

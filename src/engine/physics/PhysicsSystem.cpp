@@ -25,6 +25,7 @@
 #include <glm/trigonometric.hpp>
 #include <spdlog/spdlog.h>
 #include <entt/entt.hpp>
+#include <algorithm>
 #include <cstdint>
 #include <unordered_map>
 #include <utility>
@@ -211,8 +212,11 @@ namespace {
 
 JPH::ShapeRefC makeColliderShape(const ColliderComponent& collider) {
     switch (collider.shape) {
-    case ColliderShape::Box:
-        return new JPH::BoxShape(toJolt(collider.halfExtents));
+    case ColliderShape::Box: {
+        const float minHalf = std::min({collider.halfExtents.x, collider.halfExtents.y, collider.halfExtents.z});
+        const float convexRadius = std::min(JPH::cDefaultConvexRadius, std::max(0.0f, minHalf));
+        return new JPH::BoxShape(toJolt(collider.halfExtents), convexRadius);
+    }
     case ColliderShape::Cylinder:
         return new JPH::CylinderShape(collider.halfHeight, collider.radius);
     case ColliderShape::Sphere:

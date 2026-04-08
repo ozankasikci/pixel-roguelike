@@ -114,15 +114,12 @@ entt::entity LevelBuilder::addMesh(Mesh* mesh,
         return entt::null;
     }
 
-    auto entity = createEntity();
-    context_.registry.emplace<TransformComponent>(entity);
+    auto entity = createTransformEntity(position, rotation, scale);
     context_.registry.emplace<MeshComponent>(
         entity,
         MeshComponent{
             "",
             mesh,
-            makeModelMatrix(position, scale, rotation),
-            true,
             tint.value_or(glm::vec3(1.0f)),
             materialId.value_or("stone_default")
         }
@@ -206,6 +203,7 @@ entt::entity LevelBuilder::addCollider(const LevelColliderPlacement& placement) 
     collider.halfHeight = placement.halfHeight;
     collider.fireOnce = placement.fireOnce;
     collider.enabled = true;
+    collider.parentNodeId = placement.parentNodeId;
     context_.registry.emplace<ColliderComponent>(entity, collider);
 
     if (!placement.nodeId.empty()) {
