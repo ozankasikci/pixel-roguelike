@@ -1,5 +1,6 @@
 #include "game/systems/KinematicColliderSystem.h"
 
+#include "engine/core/Application.h"
 #include "engine/physics/PhysicsSystem.h"
 #include "game/components/ColliderComponent.h"
 #include "game/components/KinematicLinkComponent.h"
@@ -55,3 +56,15 @@ void tickKinematicColliders(GameRegistry& registry, PhysicsSystem& physics, floa
         s_loggedOnce = true;
     }
 }
+
+KinematicColliderSystem::KinematicColliderSystem(PhysicsSystem& physics)
+    : physics_(physics)
+{}
+
+void KinematicColliderSystem::init(Application& /*app*/) {}
+
+void KinematicColliderSystem::update(Application& app, float deltaTime) {
+    tickKinematicColliders(app.registry(), physics_, deltaTime);
+}
+
+void KinematicColliderSystem::shutdown() {}

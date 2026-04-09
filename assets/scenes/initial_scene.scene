@@ -334,7 +334,7 @@ collider box solid 5.0 3.0 2.0 0.3 3.0 4.0 node n_col_east parent n_room1_collid
 collider box solid -5.0 3.0 -0.8 0.3 3.0 1.2 node n_col_west_s parent n_room1_colliders
 collider box solid -5.0 3.0 3.8 0.3 3.0 2.2 node n_col_west_n parent n_room1_colliders
 collider box solid 0.0 4.794289 0.0 2.634915 4.456357 0.724372 node node_366 parent n_doorA_leaf kinematic
-player_spawn 0.0 1.0 -0.5 -2.0 node n_spawn parent n_room1
+player_spawn 0.0 0.755911 0.188869 -2.0 node n_spawn parent n_room1
 group Room1 0.0 0.0 0.0 1.0 1.0 1.0 0.0 0.0 0.0 node n_room1
 group Floor 0.0 0.0 0.0 1.0 1.0 1.0 0.0 0.0 0.0 node n_room1_floor parent n_room1
 group Ceiling 0.0 0.0 0.0 1.0 1.0 1.0 0.0 0.0 0.0 node n_room1_ceiling parent n_room1

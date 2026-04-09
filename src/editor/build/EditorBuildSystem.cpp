@@ -528,15 +528,53 @@ bool packageGame(const EditorBuildConfig& config, const std::string& outputDir,
     }
 
     std::error_code ec;
-    fs::create_directories(outputDir, ec);
+
+    // --- Create .app bundle structure ---
+    fs::path appBundle = fs::path(outputDir) / "PixelRoguelike.app";
+    fs::path contentsDir = appBundle / "Contents";
+    fs::path macosDir = contentsDir / "MacOS";
+    fs::path resourcesDir = contentsDir / "Resources";
+
+    // Clean previous bundle if it exists
+    if (fs::exists(appBundle, ec)) {
+        fs::remove_all(appBundle, ec);
+    }
+
+    fs::create_directories(macosDir, ec);
     if (ec) {
-        std::string msg = "Package: failed to create output dir: " + ec.message();
+        std::string msg = "Package: failed to create .app bundle: " + ec.message();
         log.addLine(msg.c_str(), BuildLineKind::Error);
         return false;
     }
+    fs::create_directories(resourcesDir, ec);
 
-    // Copy binary
-    fs::path destBinary = fs::path(outputDir) / fs::path(binaryPath).filename();
+    // Write Info.plist
+    {
+        std::ofstream plist(contentsDir / "Info.plist");
+        plist << "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
+              << "<!DOCTYPE plist PUBLIC \"-//Apple//DTD PLIST 1.0//EN\" "
+              << "\"http://www.apple.com/DTDs/PropertyList-1.0.dtd\">\n"
+              << "<plist version=\"1.0\">\n<dict>\n"
+              << "    <key>CFBundleExecutable</key>\n"
+              << "    <string>pixel-roguelike</string>\n"
+              << "    <key>CFBundleIdentifier</key>\n"
+              << "    <string>com.pixelroguelike.game</string>\n"
+              << "    <key>CFBundleName</key>\n"
+              << "    <string>Pixel Roguelike</string>\n"
+              << "    <key>CFBundleVersion</key>\n"
+              << "    <string>1.0</string>\n"
+              << "    <key>CFBundleShortVersionString</key>\n"
+              << "    <string>1.0</string>\n"
+              << "    <key>CFBundlePackageType</key>\n"
+              << "    <string>APPL</string>\n"
+              << "    <key>NSHighResolutionCapable</key>\n"
+              << "    <true/>\n"
+              << "</dict>\n</plist>\n";
+    }
+    log.addLine("Created Info.plist", BuildLineKind::Normal);
+
+    // Copy binary into Contents/MacOS/
+    fs::path destBinary = macosDir / fs::path(binaryPath).filename();
     fs::copy_file(binaryPath, destBinary, fs::copy_options::overwrite_existing, ec);
     if (ec) {
         std::string msg = "Package: failed to copy binary: " + ec.message();
@@ -545,8 +583,8 @@ bool packageGame(const EditorBuildConfig& config, const std::string& outputDir,
     }
     log.addLine(("Copied binary: " + destBinary.string()).c_str(), BuildLineKind::Normal);
 
-    // --- Create output assets directory ---
-    fs::path outAssets = fs::path(outputDir) / "assets";
+    // --- Create output assets directory in Resources ---
+    fs::path outAssets = resourcesDir / "assets";
     fs::create_directories(outAssets, ec);
 
     // --- Always-copy directories (small, all needed) ---
@@ -613,7 +651,7 @@ bool packageGame(const EditorBuildConfig& config, const std::string& outputDir,
 
     auto copyAsset = [&](const std::string& relPath) {
         try {
-            fs::path dest = fs::path(outputDir) / relPath;
+            fs::path dest = resourcesDir / relPath;
             fs::create_directories(dest.parent_path(), ec);
             std::string absPath = resolveProjectPath(relPath);
             if (fs::exists(absPath)) {
@@ -650,7 +688,7 @@ bool packageGame(const EditorBuildConfig& config, const std::string& outputDir,
 
     // --- Compute total package size ---
     uintmax_t packageSize = 0;
-    for (auto& entry : fs::recursive_directory_iterator(outputDir, ec)) {
+    for (auto& entry : fs::recursive_directory_iterator(appBundle, ec)) {
         if (entry.is_regular_file()) {
             packageSize += entry.file_size();
         }
@@ -661,7 +699,7 @@ bool packageGame(const EditorBuildConfig& config, const std::string& outputDir,
 
     char summary[256];
     std::snprintf(summary, sizeof(summary),
-                  "Package created: %d referenced assets (%.1f MB assets, %.1f MB total package)",
+                  "Package created: PixelRoguelike.app — %d referenced assets (%.1f MB assets, %.1f MB total)",
                   fileCount, assetMB, packageMB);
     spdlog::info("{}", summary);
     log.addLine(summary, BuildLineKind::Normal);

@@ -1,5 +1,7 @@
 #include "engine/rendering/assets/AssetCache.h"
 
+#include "engine/core/PathUtils.h"
+
 #include <spdlog/spdlog.h>
 
 #include <cstring>
@@ -94,20 +96,13 @@ std::string AssetCache::sanitizeCacheName(const std::string& name) {
 }
 
 std::filesystem::path AssetCache::cacheRoot() {
-    // Walk up from cwd to find project root (where assets/ exists)
-    auto current = std::filesystem::current_path();
-    for (int i = 0; i < 5; ++i) {
-        if (std::filesystem::exists(current / "assets")) {
-            return current / ".cache";
-        }
-        auto parent = current.parent_path();
-        if (parent == current) {
-            break;
-        }
-        current = parent;
+    // Use the project root resolved by PathUtils (handles stale CWD, exe-relative, etc.)
+    std::string root = resolveProjectPath("assets");
+    std::filesystem::path rootPath(root);
+    if (rootPath.filename() == "assets") {
+        rootPath = rootPath.parent_path();
     }
-    // Fallback: use cwd
-    return std::filesystem::current_path() / ".cache";
+    return rootPath / ".cache";
 }
 
 std::string AssetCache::toHexString(uint64_t value) {

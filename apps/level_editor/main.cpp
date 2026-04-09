@@ -435,7 +435,7 @@ int main(int argc, char* argv[]) {
     bool savePressed = false;
     bool newScenePopupRequested = false;
     bool saveLayoutPopupRequested = false;
-    bool buildSettingsPopupRequested = false;
+    bool packagePopupRequested = false;
     char newSceneNameBuffer[128] = "new_scene";
     char addMeshFilter[128] = {};
     std::string pendingDeleteScenePath;
@@ -775,13 +775,9 @@ int main(int argc, char* argv[]) {
                     if (ImGui::MenuItem("Build and Run", "Cmd+R")) {
                         buildAndRunPressed = true;
                     }
-                    if (ImGui::MenuItem("Package for Sharing")) {
-                        packagePressed = true;
-                    }
                     ImGui::EndDisabled();
-                    // Build Settings — opens tabbed settings window
-                    if (ImGui::MenuItem("Build Settings...")) {
-                        buildSettingsPopupRequested = true;
+                    if (ImGui::MenuItem("Package for Sharing...")) {
+                        packagePopupRequested = true;
                     }
                     if (ImGui::MenuItem("Open Build Folder")) {
                         auto absPath = resolveProjectPath(buildConfig.buildDir);
@@ -1289,86 +1285,65 @@ int main(int argc, char* argv[]) {
             ImGui::EndPopup();
         }
 
-        // Build Settings window — tabbed build configuration
-        if (buildSettingsPopupRequested) {
-            ImGui::OpenPopup("Build Settings");
-            buildSettingsPopupRequested = false;
+        // Package for Sharing popup — combined target, scene selection, and package trigger
+        if (packagePopupRequested) {
+            ImGui::OpenPopup("Package for Sharing");
+            packagePopupRequested = false;
         }
-        ImGui::SetNextWindowSize(ImVec2(400.0f, 350.0f), ImGuiCond_Appearing);
+        ImGui::SetNextWindowSize(ImVec2(400.0f, 380.0f), ImGuiCond_Appearing);
         {
-            bool buildSettingsOpen = true;
-            if (ImGui::BeginPopupModal("Build Settings", &buildSettingsOpen, ImGuiWindowFlags_AlwaysAutoResize)) {
-                if (ImGui::BeginTabBar("BuildSettingsTabs")) {
-                    // --- Scenes tab ---
-                    if (ImGui::BeginTabItem("Scenes")) {
-                        ImGui::TextUnformatted("Select scenes to include in builds:");
-                        ImGui::Separator();
-
-                        bool allSelected = buildConfig.buildScenes.empty();
-
-                        // "All Scenes" checkbox at top
-                        bool allCheck = allSelected;
-                        if (ImGui::Checkbox("All Scenes (default)", &allCheck)) {
-                            if (allCheck) {
-                                buildConfig.buildScenes.clear(); // empty = all
-                            } else {
-                                buildConfig.buildScenes = allBuildableScenes;
-                            }
-                            allSelected = buildConfig.buildScenes.empty();
-                        }
-                        ImGui::Separator();
-
-                        // Per-scene checkboxes
-                        for (const auto& scene : allBuildableScenes) {
-                            bool included = allSelected;
-                            if (!allSelected) {
-                                included = std::find(buildConfig.buildScenes.begin(),
-                                                     buildConfig.buildScenes.end(), scene) !=
-                                           buildConfig.buildScenes.end();
-                            }
-                            if (ImGui::Checkbox(scene.c_str(), &included)) {
-                                if (allSelected && !included) {
-                                    buildConfig.buildScenes = allBuildableScenes;
-                                    auto it = std::find(buildConfig.buildScenes.begin(),
-                                                        buildConfig.buildScenes.end(), scene);
-                                    if (it != buildConfig.buildScenes.end()) {
-                                        buildConfig.buildScenes.erase(it);
-                                    }
-                                } else if (included && !allSelected) {
-                                    buildConfig.buildScenes.push_back(scene);
-                                    std::sort(buildConfig.buildScenes.begin(),
-                                              buildConfig.buildScenes.end());
-                                    if (buildConfig.buildScenes == allBuildableScenes) {
-                                        buildConfig.buildScenes.clear();
-                                    }
-                                } else if (!included) {
-                                    auto it = std::find(buildConfig.buildScenes.begin(),
-                                                        buildConfig.buildScenes.end(), scene);
-                                    if (it != buildConfig.buildScenes.end()) {
-                                        buildConfig.buildScenes.erase(it);
-                                    }
-                                }
-                            }
-                        }
-
-                        ImGui::Separator();
-                        if (ImGui::Button("Select All")) {
-                            buildConfig.buildScenes.clear(); // empty = all
-                        }
-                        ImGui::Separator();
-                        if (buildConfig.buildScenes.empty()) {
-                            ImGui::TextColored(ImVec4(0.6f, 0.8f, 0.6f, 1.0f),
-                                               "All %d scenes selected", (int)allBuildableScenes.size());
-                        } else {
-                            ImGui::Text("%d of %d scenes selected",
-                                        (int)buildConfig.buildScenes.size(), (int)allBuildableScenes.size());
-                        }
-                        ImGui::EndTabItem();
-                    }
-                    ImGui::EndTabBar();
-                }
+            bool packagePopupOpen = true;
+            if (ImGui::BeginPopupModal("Package for Sharing", &packagePopupOpen, ImGuiWindowFlags_AlwaysAutoResize)) {
+                // --- Target platform ---
+                ImGui::TextUnformatted("Target Platform");
                 ImGui::Separator();
-                if (ImGui::Button("Close", ImVec2(-1, 0))) {
+                ImGui::TextUnformatted("  macOS (.app)");
+                ImGui::Spacing();
+
+                // --- Scene selection ---
+                ImGui::TextUnformatted("Scenes to Include");
+                ImGui::Separator();
+
+                for (const auto& scene : allBuildableScenes) {
+                    bool included = std::find(buildConfig.buildScenes.begin(),
+                                              buildConfig.buildScenes.end(), scene) !=
+                                    buildConfig.buildScenes.end();
+                    if (ImGui::Checkbox(scene.c_str(), &included)) {
+                        if (included) {
+                            buildConfig.buildScenes.push_back(scene);
+                            std::sort(buildConfig.buildScenes.begin(),
+                                      buildConfig.buildScenes.end());
+                        } else {
+                            auto it = std::find(buildConfig.buildScenes.begin(),
+                                                buildConfig.buildScenes.end(), scene);
+                            if (it != buildConfig.buildScenes.end()) {
+                                buildConfig.buildScenes.erase(it);
+                            }
+                        }
+                    }
+                }
+
+                ImGui::Separator();
+                int selectedCount = static_cast<int>(buildConfig.buildScenes.size());
+                int totalCount = static_cast<int>(allBuildableScenes.size());
+                ImGui::Text("%d of %d scenes selected", selectedCount, totalCount);
+                ImGui::Spacing();
+
+                // --- Buttons ---
+                bool noScenesSelected = buildConfig.buildScenes.empty();
+                ImGui::BeginDisabled(noScenesSelected || buildState.running);
+                if (ImGui::Button("Package", ImVec2(120, 0))) {
+                    saveBuildConfig(buildConfig, resolveProjectPath(kBuildConfigFile));
+                    packagePressed = true;
+                    ImGui::CloseCurrentPopup();
+                }
+                ImGui::EndDisabled();
+                if (noScenesSelected) {
+                    ImGui::SameLine();
+                    ImGui::TextColored(ImVec4(1.0f, 0.6f, 0.0f, 1.0f), "Select at least one scene");
+                }
+                ImGui::SameLine();
+                if (ImGui::Button("Cancel", ImVec2(120, 0))) {
                     saveBuildConfig(buildConfig, resolveProjectPath(kBuildConfigFile));
                     ImGui::CloseCurrentPopup();
                 }
@@ -2364,7 +2339,7 @@ int main(int argc, char* argv[]) {
                 bool ok = packageGame(buildConfig, packageDir, buildLog);
                 if (ok) {
                     buildLog.addLine("", BuildLineKind::Normal);
-                    buildLog.addLine("=== Package created: build-package/ ===",
+                    buildLog.addLine("=== Package created: build-package/PixelRoguelike.app ===",
                                      BuildLineKind::Normal);
                     openFolderInOS(packageDir);
                 }

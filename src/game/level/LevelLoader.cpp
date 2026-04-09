@@ -229,18 +229,21 @@ void LevelLoader::load(const LevelLoadRequest& request, const LevelLoadArgs& arg
         for (const auto& a : level.archetypes) linkParent(a.nodeId, a.parentNodeId);
     }
 
+    // Scene file stores ground-level spawn positions; convert to eye position
+    const glm::vec3 eyeHeightOffset(0.0f, CharacterControllerComponent{}.eyeHeight, 0.0f);
+
     if (session.currentLevelId != request.levelId) {
         session.currentLevelId = request.levelId;
         if (level.hasPlayerSpawn) {
-            session.respawnPosition = level.playerSpawn.position;
+            session.respawnPosition = level.playerSpawn.position + eyeHeightOffset;
             session.fallRespawnY = level.playerSpawn.fallRespawnY;
         }
     } else if (level.hasPlayerSpawn && session.respawnPosition == glm::vec3(0.0f)) {
-        session.respawnPosition = level.playerSpawn.position;
+        session.respawnPosition = level.playerSpawn.position + eyeHeightOffset;
         session.fallRespawnY = level.playerSpawn.fallRespawnY;
     }
 
-    const glm::vec3 defaultSpawn = level.hasPlayerSpawn ? level.playerSpawn.position : glm::vec3(0.0f, 1.6f, 5.4f);
+    const glm::vec3 defaultSpawn = level.hasPlayerSpawn ? level.playerSpawn.position + eyeHeightOffset : glm::vec3(0.0f, 1.6f, 5.4f);
     const glm::vec3 spawnPosition = session.respawnPosition == glm::vec3(0.0f) ? defaultSpawn : session.respawnPosition;
     const float fallRespawnY = level.hasPlayerSpawn ? level.playerSpawn.fallRespawnY : session.fallRespawnY;
 

@@ -56,16 +56,17 @@ double elapsedMilliseconds(Clock::time_point start, Clock::time_point end) {
 
 void bootstrapRuntimeMeshLibrary(MeshLibrary& meshLibrary) {
     registerProceduralAssets(meshLibrary);
+    const std::filesystem::path relativeBase(resolveProjectPath("."));
 
     const std::filesystem::path meshDirectory(resolveProjectPath("assets/meshes"));
-    for (const auto& asset : ModelLoader::discoverProjectAssets(meshDirectory, std::filesystem::current_path())) {
+    for (const auto& asset : ModelLoader::discoverProjectAssets(meshDirectory, relativeBase)) {
         if (!meshLibrary.has(asset.meshId)) {
             meshLibrary.registerFileAlias(asset.meshId, asset.relativePath);
         }
     }
 
     const std::filesystem::path packsDirectory(resolveProjectPath("assets/packs"));
-    for (const auto& asset : ModelLoader::discoverProjectAssets(packsDirectory, std::filesystem::current_path())) {
+    for (const auto& asset : ModelLoader::discoverProjectAssets(packsDirectory, relativeBase)) {
         if (!meshLibrary.has(asset.meshId)) {
             meshLibrary.registerFileAlias(asset.meshId, asset.relativePath);
         }

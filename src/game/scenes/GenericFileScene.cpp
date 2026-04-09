@@ -48,10 +48,11 @@ void GenericFileScene::onEnter(Application& app) {
     request.levelPath = request_.levelPath;
     request.registerAssets = [](MeshLibrary& library) {
         registerProceduralAssets(library);
+        const std::filesystem::path relativeBase(resolveProjectPath("."));
 
         // Auto-discover file-based meshes from assets/meshes/ (per D-05)
         const std::filesystem::path meshDir(resolveProjectPath("assets/meshes"));
-        for (const auto& asset : ModelLoader::discoverProjectAssets(meshDir, std::filesystem::current_path())) {
+        for (const auto& asset : ModelLoader::discoverProjectAssets(meshDir, relativeBase)) {
             if (!library.has(asset.meshId)) {
                 library.registerFileAlias(asset.meshId, asset.relativePath);
             }
@@ -59,7 +60,7 @@ void GenericFileScene::onEnter(Application& app) {
 
         // Auto-discover file-based meshes from assets/packs/ subdirectories
         const std::filesystem::path packsDir(resolveProjectPath("assets/packs"));
-        for (const auto& asset : ModelLoader::discoverProjectAssets(packsDir, std::filesystem::current_path())) {
+        for (const auto& asset : ModelLoader::discoverProjectAssets(packsDir, relativeBase)) {
             if (!library.has(asset.meshId)) {
                 library.registerFileAlias(asset.meshId, asset.relativePath);
             }

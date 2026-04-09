@@ -54,11 +54,17 @@ const std::string& projectRoot() {
     }
 
     // Strategy 2: CWD walk-up (kept first after env var for dev ergonomics)
-    std::string root = findProjectRoot(fs::current_path());
-    if (!root.empty()) {
-        g_projectRoot = root;
-        spdlog::info("[PathUtils] Project root from CWD walk-up: {}", g_projectRoot);
-        return g_projectRoot;
+    // current_path() throws if the CWD no longer exists (e.g. directory was
+    // deleted and recreated by a build step while the shell kept a stale ref).
+    try {
+        std::string root = findProjectRoot(fs::current_path());
+        if (!root.empty()) {
+            g_projectRoot = root;
+            spdlog::info("[PathUtils] Project root from CWD walk-up: {}", g_projectRoot);
+            return g_projectRoot;
+        }
+    } catch (const fs::filesystem_error&) {
+        spdlog::warn("[PathUtils] CWD is inaccessible, skipping CWD walk-up");
     }
 
     // Strategy 3: macOS .app bundle detection (Apple only)
@@ -84,7 +90,7 @@ const std::string& projectRoot() {
         }
 
         // Strategy 4: Exe-relative walk-up
-        root = findProjectRoot(exePath.parent_path());
+        std::string root = findProjectRoot(exePath.parent_path());
         if (!root.empty()) {
             g_projectRoot = root;
             spdlog::info("[PathUtils] Project root from exe walk-up: {}", g_projectRoot);
@@ -95,7 +101,7 @@ const std::string& projectRoot() {
     char buf[4096];
     DWORD len = GetModuleFileNameA(nullptr, buf, sizeof(buf));
     if (len > 0 && len < sizeof(buf)) {
-        root = findProjectRoot(fs::path(buf).parent_path());
+        std::string root = findProjectRoot(fs::path(buf).parent_path());
         if (!root.empty()) {
             g_projectRoot = root;
             spdlog::info("[PathUtils] Project root from exe walk-up: {}", g_projectRoot);
@@ -104,7 +110,7 @@ const std::string& projectRoot() {
     }
 #elif defined(__linux__)
     auto exePath = fs::read_symlink("/proc/self/exe");
-    root = findProjectRoot(exePath.parent_path());
+    std::string root = findProjectRoot(exePath.parent_path());
     if (!root.empty()) {
         g_projectRoot = root;
         spdlog::info("[PathUtils] Project root from exe walk-up: {}", g_projectRoot);
@@ -113,7 +119,11 @@ const std::string& projectRoot() {
 #endif
 
     // Strategy 5: Fallback to CWD (no assets/ found anywhere)
-    g_projectRoot = fs::current_path().string();
+    try {
+        g_projectRoot = fs::current_path().string();
+    } catch (const fs::filesystem_error&) {
+        g_projectRoot = ".";
+    }
     spdlog::warn("[PathUtils] No assets/ found in any search path, falling back to CWD: {}",
                  g_projectRoot);
     return g_projectRoot;
