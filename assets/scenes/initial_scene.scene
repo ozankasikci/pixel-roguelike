@@ -51,7 +51,7 @@ mesh prison_wall_door 0.0 0.0 6.0 1.0 1.5 1.0 0.0 180.0 0.0 material qdp_wall_do
 mesh SM_Wall 3.0 0.0 6.0 0.008 0.024 0.008 0.0 180.0 0.0 material qdp_wall tint 1.0 1.0 1.0 node n_wn4 parent n_room1_wall_front
 mesh SM_Wall 5.0 0.0 6.0 0.008 0.024 0.008 0.0 180.0 0.0 material qdp_wall tint 1.0 1.0 1.0 node n_wn5 parent n_room1_wall_front
 mesh SM_Wall -5.0 0.0 0.0 0.008 0.024 0.008 0.0 90.0 0.0 material qdp_wall tint 1.0 1.0 1.0 node n_ww1 parent n_room1_wall_left
-mesh prison_wall_door -5.0 0.0 1.0 1.0 1.5 1.0 0.0 90.0 0.0 material qdp_wall_door tint 1.0 1.0 1.0 node n_ww2 parent n_room1_wall_left
+mesh prison_wall_door -5.0 0.0 1.0 0.999999 1.5 0.999999 -0.0 89.999985 0.0 material qdp_wall_door tint 1.0 1.0 1.0 node n_ww2 parent n_room1_wall_left
 mesh SM_Wall -5.0 0.0 4.0 0.008 0.024 0.008 0.0 90.0 0.0 material qdp_wall tint 1.0 1.0 1.0 node n_ww3 parent n_room1_wall_left
 mesh SM_Wall -5.0 0.0 6.0 0.008 0.024 0.008 0.0 90.0 0.0 material qdp_wall tint 1.0 1.0 1.0 node n_ww4 parent n_room1_wall_left
 mesh SM_Wall 5.0 0.0 -2.0 0.008 0.024 0.008 0.0 -90.0 0.0 material qdp_wall tint 1.0 1.0 1.0 node n_we1 parent n_room1_wall_right
@@ -71,231 +71,246 @@ mesh ceiling_light_panel -2.5 5.99 0.5 1.0 1.0 1.0 0.0 0.0 0.0 material stone_de
 mesh ceiling_light_panel 2.5 5.99 0.5 1.0 1.0 1.0 0.0 0.0 0.0 material stone_default tint 0.98 0.96 0.9 node n_clp2 parent n_room1_lighting
 mesh ceiling_light_panel -2.5 5.99 3.5 1.0 1.0 1.0 0.0 0.0 0.0 material stone_default tint 0.98 0.96 0.9 node n_clp3 parent n_room1_lighting
 mesh ceiling_light_panel 2.5 5.99 3.5 1.0 1.0 1.0 0.0 0.0 0.0 material stone_default tint 0.98 0.96 0.9 node n_clp4 parent n_room1_lighting
-mesh SM_Floor -8.0 0.0 -4.0 0.008 0.008 0.008 0.0 0.0 0.0 material inst_glossy_floor tint 1.0 1.0 1.0 node n_cr_f01 parent n_room2_floor
-mesh SM_Floor -10.0 0.0 -4.0 0.008 0.008 0.008 0.0 0.0 0.0 material inst_glossy_floor tint 1.01 1.01 1.0 node n_cr_f02 parent n_room2_floor
-mesh SM_Floor -12.0 0.0 -4.0 0.008 0.008 0.008 0.0 0.0 0.0 material inst_glossy_floor tint 1.0 1.0 1.0 node n_cr_f03 parent n_room2_floor
-mesh SM_Floor -14.0 0.0 -4.0 0.008 0.008 0.008 0.0 0.0 0.0 material inst_glossy_floor tint 1.01 1.01 1.0 node n_cr_f04 parent n_room2_floor
-mesh SM_Floor -16.0 0.0 -4.0 0.008 0.008 0.008 0.0 0.0 0.0 material inst_glossy_floor tint 1.0 1.0 1.0 node n_cr_f05 parent n_room2_floor
-mesh SM_Floor -18.0 0.0 -4.0 0.008 0.008 0.008 0.0 0.0 0.0 material inst_glossy_floor tint 1.01 1.01 1.0 node n_cr_f06 parent n_room2_floor
-mesh SM_Floor -20.0 0.0 -4.0 0.008 0.008 0.008 0.0 0.0 0.0 material inst_glossy_floor tint 1.0 1.0 1.0 node n_cr_f07 parent n_room2_floor
-mesh SM_Floor -22.0 0.0 -4.0 0.008 0.008 0.008 0.0 0.0 0.0 material inst_glossy_floor tint 1.01 1.01 1.0 node n_cr_f08 parent n_room2_floor
-mesh SM_Floor -24.0 0.0 -4.0 0.008 0.008 0.008 0.0 0.0 0.0 material inst_glossy_floor tint 1.0 1.0 1.0 node n_cr_f09 parent n_room2_floor
-mesh SM_Floor -8.0 0.0 -2.0 0.008 0.008 0.008 0.0 0.0 0.0 material inst_glossy_floor tint 1.01 1.01 1.0 node n_cr_f10 parent n_room2_floor
-mesh SM_Floor -10.0 0.0 -2.0 0.008 0.008 0.008 0.0 0.0 0.0 material inst_glossy_floor tint 1.0 1.0 1.0 node n_cr_f11 parent n_room2_floor
-mesh SM_Floor -12.0 0.0 -2.0 0.008 0.008 0.008 0.0 0.0 0.0 material inst_glossy_floor tint 1.01 1.01 1.0 node n_cr_f12 parent n_room2_floor
-mesh SM_Floor -14.0 0.0 -2.0 0.008 0.008 0.008 0.0 0.0 0.0 material inst_glossy_floor tint 1.0 1.0 1.0 node n_cr_f13 parent n_room2_floor
-mesh SM_Floor -16.0 0.0 -2.0 0.008 0.008 0.008 0.0 0.0 0.0 material inst_glossy_floor tint 1.01 1.01 1.0 node n_cr_f14 parent n_room2_floor
-mesh SM_Floor -18.0 0.0 -2.0 0.008 0.008 0.008 0.0 0.0 0.0 material inst_glossy_floor tint 1.0 1.0 1.0 node n_cr_f15 parent n_room2_floor
-mesh SM_Floor -20.0 0.0 -2.0 0.008 0.008 0.008 0.0 0.0 0.0 material inst_glossy_floor tint 1.01 1.01 1.0 node n_cr_f16 parent n_room2_floor
-mesh SM_Floor -22.0 0.0 -2.0 0.008 0.008 0.008 0.0 0.0 0.0 material inst_glossy_floor tint 1.0 1.0 1.0 node n_cr_f17 parent n_room2_floor
-mesh SM_Floor -24.0 0.0 -2.0 0.008 0.008 0.008 0.0 0.0 0.0 material inst_glossy_floor tint 1.01 1.01 1.0 node n_cr_f18 parent n_room2_floor
-mesh SM_Floor -8.0 0.0 0.0 0.008 0.008 0.008 0.0 0.0 0.0 material inst_glossy_floor tint 1.0 1.0 1.0 node n_cr_f19 parent n_room2_floor
-mesh SM_Floor -10.0 0.0 0.0 0.008 0.008 0.008 0.0 0.0 0.0 material inst_glossy_floor tint 1.01 1.01 1.0 node n_cr_f20 parent n_room2_floor
-mesh SM_Floor -12.0 0.0 0.0 0.008 0.008 0.008 0.0 0.0 0.0 material inst_glossy_floor tint 1.0 1.0 1.0 node n_cr_f21 parent n_room2_floor
-mesh SM_Floor -14.0 0.0 0.0 0.008 0.008 0.008 0.0 0.0 0.0 material inst_glossy_floor tint 1.01 1.01 1.0 node n_cr_f22 parent n_room2_floor
-mesh SM_Floor -16.0 0.0 0.0 0.008 0.008 0.008 0.0 0.0 0.0 material inst_glossy_floor tint 1.0 1.0 1.0 node n_cr_f23 parent n_room2_floor
-mesh SM_Floor -18.0 0.0 0.0 0.008 0.008 0.008 0.0 0.0 0.0 material inst_glossy_floor tint 1.01 1.01 1.0 node n_cr_f24 parent n_room2_floor
-mesh SM_Floor -20.0 0.0 0.0 0.008 0.008 0.008 0.0 0.0 0.0 material inst_glossy_floor tint 1.0 1.0 1.0 node n_cr_f25 parent n_room2_floor
-mesh SM_Floor -22.0 0.0 0.0 0.008 0.008 0.008 0.0 0.0 0.0 material inst_glossy_floor tint 1.01 1.01 1.0 node n_cr_f26 parent n_room2_floor
-mesh SM_Floor -24.0 0.0 0.0 0.008 0.008 0.008 0.0 0.0 0.0 material inst_glossy_floor tint 1.0 1.0 1.0 node n_cr_f27 parent n_room2_floor
-mesh SM_Floor -8.0 0.0 2.0 0.008 0.008 0.008 0.0 0.0 0.0 material inst_glossy_floor tint 1.01 1.01 1.0 node n_cr_f28 parent n_room2_floor
-mesh SM_Floor -10.0 0.0 2.0 0.008 0.008 0.008 0.0 0.0 0.0 material inst_glossy_floor tint 1.0 1.0 1.0 node n_cr_f29 parent n_room2_floor
-mesh SM_Floor -12.0 0.0 2.0 0.008 0.008 0.008 0.0 0.0 0.0 material inst_glossy_floor tint 1.01 1.01 1.0 node n_cr_f30 parent n_room2_floor
-mesh SM_Floor -14.0 0.0 2.0 0.008 0.008 0.008 0.0 0.0 0.0 material inst_glossy_floor tint 1.0 1.0 1.0 node n_cr_f31 parent n_room2_floor
-mesh SM_Floor -16.0 0.0 2.0 0.008 0.008 0.008 0.0 0.0 0.0 material inst_glossy_floor tint 1.01 1.01 1.0 node n_cr_f32 parent n_room2_floor
-mesh SM_Floor -18.0 0.0 2.0 0.008 0.008 0.008 0.0 0.0 0.0 material inst_glossy_floor tint 1.0 1.0 1.0 node n_cr_f33 parent n_room2_floor
-mesh SM_Floor -20.0 0.0 2.0 0.008 0.008 0.008 0.0 0.0 0.0 material inst_glossy_floor tint 1.01 1.01 1.0 node n_cr_f34 parent n_room2_floor
-mesh SM_Floor -22.0 0.0 2.0 0.008 0.008 0.008 0.0 0.0 0.0 material inst_glossy_floor tint 1.0 1.0 1.0 node n_cr_f35 parent n_room2_floor
-mesh SM_Floor -24.0 0.0 2.0 0.008 0.008 0.008 0.0 0.0 0.0 material inst_glossy_floor tint 1.01 1.01 1.0 node n_cr_f36 parent n_room2_floor
-mesh SM_Floor -8.0 0.0 4.0 0.008 0.008 0.008 0.0 0.0 0.0 material inst_glossy_floor tint 1.0 1.0 1.0 node n_cr_f37 parent n_room2_floor
-mesh SM_Floor -10.0 0.0 4.0 0.008 0.008 0.008 0.0 0.0 0.0 material inst_glossy_floor tint 1.01 1.01 1.0 node n_cr_f38 parent n_room2_floor
-mesh SM_Floor -12.0 0.0 4.0 0.008 0.008 0.008 0.0 0.0 0.0 material inst_glossy_floor tint 1.0 1.0 1.0 node n_cr_f39 parent n_room2_floor
-mesh SM_Floor -14.0 0.0 4.0 0.008 0.008 0.008 0.0 0.0 0.0 material inst_glossy_floor tint 1.01 1.01 1.0 node n_cr_f40 parent n_room2_floor
-mesh SM_Floor -16.0 0.0 4.0 0.008 0.008 0.008 0.0 0.0 0.0 material inst_glossy_floor tint 1.0 1.0 1.0 node n_cr_f41 parent n_room2_floor
-mesh SM_Floor -18.0 0.0 4.0 0.008 0.008 0.008 0.0 0.0 0.0 material inst_glossy_floor tint 1.01 1.01 1.0 node n_cr_f42 parent n_room2_floor
-mesh SM_Floor -20.0 0.0 4.0 0.008 0.008 0.008 0.0 0.0 0.0 material inst_glossy_floor tint 1.0 1.0 1.0 node n_cr_f43 parent n_room2_floor
-mesh SM_Floor -22.0 0.0 4.0 0.008 0.008 0.008 0.0 0.0 0.0 material inst_glossy_floor tint 1.01 1.01 1.0 node n_cr_f44 parent n_room2_floor
-mesh SM_Floor -24.0 0.0 4.0 0.008 0.008 0.008 0.0 0.0 0.0 material inst_glossy_floor tint 1.0 1.0 1.0 node n_cr_f45 parent n_room2_floor
-mesh SM_Floor -8.0 0.0 6.0 0.008 0.008 0.008 0.0 0.0 0.0 material inst_glossy_floor tint 1.01 1.01 1.0 node n_cr_f46 parent n_room2_floor
-mesh SM_Floor -10.0 0.0 6.0 0.008 0.008 0.008 0.0 0.0 0.0 material inst_glossy_floor tint 1.0 1.0 1.0 node n_cr_f47 parent n_room2_floor
-mesh SM_Floor -12.0 0.0 6.0 0.008 0.008 0.008 0.0 0.0 0.0 material inst_glossy_floor tint 1.01 1.01 1.0 node n_cr_f48 parent n_room2_floor
-mesh SM_Floor -14.0 0.0 6.0 0.008 0.008 0.008 0.0 0.0 0.0 material inst_glossy_floor tint 1.0 1.0 1.0 node n_cr_f49 parent n_room2_floor
-mesh SM_Floor -16.0 0.0 6.0 0.008 0.008 0.008 0.0 0.0 0.0 material inst_glossy_floor tint 1.01 1.01 1.0 node n_cr_f50 parent n_room2_floor
-mesh SM_Floor -18.0 0.0 6.0 0.008 0.008 0.008 0.0 0.0 0.0 material inst_glossy_floor tint 1.0 1.0 1.0 node n_cr_f51 parent n_room2_floor
-mesh SM_Floor -20.0 0.0 6.0 0.008 0.008 0.008 0.0 0.0 0.0 material inst_glossy_floor tint 1.01 1.01 1.0 node n_cr_f52 parent n_room2_floor
-mesh SM_Floor -22.0 0.0 6.0 0.008 0.008 0.008 0.0 0.0 0.0 material inst_glossy_floor tint 1.0 1.0 1.0 node n_cr_f53 parent n_room2_floor
-mesh SM_Floor -24.0 0.0 6.0 0.008 0.008 0.008 0.0 0.0 0.0 material inst_glossy_floor tint 1.01 1.01 1.0 node n_cr_f54 parent n_room2_floor
-mesh SM_Floor -8.0 0.0 8.0 0.008 0.008 0.008 0.0 0.0 0.0 material inst_glossy_floor tint 1.0 1.0 1.0 node n_cr_f55 parent n_room2_floor
-mesh SM_Floor -10.0 0.0 8.0 0.008 0.008 0.008 0.0 0.0 0.0 material inst_glossy_floor tint 1.01 1.01 1.0 node n_cr_f56 parent n_room2_floor
-mesh SM_Floor -12.0 0.0 8.0 0.008 0.008 0.008 0.0 0.0 0.0 material inst_glossy_floor tint 1.0 1.0 1.0 node n_cr_f57 parent n_room2_floor
-mesh SM_Floor -14.0 0.0 8.0 0.008 0.008 0.008 0.0 0.0 0.0 material inst_glossy_floor tint 1.01 1.01 1.0 node n_cr_f58 parent n_room2_floor
-mesh SM_Floor -16.0 0.0 8.0 0.008 0.008 0.008 0.0 0.0 0.0 material inst_glossy_floor tint 1.0 1.0 1.0 node n_cr_f59 parent n_room2_floor
-mesh SM_Floor -18.0 0.0 8.0 0.008 0.008 0.008 0.0 0.0 0.0 material inst_glossy_floor tint 1.01 1.01 1.0 node n_cr_f60 parent n_room2_floor
-mesh SM_Floor -20.0 0.0 8.0 0.008 0.008 0.008 0.0 0.0 0.0 material inst_glossy_floor tint 1.0 1.0 1.0 node n_cr_f61 parent n_room2_floor
-mesh SM_Floor -22.0 0.0 8.0 0.008 0.008 0.008 0.0 0.0 0.0 material inst_glossy_floor tint 1.01 1.01 1.0 node n_cr_f62 parent n_room2_floor
-mesh SM_Floor -24.0 0.0 8.0 0.008 0.008 0.008 0.0 0.0 0.0 material inst_glossy_floor tint 1.0 1.0 1.0 node n_cr_f63 parent n_room2_floor
-mesh prison_ceiling -8.0 10.0 -4.0 1.0 1.0 1.0 0.0 0.0 0.0 material ceiling_default tint 0.94 0.92 0.88 node n_cr_c01 parent n_room2_ceiling
-mesh prison_ceiling -10.0 10.0 -4.0 1.0 1.0 1.0 0.0 0.0 0.0 material ceiling_default tint 0.93 0.91 0.87 node n_cr_c02 parent n_room2_ceiling
-mesh prison_ceiling -12.0 10.0 -4.0 1.0 1.0 1.0 0.0 0.0 0.0 material ceiling_default tint 0.94 0.92 0.88 node n_cr_c03 parent n_room2_ceiling
-mesh prison_ceiling -14.0 10.0 -4.0 1.0 1.0 1.0 0.0 0.0 0.0 material ceiling_default tint 0.93 0.91 0.87 node n_cr_c04 parent n_room2_ceiling
-mesh prison_ceiling -16.0 10.0 -4.0 1.0 1.0 1.0 0.0 0.0 0.0 material ceiling_default tint 0.94 0.92 0.88 node n_cr_c05 parent n_room2_ceiling
-mesh prison_ceiling -18.0 10.0 -4.0 1.0 1.0 1.0 0.0 0.0 0.0 material ceiling_default tint 0.93 0.91 0.87 node n_cr_c06 parent n_room2_ceiling
-mesh prison_ceiling -20.0 10.0 -4.0 1.0 1.0 1.0 0.0 0.0 0.0 material ceiling_default tint 0.94 0.92 0.88 node n_cr_c07 parent n_room2_ceiling
-mesh prison_ceiling -22.0 10.0 -4.0 1.0 1.0 1.0 0.0 0.0 0.0 material ceiling_default tint 0.93 0.91 0.87 node n_cr_c08 parent n_room2_ceiling
-mesh prison_ceiling -24.0 10.0 -4.0 1.0 1.0 1.0 0.0 0.0 0.0 material ceiling_default tint 0.94 0.92 0.88 node n_cr_c09 parent n_room2_ceiling
-mesh prison_ceiling -8.0 10.0 -2.0 1.0 1.0 1.0 0.0 0.0 0.0 material ceiling_default tint 0.93 0.91 0.87 node n_cr_c10 parent n_room2_ceiling
-mesh prison_ceiling -10.0 10.0 -2.0 1.0 1.0 1.0 0.0 0.0 0.0 material ceiling_default tint 0.94 0.92 0.88 node n_cr_c11 parent n_room2_ceiling
-mesh prison_ceiling -12.0 10.0 -2.0 1.0 1.0 1.0 0.0 0.0 0.0 material ceiling_default tint 0.93 0.91 0.87 node n_cr_c12 parent n_room2_ceiling
-mesh prison_ceiling -14.0 10.0 -2.0 1.0 1.0 1.0 0.0 0.0 0.0 material ceiling_default tint 0.94 0.92 0.88 node n_cr_c13 parent n_room2_ceiling
-mesh prison_ceiling -16.0 10.0 -2.0 1.0 1.0 1.0 0.0 0.0 0.0 material ceiling_default tint 0.93 0.91 0.87 node n_cr_c14 parent n_room2_ceiling
-mesh prison_ceiling -18.0 10.0 -2.0 1.0 1.0 1.0 0.0 0.0 0.0 material ceiling_default tint 0.94 0.92 0.88 node n_cr_c15 parent n_room2_ceiling
-mesh prison_ceiling -20.0 10.0 -2.0 1.0 1.0 1.0 0.0 0.0 0.0 material ceiling_default tint 0.93 0.91 0.87 node n_cr_c16 parent n_room2_ceiling
-mesh prison_ceiling -22.0 10.0 -2.0 1.0 1.0 1.0 0.0 0.0 0.0 material ceiling_default tint 0.94 0.92 0.88 node n_cr_c17 parent n_room2_ceiling
-mesh prison_ceiling -24.0 10.0 -2.0 1.0 1.0 1.0 0.0 0.0 0.0 material ceiling_default tint 0.93 0.91 0.87 node n_cr_c18 parent n_room2_ceiling
-mesh prison_ceiling -8.0 10.0 0.0 1.0 1.0 1.0 0.0 0.0 0.0 material ceiling_default tint 0.94 0.92 0.88 node n_cr_c19 parent n_room2_ceiling
-mesh prison_ceiling -10.0 10.0 0.0 1.0 1.0 1.0 0.0 0.0 0.0 material ceiling_default tint 0.93 0.91 0.87 node n_cr_c20 parent n_room2_ceiling
-mesh prison_ceiling -12.0 10.0 0.0 1.0 1.0 1.0 0.0 0.0 0.0 material ceiling_default tint 0.94 0.92 0.88 node n_cr_c21 parent n_room2_ceiling
-mesh prison_ceiling -14.0 10.0 0.0 1.0 1.0 1.0 0.0 0.0 0.0 material ceiling_default tint 0.93 0.91 0.87 node n_cr_c22 parent n_room2_ceiling
-mesh prison_ceiling -16.0 10.0 0.0 1.0 1.0 1.0 0.0 0.0 0.0 material ceiling_default tint 0.94 0.92 0.88 node n_cr_c23 parent n_room2_ceiling
-mesh prison_ceiling -18.0 10.0 0.0 1.0 1.0 1.0 0.0 0.0 0.0 material ceiling_default tint 0.93 0.91 0.87 node n_cr_c24 parent n_room2_ceiling
-mesh prison_ceiling -20.0 10.0 0.0 1.0 1.0 1.0 0.0 0.0 0.0 material ceiling_default tint 0.94 0.92 0.88 node n_cr_c25 parent n_room2_ceiling
-mesh prison_ceiling -22.0 10.0 0.0 1.0 1.0 1.0 0.0 0.0 0.0 material ceiling_default tint 0.93 0.91 0.87 node n_cr_c26 parent n_room2_ceiling
-mesh prison_ceiling -24.0 10.0 0.0 1.0 1.0 1.0 0.0 0.0 0.0 material ceiling_default tint 0.94 0.92 0.88 node n_cr_c27 parent n_room2_ceiling
-mesh prison_ceiling -8.0 10.0 2.0 1.0 1.0 1.0 0.0 0.0 0.0 material ceiling_default tint 0.93 0.91 0.87 node n_cr_c28 parent n_room2_ceiling
-mesh prison_ceiling -10.0 10.0 2.0 1.0 1.0 1.0 0.0 0.0 0.0 material ceiling_default tint 0.94 0.92 0.88 node n_cr_c29 parent n_room2_ceiling
-mesh prison_ceiling -12.0 10.0 2.0 1.0 1.0 1.0 0.0 0.0 0.0 material ceiling_default tint 0.93 0.91 0.87 node n_cr_c30 parent n_room2_ceiling
-mesh prison_ceiling -14.0 10.0 2.0 1.0 1.0 1.0 0.0 0.0 0.0 material ceiling_default tint 0.94 0.92 0.88 node n_cr_c31 parent n_room2_ceiling
-mesh prison_ceiling -16.0 10.0 2.0 1.0 1.0 1.0 0.0 0.0 0.0 material ceiling_default tint 0.93 0.91 0.87 node n_cr_c32 parent n_room2_ceiling
-mesh prison_ceiling -18.0 10.0 2.0 1.0 1.0 1.0 0.0 0.0 0.0 material ceiling_default tint 0.94 0.92 0.88 node n_cr_c33 parent n_room2_ceiling
-mesh prison_ceiling -20.0 10.0 2.0 1.0 1.0 1.0 0.0 0.0 0.0 material ceiling_default tint 0.93 0.91 0.87 node n_cr_c34 parent n_room2_ceiling
-mesh prison_ceiling -22.0 10.0 2.0 1.0 1.0 1.0 0.0 0.0 0.0 material ceiling_default tint 0.94 0.92 0.88 node n_cr_c35 parent n_room2_ceiling
-mesh prison_ceiling -24.0 10.0 2.0 1.0 1.0 1.0 0.0 0.0 0.0 material ceiling_default tint 0.93 0.91 0.87 node n_cr_c36 parent n_room2_ceiling
-mesh prison_ceiling -8.0 10.0 4.0 1.0 1.0 1.0 0.0 0.0 0.0 material ceiling_default tint 0.94 0.92 0.88 node n_cr_c37 parent n_room2_ceiling
-mesh prison_ceiling -10.0 10.0 4.0 1.0 1.0 1.0 0.0 0.0 0.0 material ceiling_default tint 0.93 0.91 0.87 node n_cr_c38 parent n_room2_ceiling
-mesh prison_ceiling -12.0 10.0 4.0 1.0 1.0 1.0 0.0 0.0 0.0 material ceiling_default tint 0.94 0.92 0.88 node n_cr_c39 parent n_room2_ceiling
-mesh prison_ceiling -14.0 10.0 4.0 1.0 1.0 1.0 0.0 0.0 0.0 material ceiling_default tint 0.93 0.91 0.87 node n_cr_c40 parent n_room2_ceiling
-mesh prison_ceiling -16.0 10.0 4.0 1.0 1.0 1.0 0.0 0.0 0.0 material ceiling_default tint 0.94 0.92 0.88 node n_cr_c41 parent n_room2_ceiling
-mesh prison_ceiling -18.0 10.0 4.0 1.0 1.0 1.0 0.0 0.0 0.0 material ceiling_default tint 0.93 0.91 0.87 node n_cr_c42 parent n_room2_ceiling
-mesh prison_ceiling -20.0 10.0 4.0 1.0 1.0 1.0 0.0 0.0 0.0 material ceiling_default tint 0.94 0.92 0.88 node n_cr_c43 parent n_room2_ceiling
-mesh prison_ceiling -22.0 10.0 4.0 1.0 1.0 1.0 0.0 0.0 0.0 material ceiling_default tint 0.93 0.91 0.87 node n_cr_c44 parent n_room2_ceiling
-mesh prison_ceiling -24.0 10.0 4.0 1.0 1.0 1.0 0.0 0.0 0.0 material ceiling_default tint 0.94 0.92 0.88 node n_cr_c45 parent n_room2_ceiling
-mesh prison_ceiling -8.0 10.0 6.0 1.0 1.0 1.0 0.0 0.0 0.0 material ceiling_default tint 0.93 0.91 0.87 node n_cr_c46 parent n_room2_ceiling
-mesh prison_ceiling -10.0 10.0 6.0 1.0 1.0 1.0 0.0 0.0 0.0 material ceiling_default tint 0.94 0.92 0.88 node n_cr_c47 parent n_room2_ceiling
-mesh prison_ceiling -12.0 10.0 6.0 1.0 1.0 1.0 0.0 0.0 0.0 material ceiling_default tint 0.93 0.91 0.87 node n_cr_c48 parent n_room2_ceiling
-mesh prison_ceiling -14.0 10.0 6.0 1.0 1.0 1.0 0.0 0.0 0.0 material ceiling_default tint 0.94 0.92 0.88 node n_cr_c49 parent n_room2_ceiling
-mesh prison_ceiling -16.0 10.0 6.0 1.0 1.0 1.0 0.0 0.0 0.0 material ceiling_default tint 0.93 0.91 0.87 node n_cr_c50 parent n_room2_ceiling
-mesh prison_ceiling -18.0 10.0 6.0 1.0 1.0 1.0 0.0 0.0 0.0 material ceiling_default tint 0.94 0.92 0.88 node n_cr_c51 parent n_room2_ceiling
-mesh prison_ceiling -20.0 10.0 6.0 1.0 1.0 1.0 0.0 0.0 0.0 material ceiling_default tint 0.93 0.91 0.87 node n_cr_c52 parent n_room2_ceiling
-mesh prison_ceiling -22.0 10.0 6.0 1.0 1.0 1.0 0.0 0.0 0.0 material ceiling_default tint 0.94 0.92 0.88 node n_cr_c53 parent n_room2_ceiling
-mesh prison_ceiling -24.0 10.0 6.0 1.0 1.0 1.0 0.0 0.0 0.0 material ceiling_default tint 0.93 0.91 0.87 node n_cr_c54 parent n_room2_ceiling
-mesh prison_ceiling -8.0 10.0 8.0 1.0 1.0 1.0 0.0 0.0 0.0 material ceiling_default tint 0.94 0.92 0.88 node n_cr_c55 parent n_room2_ceiling
-mesh prison_ceiling -10.0 10.0 8.0 1.0 1.0 1.0 0.0 0.0 0.0 material ceiling_default tint 0.93 0.91 0.87 node n_cr_c56 parent n_room2_ceiling
-mesh prison_ceiling -12.0 10.0 8.0 1.0 1.0 1.0 0.0 0.0 0.0 material ceiling_default tint 0.94 0.92 0.88 node n_cr_c57 parent n_room2_ceiling
-mesh prison_ceiling -14.0 10.0 8.0 1.0 1.0 1.0 0.0 0.0 0.0 material ceiling_default tint 0.93 0.91 0.87 node n_cr_c58 parent n_room2_ceiling
-mesh prison_ceiling -16.0 10.0 8.0 1.0 1.0 1.0 0.0 0.0 0.0 material ceiling_default tint 0.94 0.92 0.88 node n_cr_c59 parent n_room2_ceiling
-mesh prison_ceiling -18.0 10.0 8.0 1.0 1.0 1.0 0.0 0.0 0.0 material ceiling_default tint 0.93 0.91 0.87 node n_cr_c60 parent n_room2_ceiling
-mesh prison_ceiling -20.0 10.0 8.0 1.0 1.0 1.0 0.0 0.0 0.0 material ceiling_default tint 0.94 0.92 0.88 node n_cr_c61 parent n_room2_ceiling
-mesh prison_ceiling -22.0 10.0 8.0 1.0 1.0 1.0 0.0 0.0 0.0 material ceiling_default tint 0.93 0.91 0.87 node n_cr_c62 parent n_room2_ceiling
-mesh prison_ceiling -24.0 10.0 8.0 1.0 1.0 1.0 0.0 0.0 0.0 material ceiling_default tint 0.94 0.92 0.88 node n_cr_c63 parent n_room2_ceiling
-mesh SM_Wall -8.0 0.0 -5.0 0.008 0.008 0.008 0.0 0.0 0.0 material concrete_wall tint 0.82 0.78 0.7 node n_cr_wsd01 parent n_room2_wall_back
-mesh SM_Wall -10.0 0.0 -5.0 0.008 0.008 0.008 0.0 0.0 0.0 material concrete_wall tint 0.83 0.79 0.71 node n_cr_wsd02 parent n_room2_wall_back
-mesh SM_Wall -12.0 0.0 -5.0 0.008 0.008 0.008 0.0 0.0 0.0 material concrete_wall tint 0.82 0.78 0.7 node n_cr_wsd03 parent n_room2_wall_back
-mesh SM_Wall -14.0 0.0 -5.0 0.008 0.008 0.008 0.0 0.0 0.0 material concrete_wall tint 0.83 0.79 0.71 node n_cr_wsd04 parent n_room2_wall_back
-mesh SM_Wall -16.0 0.0 -5.0 0.008 0.008 0.008 0.0 0.0 0.0 material concrete_wall tint 0.82 0.78 0.7 node n_cr_wsd05 parent n_room2_wall_back
-mesh SM_Wall -18.0 0.0 -5.0 0.008 0.008 0.008 0.0 0.0 0.0 material concrete_wall tint 0.83 0.79 0.71 node n_cr_wsd06 parent n_room2_wall_back
-mesh SM_Wall -20.0 0.0 -5.0 0.008 0.008 0.008 0.0 0.0 0.0 material concrete_wall tint 0.82 0.78 0.7 node n_cr_wsd07 parent n_room2_wall_back
-mesh SM_Wall -22.0 0.0 -5.0 0.008 0.008 0.008 0.0 0.0 0.0 material concrete_wall tint 0.83 0.79 0.71 node n_cr_wsd08 parent n_room2_wall_back
-mesh SM_Wall -24.0 0.0 -5.0 0.008 0.008 0.008 0.0 0.0 0.0 material concrete_wall tint 0.82 0.78 0.7 node n_cr_wsd09 parent n_room2_wall_back
-mesh SM_Wall -8.0 0.0 9.0 0.008 0.008 0.008 0.0 180.0 0.0 material concrete_wall tint 0.82 0.78 0.7 node n_cr_wnd01 parent n_room2_wall_front
-mesh SM_Wall -10.0 0.0 9.0 0.008 0.008 0.008 0.0 180.0 0.0 material concrete_wall tint 0.83 0.79 0.71 node n_cr_wnd02 parent n_room2_wall_front
-mesh SM_Wall -12.0 0.0 9.0 0.008 0.008 0.008 0.0 180.0 0.0 material concrete_wall tint 0.82 0.78 0.7 node n_cr_wnd03 parent n_room2_wall_front
-mesh SM_Wall -14.0 0.0 9.0 0.008 0.008 0.008 0.0 180.0 0.0 material concrete_wall tint 0.83 0.79 0.71 node n_cr_wnd04 parent n_room2_wall_front
-mesh SM_Wall -16.0 0.0 9.0 0.008 0.008 0.008 0.0 180.0 0.0 material concrete_wall tint 0.82 0.78 0.7 node n_cr_wnd05 parent n_room2_wall_front
-mesh SM_Wall -18.0 0.0 9.0 0.008 0.008 0.008 0.0 180.0 0.0 material concrete_wall tint 0.83 0.79 0.71 node n_cr_wnd06 parent n_room2_wall_front
-mesh SM_Wall -20.0 0.0 9.0 0.008 0.008 0.008 0.0 180.0 0.0 material concrete_wall tint 0.82 0.78 0.7 node n_cr_wnd07 parent n_room2_wall_front
-mesh SM_Wall -22.0 0.0 9.0 0.008 0.008 0.008 0.0 180.0 0.0 material concrete_wall tint 0.83 0.79 0.71 node n_cr_wnd08 parent n_room2_wall_front
-mesh SM_Wall -24.0 0.0 9.0 0.008 0.008 0.008 0.0 180.0 0.0 material concrete_wall tint 0.82 0.78 0.7 node n_cr_wnd09 parent n_room2_wall_front
-mesh SM_Wall -7.070496 0.0 -4.0 0.011714 0.01 0.01 0.0 -89.999985 0.0 material concrete_wall tint 0.82 0.78 0.7 node n_cr_wed01 parent n_room2_wall_right
-mesh SM_Wall -7.064667 2.160031 -2.0 0.01 0.015345 0.01 0.0 -89.999985 0.0 material concrete_wall tint 0.83 0.79 0.71 node n_cr_wed02 parent n_room2_wall_right
-mesh SM_Wall -7.0 0.0 4.0 0.008 0.008 0.008 0.0 -90.0 0.0 material concrete_wall tint 0.82 0.78 0.7 node n_cr_wed03 parent n_room2_wall_right
-mesh SM_Wall -7.0 0.0 6.0 0.008 0.008 0.008 0.0 -90.0 0.0 material concrete_wall tint 0.83 0.79 0.71 node n_cr_wed04 parent n_room2_wall_right
-mesh SM_Wall -7.0 0.0 8.0 0.008 0.008 0.008 0.0 -90.0 0.0 material concrete_wall tint 0.82 0.78 0.7 node n_cr_wed05 parent n_room2_wall_right
-mesh SM_Wall -25.0 0.0 -4.0 0.008 0.008 0.008 0.0 90.0 0.0 material concrete_wall tint 0.82 0.78 0.7 node n_cr_wwd01 parent n_room2_wall_left
-mesh SM_Wall -25.0 0.0 -2.0 0.008 0.008 0.008 0.0 90.0 0.0 material concrete_wall tint 0.83 0.79 0.71 node n_cr_wwd02 parent n_room2_wall_left
-mesh SM_Wall -25.0 0.0 0.0 0.008 0.008 0.008 0.0 90.0 0.0 material concrete_wall tint 0.82 0.78 0.7 node n_cr_wwd03 parent n_room2_wall_left
-mesh SM_Wall -25.0 0.0 2.0 0.008 0.008 0.008 0.0 90.0 0.0 material concrete_wall tint 0.83 0.79 0.71 node n_cr_wwd04 parent n_room2_wall_left
-mesh SM_Wall -25.0 0.0 4.0 0.008 0.008 0.008 0.0 90.0 0.0 material concrete_wall tint 0.82 0.78 0.7 node n_cr_wwd05 parent n_room2_wall_left
-mesh SM_Wall -25.0 0.0 6.0 0.008 0.008 0.008 0.0 90.0 0.0 material concrete_wall tint 0.83 0.79 0.71 node n_cr_wwd06 parent n_room2_wall_left
-mesh SM_Wall -25.0 0.0 8.0 0.008 0.008 0.008 0.0 90.0 0.0 material concrete_wall tint 0.82 0.78 0.7 node n_cr_wwd07 parent n_room2_wall_left
-mesh SM_Wall -8.0 2.0 -5.0 0.008 0.032 0.008 0.0 0.0 0.0 material inst_beige_wall tint 1.0 1.0 1.0 node n_cr_wsu01 parent n_room2_wall_back
-mesh SM_Wall -10.0 2.0 -5.0 0.008 0.032 0.008 0.0 0.0 0.0 material inst_beige_wall tint 1.0 1.0 1.0 node n_cr_wsu02 parent n_room2_wall_back
-mesh SM_Wall -12.0 2.0 -5.0 0.008 0.032 0.008 0.0 0.0 0.0 material inst_beige_wall tint 1.0 1.0 1.0 node n_cr_wsu03 parent n_room2_wall_back
-mesh SM_Wall -14.0 2.0 -5.0 0.008 0.032 0.008 0.0 0.0 0.0 material inst_beige_wall tint 1.0 1.0 1.0 node n_cr_wsu04 parent n_room2_wall_back
-mesh SM_Wall -16.0 2.0 -5.0 0.008 0.032 0.008 0.0 0.0 0.0 material inst_beige_wall tint 1.0 1.0 1.0 node n_cr_wsu05 parent n_room2_wall_back
-mesh SM_Wall -18.0 2.0 -5.0 0.008 0.032 0.008 0.0 0.0 0.0 material inst_beige_wall tint 1.0 1.0 1.0 node n_cr_wsu06 parent n_room2_wall_back
-mesh SM_Wall -20.0 2.0 -5.0 0.008 0.032 0.008 0.0 0.0 0.0 material inst_beige_wall tint 1.0 1.0 1.0 node n_cr_wsu07 parent n_room2_wall_back
-mesh SM_Wall -22.0 2.0 -5.0 0.008 0.032 0.008 0.0 0.0 0.0 material inst_beige_wall tint 1.0 1.0 1.0 node n_cr_wsu08 parent n_room2_wall_back
-mesh SM_Wall -24.0 2.0 -5.0 0.008 0.032 0.008 0.0 0.0 0.0 material inst_beige_wall tint 1.0 1.0 1.0 node n_cr_wsu09 parent n_room2_wall_back
-mesh SM_Wall -8.0 2.0 9.0 0.008 0.032 0.008 0.0 180.0 0.0 material inst_beige_wall tint 1.0 1.0 1.0 node n_cr_wnu01 parent n_room2_wall_front
-mesh SM_Wall -10.0 2.0 9.0 0.008 0.032 0.008 0.0 180.0 0.0 material inst_beige_wall tint 1.0 1.0 1.0 node n_cr_wnu02 parent n_room2_wall_front
-mesh SM_Wall -12.0 2.0 9.0 0.008 0.032 0.008 0.0 180.0 0.0 material inst_beige_wall tint 1.0 1.0 1.0 node n_cr_wnu03 parent n_room2_wall_front
-mesh SM_Wall -14.0 2.0 9.0 0.008 0.032 0.008 0.0 180.0 0.0 material inst_beige_wall tint 1.0 1.0 1.0 node n_cr_wnu04 parent n_room2_wall_front
-mesh SM_Wall -16.0 2.0 9.0 0.008 0.032 0.008 0.0 180.0 0.0 material inst_beige_wall tint 1.0 1.0 1.0 node n_cr_wnu05 parent n_room2_wall_front
-mesh SM_Wall -18.0 2.0 9.0 0.008 0.032 0.008 0.0 180.0 0.0 material inst_beige_wall tint 1.0 1.0 1.0 node n_cr_wnu06 parent n_room2_wall_front
-mesh SM_Wall -20.0 2.0 9.0 0.008 0.032 0.008 0.0 180.0 0.0 material inst_beige_wall tint 1.0 1.0 1.0 node n_cr_wnu07 parent n_room2_wall_front
-mesh SM_Wall -22.0 2.0 9.0 0.008 0.032 0.008 0.0 180.0 0.0 material inst_beige_wall tint 1.0 1.0 1.0 node n_cr_wnu08 parent n_room2_wall_front
-mesh SM_Wall -24.0 2.0 9.0 0.008 0.032 0.008 0.0 180.0 0.0 material inst_beige_wall tint 1.0 1.0 1.0 node n_cr_wnu09 parent n_room2_wall_front
-mesh SM_Wall -7.0 2.0 -4.0 0.008 0.032 0.008 0.0 -90.0 0.0 material inst_beige_wall tint 1.0 1.0 1.0 node n_cr_weu01 parent n_room2_wall_right
-mesh SM_Wall -7.064667 3.960423 -2.0 0.01 0.028806 0.01 0.0 -89.999985 0.0 material inst_beige_wall tint 1.0 1.0 1.0 node n_cr_weu02 parent n_room2_wall_right
-mesh SM_Wall -7.0 2.0 4.0 0.008 0.032 0.008 0.0 -90.0 0.0 material inst_beige_wall tint 1.0 1.0 1.0 node n_cr_weu03 parent n_room2_wall_right
-mesh SM_Wall -7.0 2.0 6.0 0.008 0.032 0.008 0.0 -90.0 0.0 material inst_beige_wall tint 1.0 1.0 1.0 node n_cr_weu04 parent n_room2_wall_right
-mesh SM_Wall -7.0 2.0 8.0 0.008 0.032 0.008 0.0 -90.0 0.0 material inst_beige_wall tint 1.0 1.0 1.0 node n_cr_weu05 parent n_room2_wall_right
-mesh SM_Wall -25.0 2.0 -4.0 0.008 0.032 0.008 0.0 90.0 0.0 material inst_beige_wall tint 1.0 1.0 1.0 node n_cr_wwu01 parent n_room2_wall_left
-mesh SM_Wall -25.0 2.0 -2.0 0.008 0.032 0.008 0.0 90.0 0.0 material inst_beige_wall tint 1.0 1.0 1.0 node n_cr_wwu02 parent n_room2_wall_left
-mesh SM_Wall -25.0 2.0 0.0 0.008 0.032 0.008 0.0 90.0 0.0 material inst_beige_wall tint 1.0 1.0 1.0 node n_cr_wwu03 parent n_room2_wall_left
-mesh SM_Wall -25.0 2.0 2.0 0.008 0.032 0.008 0.0 90.0 0.0 material inst_beige_wall tint 1.0 1.0 1.0 node n_cr_wwu04 parent n_room2_wall_left
-mesh SM_Wall -25.0 2.0 4.0 0.008 0.032 0.008 0.0 90.0 0.0 material inst_beige_wall tint 1.0 1.0 1.0 node n_cr_wwu05 parent n_room2_wall_left
-mesh SM_Wall -25.0 2.0 6.0 0.008 0.032 0.008 0.0 90.0 0.0 material inst_beige_wall tint 1.0 1.0 1.0 node n_cr_wwu06 parent n_room2_wall_left
-mesh SM_Wall -25.0 2.0 8.0 0.008 0.032 0.008 0.0 90.0 0.0 material inst_beige_wall tint 1.0 1.0 1.0 node n_cr_wwu07 parent n_room2_wall_left
+mesh SM_Floor -6.0 0.0 -4.0 0.008 0.008 0.008 0.0 0.0 0.0 material inst_glossy_floor tint 1.0 1.0 1.0 node n_cr_f01 parent n_room2_floor
+mesh SM_Floor -8.0 0.0 -4.0 0.008 0.008 0.008 0.0 0.0 0.0 material inst_glossy_floor tint 1.01 1.01 1.0 node n_cr_f02 parent n_room2_floor
+mesh SM_Floor -10.0 0.0 -4.0 0.008 0.008 0.008 0.0 0.0 0.0 material inst_glossy_floor tint 1.0 1.0 1.0 node n_cr_f03 parent n_room2_floor
+mesh SM_Floor -12.0 0.0 -4.0 0.008 0.008 0.008 0.0 0.0 0.0 material inst_glossy_floor tint 1.01 1.01 1.0 node n_cr_f04 parent n_room2_floor
+mesh SM_Floor -14.0 0.0 -4.0 0.008 0.008 0.008 0.0 0.0 0.0 material inst_glossy_floor tint 1.0 1.0 1.0 node n_cr_f05 parent n_room2_floor
+mesh SM_Floor -16.0 0.0 -4.0 0.008 0.008 0.008 0.0 0.0 0.0 material inst_glossy_floor tint 1.01 1.01 1.0 node n_cr_f06 parent n_room2_floor
+mesh SM_Floor -18.0 0.0 -4.0 0.008 0.008 0.008 0.0 0.0 0.0 material inst_glossy_floor tint 1.0 1.0 1.0 node n_cr_f07 parent n_room2_floor
+mesh SM_Floor -20.0 0.0 -4.0 0.008 0.008 0.008 0.0 0.0 0.0 material inst_glossy_floor tint 1.01 1.01 1.0 node n_cr_f08 parent n_room2_floor
+mesh SM_Floor -22.0 0.0 -4.0 0.008 0.008 0.008 0.0 0.0 0.0 material inst_glossy_floor tint 1.0 1.0 1.0 node n_cr_f09 parent n_room2_floor
+mesh SM_Floor -24.0 0.0 -4.0 0.008 0.008 0.008 0.0 0.0 0.0 material inst_glossy_floor tint 1.01 1.01 1.0 node n_cr_f10 parent n_room2_floor
+mesh SM_Floor -6.0 0.0 -2.0 0.008 0.008 0.008 0.0 0.0 0.0 material inst_glossy_floor tint 1.0 1.0 1.0 node n_cr_f11 parent n_room2_floor
+mesh SM_Floor -8.0 0.0 -2.0 0.008 0.008 0.008 0.0 0.0 0.0 material inst_glossy_floor tint 1.01 1.01 1.0 node n_cr_f12 parent n_room2_floor
+mesh SM_Floor -10.0 0.0 -2.0 0.008 0.008 0.008 0.0 0.0 0.0 material inst_glossy_floor tint 1.0 1.0 1.0 node n_cr_f13 parent n_room2_floor
+mesh SM_Floor -12.0 0.0 -2.0 0.008 0.008 0.008 0.0 0.0 0.0 material inst_glossy_floor tint 1.01 1.01 1.0 node n_cr_f14 parent n_room2_floor
+mesh SM_Floor -14.0 0.0 -2.0 0.008 0.008 0.008 0.0 0.0 0.0 material inst_glossy_floor tint 1.0 1.0 1.0 node n_cr_f15 parent n_room2_floor
+mesh SM_Floor -16.0 0.0 -2.0 0.008 0.008 0.008 0.0 0.0 0.0 material inst_glossy_floor tint 1.01 1.01 1.0 node n_cr_f16 parent n_room2_floor
+mesh SM_Floor -18.0 0.0 -2.0 0.008 0.008 0.008 0.0 0.0 0.0 material inst_glossy_floor tint 1.0 1.0 1.0 node n_cr_f17 parent n_room2_floor
+mesh SM_Floor -20.0 0.0 -2.0 0.008 0.008 0.008 0.0 0.0 0.0 material inst_glossy_floor tint 1.01 1.01 1.0 node n_cr_f18 parent n_room2_floor
+mesh SM_Floor -22.0 0.0 -2.0 0.008 0.008 0.008 0.0 0.0 0.0 material inst_glossy_floor tint 1.0 1.0 1.0 node n_cr_f19 parent n_room2_floor
+mesh SM_Floor -24.0 0.0 -2.0 0.008 0.008 0.008 0.0 0.0 0.0 material inst_glossy_floor tint 1.01 1.01 1.0 node n_cr_f20 parent n_room2_floor
+mesh SM_Floor -6.0 0.0 0.0 0.008 0.008 0.008 0.0 0.0 0.0 material inst_glossy_floor tint 1.0 1.0 1.0 node n_cr_f21 parent n_room2_floor
+mesh SM_Floor -8.0 0.0 0.0 0.008 0.008 0.008 0.0 0.0 0.0 material inst_glossy_floor tint 1.01 1.01 1.0 node n_cr_f22 parent n_room2_floor
+mesh SM_Floor -10.0 0.0 0.0 0.008 0.008 0.008 0.0 0.0 0.0 material inst_glossy_floor tint 1.0 1.0 1.0 node n_cr_f23 parent n_room2_floor
+mesh SM_Floor -12.0 0.0 0.0 0.008 0.008 0.008 0.0 0.0 0.0 material inst_glossy_floor tint 1.01 1.01 1.0 node n_cr_f24 parent n_room2_floor
+mesh SM_Floor -14.0 0.0 0.0 0.008 0.008 0.008 0.0 0.0 0.0 material inst_glossy_floor tint 1.0 1.0 1.0 node n_cr_f25 parent n_room2_floor
+mesh SM_Floor -16.0 0.0 0.0 0.008 0.008 0.008 0.0 0.0 0.0 material inst_glossy_floor tint 1.01 1.01 1.0 node n_cr_f26 parent n_room2_floor
+mesh SM_Floor -18.0 0.0 0.0 0.008 0.008 0.008 0.0 0.0 0.0 material inst_glossy_floor tint 1.0 1.0 1.0 node n_cr_f27 parent n_room2_floor
+mesh SM_Floor -20.0 0.0 0.0 0.008 0.008 0.008 0.0 0.0 0.0 material inst_glossy_floor tint 1.01 1.01 1.0 node n_cr_f28 parent n_room2_floor
+mesh SM_Floor -22.0 0.0 0.0 0.008 0.008 0.008 0.0 0.0 0.0 material inst_glossy_floor tint 1.0 1.0 1.0 node n_cr_f29 parent n_room2_floor
+mesh SM_Floor -24.0 0.0 0.0 0.008 0.008 0.008 0.0 0.0 0.0 material inst_glossy_floor tint 1.01 1.01 1.0 node n_cr_f30 parent n_room2_floor
+mesh SM_Floor -6.0 0.0 2.0 0.008 0.008 0.008 0.0 0.0 0.0 material inst_glossy_floor tint 1.0 1.0 1.0 node n_cr_f31 parent n_room2_floor
+mesh SM_Floor -8.0 0.0 2.0 0.008 0.008 0.008 0.0 0.0 0.0 material inst_glossy_floor tint 1.01 1.01 1.0 node n_cr_f32 parent n_room2_floor
+mesh SM_Floor -10.0 0.0 2.0 0.008 0.008 0.008 0.0 0.0 0.0 material inst_glossy_floor tint 1.0 1.0 1.0 node n_cr_f33 parent n_room2_floor
+mesh SM_Floor -12.0 0.0 2.0 0.008 0.008 0.008 0.0 0.0 0.0 material inst_glossy_floor tint 1.01 1.01 1.0 node n_cr_f34 parent n_room2_floor
+mesh SM_Floor -14.0 0.0 2.0 0.008 0.008 0.008 0.0 0.0 0.0 material inst_glossy_floor tint 1.0 1.0 1.0 node n_cr_f35 parent n_room2_floor
+mesh SM_Floor -16.0 0.0 2.0 0.008 0.008 0.008 0.0 0.0 0.0 material inst_glossy_floor tint 1.01 1.01 1.0 node n_cr_f36 parent n_room2_floor
+mesh SM_Floor -18.0 0.0 2.0 0.008 0.008 0.008 0.0 0.0 0.0 material inst_glossy_floor tint 1.0 1.0 1.0 node n_cr_f37 parent n_room2_floor
+mesh SM_Floor -20.0 0.0 2.0 0.008 0.008 0.008 0.0 0.0 0.0 material inst_glossy_floor tint 1.01 1.01 1.0 node n_cr_f38 parent n_room2_floor
+mesh SM_Floor -22.0 0.0 2.0 0.008 0.008 0.008 0.0 0.0 0.0 material inst_glossy_floor tint 1.0 1.0 1.0 node n_cr_f39 parent n_room2_floor
+mesh SM_Floor -24.0 0.0 2.0 0.008 0.008 0.008 0.0 0.0 0.0 material inst_glossy_floor tint 1.01 1.01 1.0 node n_cr_f40 parent n_room2_floor
+mesh SM_Floor -6.0 0.0 4.0 0.008 0.008 0.008 0.0 0.0 0.0 material inst_glossy_floor tint 1.0 1.0 1.0 node n_cr_f41 parent n_room2_floor
+mesh SM_Floor -8.0 0.0 4.0 0.008 0.008 0.008 0.0 0.0 0.0 material inst_glossy_floor tint 1.01 1.01 1.0 node n_cr_f42 parent n_room2_floor
+mesh SM_Floor -10.0 0.0 4.0 0.008 0.008 0.008 0.0 0.0 0.0 material inst_glossy_floor tint 1.0 1.0 1.0 node n_cr_f43 parent n_room2_floor
+mesh SM_Floor -12.0 0.0 4.0 0.008 0.008 0.008 0.0 0.0 0.0 material inst_glossy_floor tint 1.01 1.01 1.0 node n_cr_f44 parent n_room2_floor
+mesh SM_Floor -14.0 0.0 4.0 0.008 0.008 0.008 0.0 0.0 0.0 material inst_glossy_floor tint 1.0 1.0 1.0 node n_cr_f45 parent n_room2_floor
+mesh SM_Floor -16.0 0.0 4.0 0.008 0.008 0.008 0.0 0.0 0.0 material inst_glossy_floor tint 1.01 1.01 1.0 node n_cr_f46 parent n_room2_floor
+mesh SM_Floor -18.0 0.0 4.0 0.008 0.008 0.008 0.0 0.0 0.0 material inst_glossy_floor tint 1.0 1.0 1.0 node n_cr_f47 parent n_room2_floor
+mesh SM_Floor -20.0 0.0 4.0 0.008 0.008 0.008 0.0 0.0 0.0 material inst_glossy_floor tint 1.01 1.01 1.0 node n_cr_f48 parent n_room2_floor
+mesh SM_Floor -22.0 0.0 4.0 0.008 0.008 0.008 0.0 0.0 0.0 material inst_glossy_floor tint 1.0 1.0 1.0 node n_cr_f49 parent n_room2_floor
+mesh SM_Floor -24.0 0.0 4.0 0.008 0.008 0.008 0.0 0.0 0.0 material inst_glossy_floor tint 1.01 1.01 1.0 node n_cr_f50 parent n_room2_floor
+mesh SM_Floor -6.0 0.0 6.0 0.008 0.008 0.008 0.0 0.0 0.0 material inst_glossy_floor tint 1.0 1.0 1.0 node n_cr_f51 parent n_room2_floor
+mesh SM_Floor -8.0 0.0 6.0 0.008 0.008 0.008 0.0 0.0 0.0 material inst_glossy_floor tint 1.01 1.01 1.0 node n_cr_f52 parent n_room2_floor
+mesh SM_Floor -10.0 0.0 6.0 0.008 0.008 0.008 0.0 0.0 0.0 material inst_glossy_floor tint 1.0 1.0 1.0 node n_cr_f53 parent n_room2_floor
+mesh SM_Floor -12.0 0.0 6.0 0.008 0.008 0.008 0.0 0.0 0.0 material inst_glossy_floor tint 1.01 1.01 1.0 node n_cr_f54 parent n_room2_floor
+mesh SM_Floor -14.0 0.0 6.0 0.008 0.008 0.008 0.0 0.0 0.0 material inst_glossy_floor tint 1.0 1.0 1.0 node n_cr_f55 parent n_room2_floor
+mesh SM_Floor -16.0 0.0 6.0 0.008 0.008 0.008 0.0 0.0 0.0 material inst_glossy_floor tint 1.01 1.01 1.0 node n_cr_f56 parent n_room2_floor
+mesh SM_Floor -18.0 0.0 6.0 0.008 0.008 0.008 0.0 0.0 0.0 material inst_glossy_floor tint 1.0 1.0 1.0 node n_cr_f57 parent n_room2_floor
+mesh SM_Floor -20.0 0.0 6.0 0.008 0.008 0.008 0.0 0.0 0.0 material inst_glossy_floor tint 1.01 1.01 1.0 node n_cr_f58 parent n_room2_floor
+mesh SM_Floor -22.0 0.0 6.0 0.008 0.008 0.008 0.0 0.0 0.0 material inst_glossy_floor tint 1.0 1.0 1.0 node n_cr_f59 parent n_room2_floor
+mesh SM_Floor -24.0 0.0 6.0 0.008 0.008 0.008 0.0 0.0 0.0 material inst_glossy_floor tint 1.01 1.01 1.0 node n_cr_f60 parent n_room2_floor
+mesh SM_Floor -6.0 0.0 8.0 0.008 0.008 0.008 0.0 0.0 0.0 material inst_glossy_floor tint 1.0 1.0 1.0 node n_cr_f61 parent n_room2_floor
+mesh SM_Floor -8.0 0.0 8.0 0.008 0.008 0.008 0.0 0.0 0.0 material inst_glossy_floor tint 1.01 1.01 1.0 node n_cr_f62 parent n_room2_floor
+mesh SM_Floor -10.0 0.0 8.0 0.008 0.008 0.008 0.0 0.0 0.0 material inst_glossy_floor tint 1.0 1.0 1.0 node n_cr_f63 parent n_room2_floor
+mesh SM_Floor -12.0 0.0 8.0 0.008 0.008 0.008 0.0 0.0 0.0 material inst_glossy_floor tint 1.01 1.01 1.0 node n_cr_f64 parent n_room2_floor
+mesh SM_Floor -14.0 0.0 8.0 0.008 0.008 0.008 0.0 0.0 0.0 material inst_glossy_floor tint 1.0 1.0 1.0 node n_cr_f65 parent n_room2_floor
+mesh SM_Floor -16.0 0.0 8.0 0.008 0.008 0.008 0.0 0.0 0.0 material inst_glossy_floor tint 1.01 1.01 1.0 node n_cr_f66 parent n_room2_floor
+mesh SM_Floor -18.0 0.0 8.0 0.008 0.008 0.008 0.0 0.0 0.0 material inst_glossy_floor tint 1.0 1.0 1.0 node n_cr_f67 parent n_room2_floor
+mesh SM_Floor -20.0 0.0 8.0 0.008 0.008 0.008 0.0 0.0 0.0 material inst_glossy_floor tint 1.01 1.01 1.0 node n_cr_f68 parent n_room2_floor
+mesh SM_Floor -22.0 0.0 8.0 0.008 0.008 0.008 0.0 0.0 0.0 material inst_glossy_floor tint 1.0 1.0 1.0 node n_cr_f69 parent n_room2_floor
+mesh SM_Floor -24.0 0.0 8.0 0.008 0.008 0.008 0.0 0.0 0.0 material inst_glossy_floor tint 1.01 1.01 1.0 node n_cr_f70 parent n_room2_floor
+mesh prison_ceiling -6.0 10.0 -4.0 1.0 1.0 1.0 0.0 0.0 0.0 material ceiling_default tint 0.94 0.92 0.88 node n_cr_c01 parent n_room2_ceiling
+mesh prison_ceiling -8.0 10.0 -4.0 1.0 1.0 1.0 0.0 0.0 0.0 material ceiling_default tint 0.93 0.91 0.87 node n_cr_c02 parent n_room2_ceiling
+mesh prison_ceiling -10.0 10.0 -4.0 1.0 1.0 1.0 0.0 0.0 0.0 material ceiling_default tint 0.94 0.92 0.88 node n_cr_c03 parent n_room2_ceiling
+mesh prison_ceiling -12.0 10.0 -4.0 1.0 1.0 1.0 0.0 0.0 0.0 material ceiling_default tint 0.93 0.91 0.87 node n_cr_c04 parent n_room2_ceiling
+mesh prison_ceiling -14.0 10.0 -4.0 1.0 1.0 1.0 0.0 0.0 0.0 material ceiling_default tint 0.94 0.92 0.88 node n_cr_c05 parent n_room2_ceiling
+mesh prison_ceiling -16.0 10.0 -4.0 1.0 1.0 1.0 0.0 0.0 0.0 material ceiling_default tint 0.93 0.91 0.87 node n_cr_c06 parent n_room2_ceiling
+mesh prison_ceiling -18.0 10.0 -4.0 1.0 1.0 1.0 0.0 0.0 0.0 material ceiling_default tint 0.94 0.92 0.88 node n_cr_c07 parent n_room2_ceiling
+mesh prison_ceiling -20.0 10.0 -4.0 1.0 1.0 1.0 0.0 0.0 0.0 material ceiling_default tint 0.93 0.91 0.87 node n_cr_c08 parent n_room2_ceiling
+mesh prison_ceiling -22.0 10.0 -4.0 1.0 1.0 1.0 0.0 0.0 0.0 material ceiling_default tint 0.94 0.92 0.88 node n_cr_c09 parent n_room2_ceiling
+mesh prison_ceiling -24.0 10.0 -4.0 1.0 1.0 1.0 0.0 0.0 0.0 material ceiling_default tint 0.93 0.91 0.87 node n_cr_c10 parent n_room2_ceiling
+mesh prison_ceiling -6.0 10.0 -2.0 1.0 1.0 1.0 0.0 0.0 0.0 material ceiling_default tint 0.94 0.92 0.88 node n_cr_c11 parent n_room2_ceiling
+mesh prison_ceiling -8.0 10.0 -2.0 1.0 1.0 1.0 0.0 0.0 0.0 material ceiling_default tint 0.93 0.91 0.87 node n_cr_c12 parent n_room2_ceiling
+mesh prison_ceiling -10.0 10.0 -2.0 1.0 1.0 1.0 0.0 0.0 0.0 material ceiling_default tint 0.94 0.92 0.88 node n_cr_c13 parent n_room2_ceiling
+mesh prison_ceiling -12.0 10.0 -2.0 1.0 1.0 1.0 0.0 0.0 0.0 material ceiling_default tint 0.93 0.91 0.87 node n_cr_c14 parent n_room2_ceiling
+mesh prison_ceiling -14.0 10.0 -2.0 1.0 1.0 1.0 0.0 0.0 0.0 material ceiling_default tint 0.94 0.92 0.88 node n_cr_c15 parent n_room2_ceiling
+mesh prison_ceiling -16.0 10.0 -2.0 1.0 1.0 1.0 0.0 0.0 0.0 material ceiling_default tint 0.93 0.91 0.87 node n_cr_c16 parent n_room2_ceiling
+mesh prison_ceiling -18.0 10.0 -2.0 1.0 1.0 1.0 0.0 0.0 0.0 material ceiling_default tint 0.94 0.92 0.88 node n_cr_c17 parent n_room2_ceiling
+mesh prison_ceiling -20.0 10.0 -2.0 1.0 1.0 1.0 0.0 0.0 0.0 material ceiling_default tint 0.93 0.91 0.87 node n_cr_c18 parent n_room2_ceiling
+mesh prison_ceiling -22.0 10.0 -2.0 1.0 1.0 1.0 0.0 0.0 0.0 material ceiling_default tint 0.94 0.92 0.88 node n_cr_c19 parent n_room2_ceiling
+mesh prison_ceiling -24.0 10.0 -2.0 1.0 1.0 1.0 0.0 0.0 0.0 material ceiling_default tint 0.93 0.91 0.87 node n_cr_c20 parent n_room2_ceiling
+mesh prison_ceiling -6.0 10.0 0.0 1.0 1.0 1.0 0.0 0.0 0.0 material ceiling_default tint 0.94 0.92 0.88 node n_cr_c21 parent n_room2_ceiling
+mesh prison_ceiling -8.0 10.0 0.0 1.0 1.0 1.0 0.0 0.0 0.0 material ceiling_default tint 0.93 0.91 0.87 node n_cr_c22 parent n_room2_ceiling
+mesh prison_ceiling -10.0 10.0 0.0 1.0 1.0 1.0 0.0 0.0 0.0 material ceiling_default tint 0.94 0.92 0.88 node n_cr_c23 parent n_room2_ceiling
+mesh prison_ceiling -12.0 10.0 0.0 1.0 1.0 1.0 0.0 0.0 0.0 material ceiling_default tint 0.93 0.91 0.87 node n_cr_c24 parent n_room2_ceiling
+mesh prison_ceiling -14.0 10.0 0.0 1.0 1.0 1.0 0.0 0.0 0.0 material ceiling_default tint 0.94 0.92 0.88 node n_cr_c25 parent n_room2_ceiling
+mesh prison_ceiling -16.0 10.0 0.0 1.0 1.0 1.0 0.0 0.0 0.0 material ceiling_default tint 0.93 0.91 0.87 node n_cr_c26 parent n_room2_ceiling
+mesh prison_ceiling -18.0 10.0 0.0 1.0 1.0 1.0 0.0 0.0 0.0 material ceiling_default tint 0.94 0.92 0.88 node n_cr_c27 parent n_room2_ceiling
+mesh prison_ceiling -20.0 10.0 0.0 1.0 1.0 1.0 0.0 0.0 0.0 material ceiling_default tint 0.93 0.91 0.87 node n_cr_c28 parent n_room2_ceiling
+mesh prison_ceiling -22.0 10.0 0.0 1.0 1.0 1.0 0.0 0.0 0.0 material ceiling_default tint 0.94 0.92 0.88 node n_cr_c29 parent n_room2_ceiling
+mesh prison_ceiling -24.0 10.0 0.0 1.0 1.0 1.0 0.0 0.0 0.0 material ceiling_default tint 0.93 0.91 0.87 node n_cr_c30 parent n_room2_ceiling
+mesh prison_ceiling -6.0 10.0 2.0 1.0 1.0 1.0 0.0 0.0 0.0 material ceiling_default tint 0.94 0.92 0.88 node n_cr_c31 parent n_room2_ceiling
+mesh prison_ceiling -8.0 10.0 2.0 1.0 1.0 1.0 0.0 0.0 0.0 material ceiling_default tint 0.93 0.91 0.87 node n_cr_c32 parent n_room2_ceiling
+mesh prison_ceiling -10.0 10.0 2.0 1.0 1.0 1.0 0.0 0.0 0.0 material ceiling_default tint 0.94 0.92 0.88 node n_cr_c33 parent n_room2_ceiling
+mesh prison_ceiling -12.0 10.0 2.0 1.0 1.0 1.0 0.0 0.0 0.0 material ceiling_default tint 0.93 0.91 0.87 node n_cr_c34 parent n_room2_ceiling
+mesh prison_ceiling -14.0 10.0 2.0 1.0 1.0 1.0 0.0 0.0 0.0 material ceiling_default tint 0.94 0.92 0.88 node n_cr_c35 parent n_room2_ceiling
+mesh prison_ceiling -16.0 10.0 2.0 1.0 1.0 1.0 0.0 0.0 0.0 material ceiling_default tint 0.93 0.91 0.87 node n_cr_c36 parent n_room2_ceiling
+mesh prison_ceiling -18.0 10.0 2.0 1.0 1.0 1.0 0.0 0.0 0.0 material ceiling_default tint 0.94 0.92 0.88 node n_cr_c37 parent n_room2_ceiling
+mesh prison_ceiling -20.0 10.0 2.0 1.0 1.0 1.0 0.0 0.0 0.0 material ceiling_default tint 0.93 0.91 0.87 node n_cr_c38 parent n_room2_ceiling
+mesh prison_ceiling -22.0 10.0 2.0 1.0 1.0 1.0 0.0 0.0 0.0 material ceiling_default tint 0.94 0.92 0.88 node n_cr_c39 parent n_room2_ceiling
+mesh prison_ceiling -24.0 10.0 2.0 1.0 1.0 1.0 0.0 0.0 0.0 material ceiling_default tint 0.93 0.91 0.87 node n_cr_c40 parent n_room2_ceiling
+mesh prison_ceiling -6.0 10.0 4.0 1.0 1.0 1.0 0.0 0.0 0.0 material ceiling_default tint 0.94 0.92 0.88 node n_cr_c41 parent n_room2_ceiling
+mesh prison_ceiling -8.0 10.0 4.0 1.0 1.0 1.0 0.0 0.0 0.0 material ceiling_default tint 0.93 0.91 0.87 node n_cr_c42 parent n_room2_ceiling
+mesh prison_ceiling -10.0 10.0 4.0 1.0 1.0 1.0 0.0 0.0 0.0 material ceiling_default tint 0.94 0.92 0.88 node n_cr_c43 parent n_room2_ceiling
+mesh prison_ceiling -12.0 10.0 4.0 1.0 1.0 1.0 0.0 0.0 0.0 material ceiling_default tint 0.93 0.91 0.87 node n_cr_c44 parent n_room2_ceiling
+mesh prison_ceiling -14.0 10.0 4.0 1.0 1.0 1.0 0.0 0.0 0.0 material ceiling_default tint 0.94 0.92 0.88 node n_cr_c45 parent n_room2_ceiling
+mesh prison_ceiling -16.0 10.0 4.0 1.0 1.0 1.0 0.0 0.0 0.0 material ceiling_default tint 0.93 0.91 0.87 node n_cr_c46 parent n_room2_ceiling
+mesh prison_ceiling -18.0 10.0 4.0 1.0 1.0 1.0 0.0 0.0 0.0 material ceiling_default tint 0.94 0.92 0.88 node n_cr_c47 parent n_room2_ceiling
+mesh prison_ceiling -20.0 10.0 4.0 1.0 1.0 1.0 0.0 0.0 0.0 material ceiling_default tint 0.93 0.91 0.87 node n_cr_c48 parent n_room2_ceiling
+mesh prison_ceiling -22.0 10.0 4.0 1.0 1.0 1.0 0.0 0.0 0.0 material ceiling_default tint 0.94 0.92 0.88 node n_cr_c49 parent n_room2_ceiling
+mesh prison_ceiling -24.0 10.0 4.0 1.0 1.0 1.0 0.0 0.0 0.0 material ceiling_default tint 0.93 0.91 0.87 node n_cr_c50 parent n_room2_ceiling
+mesh prison_ceiling -6.0 10.0 6.0 1.0 1.0 1.0 0.0 0.0 0.0 material ceiling_default tint 0.94 0.92 0.88 node n_cr_c51 parent n_room2_ceiling
+mesh prison_ceiling -8.0 10.0 6.0 1.0 1.0 1.0 0.0 0.0 0.0 material ceiling_default tint 0.93 0.91 0.87 node n_cr_c52 parent n_room2_ceiling
+mesh prison_ceiling -10.0 10.0 6.0 1.0 1.0 1.0 0.0 0.0 0.0 material ceiling_default tint 0.94 0.92 0.88 node n_cr_c53 parent n_room2_ceiling
+mesh prison_ceiling -12.0 10.0 6.0 1.0 1.0 1.0 0.0 0.0 0.0 material ceiling_default tint 0.93 0.91 0.87 node n_cr_c54 parent n_room2_ceiling
+mesh prison_ceiling -14.0 10.0 6.0 1.0 1.0 1.0 0.0 0.0 0.0 material ceiling_default tint 0.94 0.92 0.88 node n_cr_c55 parent n_room2_ceiling
+mesh prison_ceiling -16.0 10.0 6.0 1.0 1.0 1.0 0.0 0.0 0.0 material ceiling_default tint 0.93 0.91 0.87 node n_cr_c56 parent n_room2_ceiling
+mesh prison_ceiling -18.0 10.0 6.0 1.0 1.0 1.0 0.0 0.0 0.0 material ceiling_default tint 0.94 0.92 0.88 node n_cr_c57 parent n_room2_ceiling
+mesh prison_ceiling -20.0 10.0 6.0 1.0 1.0 1.0 0.0 0.0 0.0 material ceiling_default tint 0.93 0.91 0.87 node n_cr_c58 parent n_room2_ceiling
+mesh prison_ceiling -22.0 10.0 6.0 1.0 1.0 1.0 0.0 0.0 0.0 material ceiling_default tint 0.94 0.92 0.88 node n_cr_c59 parent n_room2_ceiling
+mesh prison_ceiling -24.0 10.0 6.0 1.0 1.0 1.0 0.0 0.0 0.0 material ceiling_default tint 0.93 0.91 0.87 node n_cr_c60 parent n_room2_ceiling
+mesh prison_ceiling -6.0 10.0 8.0 1.0 1.0 1.0 0.0 0.0 0.0 material ceiling_default tint 0.94 0.92 0.88 node n_cr_c61 parent n_room2_ceiling
+mesh prison_ceiling -8.0 10.0 8.0 1.0 1.0 1.0 0.0 0.0 0.0 material ceiling_default tint 0.93 0.91 0.87 node n_cr_c62 parent n_room2_ceiling
+mesh prison_ceiling -10.0 10.0 8.0 1.0 1.0 1.0 0.0 0.0 0.0 material ceiling_default tint 0.94 0.92 0.88 node n_cr_c63 parent n_room2_ceiling
+mesh prison_ceiling -12.0 10.0 8.0 1.0 1.0 1.0 0.0 0.0 0.0 material ceiling_default tint 0.93 0.91 0.87 node n_cr_c64 parent n_room2_ceiling
+mesh prison_ceiling -14.0 10.0 8.0 1.0 1.0 1.0 0.0 0.0 0.0 material ceiling_default tint 0.94 0.92 0.88 node n_cr_c65 parent n_room2_ceiling
+mesh prison_ceiling -16.0 10.0 8.0 1.0 1.0 1.0 0.0 0.0 0.0 material ceiling_default tint 0.93 0.91 0.87 node n_cr_c66 parent n_room2_ceiling
+mesh prison_ceiling -18.0 10.0 8.0 1.0 1.0 1.0 0.0 0.0 0.0 material ceiling_default tint 0.94 0.92 0.88 node n_cr_c67 parent n_room2_ceiling
+mesh prison_ceiling -20.0 10.0 8.0 1.0 1.0 1.0 0.0 0.0 0.0 material ceiling_default tint 0.93 0.91 0.87 node n_cr_c68 parent n_room2_ceiling
+mesh prison_ceiling -22.0 10.0 8.0 1.0 1.0 1.0 0.0 0.0 0.0 material ceiling_default tint 0.94 0.92 0.88 node n_cr_c69 parent n_room2_ceiling
+mesh prison_ceiling -24.0 10.0 8.0 1.0 1.0 1.0 0.0 0.0 0.0 material ceiling_default tint 0.93 0.91 0.87 node n_cr_c70 parent n_room2_ceiling
+mesh SM_Wall -5.0 0.0 -5.0 0.008 0.008 0.008 0.0 0.0 0.0 material concrete_wall tint 0.82 0.78 0.7 node n_cr_wsd01 parent n_room2_wall_back
+mesh SM_Wall -7.0 0.0 -5.0 0.008 0.008 0.008 0.0 0.0 0.0 material concrete_wall tint 0.83 0.79 0.71 node n_cr_wsd02 parent n_room2_wall_back
+mesh SM_Wall -9.0 0.0 -5.0 0.008 0.008 0.008 0.0 0.0 0.0 material concrete_wall tint 0.82 0.78 0.7 node n_cr_wsd03 parent n_room2_wall_back
+mesh SM_Wall -11.0 0.0 -5.0 0.008 0.008 0.008 0.0 0.0 0.0 material concrete_wall tint 0.83 0.79 0.71 node n_cr_wsd04 parent n_room2_wall_back
+mesh SM_Wall -13.0 0.0 -5.0 0.008 0.008 0.008 0.0 0.0 0.0 material concrete_wall tint 0.82 0.78 0.7 node n_cr_wsd05 parent n_room2_wall_back
+mesh SM_Wall -15.0 0.0 -5.0 0.008 0.008 0.008 0.0 0.0 0.0 material concrete_wall tint 0.83 0.79 0.71 node n_cr_wsd06 parent n_room2_wall_back
+mesh SM_Wall -17.0 0.0 -5.0 0.008 0.008 0.008 0.0 0.0 0.0 material concrete_wall tint 0.82 0.78 0.7 node n_cr_wsd07 parent n_room2_wall_back
+mesh SM_Wall -19.0 0.0 -5.0 0.008 0.008 0.008 0.0 0.0 0.0 material concrete_wall tint 0.83 0.79 0.71 node n_cr_wsd08 parent n_room2_wall_back
+mesh SM_Wall -21.0 0.0 -5.0 0.008 0.008 0.008 0.0 0.0 0.0 material concrete_wall tint 0.82 0.78 0.7 node n_cr_wsd09 parent n_room2_wall_back
+mesh SM_Wall -23.0 0.0 -5.0 0.008 0.008 0.008 0.0 0.0 0.0 material concrete_wall tint 0.83 0.79 0.71 node n_cr_wsd10 parent n_room2_wall_back
+mesh SM_Wall -25.0 0.0 -5.0 0.008 0.008 0.008 0.0 0.0 0.0 material concrete_wall tint 0.82 0.78 0.7 node n_cr_wsd11 parent n_room2_wall_back
+mesh SM_Wall -5.0 2.0 -5.0 0.008 0.032 0.008 0.0 0.0 0.0 material inst_beige_wall tint 1.0 1.0 1.0 node n_cr_wsu01 parent n_room2_wall_back
+mesh SM_Wall -7.0 2.0 -5.0 0.008 0.032 0.008 0.0 0.0 0.0 material inst_beige_wall tint 1.0 1.0 1.0 node n_cr_wsu02 parent n_room2_wall_back
+mesh SM_Wall -9.0 2.0 -5.0 0.008 0.032 0.008 0.0 0.0 0.0 material inst_beige_wall tint 1.0 1.0 1.0 node n_cr_wsu03 parent n_room2_wall_back
+mesh SM_Wall -11.0 2.0 -5.0 0.008 0.032 0.008 0.0 0.0 0.0 material inst_beige_wall tint 1.0 1.0 1.0 node n_cr_wsu04 parent n_room2_wall_back
+mesh SM_Wall -13.0 2.0 -5.0 0.008 0.032 0.008 0.0 0.0 0.0 material inst_beige_wall tint 1.0 1.0 1.0 node n_cr_wsu05 parent n_room2_wall_back
+mesh SM_Wall -15.0 2.0 -5.0 0.008 0.032 0.008 0.0 0.0 0.0 material inst_beige_wall tint 1.0 1.0 1.0 node n_cr_wsu06 parent n_room2_wall_back
+mesh SM_Wall -17.0 2.0 -5.0 0.008 0.032 0.008 0.0 0.0 0.0 material inst_beige_wall tint 1.0 1.0 1.0 node n_cr_wsu07 parent n_room2_wall_back
+mesh SM_Wall -19.0 2.0 -5.0 0.008 0.032 0.008 0.0 0.0 0.0 material inst_beige_wall tint 1.0 1.0 1.0 node n_cr_wsu08 parent n_room2_wall_back
+mesh SM_Wall -21.0 2.0 -5.0 0.008 0.032 0.008 0.0 0.0 0.0 material inst_beige_wall tint 1.0 1.0 1.0 node n_cr_wsu09 parent n_room2_wall_back
+mesh SM_Wall -23.0 2.0 -5.0 0.008 0.032 0.008 0.0 0.0 0.0 material inst_beige_wall tint 1.0 1.0 1.0 node n_cr_wsu10 parent n_room2_wall_back
+mesh SM_Wall -25.0 2.0 -5.0 0.008 0.032 0.008 0.0 0.0 0.0 material inst_beige_wall tint 1.0 1.0 1.0 node n_cr_wsu11 parent n_room2_wall_back
+mesh SM_Wall -5.0 0.0 9.0 0.008 0.008 0.008 0.0 180.0 0.0 material concrete_wall tint 0.82 0.78 0.7 node n_cr_wnd01 parent n_room2_wall_front
+mesh SM_Wall -7.0 0.0 9.0 0.008 0.008 0.008 0.0 180.0 0.0 material concrete_wall tint 0.83 0.79 0.71 node n_cr_wnd02 parent n_room2_wall_front
+mesh SM_Wall -9.0 0.0 9.0 0.008 0.008 0.008 0.0 180.0 0.0 material concrete_wall tint 0.82 0.78 0.7 node n_cr_wnd03 parent n_room2_wall_front
+mesh SM_Wall -11.0 0.0 9.0 0.008 0.008 0.008 0.0 180.0 0.0 material concrete_wall tint 0.83 0.79 0.71 node n_cr_wnd04 parent n_room2_wall_front
+mesh SM_Wall -13.0 0.0 9.0 0.008 0.008 0.008 0.0 180.0 0.0 material concrete_wall tint 0.82 0.78 0.7 node n_cr_wnd05 parent n_room2_wall_front
+mesh SM_Wall -15.0 0.0 9.0 0.008 0.008 0.008 0.0 180.0 0.0 material concrete_wall tint 0.83 0.79 0.71 node n_cr_wnd06 parent n_room2_wall_front
+mesh SM_Wall -17.0 0.0 9.0 0.008 0.008 0.008 0.0 180.0 0.0 material concrete_wall tint 0.82 0.78 0.7 node n_cr_wnd07 parent n_room2_wall_front
+mesh SM_Wall -19.0 0.0 9.0 0.008 0.008 0.008 0.0 180.0 0.0 material concrete_wall tint 0.83 0.79 0.71 node n_cr_wnd08 parent n_room2_wall_front
+mesh SM_Wall -21.0 0.0 9.0 0.008 0.008 0.008 0.0 180.0 0.0 material concrete_wall tint 0.82 0.78 0.7 node n_cr_wnd09 parent n_room2_wall_front
+mesh SM_Wall -23.0 0.0 9.0 0.008 0.008 0.008 0.0 180.0 0.0 material concrete_wall tint 0.83 0.79 0.71 node n_cr_wnd10 parent n_room2_wall_front
+mesh SM_Wall -25.0 0.0 9.0 0.008 0.008 0.008 0.0 180.0 0.0 material concrete_wall tint 0.82 0.78 0.7 node n_cr_wnd11 parent n_room2_wall_front
+mesh SM_Wall -5.0 2.0 9.0 0.008 0.032 0.008 0.0 180.0 0.0 material inst_beige_wall tint 1.0 1.0 1.0 node n_cr_wnu01 parent n_room2_wall_front
+mesh SM_Wall -7.0 2.0 9.0 0.008 0.032 0.008 0.0 180.0 0.0 material inst_beige_wall tint 1.0 1.0 1.0 node n_cr_wnu02 parent n_room2_wall_front
+mesh SM_Wall -9.0 2.0 9.0 0.008 0.032 0.008 0.0 180.0 0.0 material inst_beige_wall tint 1.0 1.0 1.0 node n_cr_wnu03 parent n_room2_wall_front
+mesh SM_Wall -11.0 2.0 9.0 0.008 0.032 0.008 0.0 180.0 0.0 material inst_beige_wall tint 1.0 1.0 1.0 node n_cr_wnu04 parent n_room2_wall_front
+mesh SM_Wall -13.0 2.0 9.0 0.008 0.032 0.008 0.0 180.0 0.0 material inst_beige_wall tint 1.0 1.0 1.0 node n_cr_wnu05 parent n_room2_wall_front
+mesh SM_Wall -15.0 2.0 9.0 0.008 0.032 0.008 0.0 180.0 0.0 material inst_beige_wall tint 1.0 1.0 1.0 node n_cr_wnu06 parent n_room2_wall_front
+mesh SM_Wall -17.0 2.0 9.0 0.008 0.032 0.008 0.0 180.0 0.0 material inst_beige_wall tint 1.0 1.0 1.0 node n_cr_wnu07 parent n_room2_wall_front
+mesh SM_Wall -19.0 2.0 9.0 0.008 0.032 0.008 0.0 180.0 0.0 material inst_beige_wall tint 1.0 1.0 1.0 node n_cr_wnu08 parent n_room2_wall_front
+mesh SM_Wall -21.0 2.0 9.0 0.008 0.032 0.008 0.0 180.0 0.0 material inst_beige_wall tint 1.0 1.0 1.0 node n_cr_wnu09 parent n_room2_wall_front
+mesh SM_Wall -23.0 2.0 9.0 0.008 0.032 0.008 0.0 180.0 0.0 material inst_beige_wall tint 1.0 1.0 1.0 node n_cr_wnu10 parent n_room2_wall_front
+mesh SM_Wall -25.0 2.0 9.0 0.008 0.032 0.008 0.0 180.0 0.0 material inst_beige_wall tint 1.0 1.0 1.0 node n_cr_wnu11 parent n_room2_wall_front
+mesh SM_Wall -5.0 0.0 -5.0 0.008 0.008 0.008 0.0 -90.0 0.0 material concrete_wall tint 0.82 0.78 0.7 node n_cr_wed01 parent n_room2_wall_right
+mesh SM_Wall -5.124919 0.0 -3.035618 0.014062 0.01 0.01 0.0 -89.999985 0.0 material concrete_wall tint 0.83 0.79 0.71 node n_cr_wed02 parent n_room2_wall_right
+mesh SM_Wall -5.126965 0.0 1.551129 0.014772 0.01 0.01 0.0 -89.999985 0.0 material concrete_wall tint 0.82 0.78 0.7 node n_cr_wed03 parent n_room2_wall_right
+mesh SM_Wall -5.0 0.0 5.0 0.008 0.008 0.008 0.0 -90.0 0.0 material concrete_wall tint 0.83 0.79 0.71 node n_cr_wed04 parent n_room2_wall_right
+mesh SM_Wall -5.0 0.0 7.0 0.008 0.008 0.008 0.0 -90.0 0.0 material concrete_wall tint 0.82 0.78 0.7 node n_cr_wed05 parent n_room2_wall_right
+mesh SM_Wall -5.0 0.0 9.0 0.01 0.01 0.01 0.0 -89.999985 0.0 material concrete_wall tint 0.83 0.79 0.71 node n_cr_wed06 parent n_room2_wall_right
+mesh SM_Wall -5.0 2.0 -5.0 0.008 0.032 0.008 0.0 -90.0 0.0 material inst_beige_wall tint 1.0 1.0 1.0 node n_cr_weu01 parent n_room2_wall_right
+mesh SM_Wall -5.0 2.0 -3.0 0.008 0.032 0.008 0.0 -90.0 0.0 material inst_beige_wall tint 1.0 1.0 1.0 node n_cr_weu02 parent n_room2_wall_right
+mesh SM_Wall -5.121847 2.126271 -1.695178 0.027468 0.032 0.01 0.0 -89.999985 0.0 material inst_beige_wall tint 1.0 1.0 1.0 node n_cr_weu03 parent n_room2_wall_right
+mesh SM_Wall -5.0 2.0 5.0 0.008 0.032 0.008 0.0 -90.0 0.0 material inst_beige_wall tint 1.0 1.0 1.0 node n_cr_weu04 parent n_room2_wall_right
+mesh SM_Wall -5.0 2.0 7.0 0.008 0.032 0.008 0.0 -90.0 0.0 material inst_beige_wall tint 1.0 1.0 1.0 node n_cr_weu05 parent n_room2_wall_right
+mesh SM_Wall -5.0 2.0 9.0 0.008 0.032 0.008 0.0 -90.0 0.0 material inst_beige_wall tint 1.0 1.0 1.0 node n_cr_weu06 parent n_room2_wall_right
+mesh SM_Wall -25.0 0.0 -5.0 0.008 0.008 0.008 0.0 90.0 0.0 material concrete_wall tint 0.82 0.78 0.7 node n_cr_wwd01 parent n_room2_wall_left
+mesh SM_Wall -25.0 0.0 -3.0 0.008 0.008 0.008 0.0 90.0 0.0 material concrete_wall tint 0.83 0.79 0.71 node n_cr_wwd02 parent n_room2_wall_left
+mesh SM_Wall -25.0 0.0 -1.0 0.008 0.008 0.008 0.0 90.0 0.0 material concrete_wall tint 0.82 0.78 0.7 node n_cr_wwd03 parent n_room2_wall_left
+mesh SM_Wall -25.0 0.0 1.0 0.008 0.008 0.008 0.0 90.0 0.0 material concrete_wall tint 0.83 0.79 0.71 node n_cr_wwd04 parent n_room2_wall_left
+mesh SM_Wall -25.0 0.0 3.0 0.008 0.008 0.008 0.0 90.0 0.0 material concrete_wall tint 0.82 0.78 0.7 node n_cr_wwd05 parent n_room2_wall_left
+mesh SM_Wall -25.0 0.0 5.0 0.008 0.008 0.008 0.0 90.0 0.0 material concrete_wall tint 0.83 0.79 0.71 node n_cr_wwd06 parent n_room2_wall_left
+mesh SM_Wall -25.0 0.0 7.0 0.008 0.008 0.008 0.0 90.0 0.0 material concrete_wall tint 0.82 0.78 0.7 node n_cr_wwd07 parent n_room2_wall_left
+mesh SM_Wall -25.0 0.0 9.0 0.008 0.008 0.008 0.0 90.0 0.0 material concrete_wall tint 0.83 0.79 0.71 node n_cr_wwd08 parent n_room2_wall_left
+mesh SM_Wall -25.0 2.0 -5.0 0.008 0.032 0.008 0.0 90.0 0.0 material inst_beige_wall tint 1.0 1.0 1.0 node n_cr_wwu01 parent n_room2_wall_left
+mesh SM_Wall -25.0 2.0 -3.0 0.008 0.032 0.008 0.0 90.0 0.0 material inst_beige_wall tint 1.0 1.0 1.0 node n_cr_wwu02 parent n_room2_wall_left
+mesh SM_Wall -25.0 2.0 -1.0 0.008 0.032 0.008 0.0 90.0 0.0 material inst_beige_wall tint 1.0 1.0 1.0 node n_cr_wwu03 parent n_room2_wall_left
+mesh SM_Wall -25.0 2.0 1.0 0.008 0.032 0.008 0.0 90.0 0.0 material inst_beige_wall tint 1.0 1.0 1.0 node n_cr_wwu04 parent n_room2_wall_left
+mesh SM_Wall -25.0 2.0 3.0 0.008 0.032 0.008 0.0 90.0 0.0 material inst_beige_wall tint 1.0 1.0 1.0 node n_cr_wwu05 parent n_room2_wall_left
+mesh SM_Wall -25.0 2.0 5.0 0.008 0.032 0.008 0.0 90.0 0.0 material inst_beige_wall tint 1.0 1.0 1.0 node n_cr_wwu06 parent n_room2_wall_left
+mesh SM_Wall -25.0 2.0 7.0 0.008 0.032 0.008 0.0 90.0 0.0 material inst_beige_wall tint 1.0 1.0 1.0 node n_cr_wwu07 parent n_room2_wall_left
+mesh SM_Wall -25.0 2.0 9.0 0.008 0.032 0.008 0.0 90.0 0.0 material inst_beige_wall tint 1.0 1.0 1.0 node n_cr_wwu08 parent n_room2_wall_left
 mesh ceiling_light_panel -11.0 9.99 0.0 1.0 1.0 1.0 0.0 0.0 0.0 material stone_default tint 0.98 0.96 0.9 node n_cr_clp01 parent n_room2_lighting
 mesh ceiling_light_panel -16.0 9.99 0.0 1.0 1.0 1.0 0.0 0.0 0.0 material stone_default tint 0.98 0.96 0.9 node n_cr_clp02 parent n_room2_lighting
 mesh ceiling_light_panel -21.0 9.99 0.0 1.0 1.0 1.0 0.0 0.0 0.0 material stone_default tint 0.98 0.96 0.9 node n_cr_clp03 parent n_room2_lighting
 mesh ceiling_light_panel -11.0 9.99 4.0 1.0 1.0 1.0 0.0 0.0 0.0 material stone_default tint 0.98 0.96 0.9 node n_cr_clp04 parent n_room2_lighting
 mesh ceiling_light_panel -16.0 9.99 4.0 1.0 1.0 1.0 0.0 0.0 0.0 material stone_default tint 0.98 0.96 0.9 node n_cr_clp05 parent n_room2_lighting
 mesh ceiling_light_panel -21.0 9.99 4.0 1.0 1.0 1.0 0.0 0.0 0.0 material stone_default tint 0.98 0.96 0.9 node n_cr_clp06 parent n_room2_lighting
-mesh prison_desk -15.0 0.0 0.0 1.0 1.0 1.0 0.0 -90.0 0.0 material wood_default tint 0.55 0.4 0.22 node n_cr_desk01 parent n_room2_furniture
-mesh prison_desk -17.0 0.0 0.0 1.0 1.0 1.0 0.0 -90.0 0.0 material wood_default tint 0.55 0.4 0.22 node n_cr_desk02 parent n_room2_furniture
-mesh prison_desk -15.0 0.0 3.0 1.0 1.0 1.0 0.0 -90.0 0.0 material wood_default tint 0.55 0.4 0.22 node n_cr_desk03 parent n_room2_furniture
-mesh prison_desk -17.0 0.0 3.0 1.0 1.0 1.0 0.0 -90.0 0.0 material wood_default tint 0.55 0.4 0.22 node n_cr_desk04 parent n_room2_furniture
-mesh prison_chair -14.0 0.0 0.0 1.0 1.0 1.0 0.0 90.0 0.0 material wood_default tint 0.5 0.38 0.24 node n_cr_chair01 parent n_room2_furniture
-mesh prison_chair -18.0 0.0 0.0 1.0 1.0 1.0 0.0 -90.0 0.0 material wood_default tint 0.5 0.38 0.24 node n_cr_chair02 parent n_room2_furniture
-mesh prison_chair -14.0 0.0 3.0 1.0 1.0 1.0 0.0 90.0 0.0 material wood_default tint 0.5 0.38 0.24 node n_cr_chair03 parent n_room2_furniture
-mesh prison_chair -18.0 0.0 3.0 1.0 1.0 1.0 0.0 -90.0 0.0 material wood_default tint 0.5 0.38 0.24 node n_cr_chair04 parent n_room2_furniture
-mesh prison_desk -23.0 0.0 2.0 1.0 1.0 1.0 0.0 -90.0 0.0 material wood_default tint 0.55 0.4 0.22 node n_cr_desk_w parent n_room2_furniture
-mesh warden_chair -22.0 0.0 2.0 1.0 1.0 1.0 0.0 90.0 0.0 material wood_default tint 0.5 0.38 0.24 node n_cr_chair_w parent n_room2_furniture
-mesh prison_cabinet -24.5 0.0 2.0 1.0 1.0 1.0 0.0 90.0 0.0 material metal_default tint 0.55 0.53 0.5 node n_cr_cab_w parent n_room2_furniture
-mesh prison_cabinet -10.0 0.0 8.5 1.0 1.0 1.0 0.0 180.0 0.0 material metal_default tint 0.55 0.53 0.5 node n_cr_cab01 parent n_room2_furniture
-mesh prison_cabinet -13.0 0.0 8.5 1.0 1.0 1.0 0.0 180.0 0.0 material metal_default tint 0.55 0.53 0.5 node n_cr_cab02 parent n_room2_furniture
-mesh prison_cabinet -16.0 0.0 8.5 1.0 1.0 1.0 0.0 180.0 0.0 material metal_default tint 0.55 0.53 0.5 node n_cr_cab03 parent n_room2_furniture
-mesh prison_cabinet -19.0 0.0 8.5 1.0 1.0 1.0 0.0 180.0 0.0 material metal_default tint 0.55 0.53 0.5 node n_cr_cab04 parent n_room2_furniture
-mesh prison_shelf -12.0 1.6 -4.5 1.0 1.0 1.0 0.0 0.0 0.0 material metal_default tint 0.5 0.48 0.44 node n_cr_shelf01 parent n_room2_furniture
-mesh prison_shelf -16.0 1.6 -4.5 1.0 1.0 1.0 0.0 0.0 0.0 material metal_default tint 0.5 0.48 0.44 node n_cr_shelf02 parent n_room2_furniture
-mesh prison_shelf -20.0 1.6 -4.5 1.0 1.0 1.0 0.0 0.0 0.0 material metal_default tint 0.5 0.48 0.44 node n_cr_shelf03 parent n_room2_furniture
-mesh inst_hvac_vent -16.0 8.0 -4.95 1.0 1.0 1.0 0.0 0.0 0.0 material metal_default tint 0.55 0.53 0.5 node n_cr_hvac01 parent n_room2_props
-mesh inst_hvac_vent -16.0 8.0 8.95 1.0 1.0 1.0 0.0 180.0 0.0 material metal_default tint 0.55 0.53 0.5 node n_cr_hvac02 parent n_room2_props
-mesh inst_smoke_detector -12.0 9.97 2.0 1.0 1.0 1.0 0.0 0.0 0.0 material stone_default tint 0.92 0.9 0.88 node n_cr_smoke01 parent n_room2_props
-mesh inst_smoke_detector -20.0 9.97 2.0 1.0 1.0 1.0 0.0 0.0 0.0 material stone_default tint 0.92 0.9 0.88 node n_cr_smoke02 parent n_room2_props
-mesh SM_Wall -7.094803 2.0 -0.340786 0.01 0.032 0.01 0.0 -89.999985 0.0 material inst_beige_wall tint 1.0 1.0 1.0 node node_349 parent n_room2_wall_right
-mesh SM_Wall -7.094803 0.0 -0.340786 0.01 0.01 0.01 0.0 -89.999985 0.0 material concrete_wall tint 0.83 0.79 0.71 node node_350 parent n_room2_wall_right
-mesh SM_Wall -6.998707 2.0 1.563745 0.01 0.032 0.01 0.0 -89.999985 0.0 material inst_beige_wall tint 1.0 1.0 1.0 node node_351 parent n_room2_wall_right
-mesh SM_Wall -6.998707 0.0 1.563745 0.01 0.01 0.01 0.0 -89.999985 0.0 material concrete_wall tint 0.83 0.79 0.71 node node_352 parent n_room2_wall_right
-light point -2.5 5.7 0.5 1.0 0.97 0.88 6.0 4.5 node n_l1 parent n_room1_lighting
-light point 2.5 5.7 0.5 1.0 0.97 0.88 6.0 4.5 node n_l2 parent n_room1_lighting
-light point -2.5 5.7 3.5 1.0 0.97 0.88 6.0 4.5 node n_l3 parent n_room1_lighting
-light point 2.5 5.7 3.5 1.0 0.97 0.88 6.0 4.5 node n_l4 parent n_room1_lighting
-light point -5.5 1.5 1.0 1.0 0.9 0.65 8.0 5.0 node n_l_door_a parent n_room1_lighting
-light point 0.0 2.5 -1.5 0.85 0.8 0.72 5.0 1.0 node n_l_fill parent n_room1_lighting
-light point 1.0 5.85 1.5 1.0 0.05 0.02 0.5 0.3 node n_l_led parent n_room1_lighting
+mesh prison_desk -15.0 0.0 1.0 1.0 1.0 1.0 0.0 0.0 0.0 material wood_default tint 0.7 0.6 0.5 node n_cr_desk01 parent n_room2_furniture
+mesh prison_desk -15.0 0.0 3.0 1.0 1.0 1.0 0.0 0.0 0.0 material wood_default tint 0.72 0.62 0.52 node n_cr_desk02 parent n_room2_furniture
+mesh prison_desk -17.0 0.0 1.0 1.0 1.0 1.0 0.0 90.0 0.0 material wood_default tint 0.7 0.6 0.5 node n_cr_desk03 parent n_room2_furniture
+mesh prison_desk -17.0 0.0 3.0 1.0 1.0 1.0 0.0 90.0 0.0 material wood_default tint 0.72 0.62 0.52 node n_cr_desk04 parent n_room2_furniture
+mesh prison_chair -14.0 0.0 1.0 1.0 1.0 1.0 0.0 180.0 0.0 material metal_default tint 0.4 0.38 0.35 node n_cr_chair01 parent n_room2_furniture
+mesh prison_chair -14.0 0.0 3.0 1.0 1.0 1.0 0.0 180.0 0.0 material metal_default tint 0.4 0.38 0.35 node n_cr_chair02 parent n_room2_furniture
+mesh prison_chair -18.0 0.0 1.0 1.0 1.0 1.0 0.0 0.0 0.0 material metal_default tint 0.4 0.38 0.35 node n_cr_chair03 parent n_room2_furniture
+mesh prison_chair -18.0 0.0 3.0 1.0 1.0 1.0 0.0 0.0 0.0 material metal_default tint 0.4 0.38 0.35 node n_cr_chair04 parent n_room2_furniture
+mesh prison_desk -23.0 0.0 2.0 1.0 1.0 1.0 0.0 -90.0 0.0 material wood_default tint 0.65 0.55 0.45 node n_cr_desk_w parent n_room2_furniture
+mesh warden_chair -22.0 0.0 2.0 1.0 1.0 1.0 0.0 90.0 0.0 material metal_default tint 0.35 0.33 0.3 node n_cr_chair_w parent n_room2_furniture
+mesh prison_cabinet -24.0 0.0 2.0 1.0 1.0 1.0 0.0 90.0 0.0 material wood_default tint 0.6 0.5 0.4 node n_cr_cab_w parent n_room2_furniture
+mesh prison_cabinet -10.0 0.0 8.0 1.0 1.0 1.0 0.0 180.0 0.0 material wood_default tint 0.6 0.5 0.4 node n_cr_cab01 parent n_room2_furniture
+mesh prison_cabinet -14.0 0.0 8.0 1.0 1.0 1.0 0.0 180.0 0.0 material wood_default tint 0.6 0.5 0.4 node n_cr_cab02 parent n_room2_furniture
+mesh prison_cabinet -18.0 0.0 8.0 1.0 1.0 1.0 0.0 180.0 0.0 material wood_default tint 0.6 0.5 0.4 node n_cr_cab03 parent n_room2_furniture
+mesh prison_cabinet -22.0 0.0 8.0 1.0 1.0 1.0 0.0 180.0 0.0 material wood_default tint 0.6 0.5 0.4 node n_cr_cab04 parent n_room2_furniture
+mesh prison_shelf -10.0 0.0 -4.0 1.0 1.0 1.0 0.0 0.0 0.0 material metal_default tint 0.5 0.48 0.45 node n_cr_shelf01 parent n_room2_furniture
+mesh prison_shelf -15.0 0.0 -4.0 1.0 1.0 1.0 0.0 0.0 0.0 material metal_default tint 0.5 0.48 0.45 node n_cr_shelf02 parent n_room2_furniture
+mesh prison_shelf -20.0 0.0 -4.0 1.0 1.0 1.0 0.0 0.0 0.0 material metal_default tint 0.5 0.48 0.45 node n_cr_shelf03 parent n_room2_furniture
+mesh inst_hvac_vent -12.0 9.2 -4.95 1.0 1.0 1.0 0.0 0.0 0.0 material metal_default tint 0.55 0.53 0.5 node n_cr_hvac01 parent n_room2_props
+mesh inst_hvac_vent -20.0 9.2 8.95 1.0 1.0 1.0 0.0 180.0 0.0 material metal_default tint 0.55 0.53 0.5 node n_cr_hvac02 parent n_room2_props
+mesh inst_smoke_detector -13.0 9.97 2.0 1.0 1.0 1.0 0.0 0.0 0.0 material stone_default tint 0.92 0.9 0.88 node n_cr_smoke01 parent n_room2_props
+mesh inst_smoke_detector -20.0 9.97 5.0 1.0 1.0 1.0 0.0 0.0 0.0 material stone_default tint 0.92 0.9 0.88 node n_cr_smoke02 parent n_room2_props
 light point -11.0 9.7 0.0 1.0 0.97 0.88 10.0 4.0 node n_cr_l01 parent n_room2_lighting
 light point -16.0 9.7 0.0 1.0 0.97 0.88 10.0 4.0 node n_cr_l02 parent n_room2_lighting
 light point -21.0 9.7 0.0 1.0 0.97 0.88 10.0 4.0 node n_cr_l03 parent n_room2_lighting
@@ -304,21 +319,21 @@ light point -16.0 9.7 4.0 1.0 0.97 0.88 10.0 4.0 node n_cr_l05 parent n_room2_li
 light point -21.0 9.7 4.0 1.0 0.97 0.88 10.0 4.0 node n_cr_l06 parent n_room2_lighting
 light point -8.0 3.0 1.0 1.0 0.97 0.88 6.0 2.5 node n_cr_l_entry parent n_room2_lighting
 light point -23.0 3.0 2.0 1.0 0.92 0.75 5.0 2.0 node n_cr_l_warden parent n_room2_lighting
+collider box solid -15.0 -0.05 2.0 10.0 0.05 7.0 node n_cr_col_floor parent n_room2_colliders
+collider box solid -15.0 10.05 2.0 10.0 0.05 7.0 node n_cr_col_ceil parent n_room2_colliders
+collider box solid -15.0 5.0 -5.0 10.0 5.0 0.1 node n_cr_col_south parent n_room2_colliders
+collider box solid -15.0 5.0 9.0 10.0 5.0 0.1 node n_cr_col_north parent n_room2_colliders
+collider box solid -25.0 5.0 2.0 0.1 5.0 7.0 node n_cr_col_west parent n_room2_colliders
+collider box solid -5.0 5.0 -3.5 0.1 5.0 1.5 node n_cr_col_east_s parent n_room2_colliders
+collider box solid -5.0 5.0 7.5 0.1 5.0 1.5 node n_cr_col_east_n parent n_room2_colliders
 collider box solid 0.0 -0.05 2.0 5.0 0.05 4.0 node n_col_floor parent n_room1_colliders
 collider box solid 0.0 6.05 2.0 5.0 0.05 4.0 node n_col_ceil parent n_room1_colliders
 collider box solid 0.0 3.0 -2.0 5.0 3.0 0.1 node n_col_south parent n_room1_colliders
 collider box solid 0.0 3.0 6.0 5.0 3.0 0.1 node n_col_north parent n_room1_colliders
 collider box solid 5.0 3.0 2.0 0.1 3.0 4.0 node n_col_east parent n_room1_colliders
-collider box solid -5.0 3.0 -1.0 0.1 3.0 1.382306 node n_col_west_s parent n_room1_colliders
-collider box solid -5.0 3.0 4.021411 0.1 3.0 2.380183 node n_col_west_n parent n_room1_colliders
-collider box solid -16.471855 -0.05 2.0 10.45473 0.05 7.0 node n_cr_col_floor parent n_room2_colliders
-collider box solid -16.0 10.05 2.0 9.0 0.05 7.0 node n_cr_col_ceil parent n_room2_colliders
-collider box solid -16.0 5.0 -5.0 9.0 5.0 0.1 node n_cr_col_south parent n_room2_colliders
-collider box solid -16.0 5.0 9.0 9.0 5.0 0.1 node n_cr_col_north parent n_room2_colliders
-collider box solid -25.0 5.0 2.0 0.1 5.0 7.0 node n_cr_col_west parent n_room2_colliders
-collider box solid -7.0 5.0 -2.5 0.1 5.0 2.5 node n_cr_col_east_s parent n_room2_colliders
-collider box solid -7.0 5.0 5.5 0.1 5.0 3.5 node n_cr_col_east_n parent n_room2_colliders
-collider box solid -0.079656 5.287961 0.0 3.435865 5.015478 0.584384 rotation -180.0 -0.0 0.0 node node_353 parent n_doorA_leaf kinematic
+collider box solid -5.0 3.0 -1.0 0.1 3.0 1.0 node n_col_west_s parent n_room1_colliders
+collider box solid -5.0 3.0 4.0 0.1 3.0 2.353166 node n_col_west_n parent n_room1_colliders
+collider box solid 0.0 4.794289 0.0 2.634915 4.456357 0.724372 node node_366 parent n_doorA_leaf kinematic
 player_spawn 0.0 1.0 -0.5 -2.0 node n_spawn parent n_room1
 group Room1 0.0 0.0 0.0 1.0 1.0 1.0 0.0 0.0 0.0 node n_room1
 group Floor 0.0 0.0 0.0 1.0 1.0 1.0 0.0 0.0 0.0 node n_room1_floor parent n_room1
@@ -332,8 +347,8 @@ group Lighting 0.0 0.0 0.0 1.0 1.0 1.0 0.0 0.0 0.0 node n_room1_lighting parent 
 group Props 0.0 0.0 0.0 1.0 1.0 1.0 0.0 0.0 0.0 node n_room1_props parent n_room1
 group Doors 0.0 0.0 0.0 1.0 1.0 1.0 0.0 0.0 0.0 node n_room1_doors parent n_room1
 group Colliders 0.0 0.0 0.0 1.0 1.0 1.0 0.0 0.0 0.0 node n_room1_colliders parent n_room1
-group Room2 0.534577 0.0 3.419284 1.0 1.0 1.0 -0.0 0.0 -0.0 node n_room2
-group Floor 0.0 0.0 0.0 1.0 1.0 1.0 0.0 0.0 0.0 node n_room2_floor parent n_room2
+group Room2 -0.008979 0.0 0.0 1.0 1.0 1.0 -0.0 0.0 -0.0 node n_room2
+group Floor -0.98684 0.0 0.985477 1.0 1.0 1.0 -0.0 0.0 -0.0 node n_room2_floor parent n_room2
 group Ceiling 0.0 0.0 0.0 1.0 1.0 1.0 0.0 0.0 0.0 node n_room2_ceiling parent n_room2
 group Walls 0.0 0.0 0.0 1.0 1.0 1.0 0.0 0.0 0.0 node n_room2_walls parent n_room2
 group BackWall 0.0 0.0 0.0 1.0 1.0 1.0 0.0 0.0 0.0 node n_room2_wall_back parent n_room2_walls
