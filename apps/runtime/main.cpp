@@ -90,6 +90,7 @@ int main(int argc, char* argv[]) {
 
     // Register systems by phase so scheduling policy lives in the engine instead of boot order.
     auto& input = app.addSystem<InputSystem>(Application::UpdatePhase::Input);
+    app.emplaceService<InputSystem*>(&input);
     auto& interaction = app.addSystem<InteractionSystem>(Application::UpdatePhase::Interaction, input);
     auto& checkpoints = app.addSystem<CheckpointSystem>(Application::UpdatePhase::Interaction);
     auto& physics = app.addSystem<PhysicsSystem>(Application::UpdatePhase::Physics);

@@ -1,13 +1,11 @@
 #pragma once
 
 #include "engine/scene/Scene.h"
-#include "engine/rendering/geometry/MeshLibrary.h"
 #include "game/level/LevelLoader.h"
+#include "game/runtime/RuntimeGameSession.h"
 
-#include <entt/entt.hpp>
 #include <functional>
 #include <string>
-#include <vector>
 
 class LevelBuilder;
 
@@ -18,6 +16,7 @@ public:
     explicit GenericFileScene(const std::string& scenePath);
 
     void onEnter(Application& app) override;
+    void onUpdate(Application& app, float deltaTime) override;
     void onExit(Application& app) override;
 
     /// Register a scripted geometry callback for a specific level ID.
@@ -27,7 +26,6 @@ public:
                                           std::function<void(LevelBuilder&)> callback);
 
 private:
-    MeshLibrary meshLibrary_;
-    std::vector<entt::entity> entities_;
+    RuntimeGameSession session_;
     LevelLoadRequest request_;
 };

@@ -1,17 +1,17 @@
 #include "GenericFileScene.h"
 
 #include "engine/core/Application.h"
-#include "game/content/ContentRegistry.h"
-#include "game/level/LevelBuildContext.h"
-#include "game/level/LevelBuilder.h"
-#include "game/level/LevelLoader.h"
-#include "game/levels/ProceduralGameAssets.h"
-#include "game/rendering/MeshAssetProvider.h"
-#include "game/rendering/EnvironmentProfile.h"
-#include "game/session/RunSession.h"
 #include "engine/core/PathUtils.h"
+#include "engine/input/InputSystem.h"
+#include "game/behavior/BehaviorSystem.h"
+#include "game/content/ContentRegistry.h"
+#include "game/level/LevelBuilder.h"
+#include "game/level/LevelDef.h"
+#include "game/levels/ProceduralGameAssets.h"
+#include "game/runtime/GameplayEventSink.h"
 #include "engine/rendering/assets/ModelLoader.h"
 
+#include <GLFW/glfw3.h>
 #include <filesystem>
 #include <unordered_map>
 
@@ -41,13 +41,12 @@ GenericFileScene::GenericFileScene(const std::string& scenePath) {
 }
 
 void GenericFileScene::onEnter(Application& app) {
-    entities_.clear();
-    LevelBuildContext context{
-        .registry    = app.registry(),
-        .meshLibrary = meshLibrary_,
-        .entities    = entities_,
-    };
-    request_.registerAssets = [](MeshLibrary& library) {
+    auto& content = app.getService<ContentRegistry>();
+
+    LevelLoadRequest request;
+    request.levelId = request_.levelId;
+    request.levelPath = request_.levelPath;
+    request.registerAssets = [](MeshLibrary& library) {
         registerProceduralAssets(library);
 
         // Auto-discover file-based meshes from assets/meshes/ (per D-05)
@@ -70,32 +69,63 @@ void GenericFileScene::onEnter(Application& app) {
     // Look up scripted geometry from the registry (no hard-coded if-chain)
     auto it = scriptedGeometryRegistry().find(request_.levelId);
     if (it != scriptedGeometryRegistry().end()) {
-        request_.buildScriptedGeometry = it->second;
+        request.buildScriptedGeometry = it->second;
     } else {
-        request_.buildScriptedGeometry = {};
+        request.buildScriptedGeometry = {};
     }
 
-    LevelLoadArgs args{
-        .content = &app.getService<ContentRegistry>(),
-        .session = &app.getService<RunSession>()
-    };
-    LevelLoader loader(context);
-    loader.load(request_, args);
+    // Load level definition from scene file
+    LevelDef level = loadLevelDef(resolveProjectPath(request_.levelPath));
+
+    session_.rebuild(level, request_.levelId, request_.levelPath, content, request);
+
+    // Expose session so RenderSystem can access the gameplay registry
+    app.emplaceService<RuntimeGameSession*>(&session_);
+}
+
+void GenericFileScene::onUpdate(Application& app, float deltaTime) {
+    auto* appInput = app.tryGetService<InputSystem*>();
+    if (!appInput) return;
+    InputSystem& src = **appInput;
+    InputSystem& dst = session_.input();
+
+    dst.beginFrame();
+    dst.setCursorLocked(src.isCursorLocked());
+    dst.setWantsCaptureMouse(src.wantsCaptureMouse());
+    for (int key = 0; key < InputSystem::kMaxKeys; ++key) {
+        dst.setKeyPressed(key, src.isKeyPressed(key));
+    }
+    for (int button = 0; button < InputSystem::kMaxButtons; ++button) {
+        dst.setMouseButtonPressed(button, src.isMouseButtonPressed(button));
+    }
+    dst.setMousePosition(src.mousePosition());
+    dst.setMouseDelta(src.mouseDelta());
+    dst.setScrollDelta(src.scrollDelta());
+    for (const auto& event : src.keyPressEvents()) {
+        dst.addKeyPressEvent(event.key, event.scancode);
+    }
+    for (unsigned int ch : src.typedCharacters()) {
+        dst.addTypedCharacter(ch);
+    }
+
+    // Tick gameplay
+    int w, h;
+    glfwGetFramebufferSize(app.window().handle(), &w, &h);
+    float aspect = (h > 0) ? static_cast<float>(w) / static_cast<float>(h) : 1.0f;
+    session_.tick(deltaTime, aspect);
+
+    // Drain gameplay events to application EventBus (for audio etc.)
+    for (const auto& event : session_.eventSink().events()) {
+        if (event.kind == GameplayEvent::Kind::PlaySound) {
+            app.eventBus().publish(PlaySoundEvent{event.id, event.value});
+        } else if (event.kind == GameplayEvent::Kind::ShowMessage) {
+            app.eventBus().publish(ShowMessageEvent{event.id, event.value});
+        }
+    }
+    session_.eventSink().drain();
 }
 
 void GenericFileScene::onExit(Application& app) {
-    for (auto entity : entities_) {
-        if (app.registry().valid(entity)) {
-            app.registry().destroy(entity);
-        }
-    }
-    entities_.clear();
-    auto& ctx = app.registry().ctx();
-    if (ctx.contains<MeshAssetProvider>()) {
-        ctx.erase<MeshAssetProvider>();
-    }
-    if (ctx.contains<ActiveEnvironmentProfile>()) {
-        ctx.erase<ActiveEnvironmentProfile>();
-    }
-    meshLibrary_.clear();
+    (void)app;
+    session_.clear();
 }
