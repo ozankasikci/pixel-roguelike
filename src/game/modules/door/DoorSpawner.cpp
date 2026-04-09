@@ -113,7 +113,7 @@ entt::entity spawnDoorGroup(LevelBuilder& builder,
                 false
             });
 
-        // BehaviorComponent with ToggleDoor so BehaviorSystem processes the interaction
+        // BehaviorComponent with ToggleDoor so GameplayBehaviors processes the interaction
         BehaviorComponent behavior;
         ActionEntry toggleAction;
         toggleAction.type = ActionType::ToggleDoor;
