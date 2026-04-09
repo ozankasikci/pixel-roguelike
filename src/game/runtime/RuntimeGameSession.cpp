@@ -206,15 +206,15 @@ void RuntimeGameSession::tick(float deltaTime, float aspect) {
     performanceStats_.checkpointsMs = elapsedMilliseconds(t0, t1);
 
     t0 = t1;
+    updateRuntimeBehaviors(registry_);
+    tickDoorAnimation(registry_, deltaTime);
+    tickKinematicColliders(registry_, physics_, deltaTime);
+    t1 = Clock::now();
+
+    t0 = t1;
     physics_.update(registry_, deltaTime);
     t1 = Clock::now();
     performanceStats_.physicsMs = elapsedMilliseconds(t0, t1);
-
-    t0 = t1;
-    updateRuntimeBehaviors(registry_);
-    tickDoorAnimation(registry_, deltaTime);
-    tickKinematicColliders(registry_, physics_);
-    t1 = Clock::now();
 
     ContentRegistry* content = nullptr;
     if (registry_.ctx().contains<ContentRegistry*>()) {

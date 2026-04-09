@@ -4,4 +4,4 @@
 
 class PhysicsSystem;
 
-void tickKinematicColliders(GameRegistry& registry, PhysicsSystem& physics);
+void tickKinematicColliders(GameRegistry& registry, PhysicsSystem& physics, float deltaTime);

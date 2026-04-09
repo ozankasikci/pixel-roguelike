@@ -16,6 +16,7 @@
 #include "game/components/ControllableTag.h"
 #include "game/components/KinematicLinkComponent.h"
 #include "game/components/MeshComponent.h"
+#include "game/components/TransformComponent.h"
 #include "game/components/PlayerInteractionLockComponent.h"
 #include "game/components/PlayerMovementComponent.h"
 #include "game/components/PlayerSpawnComponent.h"
@@ -26,6 +27,25 @@
 #include <cassert>
 #include <unordered_set>
 #include <spdlog/spdlog.h>
+
+namespace {
+
+glm::vec3 colliderScale(const ColliderComponent& collider) {
+    if (collider.shape == ColliderShape::Box) {
+        return collider.halfExtents * 2.0f;
+    }
+    return glm::vec3(collider.radius * 2.0f, collider.halfHeight * 2.0f, collider.radius * 2.0f);
+}
+
+glm::mat4 colliderModelMatrix(const ColliderComponent& collider) {
+    TransformComponent transform;
+    transform.position = collider.position;
+    transform.rotation = collider.rotation;
+    transform.scale = colliderScale(collider);
+    return transform.modelMatrix();
+}
+
+} // namespace
 
 LevelLoader::LevelLoader(LevelBuildContext& context)
     : context_(context) {}
@@ -116,6 +136,8 @@ void LevelLoader::load(const LevelLoadRequest& request, const LevelLoadArgs& arg
 
     for (const auto& placement : level.colliders) {
         auto entity = builder.addCollider(placement);
+        spdlog::info("LevelLoader: collider '{}' kinematic={} parent='{}'",
+                     placement.nodeId, placement.kinematic, placement.parentNodeId);
         if (placement.kinematic && !placement.parentNodeId.empty()) {
             kinematicPending.push_back({entity, placement.parentNodeId});
         }
@@ -157,8 +179,27 @@ void LevelLoader::load(const LevelLoadRequest& request, const LevelLoadArgs& arg
             if (pending.entity == entt::null) continue;
             entt::entity parent = nodeIndex.resolve(pending.parentNodeId);
             if (parent != entt::null && registry.all_of<MeshComponent>(parent)) {
+                // Compute local offset: collider world position minus parent mesh world position
+                glm::vec3 localOffset{0.0f};
+                glm::mat4 parentModel(1.0f);
+                glm::mat4 localModel(1.0f);
+                const auto* colliderComp = registry.try_get<ColliderComponent>(pending.entity);
+                const auto* parentMesh = registry.try_get<MeshComponent>(parent);
+                if (colliderComp && parentMesh && parentMesh->useModelOverride) {
+                    parentModel = parentMesh->modelOverride;
+                    glm::vec3 parentPos = glm::vec3(parentModel[3]);
+                    localOffset = colliderComp->position - parentPos;
+                    localModel = glm::inverse(parentModel) * colliderModelMatrix(*colliderComp);
+                } else if (colliderComp) {
+                    const auto* parentTransform = registry.try_get<TransformComponent>(parent);
+                    if (parentTransform) {
+                        parentModel = parentTransform->modelMatrix();
+                        localOffset = colliderComp->position - parentTransform->position;
+                        localModel = glm::inverse(parentModel) * colliderModelMatrix(*colliderComp);
+                    }
+                }
                 registry.emplace<KinematicLinkComponent>(pending.entity,
-                    KinematicLinkComponent{parent});
+                    KinematicLinkComponent{parent, localOffset, localModel});
             } else {
                 spdlog::warn("LevelLoader: kinematic collider parent '{}' not found or has no MeshComponent",
                              pending.parentNodeId);

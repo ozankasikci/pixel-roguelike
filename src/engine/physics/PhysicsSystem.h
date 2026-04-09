@@ -25,7 +25,7 @@ public:
     void shutdownRuntime();
 
     // Kinematic body API (used by KinematicColliderSystem)
-    void moveKinematicBody(entt::entity entity, const glm::vec3& position, const glm::vec3& rotation);
+    void moveKinematicBody(entt::entity entity, const glm::vec3& position, const glm::vec3& rotation, float deltaTime);
 
     // Character controller API (used by gameplay systems)
     void setCharacterVelocity(entt::entity entity, const glm::vec3& velocity);

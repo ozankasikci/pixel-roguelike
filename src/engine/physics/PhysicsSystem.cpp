@@ -223,6 +223,10 @@ JPH::ShapeRefC makeColliderShape(const ColliderComponent& collider) {
     return nullptr;
 }
 
+JPH::ObjectLayer objectLayerForCollider(const ColliderComponent& collider) {
+    return collider.kinematic ? Layers::MOVING : Layers::NON_MOVING;
+}
+
 } // namespace
 
 void PhysicsSystem::init(Application& app) {
@@ -326,7 +330,7 @@ void PhysicsSystem::update(GameRegistry& registry, float deltaTime) {
                     toJoltR(collider.position),
                     toJoltQuat(collider.rotation),
                     collider.kinematic ? JPH::EMotionType::Kinematic : JPH::EMotionType::Static,
-                    Layers::NON_MOVING
+                    objectLayerForCollider(collider)
                 );
                 JPH::BodyID bodyId = bodyInterface.CreateAndAddBody(
                     bodySettings,
@@ -382,7 +386,7 @@ void PhysicsSystem::update(GameRegistry& registry, float deltaTime) {
                     toJoltR(collider.position),
                     toJoltQuat(collider.rotation),
                     collider.kinematic ? JPH::EMotionType::Kinematic : JPH::EMotionType::Static,
-                    Layers::NON_MOVING
+                    objectLayerForCollider(collider)
                 );
                 JPH::BodyID solidId = bodyInterface.CreateAndAddBody(
                     solidSettings,
@@ -459,6 +463,9 @@ void PhysicsSystem::update(GameRegistry& registry, float deltaTime) {
         settings.mMass = 80.0f;
         settings.mUp = JPH::Vec3::sAxisY();
         settings.mSupportingVolume = JPH::Plane(JPH::Vec3::sAxisY(), -cc.capsuleRadius);
+        settings.mPenetrationRecoverySpeed = 10.0f;        // Fast pushback (2x walk speed)
+        settings.mPredictiveContactDistance = 0.1f;        // Default look-ahead
+        settings.mCharacterPadding = 0.02f;                // Default padding
 
         Impl::CharacterBinding binding;
         binding.character = new JPH::CharacterVirtual(
@@ -636,29 +643,49 @@ GroundState PhysicsSystem::getCharacterGroundState(entt::entity entity) const {
     }
 }
 
-void PhysicsSystem::moveKinematicBody(entt::entity entity, const glm::vec3& position, const glm::vec3& rotation) {
+void PhysicsSystem::moveKinematicBody(entt::entity entity,
+                                      const glm::vec3& position,
+                                      const glm::vec3& rotation,
+                                      float deltaTime) {
     if (!impl_ || !impl_->physicsSystem) return;
     auto& bodyInterface = impl_->physicsSystem->GetBodyInterface();
+    const bool canSweep = deltaTime > 0.0f;
 
     // Check staticBodies map (Solid mode kinematic bodies live here)
     auto staticIt = impl_->staticBodies.find(entity);
     if (staticIt != impl_->staticBodies.end()) {
-        bodyInterface.MoveKinematic(
-            staticIt->second.bodyId,
-            toJoltR(position),
-            toJoltQuat(rotation),
-            impl_->fixedTimeStep);
+        if (canSweep) {
+            bodyInterface.MoveKinematic(
+                staticIt->second.bodyId,
+                toJoltR(position),
+                toJoltQuat(rotation),
+                deltaTime);
+        } else {
+            bodyInterface.SetPositionAndRotation(
+                staticIt->second.bodyId,
+                toJoltR(position),
+                toJoltQuat(rotation),
+                JPH::EActivation::Activate);
+        }
         return;
     }
 
     // Check dualBodies map (SolidAndTrigger mode kinematic bodies)
     auto dualIt = impl_->dualBodies.find(entity);
     if (dualIt != impl_->dualBodies.end()) {
-        bodyInterface.MoveKinematic(
-            dualIt->second.solidBodyId,
-            toJoltR(position),
-            toJoltQuat(rotation),
-            impl_->fixedTimeStep);
+        if (canSweep) {
+            bodyInterface.MoveKinematic(
+                dualIt->second.solidBodyId,
+                toJoltR(position),
+                toJoltQuat(rotation),
+                deltaTime);
+        } else {
+            bodyInterface.SetPositionAndRotation(
+                dualIt->second.solidBodyId,
+                toJoltR(position),
+                toJoltQuat(rotation),
+                JPH::EActivation::Activate);
+        }
         bodyInterface.SetPositionAndRotation(
             dualIt->second.sensorBodyId,
             toJoltR(position),

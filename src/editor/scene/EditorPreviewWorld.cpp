@@ -7,6 +7,7 @@
 #include "game/components/MeshComponent.h"
 #include "game/components/ReflectionProbeComponent.h"
 #include "game/components/ColliderComponent.h"
+#include "game/components/KinematicLinkComponent.h"
 #include "game/modules/door/DoorComponents.h"
 #include "game/modules/door/DoorMath.h"
 #include "game/components/TransformComponent.h"
@@ -214,7 +215,26 @@ void EditorPreviewWorld::spawnObject(const EditorSceneObject& object,
                 placement.halfHeight = std::max(0.001f, std::abs(scale.y) * 0.5f);
             }
         }
-        builder.addCollider(placement);
+        auto colliderEntity = builder.addCollider(placement);
+        // Link kinematic colliders to their parent mesh entity
+        if (placement.kinematic && colliderEntity != entt::null) {
+            std::uint64_t parentDocId = document.parentObjectId(object.id);
+            if (parentDocId != 0) {
+                for (const auto& [ecsEntity, docId] : ownerMap_) {
+                    if (docId == parentDocId && registry_.all_of<MeshComponent>(ecsEntity)) {
+                        glm::vec3 localOffset{0.0f};
+                        const auto* meshComp = registry_.try_get<MeshComponent>(ecsEntity);
+                        if (meshComp && meshComp->useModelOverride) {
+                            glm::vec3 parentPos = glm::vec3(meshComp->modelOverride[3]);
+                            localOffset = placement.position - parentPos;
+                        }
+                        registry_.emplace<KinematicLinkComponent>(colliderEntity,
+                            KinematicLinkComponent{ecsEntity, localOffset});
+                        break;
+                    }
+                }
+            }
+        }
         break;
     }
     case EditorSceneObjectKind::ReflectionProbe: {
