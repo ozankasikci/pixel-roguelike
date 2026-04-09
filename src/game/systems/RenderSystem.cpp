@@ -150,6 +150,19 @@ void RenderSystem::update(Application& app, float deltaTime) {
                             true,
                             &frameOutput);
 
+    // Log render pipeline stats periodically
+    {
+        static int renderLogCounter = 0;
+        if (++renderLogCounter >= 300) {
+            const auto& stats = runtimeRenderer_.pipelineStats();
+            spdlog::info("[Render] total {:.1f}ms | shadow {:.1f}ms | scene {:.1f}ms | bloom {:.1f}ms | ssao {:.1f}ms | composite {:.1f}ms | draws {} | lights {} | culled {}",
+                         stats.totalRenderMs, stats.shadowPassMs, stats.scenePassMs,
+                         stats.bloomMs, stats.ssaoMs, stats.compositeMs,
+                         stats.drawCalls, stats.lightCount, stats.culledCount);
+            renderLogCounter = 0;
+        }
+    }
+
     GLFWwindow* win = app.window().handle();
     if (glfwGetKey(win, GLFW_KEY_F1) == GLFW_PRESS && !f1Pressed_) {
         f1Pressed_ = true;

@@ -361,55 +361,7 @@ AssetManifest collectUsedAssets(const std::vector<std::string>& sceneFilter) {
     AssetManifest manifest;
     std::set<std::string> neededMeshIds;
 
-    // 1. Collect texture paths from material files
-    for (const auto& matFile : findFiles(resolveProjectPath("assets/materials"), ".material")) {
-        std::ifstream in(matFile);
-        std::string line;
-        while (std::getline(in, line)) {
-            std::istringstream iss(line);
-            std::string key, value;
-            if (!(iss >> key >> value)) {
-                continue;
-            }
-            if (key == "albedo_map" || key == "normal_map" ||
-                key == "roughness_map" || key == "ao_map") {
-                manifest.texturePaths.insert(value);
-            }
-        }
-    }
-
-    // 2. Collect sky/cloud asset paths from environment files
-    std::vector<std::string> envDirs = {resolveProjectPath("assets/defs/environments"), resolveProjectPath("assets/environments")};
-    for (const auto& dir : envDirs) {
-        for (const auto& envFile : findFiles(dir, ".environment")) {
-            std::ifstream in(envFile);
-            std::string line;
-            while (std::getline(in, line)) {
-                std::istringstream iss(line);
-                std::string key;
-                if (!(iss >> key)) {
-                    continue;
-                }
-                if (key == "sky_cubemap_faces") {
-                    // 6 face paths follow
-                    std::string face;
-                    for (int i = 0; i < 6; ++i) {
-                        if (iss >> face) {
-                            manifest.skyPaths.insert(face);
-                        }
-                    }
-                } else if (key == "sky_cloud_layer_a" || key == "sky_cloud_layer_b" ||
-                           key == "sky_panorama_path" || key == "sky_horizon_layer") {
-                    std::string path;
-                    if (iss >> path) {
-                        manifest.skyPaths.insert(path);
-                    }
-                }
-            }
-        }
-    }
-
-    // 3. Collect mesh IDs from scene files (filtered if sceneFilter is non-empty)
+    // 1. Parse scene files: collect mesh IDs, material IDs, and environment IDs
     for (const auto& sceneFile : findFiles(resolveProjectPath("assets/scenes"), ".scene")) {
         if (!sceneFilter.empty()) {
             const std::string filename = sceneFile.filename().string();
@@ -421,12 +373,98 @@ AssetManifest collectUsedAssets(const std::vector<std::string>& sceneFilter) {
         std::string line;
         while (std::getline(in, line)) {
             std::istringstream iss(line);
-            std::string key, meshId;
-            if (!(iss >> key >> meshId)) {
+            std::string key, value;
+            if (!(iss >> key >> value)) {
                 continue;
             }
             if (key == "mesh") {
-                neededMeshIds.insert(meshId);
+                neededMeshIds.insert(value);
+                // Scan rest of line for "material <id>"
+                std::string token;
+                while (iss >> token) {
+                    if (token == "material" && (iss >> token)) {
+                        manifest.materialIds.insert(token);
+                    }
+                }
+            } else if (key == "environment_profile") {
+                manifest.environmentIds.insert(value);
+            }
+        }
+    }
+
+    // 2. Resolve material parent chains — if material A inherits from B, include B too
+    {
+        std::string matDir = resolveProjectPath("assets/materials");
+        std::set<std::string> pending = manifest.materialIds;
+        while (!pending.empty()) {
+            std::set<std::string> newParents;
+            for (const auto& matId : pending) {
+                fs::path matPath = fs::path(matDir) / (matId + ".material");
+                if (!fs::exists(matPath)) continue;
+                std::ifstream in(matPath);
+                std::string line;
+                while (std::getline(in, line)) {
+                    std::istringstream iss(line);
+                    std::string key, parentId;
+                    if ((iss >> key >> parentId) && key == "parent") {
+                        if (!manifest.materialIds.count(parentId)) {
+                            manifest.materialIds.insert(parentId);
+                            newParents.insert(parentId);
+                        }
+                    }
+                }
+            }
+            pending = newParents;
+        }
+    }
+
+    // 3. Collect texture paths only from referenced materials
+    {
+        std::string matDir = resolveProjectPath("assets/materials");
+        for (const auto& matId : manifest.materialIds) {
+            fs::path matPath = fs::path(matDir) / (matId + ".material");
+            if (!fs::exists(matPath)) continue;
+            std::ifstream in(matPath);
+            std::string line;
+            while (std::getline(in, line)) {
+                std::istringstream iss(line);
+                std::string key, value;
+                if (!(iss >> key >> value)) continue;
+                if (key == "albedo_map" || key == "normal_map" ||
+                    key == "roughness_map" || key == "ao_map") {
+                    manifest.texturePaths.insert(value);
+                }
+            }
+        }
+    }
+
+    // 4. Collect sky/cloud asset paths only from referenced environments
+    {
+        std::vector<std::string> envDirs = {
+            resolveProjectPath("assets/defs/environments"),
+            resolveProjectPath("assets/environments")
+        };
+        for (const auto& dir : envDirs) {
+            for (const auto& envFile : findFiles(dir, ".environment")) {
+                std::string envId = envFile.stem().string();
+                if (!manifest.environmentIds.count(envId)) continue;
+                std::ifstream in(envFile);
+                std::string line;
+                while (std::getline(in, line)) {
+                    std::istringstream iss(line);
+                    std::string key;
+                    if (!(iss >> key)) continue;
+                    if (key == "sky_cubemap_faces") {
+                        std::string face;
+                        for (int i = 0; i < 6; ++i) {
+                            if (iss >> face) manifest.skyPaths.insert(face);
+                        }
+                    } else if (key == "sky_cloud_layer_a" || key == "sky_cloud_layer_b" ||
+                               key == "sky_panorama_path" || key == "sky_horizon_layer") {
+                        std::string path;
+                        if (iss >> path) manifest.skyPaths.insert(path);
+                    }
+                }
             }
         }
     }
@@ -587,8 +625,8 @@ bool packageGame(const EditorBuildConfig& config, const std::string& outputDir,
     fs::path outAssets = resourcesDir / "assets";
     fs::create_directories(outAssets, ec);
 
-    // --- Always-copy directories (small, all needed) ---
-    auto alwaysCopyDirs = {"shaders", "defs", "prefabs", "materials", "fonts", "environments"};
+    // --- Always-copy directories (shaders and fonts are always needed) ---
+    auto alwaysCopyDirs = {"shaders", "fonts"};
     for (const auto& subdir : alwaysCopyDirs) {
         fs::path src = fs::path(resolveProjectPath("assets")) / subdir;
         fs::path dst = outAssets / subdir;
@@ -645,6 +683,75 @@ bool packageGame(const EditorBuildConfig& config, const std::string& outputDir,
 
     // --- Collect and copy referenced assets ---
     AssetManifest manifest = collectUsedAssets(config.buildScenes);
+
+    // --- Copy only referenced material files ---
+    {
+        fs::path matSrc = fs::path(resolveProjectPath("assets/materials"));
+        fs::path matDst = outAssets / "materials";
+        fs::create_directories(matDst, ec);
+        for (const auto& matId : manifest.materialIds) {
+            fs::path src = matSrc / (matId + ".material");
+            if (fs::exists(src, ec)) {
+                fs::copy_file(src, matDst / (matId + ".material"),
+                              fs::copy_options::overwrite_existing, ec);
+            }
+        }
+        char matMsg[128];
+        std::snprintf(matMsg, sizeof(matMsg), "Package: %d of %d materials",
+                      static_cast<int>(manifest.materialIds.size()),
+                      static_cast<int>(findFiles(matSrc, ".material").size()));
+        log.addLine(matMsg, BuildLineKind::Normal);
+    }
+
+    // --- Copy only referenced environment files ---
+    {
+        std::vector<std::pair<fs::path, fs::path>> envDirs = {
+            {resolveProjectPath("assets/environments"), outAssets / "environments"},
+            {resolveProjectPath("assets/defs/environments"), outAssets / "defs" / "environments"}
+        };
+        for (const auto& [srcDir, dstDir] : envDirs) {
+            if (!fs::exists(srcDir, ec)) continue;
+            fs::create_directories(dstDir, ec);
+            for (const auto& envId : manifest.environmentIds) {
+                fs::path src = srcDir / (envId + ".environment");
+                if (fs::exists(src, ec)) {
+                    fs::copy_file(src, dstDir / (envId + ".environment"),
+                                  fs::copy_options::overwrite_existing, ec);
+                }
+            }
+        }
+    }
+
+    // --- Copy defs referenced by scenes (archetypes, weapons, enemies, etc.) ---
+    // For now, copy the entire defs directory minus environments (already handled above).
+    // Def files are small text files — not worth the complexity of per-file filtering yet.
+    {
+        fs::path defsSrc = fs::path(resolveProjectPath("assets/defs"));
+        fs::path defsDst = outAssets / "defs";
+        if (fs::exists(defsSrc, ec)) {
+            for (auto& entry : fs::recursive_directory_iterator(defsSrc, ec)) {
+                if (!entry.is_regular_file()) continue;
+                // Skip environment files — already handled selectively above
+                if (entry.path().extension() == ".environment") continue;
+                fs::path rel = fs::relative(entry.path(), defsSrc, ec);
+                fs::path dst = defsDst / rel;
+                fs::create_directories(dst.parent_path(), ec);
+                fs::copy_file(entry.path(), dst, fs::copy_options::overwrite_existing, ec);
+                ec.clear();
+            }
+        }
+    }
+
+    // --- Copy prefabs directory (small text files, all potentially referenced) ---
+    {
+        fs::path prefabSrc = fs::path(resolveProjectPath("assets/prefabs"));
+        fs::path prefabDst = outAssets / "prefabs";
+        if (fs::exists(prefabSrc, ec)) {
+            fs::copy(prefabSrc, prefabDst,
+                     fs::copy_options::recursive | fs::copy_options::overwrite_existing, ec);
+            ec.clear();
+        }
+    }
 
     int fileCount = 0;
     uintmax_t totalBytes = 0;

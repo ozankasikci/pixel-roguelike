@@ -102,6 +102,17 @@ std::filesystem::path AssetCache::cacheRoot() {
     if (rootPath.filename() == "assets") {
         rootPath = rootPath.parent_path();
     }
+
+    // If running from a .app bundle, Contents/Resources is read-only in practice.
+    // Write cache to ~/Library/Caches/PixelRoguelike/ instead.
+    std::string rootStr = rootPath.string();
+    if (rootStr.find(".app/Contents/Resources") != std::string::npos) {
+        const char* home = std::getenv("HOME");
+        if (home) {
+            return std::filesystem::path(home) / "Library" / "Caches" / "PixelRoguelike";
+        }
+    }
+
     return rootPath / ".cache";
 }
 

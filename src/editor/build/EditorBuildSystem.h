@@ -122,9 +122,11 @@ void launchGame(const EditorBuildConfig& config, const std::string& scenePath);
 
 /// Collected set of asset file paths that are actually referenced by game content.
 struct AssetManifest {
-    std::set<std::string> texturePaths;  // e.g. "assets/packs/.../T_Wall_BaseColor.png"
-    std::set<std::string> skyPaths;      // e.g. "assets/skies/.../px.png"
-    std::set<std::string> meshFiles;     // e.g. "assets/packs/.../SM_Wall.fbx"
+    std::set<std::string> texturePaths;   // e.g. "assets/packs/.../T_Wall_BaseColor.png"
+    std::set<std::string> skyPaths;       // e.g. "assets/skies/.../px.png"
+    std::set<std::string> meshFiles;      // e.g. "assets/packs/.../SM_Wall.fbx"
+    std::set<std::string> materialIds;    // e.g. "qdp_floor", "stone_default"
+    std::set<std::string> environmentIds; // e.g. "default", "outdoor_bright"
 };
 
 /// List all .scene files in assets/scenes/ (sorted alphabetically by filename).
