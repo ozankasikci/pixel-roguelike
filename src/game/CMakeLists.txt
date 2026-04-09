@@ -30,6 +30,7 @@ add_library(gameplay STATIC
     level/LevelLoader.cpp
     levels/cathedral/CathedralPrefabs.cpp
     prefabs/GameplayPrefabs.cpp
+    runtime/GameplayBehaviors.cpp
     runtime/RuntimeGameplay.cpp
     runtime/RuntimeGameSession.cpp
     scenes/GenericFileScene.cpp

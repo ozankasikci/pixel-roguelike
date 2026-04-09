@@ -8,6 +8,7 @@
 #include "game/level/LevelLoader.h"
 #include "game/rendering/EnvironmentDebugSync.h"
 #include "game/rendering/RuntimeSceneRenderer.h"
+#include "game/runtime/GameplayBehaviors.h"
 #include "game/runtime/GameplayEventSink.h"
 #include "game/runtime/RuntimeGameplay.h"
 #include "game/session/RunSession.h"
@@ -102,6 +103,7 @@ private:
     RuntimeEnvironmentSyncState environmentSyncState_;
     RuntimeSessionPerformanceStats performanceStats_;
     std::unique_ptr<RuntimeMutableSnapshot> baselineSnapshot_;
+    GameplayBehaviors behaviors_;
     GameplayEventSink eventSink_;
     ContentRegistry* content_ = nullptr;
     float elapsedTime_ = 0.0f;

@@ -139,6 +139,7 @@ void RuntimeGameSession::rebuild(const LevelDef& level,
     clearEntities();
     runSession_ = RunSession{};
     elapsedTime_ = 0.0f;
+    behaviors_.reset();
     inputSystem_.reset();
 
     registry_.ctx().insert_or_assign<ContentRegistry*>(&content);
@@ -178,6 +179,7 @@ void RuntimeGameSession::resetForPlay() {
     }
 
     elapsedTime_ = 0.0f;
+    behaviors_.reset();
     restoreBaselineState();
     resetDoorVisuals(registry_);
     resetTransientRuntimeState();
@@ -210,7 +212,7 @@ void RuntimeGameSession::tick(float deltaTime, float aspect) {
     performanceStats_.checkpointsMs = elapsedMilliseconds(t0, t1);
 
     t0 = t1;
-    updateRuntimeBehaviors(registry_);
+    behaviors_.tick(registry_, elapsedTime_, eventSink_);
     tickDoorAnimation(registry_, deltaTime);
     tickKinematicColliders(registry_, physics_, deltaTime);
     t1 = Clock::now();
