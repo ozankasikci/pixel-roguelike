@@ -138,6 +138,7 @@ void RuntimeGameSession::rebuild(const LevelDef& level,
     }
     clearEntities();
     runSession_ = RunSession{};
+    elapsedTime_ = 0.0f;
     inputSystem_.reset();
 
     registry_.ctx().insert_or_assign<ContentRegistry*>(&content);
@@ -176,6 +177,7 @@ void RuntimeGameSession::resetForPlay() {
         return;
     }
 
+    elapsedTime_ = 0.0f;
     restoreBaselineState();
     resetDoorVisuals(registry_);
     resetTransientRuntimeState();
@@ -192,6 +194,8 @@ void RuntimeGameSession::tick(float deltaTime, float aspect) {
     if (!physicsInitialized_) {
         return;
     }
+
+    elapsedTime_ += deltaTime;
 
     const Clock::time_point tickStart = Clock::now();
 

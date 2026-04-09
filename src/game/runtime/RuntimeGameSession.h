@@ -8,6 +8,7 @@
 #include "game/level/LevelLoader.h"
 #include "game/rendering/EnvironmentDebugSync.h"
 #include "game/rendering/RuntimeSceneRenderer.h"
+#include "game/runtime/GameplayEventSink.h"
 #include "game/runtime/RuntimeGameplay.h"
 #include "game/session/RunSession.h"
 
@@ -79,6 +80,8 @@ public:
     const DebugParams& debugParams() const { return debugParams_; }
     const RuntimeSessionPerformanceStats& performanceStats() const { return performanceStats_; }
     const SceneRenderPipelineStats& pipelineStats() const { return renderer_.pipelineStats(); }
+    GameplayEventSink& eventSink() { return eventSink_; }
+    float elapsedTime() const { return elapsedTime_; }
 
 private:
     void ensureInitialized();
@@ -99,7 +102,9 @@ private:
     RuntimeEnvironmentSyncState environmentSyncState_;
     RuntimeSessionPerformanceStats performanceStats_;
     std::unique_ptr<RuntimeMutableSnapshot> baselineSnapshot_;
+    GameplayEventSink eventSink_;
     ContentRegistry* content_ = nullptr;
+    float elapsedTime_ = 0.0f;
     bool physicsInitialized_ = false;
     bool rendererInitialized_ = false;
 };
