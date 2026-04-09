@@ -1,6 +1,7 @@
 #include "game/systems/RenderSystem.h"
 
 #include "engine/core/Application.h"
+#include "game/runtime/RuntimeGameSession.h"
 #include "engine/core/Window.h"
 #include "game/components/MeshComponent.h"
 #include "game/components/PlayerMovementComponent.h"
@@ -130,7 +131,9 @@ void RenderSystem::handleCapture(Application& app, int displayW, int displayH) {
 }
 
 void RenderSystem::update(Application& app, float deltaTime) {
-    auto& registry = app.registry();
+    auto* sessionPtr = app.tryGetService<RuntimeGameSession*>();
+    if (!sessionPtr || !*sessionPtr) return;
+    auto& registry = (*sessionPtr)->registry();
     const bool escapeOpenedCursor = input_.isKeyJustPressed(GLFW_KEY_ESCAPE) && !input_.isCursorLocked();
 
     const int internalIndex = std::clamp(debugParams_.internalResIndex, 0, 2);
