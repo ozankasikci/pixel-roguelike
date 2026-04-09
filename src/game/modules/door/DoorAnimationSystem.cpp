@@ -1,6 +1,5 @@
 #include "game/modules/door/DoorAnimationSystem.h"
 
-#include "engine/core/Application.h"
 #include "game/modules/door/DoorComponents.h"
 #include "game/modules/door/DoorMath.h"
 #include "game/components/InteractableComponent.h"
@@ -87,34 +86,6 @@ void tickDoorAnimation(GameRegistry& registry, float deltaTime) {
             interactable->enabled = !isDoorFullyOpen(state);
         }
     }
-}
-
-void DoorAnimationSystem::init(Application& app) {
-    auto& registry = app.registry();
-
-    auto lockView = registry.view<PlayerInteractionLockComponent>();
-    for (auto [entity, lock] : lockView.each()) {
-        (void)entity;
-        lock.active = false;
-        lock.remainingTime = 0.0f;
-    }
-
-    // Initialize door leaf positions to closed state
-    auto doorView = registry.view<DoorConfigComponent, DoorStateComponent>();
-    for (auto [entity, config, state] : doorView.each()) {
-        (void)entity;
-        state.progress = 0.0f;
-        state.targetState = DoorTargetState::Closed;
-        updateDoorLeaf(registry, config.leftLeaf, 0.0f);
-        updateDoorLeaf(registry, config.rightLeaf, 0.0f);
-    }
-}
-
-void DoorAnimationSystem::update(Application& app, float deltaTime) {
-    tickDoorAnimation(app.registry(), deltaTime);
-}
-
-void DoorAnimationSystem::shutdown() {
 }
 
 void resetDoorVisuals(GameRegistry& registry) {

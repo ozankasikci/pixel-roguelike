@@ -36,12 +36,7 @@ add_library(gameplay STATIC
     scenes/GenericFileScene.cpp
     session/EquipmentState.cpp
     systems/AudioListenerSystem.cpp
-    systems/CameraSystem.cpp
-    systems/CheckpointSystem.cpp
-    systems/InteractionSystem.cpp
-    systems/InventorySystem.cpp
     systems/KinematicColliderSystem.cpp
-    systems/PlayerMovementSystem.cpp
     systems/RenderSystem.cpp
     ui/GameOverlays.cpp
 )
