@@ -1,5 +1,6 @@
 #pragma once
 
+#include "engine/camera/CameraManager.h"
 #include "engine/input/InputSystem.h"
 #include "engine/physics/PhysicsSystem.h"
 #include "engine/rendering/geometry/MeshLibrary.h"
@@ -83,6 +84,8 @@ public:
     const SceneRenderPipelineStats& pipelineStats() const { return renderer_.pipelineStats(); }
     GameplayEventSink& eventSink() { return eventSink_; }
     float elapsedTime() const { return elapsedTime_; }
+    CameraManager& cameraManager() { return cameraManager_; }
+    const CameraManager& cameraManager() const { return cameraManager_; }
 
 private:
     void ensureInitialized();
@@ -106,6 +109,7 @@ private:
     GameplayBehaviors behaviors_;
     GameplayEventSink eventSink_;
     ContentRegistry* content_ = nullptr;
+    CameraManager cameraManager_;
     float elapsedTime_ = 0.0f;
     bool physicsInitialized_ = false;
     bool rendererInitialized_ = false;

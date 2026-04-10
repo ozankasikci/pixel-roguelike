@@ -20,6 +20,7 @@ add_library(game_rendering STATIC
 target_include_directories(game_rendering PUBLIC ${CMAKE_SOURCE_DIR}/src)
 target_link_libraries(game_rendering PUBLIC
     game_content
+    engine_camera
     engine_ui
 )
 target_link_libraries(game_rendering PRIVATE tinygltf)
@@ -45,6 +46,7 @@ target_link_libraries(gameplay PUBLIC
     game_content
     game_rendering
     engine_audio
+    engine_camera
     engine_input
     engine_physics
     EnTT::EnTT

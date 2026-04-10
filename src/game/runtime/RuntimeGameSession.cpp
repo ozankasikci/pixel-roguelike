@@ -2,7 +2,6 @@
 
 #include "engine/core/PathUtils.h"
 #include "engine/rendering/assets/ModelLoader.h"
-#include "game/components/CameraComponent.h"
 #include "game/components/CheckpointComponent.h"
 #include "game/components/CharacterControllerComponent.h"
 #include "game/modules/checkpoint/CheckpointFeedbackState.h"
@@ -15,7 +14,6 @@
 #include "game/components/PlayerMovementComponent.h"
 #include "game/components/PlayerSpawnComponent.h"
 #include "game/components/PlayerTag.h"
-#include "game/components/PrimaryCameraTag.h"
 #include "game/components/TransformComponent.h"
 #include "game/content/ContentRegistry.h"
 #include "game/levels/ProceduralGameAssets.h"
@@ -37,11 +35,15 @@ struct RuntimeMutableSnapshot {
     struct PlayerState {
         entt::entity entity = entt::null;
         TransformComponent transform{};
-        CameraComponent camera{};
         PlayerMovementComponent movement{};
         PlayerInteractionLockComponent interactionLock{};
         PlayerSpawnComponent spawn{};
         bool valid = false;
+
+        // Camera baseline (captured from CameraManager)
+        float cameraYaw = -90.0f;
+        float cameraPitch = 0.0f;
+        float cameraFov = 70.0f;
     };
 
     RunSession runSession{};
@@ -150,6 +152,7 @@ void RuntimeGameSession::rebuild(const LevelDef& level,
     registry_.ctx().insert_or_assign<ContentRegistry*>(&content);
     registry_.ctx().insert_or_assign<RunSession*>(&runSession_);
     registry_.ctx().insert_or_assign<PhysicsSystem*>(&physics_);
+    registry_.ctx().insert_or_assign<CameraManager*>(&cameraManager_);
 
     LevelBuildContext context{
         .registry = registry_,
@@ -208,7 +211,7 @@ void RuntimeGameSession::tick(float deltaTime, float aspect) {
     const Clock::time_point tickStart = Clock::now();
 
     Clock::time_point t0 = Clock::now();
-    updateRuntimeInteraction(registry_, inputSystem_);
+    updateRuntimeInteraction(registry_, inputSystem_, cameraManager_);
     Clock::time_point t1 = Clock::now();
     performanceStats_.interactionMs = elapsedMilliseconds(t0, t1);
 
@@ -240,12 +243,13 @@ void RuntimeGameSession::tick(float deltaTime, float aspect) {
     performanceStats_.inventoryMs = elapsedMilliseconds(t0, t1);
 
     t0 = t1;
-    tickPlayerMovement(registry_, inputSystem_, physics_, deltaTime);
+    tickPlayerMovement(registry_, inputSystem_, cameraManager_, physics_, deltaTime);
     t1 = Clock::now();
     performanceStats_.movementMs = elapsedMilliseconds(t0, t1);
 
     t0 = t1;
-    tickPlayerCamera(registry_, inputSystem_, aspect, deltaTime);
+    tickPlayerCamera(registry_, inputSystem_, cameraManager_, aspect, deltaTime);
+    cameraManager_.update(deltaTime);
     t1 = Clock::now();
     performanceStats_.cameraMs = elapsedMilliseconds(t0, t1);
 
@@ -269,14 +273,15 @@ bool RuntimeGameSession::setPrimaryCameraView(const glm::vec3& position,
                                               float yaw,
                                               float pitch,
                                               const std::optional<float>& fov) {
-    auto view = registry_.view<TransformComponent, CameraComponent, PrimaryCameraTag>();
-    for (auto [entity, transform, camera] : view.each()) {
+    cameraManager_.setBaseState(position, yaw, std::clamp(pitch, -89.0f, 89.0f));
+    if (fov.has_value()) {
+        const auto& base = cameraManager_.getBaseState();
+        cameraManager_.setProjection(fov.value(), 16.0f / 9.0f, base.nearPlane, base.farPlane);
+    }
+
+    auto view = registry_.view<TransformComponent, PlayerTag>();
+    for (auto [entity, transform] : view.each()) {
         transform.position = position;
-        camera.yaw = yaw;
-        camera.pitch = std::clamp(pitch, -89.0f, 89.0f);
-        if (fov.has_value()) {
-            camera.fov = fov.value();
-        }
 
         if (registry_.all_of<PlayerMovementComponent>(entity)) {
             auto& movement = registry_.get<PlayerMovementComponent>(entity);
@@ -330,6 +335,7 @@ RuntimeSceneRenderOutput RuntimeGameSession::render(float deltaTime,
         return output;
     }
     renderer_.render(registry_,
+                     cameraManager_.getState(),
                      debugParams_,
                      deltaTime,
                      internalWidth,
@@ -350,13 +356,17 @@ void RuntimeGameSession::captureBaselineState() {
     baselineSnapshot_->doors.clear();
     baselineSnapshot_->checkpoints.clear();
 
-    auto playerView = registry_.view<TransformComponent, CameraComponent, PlayerMovementComponent,
+    auto playerView = registry_.view<TransformComponent, PlayerMovementComponent,
                                      PlayerInteractionLockComponent, PlayerSpawnComponent, PlayerTag>();
-    for (auto [entity, transform, camera, movement, lock, spawn] : playerView.each()) {
+    for (auto [entity, transform, movement, lock, spawn] : playerView.each()) {
         baselineSnapshot_->player.entity = entity;
         baselineSnapshot_->player.transform = transform;
-        baselineSnapshot_->player.camera = camera;
         baselineSnapshot_->player.movement = movement;
+
+        const auto& baseCam = cameraManager_.getBaseState();
+        baselineSnapshot_->player.cameraYaw = baseCam.yaw;
+        baselineSnapshot_->player.cameraPitch = baseCam.pitch;
+        baselineSnapshot_->player.cameraFov = baseCam.fov;
         baselineSnapshot_->player.interactionLock = lock;
         baselineSnapshot_->player.spawn = spawn;
         baselineSnapshot_->player.valid = true;
@@ -390,9 +400,15 @@ void RuntimeGameSession::restoreBaselineState() {
         registry_.patch<TransformComponent>(player, [&](auto& component) {
             component = baselineSnapshot_->player.transform;
         });
-        registry_.patch<CameraComponent>(player, [&](auto& component) {
-            component = baselineSnapshot_->player.camera;
-        });
+        cameraManager_.setBaseState(baselineSnapshot_->player.transform.position,
+                                    baselineSnapshot_->player.cameraYaw,
+                                    baselineSnapshot_->player.cameraPitch);
+        {
+            const auto& base = cameraManager_.getBaseState();
+            cameraManager_.setProjection(baselineSnapshot_->player.cameraFov,
+                                         16.0f / 9.0f, base.nearPlane, base.farPlane);
+        }
+        cameraManager_.clearEffects();
         registry_.patch<PlayerMovementComponent>(player, [&](auto& component) {
             component = baselineSnapshot_->player.movement;
         });
@@ -470,5 +486,9 @@ void RuntimeGameSession::clearEntities() {
     if (ctx.contains<PhysicsSystem*>()) {
         ctx.erase<PhysicsSystem*>();
     }
+    if (ctx.contains<CameraManager*>()) {
+        ctx.erase<CameraManager*>();
+    }
+    cameraManager_.clearEffects();
     baselineSnapshot_.reset();
 }
