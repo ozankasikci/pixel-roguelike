@@ -69,10 +69,22 @@ target_link_libraries(engine_physics PRIVATE Jolt)
 
 add_library(engine_audio STATIC
     audio/AudioSystem.cpp
+    audio/AudioEngine.cpp
+    audio/backend/ALDevice.cpp
+    audio/backend/ALSourcePool.cpp
+    audio/backend/ALBufferCache.cpp
+    audio/backend/ALStreamPlayer.cpp
+    audio/backend/ALEffectSlots.cpp
+    audio/mix/Voice.cpp
+    audio/mix/VoiceManager.cpp
+    audio/mix/BusGraph.cpp
+    audio/mix/OcclusionProcessor.cpp
+    audio/mix/ReverbManager.cpp
+    audio/events/EventRegistry.cpp
     ${CMAKE_SOURCE_DIR}/external/stb_vorbis.c
 )
 target_include_directories(engine_audio PUBLIC ${CMAKE_SOURCE_DIR}/src)
 target_include_directories(engine_audio PRIVATE ${CMAKE_SOURCE_DIR}/external)
 target_link_libraries(engine_audio PUBLIC engine_core glm::glm)
-target_link_libraries(engine_audio PRIVATE OpenAL::OpenAL)
+target_link_libraries(engine_audio PRIVATE OpenAL::OpenAL nlohmann_json::nlohmann_json spdlog::spdlog)
 set_source_files_properties(${CMAKE_SOURCE_DIR}/external/stb_vorbis.c PROPERTIES LANGUAGE C)
