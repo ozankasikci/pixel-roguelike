@@ -132,7 +132,7 @@ void tickPlayerMovement(GameRegistry& registry,
         movement.grounded = (physics.getCharacterGroundState(entity) == GroundState::OnGround);
 
         // Footstep audio: accumulate horizontal distance while grounded and moving
-        constexpr float kStepDistance = 1.8f;
+        constexpr float kStepDistance = 0.7f;
         if (movement.grounded && hasInput) {
             const float horizontalSpeed =
                 glm::length(glm::vec2(movement.velocity.x, movement.velocity.z));
