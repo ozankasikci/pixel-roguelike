@@ -101,7 +101,7 @@ void EditorRuntimePreviewSession::tick(float deltaTime, float aspect) {
             // Use time-based stepping instead of distance
             // Trigger one footstep every ~0.5 seconds of movement
             static float timeSinceLastStep = 0.0f;
-            constexpr float kStepInterval = 0.5f; // seconds between steps
+            constexpr float kStepInterval = 1.2f; // seconds between steps
             if (horizontalDist > 0.001f) {
                 timeSinceLastStep += deltaTime;
                 if (timeSinceLastStep >= kStepInterval) {
