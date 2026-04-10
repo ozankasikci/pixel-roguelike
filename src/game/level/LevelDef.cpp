@@ -158,6 +158,7 @@ struct LevelNodeRef {
         Archetype,
         Group,
         DoorGroup,
+        Checkpoint,
     };
 
     Kind kind = Kind::Mesh;
@@ -174,6 +175,7 @@ ActionType parseActionTypeName(const std::string& path, int lineNumber, const st
     if (name == "open_door")       return ActionType::OpenDoor;
     if (name == "close_door")      return ActionType::CloseDoor;
     if (name == "toggle_door")     return ActionType::ToggleDoor;
+    if (name == "activate_checkpoint") return ActionType::ActivateCheckpoint;
     if (name == "play_sound")      return ActionType::PlaySound;
     if (name == "set_light")       return ActionType::SetLight;
     if (name == "flicker_light")   return ActionType::FlickerLight;
@@ -367,6 +369,9 @@ ActionEntry parseActionEntry(const std::string& path,
     case ActionType::ToggleDoor:
         entry.params = DoorActionParams{};
         break;
+    case ActionType::ActivateCheckpoint:
+        entry.params = ActivateCheckpointParams{};
+        break;
     case ActionType::PlaySound:
         entry.params = SoundActionParams{};
         break;
@@ -430,6 +435,9 @@ ActionEntry parseActionEntry(const std::string& path,
         case ActionType::CloseDoor:
         case ActionType::ToggleDoor:
             parseDoorActionParams(std::get<DoorActionParams>(entry.params), path, lineNumber, tokens, i);
+            break;
+        case ActionType::ActivateCheckpoint:
+            throwParseError(path, lineNumber, "unknown activate_checkpoint action parameter '" + tok + "'");
             break;
         case ActionType::PlaySound:
             parseSoundActionParams(std::get<SoundActionParams>(entry.params), path, lineNumber, tokens, i);
@@ -542,6 +550,7 @@ const char* actionTypeName(ActionType type) {
     case ActionType::OpenDoor:       return "open_door";
     case ActionType::CloseDoor:      return "close_door";
     case ActionType::ToggleDoor:     return "toggle_door";
+    case ActionType::ActivateCheckpoint: return "activate_checkpoint";
     case ActionType::PlaySound:      return "play_sound";
     case ActionType::SetLight:       return "set_light";
     case ActionType::FlickerLight:   return "flicker_light";
@@ -572,6 +581,8 @@ void serializeActionEntry(std::ostringstream& out, const std::string& eventType,
         using T = std::decay_t<decltype(params)>;
         if constexpr (std::is_same_v<T, DoorActionParams>) {
             out << " duration " << formatFloat(params.duration);
+        } else if constexpr (std::is_same_v<T, ActivateCheckpointParams>) {
+            (void)params;
         } else if constexpr (std::is_same_v<T, SoundActionParams>) {
             if (!params.soundId.empty()) out << " sound " << params.soundId;
             out << " volume " << formatFloat(params.volume);
@@ -1017,6 +1028,7 @@ LevelDef resolveLevelHierarchy(const LevelDef& data) {
                  + data.archetypes.size()
                  + data.groups.size()
                  + data.doors.size()
+                 + data.checkpoints.size()
                  + (data.hasPlayerSpawn ? 1u : 0u));
 
     for (std::size_t i = 0; i < data.meshes.size(); ++i) {
@@ -1042,6 +1054,9 @@ LevelDef resolveLevelHierarchy(const LevelDef& data) {
     }
     for (std::size_t i = 0; i < data.doors.size(); ++i) {
         refs.push_back(LevelNodeRef{LevelNodeRef::Kind::DoorGroup, i, data.doors[i].nodeId, data.doors[i].parentNodeId});
+    }
+    for (std::size_t i = 0; i < data.checkpoints.size(); ++i) {
+        refs.push_back(LevelNodeRef{LevelNodeRef::Kind::Checkpoint, i, data.checkpoints[i].nodeId, data.checkpoints[i].parentNodeId});
     }
 
     std::unordered_map<std::string, std::size_t> nodeLookup;
@@ -1095,6 +1110,10 @@ LevelDef resolveLevelHierarchy(const LevelDef& data) {
         case LevelNodeRef::Kind::DoorGroup: {
             const auto& dg = data.doors[ref.index];
             return makeTransformMatrix(dg.position, glm::vec3(0.0f, dg.yawDegrees, 0.0f), dg.scale);
+        }
+        case LevelNodeRef::Kind::Checkpoint: {
+            const auto& checkpoint = data.checkpoints[ref.index];
+            return makeTransformMatrix(checkpoint.position, glm::vec3(0.0f), glm::vec3(1.0f));
         }
         }
         return glm::mat4(1.0f);
@@ -1206,6 +1225,13 @@ LevelDef resolveLevelHierarchy(const LevelDef& data) {
                 dg.yawDegrees = rotation.y;
                 dg.scale = glm::max(scale, glm::vec3(0.01f));
             }
+            break;
+        }
+        case LevelNodeRef::Kind::Checkpoint: {
+            auto& checkpoint = resolved.checkpoints[refs[idx].index];
+            checkpoint.position = glm::vec3(worldMatrices[idx][3]);
+            checkpoint.respawnPosition = glm::vec3(parentMatrix * glm::vec4(data.checkpoints[refs[idx].index].respawnPosition, 1.0f));
+            checkpoint.lightOffset = glm::vec3(parentMatrix * glm::vec4(data.checkpoints[refs[idx].index].lightOffset, 0.0f));
             break;
         }
         }

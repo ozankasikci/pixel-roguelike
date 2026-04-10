@@ -77,6 +77,9 @@ void EditorSceneDocument::loadFromSceneFile(const std::string& scenePath, const 
     if (level.hasPlayerSpawn) {
         setPlayerSpawn(level.playerSpawn);
     }
+    for (const auto& checkpoint : level.checkpoints) {
+        addCheckpoint(checkpoint);
+    }
     for (const auto& archetype : level.archetypes) {
         addArchetype(archetype);
     }
@@ -210,6 +213,10 @@ std::uint64_t EditorSceneDocument::setPlayerSpawn(const LevelPlayerSpawn& placem
     return addObject(EditorSceneObjectKind::PlayerSpawn, placement);
 }
 
+std::uint64_t EditorSceneDocument::addCheckpoint(const LevelCheckpointPlacement& placement) {
+    return addObject(EditorSceneObjectKind::Checkpoint, placement);
+}
+
 std::uint64_t EditorSceneDocument::addArchetype(const LevelArchetypePlacement& placement) {
     return addObject(EditorSceneObjectKind::Archetype, placement);
 }
@@ -271,6 +278,7 @@ bool EditorSceneDocument::supportsParenting(std::uint64_t id) const {
     }
     return object->kind == EditorSceneObjectKind::Mesh
         || object->kind == EditorSceneObjectKind::Collider
+        || object->kind == EditorSceneObjectKind::Checkpoint
         || object->kind == EditorSceneObjectKind::Archetype
         || object->kind == EditorSceneObjectKind::Group
         || object->kind == EditorSceneObjectKind::DoorGroup;
@@ -587,6 +595,11 @@ bool EditorSceneDocument::applyWorldTransform(std::uint64_t id, const glm::mat4&
         } else if constexpr (std::is_same_v<T, LevelPlayerSpawn>) {
             p.position = glm::vec3(localMatrix[3]);
             return true;
+        } else if constexpr (std::is_same_v<T, LevelCheckpointPlacement>) {
+            const glm::vec3 previousPosition = p.position;
+            p.position = glm::vec3(localMatrix[3]);
+            p.respawnPosition += (p.position - previousPosition);
+            return true;
         } else if constexpr (std::is_same_v<T, LevelArchetypePlacement>) {
             if (!decomposeTransformMatrix(localMatrix, position, rotation, scale)) {
                 return false;
@@ -668,6 +681,8 @@ LevelDef EditorSceneDocument::toLevelDef() const {
             } else if constexpr (std::is_same_v<T, LevelPlayerSpawn>) {
                 level.playerSpawn = p;
                 level.hasPlayerSpawn = true;
+            } else if constexpr (std::is_same_v<T, LevelCheckpointPlacement>) {
+                level.checkpoints.push_back(p);
             } else if constexpr (std::is_same_v<T, LevelArchetypePlacement>) {
                 level.archetypes.push_back(p);
             } else if constexpr (std::is_same_v<T, LevelGroupNode>) {
@@ -808,6 +823,8 @@ glm::mat4 EditorSceneDocument::localTransformMatrix(const EditorSceneObject& obj
             return makeTransformMatrix(p.position, glm::vec3(0.0f), p.extents * 2.0f);
         } else if constexpr (std::is_same_v<T, LevelPlayerSpawn>) {
             return makeTransformMatrix(p.position, glm::vec3(0.0f), glm::vec3(1.0f));
+        } else if constexpr (std::is_same_v<T, LevelCheckpointPlacement>) {
+            return makeTransformMatrix(p.position, glm::vec3(0.0f), glm::vec3(1.0f));
         } else if constexpr (std::is_same_v<T, LevelArchetypePlacement>) {
             return makeTransformMatrix(p.position, glm::vec3(0.0f, p.yawDegrees, 0.0f), glm::vec3(1.0f));
         } else if constexpr (std::is_same_v<T, LevelGroupNode>) {
@@ -848,6 +865,8 @@ const char* editorSceneObjectKindName(EditorSceneObjectKind kind) {
         return "Reflection Probe";
     case EditorSceneObjectKind::PlayerSpawn:
         return "Player Spawn";
+    case EditorSceneObjectKind::Checkpoint:
+        return "Checkpoint";
     case EditorSceneObjectKind::Archetype:
         return "Archetype";
     case EditorSceneObjectKind::Group:
@@ -887,6 +906,8 @@ std::string editorSceneObjectLabel(const EditorSceneObject& object) {
         } else if constexpr (std::is_same_v<T, LevelGroupNode>) {
             label << " [" << p.name << "]";
         } else if constexpr (std::is_same_v<T, LevelDoorPlacement>) {
+            label << " [" << p.name << "]";
+        } else if constexpr (std::is_same_v<T, LevelCheckpointPlacement>) {
             label << " [" << p.name << "]";
         }
         // LevelPlayerSpawn: no suffix needed

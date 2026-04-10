@@ -71,6 +71,7 @@ enum class EditorPlacementKind {
     DirectionalLight,
     Collider,
     PlayerSpawn,
+    Checkpoint,
     Archetype,
 };
 

@@ -6,8 +6,11 @@
 #include "game/components/LightComponent.h"
 #include "game/components/MeshComponent.h"
 #include "game/components/ReflectionProbeComponent.h"
+#include "game/components/CheckpointComponent.h"
 #include "game/components/ColliderComponent.h"
 #include "game/components/KinematicLinkComponent.h"
+#include "game/components/InteractableComponent.h"
+#include "game/modules/checkpoint/CheckpointSpawner.h"
 #include "game/modules/door/DoorComponents.h"
 #include "game/modules/door/DoorMath.h"
 #include "game/components/TransformComponent.h"
@@ -31,6 +34,15 @@ namespace {
 
 glm::vec3 transformPoint(const glm::mat4& matrix, const glm::vec3& point) {
     return glm::vec3(matrix * glm::vec4(point, 1.0f));
+}
+
+glm::vec3 transformVector(const glm::mat4& matrix, const glm::vec3& vector) {
+    return glm::vec3(matrix * glm::vec4(vector, 0.0f));
+}
+
+glm::mat4 parentWorldMatrix(const EditorSceneDocument& document, std::uint64_t objectId) {
+    const std::uint64_t parentId = document.parentObjectId(objectId);
+    return parentId != 0 ? document.worldTransformMatrix(parentId) : glm::mat4(1.0f);
 }
 
 EditorObjectBounds transformBounds(const glm::vec3& boundsMin,
@@ -254,6 +266,16 @@ void EditorPreviewWorld::spawnObject(const EditorSceneObject& object,
     }
     case EditorSceneObjectKind::PlayerSpawn:
         break;
+    case EditorSceneObjectKind::Checkpoint: {
+        auto placement = std::get<LevelCheckpointPlacement>(object.payload);
+        const glm::mat4 worldMatrix = document.worldTransformMatrix(object.id);
+        const glm::mat4 parentMatrix = parentWorldMatrix(document, object.id);
+        placement.position = glm::vec3(worldMatrix[3]);
+        placement.respawnPosition = transformPoint(parentMatrix, placement.respawnPosition);
+        placement.lightOffset = transformVector(parentMatrix, placement.lightOffset);
+        spawnCheckpointEntity(builder, placement);
+        break;
+    }
     case EditorSceneObjectKind::Group:
         break;
     case EditorSceneObjectKind::DoorGroup: {
@@ -494,6 +516,35 @@ void EditorPreviewWorld::syncTransforms(const EditorSceneDocument& document) {
                 } else {
                     collider.radius = std::max(0.001f, (std::abs(scale.x) + std::abs(scale.z)) * 0.25f);
                     collider.halfHeight = std::max(0.001f, std::abs(scale.y) * 0.5f);
+                }
+            }
+            break;
+        }
+        case EditorSceneObjectKind::Checkpoint: {
+            const auto& checkpointPlacement = std::get<LevelCheckpointPlacement>(object->payload);
+            const glm::mat4 parentMatrix = parentWorldMatrix(document, object->id);
+            const glm::vec3 checkpointPosition = glm::vec3(worldMatrix[3]);
+            const glm::vec3 respawnPosition = transformPoint(parentMatrix, checkpointPlacement.respawnPosition);
+            const glm::vec3 lightOffset = transformVector(parentMatrix, checkpointPlacement.lightOffset);
+            const glm::vec3 lightPosition = checkpointPosition + lightOffset;
+
+            if (registry_.all_of<CheckpointComponent>(entity)) {
+                transform.position = checkpointPosition;
+                if (auto* checkpoint = registry_.try_get<CheckpointComponent>(entity)) {
+                    checkpoint->respawnPosition = respawnPosition;
+                    checkpoint->interactDistance = checkpointPlacement.interactDistance;
+                    checkpoint->interactDotThreshold = checkpointPlacement.interactDotThreshold;
+                }
+                if (auto* interactable = registry_.try_get<InteractableComponent>(entity)) {
+                    interactable->interactDistance = checkpointPlacement.interactDistance;
+                    interactable->interactDotThreshold = checkpointPlacement.interactDotThreshold;
+                }
+            } else if (registry_.all_of<LightComponent>(entity)) {
+                transform.position = lightPosition;
+                if (auto* light = registry_.try_get<LightComponent>(entity)) {
+                    light->color = checkpointPlacement.lightColor;
+                    light->radius = checkpointPlacement.lightRadius;
+                    light->intensity = checkpointPlacement.lightIntensity;
                 }
             }
             break;

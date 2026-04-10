@@ -5,6 +5,7 @@
 #include "engine/audio/AudioSystem.h"
 #include "engine/input/InputSystem.h"
 #include "engine/ui/ImGuiLayer.h"
+#include "game/modules/checkpoint/CheckpointModule.h"
 #include "game/modules/door/DoorModule.h"
 #include "game/systems/AudioListenerSystem.h"
 #include "game/systems/RenderSystem.h"
@@ -79,6 +80,7 @@ int main(int argc, char* argv[]) {
     app.registry().ctx().insert_or_assign<RunSession*>(&app.getService<RunSession>());
 
     registerDoorModule();
+    registerCheckpointModule();
 
     // Register systems by phase so scheduling policy lives in the engine instead of boot order.
     // Gameplay systems (interaction, checkpoints, doors, movement, camera) are handled by

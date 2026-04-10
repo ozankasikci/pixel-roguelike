@@ -17,6 +17,7 @@ enum class EditorSceneObjectKind {
     Collider,
     ReflectionProbe,
     PlayerSpawn,
+    Checkpoint,
     Archetype,
     Group,
     DoorGroup,
@@ -28,6 +29,7 @@ using EditorSceneObjectPayload = std::variant<
     LevelColliderPlacement,
     LevelReflectionProbePlacement,
     LevelPlayerSpawn,
+    LevelCheckpointPlacement,
     LevelArchetypePlacement,
     LevelGroupNode,
     LevelDoorPlacement>;
@@ -77,6 +79,7 @@ public:
     std::uint64_t addCollider(const LevelColliderPlacement& placement);
     std::uint64_t addReflectionProbe(const LevelReflectionProbePlacement& placement);
     std::uint64_t setPlayerSpawn(const LevelPlayerSpawn& placement);
+    std::uint64_t addCheckpoint(const LevelCheckpointPlacement& placement);
     std::uint64_t addArchetype(const LevelArchetypePlacement& placement);
     std::uint64_t addGroup(const LevelGroupNode& placement);
     std::uint64_t addDoorGroup(const LevelDoorPlacement& placement);

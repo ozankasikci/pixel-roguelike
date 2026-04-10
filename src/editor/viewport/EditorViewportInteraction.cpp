@@ -34,6 +34,7 @@ bool isViewportSelectableKind(const EditorSelectionHandle& handle, const EditorU
     case EditorSceneObjectKind::PlayerSpawn:
         return ui.showSpawnMarker;
     case EditorSceneObjectKind::Mesh:
+    case EditorSceneObjectKind::Checkpoint:
     case EditorSceneObjectKind::Archetype:
     case EditorSceneObjectKind::Group:
     case EditorSceneObjectKind::DoorGroup:
@@ -125,6 +126,11 @@ EditorPlacementState makePlacementState(const EditorDragPayload& payload) {
 
     switch (payload.kind) {
     case EditorPlacementKind::Mesh:
+        state.archetypeId.clear();
+        break;
+    case EditorPlacementKind::Checkpoint:
+        state.meshId.clear();
+        state.materialId.clear();
         state.archetypeId.clear();
         break;
     case EditorPlacementKind::Archetype:
@@ -302,6 +308,7 @@ bool applyGizmoToSelectedObject(EditorSceneDocument& document,
         case EditorSceneObjectKind::Mesh:
         case EditorSceneObjectKind::Collider:
         case EditorSceneObjectKind::ReflectionProbe:
+        case EditorSceneObjectKind::Checkpoint:
         case EditorSceneObjectKind::Archetype:
         case EditorSceneObjectKind::Group:
         case EditorSceneObjectKind::DoorGroup:
@@ -355,6 +362,7 @@ bool applyGizmoToSelectedObject(EditorSceneDocument& document,
         case EditorSceneObjectKind::Mesh:
         case EditorSceneObjectKind::Collider:
         case EditorSceneObjectKind::ReflectionProbe:
+        case EditorSceneObjectKind::Checkpoint:
         case EditorSceneObjectKind::Archetype:
         case EditorSceneObjectKind::Group:
         case EditorSceneObjectKind::DoorGroup:
@@ -457,6 +465,7 @@ bool applyGizmoToSelectedObject(EditorSceneDocument& document,
         case EditorSceneObjectKind::Mesh:
         case EditorSceneObjectKind::Collider:
         case EditorSceneObjectKind::ReflectionProbe:
+        case EditorSceneObjectKind::Checkpoint:
         case EditorSceneObjectKind::Archetype:
         case EditorSceneObjectKind::Group:
         case EditorSceneObjectKind::DoorGroup: {
@@ -588,6 +597,13 @@ std::optional<std::uint64_t> commitPlacement(EditorSceneDocument& document,
             .fallRespawnY = -8.0f,
         });
         break;
+    case EditorPlacementKind::Checkpoint:
+        document.addCheckpoint(LevelCheckpointPlacement{
+            .name = "Checkpoint",
+            .position = position,
+            .respawnPosition = position + glm::vec3(0.0f, 1.6f, 2.5f),
+        });
+        break;
     case EditorPlacementKind::Archetype:
         document.addArchetype(LevelArchetypePlacement{
             .archetypeId = state.archetypeId,
@@ -665,6 +681,16 @@ void appendPlacementGhost(std::vector<RenderObject>& objects,
                 makeModelMatrix(position, glm::vec3(0.22f, 0.80f, 0.22f)),
                 tint,
                 materials.resolve("moss_default")
+            });
+        }
+        break;
+    case EditorPlacementKind::Checkpoint:
+        if (cube != nullptr) {
+            objects.push_back(RenderObject{
+                cube,
+                makeModelMatrix(position, glm::vec3(0.30f, 1.10f, 0.30f)),
+                tint,
+                materials.resolve("wax_default")
             });
         }
         break;

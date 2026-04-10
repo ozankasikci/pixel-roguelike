@@ -1,5 +1,6 @@
 #pragma once
 
+#include "game/modules/checkpoint/CheckpointActionTypes.h"
 #include "game/modules/door/DoorActionTypes.h"
 
 #include <glm/glm.hpp>
@@ -11,6 +12,7 @@ enum class ActionType : uint8_t {
     OpenDoor,
     CloseDoor,
     ToggleDoor,
+    ActivateCheckpoint,
     PlaySound,
     SetLight,
     FlickerLight,
@@ -69,6 +71,7 @@ struct TeleportPlayerParams {
 
 using ActionParams = std::variant<
     DoorActionParams,
+    ActivateCheckpointParams,
     SoundActionParams,
     LightActionParams,
     FlickerLightParams,

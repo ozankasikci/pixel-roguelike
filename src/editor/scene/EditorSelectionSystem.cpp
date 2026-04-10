@@ -168,6 +168,7 @@ void inflateThinBounds(glm::vec3& boundsMin, glm::vec3& boundsMax) {
 int selectionPriority(const EditorSelectionHandle& handle) {
     switch (handle.objectKind) {
     case EditorSceneObjectKind::Mesh:
+    case EditorSceneObjectKind::Checkpoint:
     case EditorSceneObjectKind::Archetype:
     case EditorSceneObjectKind::Group:
     case EditorSceneObjectKind::DoorGroup:
@@ -218,6 +219,7 @@ std::vector<EditorSelectionHandle> buildEditorSelectionHandles(const EditorScene
 
         switch (object.kind) {
         case EditorSceneObjectKind::Mesh:
+        case EditorSceneObjectKind::Checkpoint:
         case EditorSceneObjectKind::Archetype:
             if (const auto* bounds = previewWorld.findObjectBounds(object.id)) {
                 handle.shape = EditorSelectionShape::WorldAabb;

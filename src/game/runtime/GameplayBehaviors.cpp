@@ -158,16 +158,17 @@ void GameplayBehaviors::executeAction(GameRegistry& registry, entt::entity sourc
         }
     }
 
+    if (auto* handler = findBehaviorActionHandler(action.type)) {
+        (*handler)(registry, source, target, action);
+        return;
+    }
+
     switch (action.type) {
     case ActionType::OpenDoor:
     case ActionType::CloseDoor:
-    case ActionType::ToggleDoor: {
-        auto* handler = findBehaviorActionHandler(action.type);
-        if (handler) {
-            (*handler)(registry, source, target, action);
-        }
+    case ActionType::ToggleDoor:
+    case ActionType::ActivateCheckpoint:
         break;
-    }
     case ActionType::PlaySound: {
         const auto* soundParams = std::get_if<SoundActionParams>(&action.params);
         if (soundParams) {

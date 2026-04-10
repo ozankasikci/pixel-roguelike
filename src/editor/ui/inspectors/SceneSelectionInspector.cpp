@@ -8,6 +8,7 @@
 #include "editor/ui/inspectors/PlayerSpawnInspector.h"
 #include "editor/ui/inspectors/PrefabInspector.h"
 #include "game/modules/door/editor/DoorGroupInspector.h"
+#include "game/modules/checkpoint/editor/CheckpointInspector.h"
 #include "editor/ui/inspectors/ReflectionProbeInspector.h"
 #include "game/content/ContentRegistry.h"
 #include "game/level/LevelDef.h"
@@ -147,6 +148,10 @@ void renderSceneSelectionInspector(EditorSceneDocument& document,
     case EditorSceneObjectKind::PlayerSpawn:
         drawPlayerSpawnInspector(std::get<LevelPlayerSpawn>(object->payload), document,
                                  commandStack, pendingCommand, beforeState);
+        return;
+    case EditorSceneObjectKind::Checkpoint:
+        drawCheckpointInspector(std::get<LevelCheckpointPlacement>(object->payload), document,
+                                commandStack, pendingCommand, beforeState);
         return;
     case EditorSceneObjectKind::Archetype:
         drawArchetypeInspector(std::get<LevelArchetypePlacement>(object->payload), document,

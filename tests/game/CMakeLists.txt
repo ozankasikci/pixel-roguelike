@@ -51,7 +51,7 @@ pixel_roguelike_add_test(test_equipment_state
 
 pixel_roguelike_add_test(test_cathedral_prefabs
     SOURCES test_cathedral_prefabs.cpp
-    LIBRARIES gameplay
+    LIBRARIES gameplay game_module_checkpoint
     LABELS game
 )
 
@@ -71,7 +71,13 @@ pixel_roguelike_add_test(test_silos_cloister_level
 
 pixel_roguelike_add_test(test_level_roundtrip
     SOURCES test_level_roundtrip.cpp
-    LIBRARIES game_content game_module_door
+    LIBRARIES game_content game_module_door game_module_checkpoint
+    LABELS game
+)
+
+pixel_roguelike_add_test(test_checkpoint_module
+    SOURCES test_checkpoint_module.cpp
+    LIBRARIES gameplay game_module_checkpoint
     LABELS game
 )
 

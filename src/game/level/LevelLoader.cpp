@@ -5,6 +5,7 @@
 #include "game/behavior/NodeIndex.h"
 #include "game/content/ContentRegistry.h"
 #include "game/level/LevelBuilder.h"
+#include "game/modules/checkpoint/CheckpointSpawner.h"
 #include "game/modules/door/DoorSpawner.h"
 #include "game/prefabs/GameplayPrefabs.h"
 #include "game/rendering/EnvironmentProfile.h"
@@ -112,6 +113,10 @@ void LevelLoader::load(const LevelLoadRequest& request, const LevelLoadArgs& arg
 
     for (const auto& doorGroup : level.doors) {
         spawnDoorGroup(builder, doorGroup, level);
+    }
+
+    for (const auto& placement : level.checkpoints) {
+        spawnCheckpointEntity(builder, placement);
     }
 
     for (const auto& placement : level.lights) {
@@ -226,6 +231,7 @@ void LevelLoader::load(const LevelLoadRequest& request, const LevelLoadArgs& arg
         for (const auto& l : level.lights) linkParent(l.nodeId, l.parentNodeId);
         for (const auto& c : level.colliders) linkParent(c.nodeId, c.parentNodeId);
         for (const auto& r : level.reflectionProbes) linkParent(r.nodeId, r.parentNodeId);
+        for (const auto& checkpoint : level.checkpoints) linkParent(checkpoint.nodeId, checkpoint.parentNodeId);
         for (const auto& a : level.archetypes) linkParent(a.nodeId, a.parentNodeId);
     }
 

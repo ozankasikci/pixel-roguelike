@@ -268,6 +268,9 @@ void renderAssetBrowserCreateContextMenu(EditorPlacementState& placementState) {
     if (ImGui::MenuItem("Place Player Spawn")) {
         beginPlacement(placementState, EditorPlacementKind::PlayerSpawn);
     }
+    if (ImGui::MenuItem("Place Checkpoint")) {
+        beginPlacement(placementState, EditorPlacementKind::Checkpoint);
+    }
 }
 
 } // namespace

@@ -255,6 +255,8 @@ void beginPlacement(EditorPlacementState& state,
         state.meshId = primaryId;
         state.materialId = secondaryId;
         break;
+    case EditorPlacementKind::Checkpoint:
+        break;
     case EditorPlacementKind::Archetype:
         state.archetypeId = primaryId;
         break;

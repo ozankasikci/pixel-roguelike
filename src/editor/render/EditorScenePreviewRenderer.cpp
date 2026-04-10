@@ -214,6 +214,23 @@ void appendHelperObjects(std::vector<RenderObject>& objects,
         }
     }
 
+    if (cube != nullptr) {
+        for (const auto& object : document.objects()) {
+            if (object.kind != EditorSceneObjectKind::Checkpoint) {
+                continue;
+            }
+            const bool selected = isSelected(selectedIds, object.id);
+            const glm::vec3 tint = selected ? glm::vec3(1.30f, 1.05f, 0.46f) : glm::vec3(1.00f, 0.74f, 0.22f);
+            const glm::vec3 position = glm::vec3(document.worldTransformMatrix(object.id)[3]);
+            objects.push_back(RenderObject{
+                cube,
+                makeModelMatrix(position + glm::vec3(0.0f, 0.55f, 0.0f), glm::vec3(0.26f, 1.10f, 0.26f)),
+                tint,
+                materials.resolve("wax_default")
+            });
+        }
+    }
+
     // Trigger volume visualization: semi-transparent wireframe in the editor viewport
     // Trigger-mode: green (box) / blue (non-box); SolidAndTrigger: yellow
     if (showTriggers && cube != nullptr) {

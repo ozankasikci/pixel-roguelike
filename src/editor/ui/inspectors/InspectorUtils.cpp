@@ -24,6 +24,7 @@ struct ActionCategoryDef {
 const std::vector<ActionCategoryDef>& coreActionCategories() {
     static const std::vector<ActionCategoryDef> categories = {
         {"Door", {{"Open", ActionType::OpenDoor}, {"Close", ActionType::CloseDoor}, {"Toggle", ActionType::ToggleDoor}}},
+        {"Checkpoint", {{"Activate", ActionType::ActivateCheckpoint}}},
         {"Lighting", {{"SetLight", ActionType::SetLight}}},
         {"Audio", {{"PlaySound", ActionType::PlaySound}}},
         {"Entity", {{"EnableEntity", ActionType::EnableEntity}, {"DisableEntity", ActionType::DisableEntity}}},
@@ -57,6 +58,8 @@ ActionParams defaultParamsForType(ActionType type) {
     case ActionType::CloseDoor:
     case ActionType::ToggleDoor:
         return DoorActionParams{};
+    case ActionType::ActivateCheckpoint:
+        return ActivateCheckpointParams{};
     case ActionType::SetLight:
         return LightActionParams{};
     case ActionType::PlaySound:

@@ -50,5 +50,39 @@ int main() {
     assert(test_support::nearlyEqual(level.reflectionProbes.front().intensity, 0.75f));
     assert(!level.reflectionProbes.front().boxProjection);
 
+    LevelCheckpointPlacement checkpoint;
+    checkpoint.name = "Shrine";
+    checkpoint.position = glm::vec3(-2.0f, 0.0f, 4.0f);
+    checkpoint.respawnPosition = glm::vec3(-2.0f, 1.6f, 6.5f);
+    checkpoint.nodeId = "checkpoint_shrine";
+
+    const std::uint64_t checkpointId = document.addCheckpoint(checkpoint);
+    assert(checkpointId != 0);
+    assert(document.supportsParenting(checkpointId));
+
+    object = document.findObject(checkpointId);
+    assert(object != nullptr);
+    assert(object->kind == EditorSceneObjectKind::Checkpoint);
+    assert(editorSceneObjectKindName(object->kind) == std::string("Checkpoint"));
+    assert(editorSceneObjectLabel(*object).find("[Shrine]") != std::string::npos);
+    assert(test_support::nearlyEqualVec3(editorSceneObjectAnchor(*object), checkpoint.position));
+
+    const glm::mat4 checkpointWorld =
+        glm::translate(glm::mat4(1.0f), glm::vec3(3.0f, 0.0f, -5.0f));
+    assert(document.applyWorldTransform(checkpointId, checkpointWorld));
+
+    object = document.findObject(checkpointId);
+    assert(object != nullptr);
+    const auto& transformedCheckpoint = std::get<LevelCheckpointPlacement>(object->payload);
+    assert(test_support::nearlyEqualVec3(transformedCheckpoint.position, glm::vec3(3.0f, 0.0f, -5.0f)));
+    assert(test_support::nearlyEqualVec3(transformedCheckpoint.respawnPosition, glm::vec3(3.0f, 1.6f, -2.5f)));
+
+    const LevelDef checkpointLevel = document.toLevelDef();
+    assert(checkpointLevel.checkpoints.size() == 1);
+    assert(checkpointLevel.checkpoints.front().name == "Shrine");
+    assert(checkpointLevel.checkpoints.front().nodeId == "checkpoint_shrine");
+    assert(test_support::nearlyEqualVec3(checkpointLevel.checkpoints.front().respawnPosition,
+                                         glm::vec3(3.0f, 1.6f, -2.5f)));
+
     return 0;
 }

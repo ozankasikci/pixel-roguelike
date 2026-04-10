@@ -35,6 +35,9 @@ LevelDef makeLevelDefFromState(const EditorSceneDocumentState& state) {
             level.playerSpawn = std::get<LevelPlayerSpawn>(object.payload);
             level.hasPlayerSpawn = true;
             break;
+        case EditorSceneObjectKind::Checkpoint:
+            level.checkpoints.push_back(std::get<LevelCheckpointPlacement>(object.payload));
+            break;
         case EditorSceneObjectKind::Archetype:
             level.archetypes.push_back(std::get<LevelArchetypePlacement>(object.payload));
             break;

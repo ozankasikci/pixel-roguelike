@@ -1,5 +1,7 @@
 #include "game/level/LevelDef.h"
 #include "game/components/ColliderComponent.h"
+#include "game/modules/door/DoorModule.h"
+#include "game/modules/checkpoint/CheckpointModule.h"
 #include "common/TestSupport.h"
 
 #include <cassert>
@@ -8,6 +10,9 @@
 
 int main() {
     namespace fs = std::filesystem;
+
+    registerDoorModule();
+    registerCheckpointModule();
 
     LevelDef level;
     level.environmentId = "cloister_daylight";
@@ -104,6 +109,18 @@ int main() {
         .fallRespawnY = -10.0f,
     };
     level.hasPlayerSpawn = true;
+    level.checkpoints.push_back(LevelCheckpointPlacement{
+        .name = "attunement_shrine",
+        .position = glm::vec3(-2.0f, 0.0f, -4.0f),
+        .respawnPosition = glm::vec3(-2.0f, 1.6f, -1.5f),
+        .interactDistance = 2.8f,
+        .interactDotThreshold = 0.65f,
+        .lightOffset = glm::vec3(0.0f, 0.8f, -0.5f),
+        .lightColor = glm::vec3(1.0f, 0.72f, 0.5f),
+        .lightRadius = 8.0f,
+        .lightIntensity = 9.5f,
+        .nodeId = "checkpoint_direct_1",
+    });
     level.archetypes.push_back(LevelArchetypePlacement{
         .archetypeId = "checkpoint_shrine",
         .position = glm::vec3(2.0f, 0.0f, -6.0f),
@@ -118,6 +135,7 @@ int main() {
     assert(serialized.find("parent root_mesh") != std::string::npos);
     assert(serialized.find("rotation 0.0 15.0 0.0") != std::string::npos);
     assert(serialized.find("reflection_probe 7.0 2.0 -4.0 5.0 3.0 6.0 1.4 0.85 false") != std::string::npos);
+    assert(serialized.find("checkpoint attunement_shrine -2.0 0.0 -4.0 respawn -2.0 1.6 -1.5") != std::string::npos);
     // Verify new unified light format
     assert(serialized.find("light point ") != std::string::npos);
     assert(serialized.find("light spot ") != std::string::npos);
@@ -186,6 +204,13 @@ int main() {
     assert(test_support::nearlyEqual(loaded.reflectionProbes.front().intensity, 0.85f));
     assert(!loaded.reflectionProbes.front().boxProjection);
     assert(loaded.hasPlayerSpawn);
+    assert(loaded.checkpoints.size() == 1);
+    assert(loaded.checkpoints.front().name == "attunement_shrine");
+    assert(loaded.checkpoints.front().nodeId == "checkpoint_direct_1");
+    assert(test_support::nearlyEqualVec3(loaded.checkpoints.front().position, glm::vec3(-2.0f, 0.0f, -4.0f)));
+    assert(test_support::nearlyEqualVec3(loaded.checkpoints.front().respawnPosition, glm::vec3(-2.0f, 1.6f, -1.5f)));
+    assert(test_support::nearlyEqual(loaded.checkpoints.front().interactDistance, 2.8f));
+    assert(test_support::nearlyEqual(loaded.checkpoints.front().interactDotThreshold, 0.65f));
     assert(loaded.archetypes.size() == 1);
 
     LevelDef hierarchy;

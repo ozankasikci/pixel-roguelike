@@ -1,3 +1,4 @@
+#include "game/behavior/BehaviorComponent.h"
 #include "game/components/CheckpointComponent.h"
 #include "game/components/InteractableComponent.h"
 #include "game/components/LightComponent.h"
@@ -38,6 +39,11 @@ int main() {
     assert(checkpointComponent.interactDistance == checkpointPlacement.interactDistance);
     assert(checkpointComponent.interactDotThreshold == checkpointPlacement.interactDotThreshold);
     assert(checkpointInteractable.promptText == "E  KINDLE CHECKPOINT");
+    assert((registry.all_of<BehaviorComponent>(checkpoint)));
+    const auto& behavior = registry.get<BehaviorComponent>(checkpoint);
+    assert(behavior.onActivate.size() == 1);
+    assert(behavior.onActivate.front().type == ActionType::ActivateCheckpoint);
+    assert(behavior.onActivate.front().targetNodeId == "self");
     assert(registry.valid(checkpointComponent.lightEntity));
     assert((registry.all_of<TransformComponent, LightComponent>(checkpointComponent.lightEntity)));
     assert(registry.get<TransformComponent>(checkpointComponent.lightEntity).position == checkpointPlacement.lightPosition);
