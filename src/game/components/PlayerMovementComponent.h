@@ -25,4 +25,7 @@ struct PlayerMovementComponent {
     // Jump state (runtime)
     float jumpHoldTimer = 0.0f;
     bool jumpHeld = false;
+
+    // Footstep accumulator (runtime)
+    float stepAccumulator = 0.0f;
 };

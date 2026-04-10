@@ -1,5 +1,6 @@
 #include "game/runtime/RuntimeGameSession.h"
 
+#include "engine/audio/AudioEngine.h"
 #include "engine/core/PathUtils.h"
 #include "engine/rendering/assets/ModelLoader.h"
 #include "game/components/CheckpointComponent.h"
@@ -514,6 +515,9 @@ void RuntimeGameSession::clearEntities() {
     }
     if (ctx.contains<CameraManager*>()) {
         ctx.erase<CameraManager*>();
+    }
+    if (ctx.contains<engine::audio::AudioEngine*>()) {
+        ctx.erase<engine::audio::AudioEngine*>();
     }
     cameraManager_.clearEffects();
     baselineSnapshot_.reset();

@@ -2,12 +2,13 @@
 #include "engine/core/PathUtils.h"
 #include "engine/core/ProjectConfig.h"
 #include "engine/scene/SceneManager.h"
-#include "engine/audio/AudioSystem.h"
+#include "engine/audio/AudioEngine.h"
 #include "engine/input/InputSystem.h"
 #include "engine/ui/ImGuiLayer.h"
 #include "game/modules/checkpoint/CheckpointModule.h"
 #include "game/modules/door/DoorModule.h"
 #include "game/modules/player_control/PlayerControlModule.h"
+#include "game/systems/AudioEngineSystem.h"
 #include "game/systems/AudioListenerSystem.h"
 #include "game/systems/RenderSystem.h"
 #include "game/scenes/GenericFileScene.h"
@@ -89,10 +90,16 @@ int main(int argc, char* argv[]) {
     // RuntimeGameSession — only app-level infrastructure systems remain here.
     auto& input = app.addSystem<InputSystem>(Application::UpdatePhase::Input);
     app.emplaceService<InputSystem*>(&input);
-    auto& audio = app.addSystem<AudioSystem>(Application::UpdatePhase::Gameplay);
-    app.emplaceService<AudioSystem*>(&audio);
-    auto& audioListener = app.addSystem<AudioListenerSystem>(Application::UpdatePhase::Gameplay, audio);
-    (void)audioListener;
+
+    // AudioEngine: standalone lifecycle (not a System subclass itself).
+    // PhysicsSystem lives inside RuntimeGameSession (created later by GenericFileScene),
+    // so occlusion raycast wiring is deferred until a session provides it.
+    static engine::audio::AudioEngine audioEngine;
+    audioEngine.init();
+    app.emplaceService<engine::audio::AudioEngine*>(&audioEngine);
+    app.addSystem<AudioEngineSystem>(Application::UpdatePhase::Gameplay, audioEngine);
+    app.addSystem<AudioListenerSystem>(Application::UpdatePhase::Gameplay, audioEngine);
+
     auto& render = app.addSystem<RenderSystem>(Application::UpdatePhase::Render, input);
 
     if (!autoScreenshotPath.empty()) {

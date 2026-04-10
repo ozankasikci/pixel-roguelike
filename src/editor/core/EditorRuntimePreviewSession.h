@@ -10,10 +10,13 @@ struct ImGuiIO;
 struct GLFWwindow;
 class ContentRegistry;
 class EditorSceneDocument;
+namespace engine::audio { class AudioEngine; }
 
 class EditorRuntimePreviewSession {
 public:
     EditorRuntimePreviewSession() = default;
+
+    void setAudioEngine(engine::audio::AudioEngine* engine) { audioEngine_ = engine; }
 
     void rebuild(const EditorSceneDocument& document, ContentRegistry& content, bool contentChanged = false);
     void syncMaterials(const EditorSceneDocument& document, const ContentRegistry& content);
@@ -56,6 +59,7 @@ public:
 
 private:
     RuntimeGameSession session_;
+    engine::audio::AudioEngine* audioEngine_ = nullptr;
     bool captured_ = false;
     bool hasLastCursorPosition_ = false;
     glm::vec2 lastCursorPosition_{0.0f};

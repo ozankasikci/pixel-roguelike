@@ -35,6 +35,7 @@ add_library(gameplay STATIC
     runtime/RuntimeGameSession.cpp
     scenes/GenericFileScene.cpp
     session/EquipmentState.cpp
+    systems/AudioEngineSystem.cpp
     systems/AudioListenerSystem.cpp
     systems/KinematicColliderSystem.cpp
     systems/RenderSystem.cpp

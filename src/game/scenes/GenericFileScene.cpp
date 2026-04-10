@@ -1,5 +1,6 @@
 #include "GenericFileScene.h"
 
+#include "engine/audio/AudioEngine.h"
 #include "engine/core/Application.h"
 #include "engine/core/PathUtils.h"
 #include "engine/input/InputSystem.h"
@@ -79,6 +80,13 @@ void GenericFileScene::onEnter(Application& app) {
     LevelDef level = loadLevelDef(resolveProjectPath(request_.levelPath));
 
     session_.rebuild(level, request_.levelId, request_.levelPath, content, request);
+
+    // Store AudioEngine pointer in registry context so gameplay systems (doors, footsteps)
+    // can play spatial sounds without coupling to Application.
+    if (auto* audioPtr = app.tryGetService<engine::audio::AudioEngine*>()) {
+        engine::audio::AudioEngine* audio = *audioPtr;
+        session_.registry().ctx().insert_or_assign<engine::audio::AudioEngine*>(std::move(audio));
+    }
 
     // Expose session so RenderSystem can access the gameplay registry
     app.emplaceService<RuntimeGameSession*>(&session_);

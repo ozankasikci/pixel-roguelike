@@ -4,26 +4,27 @@
 #include "engine/ecs/GameRegistry.h"
 
 class Application;
-class AudioSystem;
 
-// Free-function accessor for AudioSystem from Application's service locator (per D-10).
-// Stores AudioSystem as AudioSystem* in the service locator since AudioSystem is non-copyable.
-// Matches existing pattern: game systems access engine subsystems via free functions.
-AudioSystem& audioSystem(Application& app);
+namespace engine::audio {
+class AudioEngine;
+}
 
-// Free-function to sync audio listener position from CameraManager (per D-15).
+// Free-function to sync audio listener position from CameraManager.
 class CameraManager;
-void updateAudioListener(const CameraManager& cameraManager, AudioSystem& audio);
+void updateAudioListener(const CameraManager& cameraManager, engine::audio::AudioEngine& audio);
+
+// Free-function to process AudioSourceComponent triggers via AudioEngine.
+void processAudioSources(GameRegistry& registry, engine::audio::AudioEngine& audio);
 
 // System wrapper for registration via addSystem (matches PlayerMovementSystem/CameraSystem pattern).
-// Holds a reference to AudioSystem obtained from Application's system lifecycle.
+// Holds a reference to AudioEngine obtained at construction time.
 class AudioListenerSystem : public System {
 public:
-    explicit AudioListenerSystem(AudioSystem& audio);
+    explicit AudioListenerSystem(engine::audio::AudioEngine& audio);
     void init(Application& app) override;
     void update(Application& app, float deltaTime) override;
     void shutdown() override;
 
 private:
-    AudioSystem& audio_;
+    engine::audio::AudioEngine& audio_;
 };

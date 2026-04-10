@@ -1,6 +1,7 @@
 #include "editor/core/EditorRuntimePreviewSession.h"
 
 #include "editor/scene/EditorSceneDocument.h"
+#include "engine/audio/AudioEngine.h"
 #include "game/components/MeshComponent.h"
 #include "game/rendering/MaterialDefinition.h"
 
@@ -27,6 +28,10 @@ void EditorRuntimePreviewSession::rebuild(const EditorSceneDocument& document, C
     request.levelId = document.scenePath().empty() ? "editor_runtime_preview" : document.scenePath();
     request.levelPath = document.scenePath();
     session_.rebuild(document.toLevelDef(), request.levelId, request.levelPath, content, request, contentChanged);
+    if (audioEngine_) {
+        engine::audio::AudioEngine* ptr = audioEngine_;
+        session_.registry().ctx().insert_or_assign<engine::audio::AudioEngine*>(std::move(ptr));
+    }
     syncEnvironment(document);
 }
 
@@ -46,7 +51,14 @@ void EditorRuntimePreviewSession::syncMaterials(const EditorSceneDocument& docum
 }
 
 void EditorRuntimePreviewSession::resetForPlay() {
+    if (audioEngine_) {
+        audioEngine_->stopAll();
+    }
     session_.resetForPlay();
+    if (audioEngine_) {
+        engine::audio::AudioEngine* ptr = audioEngine_;
+        session_.registry().ctx().insert_or_assign<engine::audio::AudioEngine*>(std::move(ptr));
+    }
 }
 
 void EditorRuntimePreviewSession::syncEnvironment(const EditorSceneDocument& document) {
@@ -61,6 +73,9 @@ void EditorRuntimePreviewSession::clear() {
 
 void EditorRuntimePreviewSession::tick(float deltaTime, float aspect) {
     session_.tick(deltaTime, aspect);
+    if (audioEngine_ && captured_) {
+        audioEngine_->update(deltaTime);
+    }
 }
 
 void EditorRuntimePreviewSession::prewarmRenderer(ContentRegistry& content) {
