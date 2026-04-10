@@ -1,9 +1,3 @@
 #pragma once
 
-#include <string>
-
-struct InteractionPromptState {
-    bool visible = false;
-    bool busy = false;
-    std::string text;
-};
+#include "game/modules/interaction/InteractionPromptState.h"

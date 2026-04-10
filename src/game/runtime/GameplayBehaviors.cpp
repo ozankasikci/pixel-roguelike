@@ -10,7 +10,7 @@
 #include "game/components/PlayerInteractionLockComponent.h"
 #include "game/components/PlayerTag.h"
 #include "game/components/TransformComponent.h"
-#include "game/ui/InteractionFocusState.h"
+#include "game/modules/interaction/InteractionFocusState.h"
 
 #include <algorithm>
 #include <cmath>

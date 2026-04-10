@@ -62,3 +62,4 @@ target_link_libraries(game INTERFACE
 add_subdirectory(modules/door)
 add_subdirectory(modules/checkpoint)
 add_subdirectory(modules/player_control)
+add_subdirectory(modules/interaction)

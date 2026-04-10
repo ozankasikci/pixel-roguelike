@@ -10,9 +10,6 @@ struct RuntimeInventoryCaptureState {
     bool openedByMenu = false;
 };
 
-void initializeRuntimeInteraction(GameRegistry& registry);
-void updateRuntimeInteraction(GameRegistry& registry, const InputSystem& input);
-
 void initializeRuntimeInventory(GameRegistry& registry);
 void updateRuntimeInventory(GameRegistry& registry,
                             InputSystem& input,

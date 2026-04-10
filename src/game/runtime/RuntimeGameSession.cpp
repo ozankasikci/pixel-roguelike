@@ -8,6 +8,7 @@
 #include "game/modules/checkpoint/CheckpointFeedbackState.h"
 #include "game/modules/checkpoint/CheckpointSystem.h"
 #include "game/modules/door/DoorComponents.h"
+#include "game/modules/interaction/InteractionSystem.h"
 #include "game/modules/player_control/PlayerControlCamera.h"
 #include "game/modules/player_control/PlayerControlMovement.h"
 #include "game/components/PlayerInteractionLockComponent.h"
@@ -24,8 +25,6 @@
 #include "game/systems/KinematicColliderSystem.h"
 #include "game/runtime/RuntimeGameplay.h"
 #include "game/session/RunSession.h"
-#include "game/ui/InteractionFocusState.h"
-#include "game/ui/InteractionPromptState.h"
 #include "game/ui/InventoryMenuState.h"
 
 #include <algorithm>
@@ -431,12 +430,7 @@ void RuntimeGameSession::restoreBaselineState() {
 
 void RuntimeGameSession::resetTransientRuntimeState() {
     auto& ctx = registry_.ctx();
-    if (ctx.contains<InteractionPromptState>()) {
-        ctx.insert_or_assign<InteractionPromptState>(InteractionPromptState{});
-    }
-    if (ctx.contains<InteractionFocusState>()) {
-        ctx.insert_or_assign<InteractionFocusState>(InteractionFocusState{});
-    }
+    resetRuntimeInteraction(registry_);
     if (ctx.contains<InventoryMenuState>()) {
         ctx.insert_or_assign<InventoryMenuState>(InventoryMenuState{});
     }
@@ -466,12 +460,7 @@ void RuntimeGameSession::clearEntities() {
     if (ctx.contains<InventoryMenuState>()) {
         ctx.erase<InventoryMenuState>();
     }
-    if (ctx.contains<InteractionPromptState>()) {
-        ctx.erase<InteractionPromptState>();
-    }
-    if (ctx.contains<InteractionFocusState>()) {
-        ctx.erase<InteractionFocusState>();
-    }
+    clearRuntimeInteraction(registry_);
     if (ctx.contains<MeshAssetProvider>()) {
         ctx.erase<MeshAssetProvider>();
     }

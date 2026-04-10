@@ -1,29 +1,13 @@
 #include "game/runtime/RuntimeGameplay.h"
 
 #include "engine/input/InputSystem.h"
-#include "game/components/ColliderComponent.h"
-#include "game/components/CameraComponent.h"
-#include "game/components/ControllableTag.h"
-#include "game/components/InteractableComponent.h"
-#include "game/components/MeshComponent.h"
-#include "game/components/PlayerInteractionLockComponent.h"
 #include "game/components/PlayerTag.h"
-#include "game/components/PrimaryCameraTag.h"
-#include "game/components/TransformComponent.h"
 #include "game/content/ContentRegistry.h"
-#include "game/modules/player_control/PlayerControlCamera.h"
 #include "game/session/EquipmentState.h"
 #include "game/session/RunSession.h"
-#include "game/ui/InteractionFocusState.h"
-#include "game/ui/InteractionPromptState.h"
 #include "game/ui/InventoryMenuState.h"
 
 #include <GLFW/glfw3.h>
-#include <glm/glm.hpp>
-#include <glm/gtc/matrix_transform.hpp>
-
-#include <algorithm>
-#include <cmath>
 
 namespace {
 
@@ -79,98 +63,6 @@ void clampSelection(RunSession& session, InventoryMenuState& menu) {
 }
 
 } // namespace
-
-void initializeRuntimeInteraction(GameRegistry& registry) {
-    auto& ctx = registry.ctx();
-    if (!ctx.contains<InteractionPromptState>()) {
-        ctx.emplace<InteractionPromptState>();
-    }
-    if (!ctx.contains<InteractionFocusState>()) {
-        ctx.emplace<InteractionFocusState>();
-    }
-}
-
-void updateRuntimeInteraction(GameRegistry& registry, const InputSystem& input) {
-    auto& ctx = registry.ctx();
-    initializeRuntimeInteraction(registry);
-
-    auto& prompt = ctx.get<InteractionPromptState>();
-    auto& focus = ctx.get<InteractionFocusState>();
-    prompt.visible = false;
-    prompt.busy = false;
-    prompt.text.clear();
-    focus = InteractionFocusState{};
-
-    const bool inventoryOpen = ctx.contains<InventoryMenuState>() && ctx.get<InventoryMenuState>().open;
-    if (inventoryOpen) {
-        return;
-    }
-
-    entt::entity actor = entt::null;
-    TransformComponent* actorTransform = nullptr;
-    CameraComponent* actorCamera = nullptr;
-    PlayerInteractionLockComponent* actorLock = nullptr;
-
-    auto actorView = registry.view<TransformComponent, CameraComponent, ControllableTag, PrimaryCameraTag>();
-    for (auto entity : actorView) {
-        actor = entity;
-        actorTransform = &actorView.get<TransformComponent>(entity);
-        actorCamera = &actorView.get<CameraComponent>(entity);
-        actorLock = registry.try_get<PlayerInteractionLockComponent>(entity);
-        break;
-    }
-
-    if (actor == entt::null || actorTransform == nullptr || actorCamera == nullptr) {
-        return;
-    }
-
-    focus.actor = actor;
-    const glm::vec3 actorForward = buildPlayerCameraForward(actorCamera->yaw, actorCamera->pitch);
-
-    float bestScore = -1.0f;
-    auto interactableView = registry.view<TransformComponent, InteractableComponent>();
-    for (auto [entity, transform, interactable] : interactableView.each()) {
-        if (!interactable.enabled) {
-            continue;
-        }
-
-        const glm::vec3 toTarget = transform.position - actorTransform->position;
-        const float distance = glm::length(toTarget);
-        if (distance > interactable.interactDistance || distance < 0.001f) {
-            continue;
-        }
-
-        const glm::vec3 direction = toTarget / distance;
-        const float facing = glm::dot(actorForward, direction);
-        if (facing < interactable.interactDotThreshold) {
-            continue;
-        }
-
-        const float score = facing - distance * 0.08f;
-        if (score > bestScore) {
-            bestScore = score;
-            focus.focused = entity;
-        }
-    }
-
-    if (focus.focused == entt::null) {
-        return;
-    }
-
-    auto& interactable = registry.get<InteractableComponent>(focus.focused);
-    prompt.visible = true;
-    prompt.busy = interactable.busy;
-    prompt.text = interactable.busy ? interactable.busyText : interactable.promptText;
-
-    const bool locked = actorLock != nullptr && actorLock->active;
-    if (locked || interactable.busy) {
-        return;
-    }
-
-    if (input.isCursorLocked() && !input.wantsCaptureMouse() && input.isKeyJustPressed(GLFW_KEY_E)) {
-        focus.activationRequested = true;
-    }
-}
 
 void initializeRuntimeInventory(GameRegistry& registry) {
     (void)ensureMenuState(registry);

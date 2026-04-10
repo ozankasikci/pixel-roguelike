@@ -7,10 +7,11 @@
 #include "game/components/PlayerMovementComponent.h"
 #include "game/components/ViewmodelComponent.h"
 #include "game/content/ContentRegistry.h"
+#include "game/modules/interaction/InteractionPromptState.h"
+#include "game/modules/interaction/InteractionSystem.h"
 #include "game/session/EquipmentState.h"
 #include "game/session/RunSession.h"
 #include "game/ui/GameOverlays.h"
-#include "game/ui/InteractionPromptState.h"
 #include "game/ui/InventoryMenuState.h"
 
 #include <GLFW/glfw3.h>
@@ -45,14 +46,6 @@ void RenderSystem::init(Application& app) {
     runtimeRenderer_.init(app.getService<ContentRegistry>());
     imguiLayer_.init(app.window().handle());
     applyEnvironmentProfile(debugParams_, EnvironmentProfile::Default, true);
-}
-
-InteractionPromptState& RenderSystem::ensurePromptState(GameRegistry& registry) const {
-    auto& ctx = registry.ctx();
-    if (!ctx.contains<InteractionPromptState>()) {
-        ctx.emplace<InteractionPromptState>();
-    }
-    return ctx.get<InteractionPromptState>();
 }
 
 void RenderSystem::renderOverlays(Application& app,
@@ -180,7 +173,7 @@ void RenderSystem::update(Application& app, float deltaTime) {
         }
     }
 
-    auto& prompt = ensurePromptState(registry);
+    auto& prompt = ensureInteractionPromptState(registry);
     renderOverlays(app, registry, frameOutput.lights, prompt);
     handleResolutionChange();
     handleCapture(app, app.window().width(), app.window().height());

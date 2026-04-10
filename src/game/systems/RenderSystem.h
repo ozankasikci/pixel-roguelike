@@ -25,7 +25,6 @@ public:
     void enableAutoScreenshot(const std::string& path, int delayFrames = 10);
 
 private:
-    InteractionPromptState& ensurePromptState(GameRegistry& registry) const;
     void renderOverlays(Application& app,
                         GameRegistry& registry,
                         std::vector<RenderLight>& lights,
