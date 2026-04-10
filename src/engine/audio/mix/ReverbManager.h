@@ -5,7 +5,7 @@
 
 #include "engine/audio/ReverbParams.h"
 
-namespace audio {
+namespace engine::audio {
 
 /// Manages reverb presets and crossfades between them.
 /// Stores named ReverbParams presets and provides linear interpolation
@@ -66,4 +66,4 @@ private:
     bool transitioning_ = false;
 };
 
-} // namespace audio
+} // namespace engine::audio

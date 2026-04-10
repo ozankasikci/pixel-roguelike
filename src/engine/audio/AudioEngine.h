@@ -79,14 +79,14 @@ public:
     void setReverbPreset(const std::string& presetName, float transitionTime = 0.5f);
 
     /// Install a raycast callback for occlusion processing.
-    void setRaycastFunc(::audio::RaycastFunc func);
+    void setRaycastFunc(RaycastFunc func);
 
     /// Per-frame update: voice scoring/virtualization, occlusion, reverb transitions,
     /// sync voices to AL sources, update streams.
     void update(float deltaTime);
 
     /// Direct access to the bus graph for volume queries.
-    ::audio::BusGraph& busGraph();
+    BusGraph& busGraph();
 
     /// Direct access to the event registry for lookups.
     EventRegistry& eventRegistry();

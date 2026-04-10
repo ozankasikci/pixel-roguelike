@@ -2,7 +2,7 @@
 
 #include <algorithm>
 
-namespace audio {
+namespace engine::audio {
 
 BusGraph::BusGraph() {
     // Default hierarchy:
@@ -96,4 +96,4 @@ bool BusGraph::isMuted(const std::string& name) const {
     return it->second.muted;
 }
 
-} // namespace audio
+} // namespace engine::audio

@@ -11,8 +11,8 @@ static bool approx(float a, float b, float eps = 0.001f) {
 int main() {
     // --- Spawn a voice, verify it's Playing with correct bufferHandle ---
     {
-        audio::VoiceManager mgr(4);
-        audio::BusGraph graph;
+        engine::audio::VoiceManager mgr(4);
+        engine::audio::BusGraph graph;
         glm::vec3 listener(0.0f);
 
         auto handle = mgr.spawn("footstep", glm::vec3(0.0f), 1.0f, 1.0f, 128, "SFX", true, false,
@@ -20,11 +20,11 @@ int main() {
 
         assert(handle.valid());
 
-        const audio::Voice* v = mgr.findVoice(handle);
+        const engine::audio::Voice* v = mgr.findVoice(handle);
         assert(v != nullptr);
         assert(v->bufferHandle == 42);
         assert(v->eventName == "footstep");
-        assert(v->state == audio::VoiceState::Playing);
+        assert(v->state == engine::audio::VoiceState::Playing);
         assert(approx(v->volume, 1.0f));
         assert(approx(v->pitch, 1.0f));
 
@@ -32,14 +32,14 @@ int main() {
         mgr.update(listener, graph, 0.016f);
         v = mgr.findVoice(handle);
         assert(v != nullptr);
-        assert(v->state == audio::VoiceState::Playing);
+        assert(v->state == engine::audio::VoiceState::Playing);
         assert(v->sourceIndex >= 0);
     }
 
     // --- Fill pool (poolSize=4), spawn 5th; after update, farthest goes Virtual ---
     {
-        audio::VoiceManager mgr(4);
-        audio::BusGraph graph;
+        engine::audio::VoiceManager mgr(4);
+        engine::audio::BusGraph graph;
         glm::vec3 listener(0.0f);
 
         // Spawn 4 voices at increasing distances
@@ -59,27 +59,27 @@ int main() {
         mgr.update(listener, graph, 0.016f);
 
         // The farthest voice (h5 at 40 units) should be Virtual
-        const audio::Voice* v5 = mgr.findVoice(h5);
+        const engine::audio::Voice* v5 = mgr.findVoice(h5);
         assert(v5 != nullptr);
-        assert(v5->state == audio::VoiceState::Virtual);
+        assert(v5->state == engine::audio::VoiceState::Virtual);
         assert(v5->sourceIndex == -1);
 
         // The closest 4 should be Playing with source indices
-        const audio::Voice* v1 = mgr.findVoice(h1);
+        const engine::audio::Voice* v1 = mgr.findVoice(h1);
         assert(v1 != nullptr);
-        assert(v1->state == audio::VoiceState::Playing);
+        assert(v1->state == engine::audio::VoiceState::Playing);
         assert(v1->sourceIndex >= 0);
 
-        const audio::Voice* v4 = mgr.findVoice(h4);
+        const engine::audio::Voice* v4 = mgr.findVoice(h4);
         assert(v4 != nullptr);
-        assert(v4->state == audio::VoiceState::Playing);
+        assert(v4->state == engine::audio::VoiceState::Playing);
         assert(v4->sourceIndex >= 0);
     }
 
     // --- Stop a voice, verify removed after update ---
     {
-        audio::VoiceManager mgr(4);
-        audio::BusGraph graph;
+        engine::audio::VoiceManager mgr(4);
+        engine::audio::BusGraph graph;
         glm::vec3 listener(0.0f);
 
         auto h1 = mgr.spawn("door_open", glm::vec3(0.0f), 1.0f, 1.0f, 128, "Doors", true, false,
@@ -92,9 +92,9 @@ int main() {
         // Stop immediately (fadeTime = 0)
         mgr.stop(h1, 0.0f);
 
-        const audio::Voice* v1 = mgr.findVoice(h1);
+        const engine::audio::Voice* v1 = mgr.findVoice(h1);
         assert(v1 != nullptr);
-        assert(v1->state == audio::VoiceState::Stopped);
+        assert(v1->state == engine::audio::VoiceState::Stopped);
 
         // After update, stopped voice is removed
         mgr.update(listener, graph, 0.016f);
@@ -107,8 +107,8 @@ int main() {
 
     // --- Stop with fadeTime sets Stopping state ---
     {
-        audio::VoiceManager mgr(4);
-        audio::BusGraph graph;
+        engine::audio::VoiceManager mgr(4);
+        engine::audio::BusGraph graph;
         glm::vec3 listener(0.0f);
 
         auto handle = mgr.spawn("ambience", glm::vec3(0.0f), 1.0f, 1.0f, 128, "Ambience", false,
@@ -116,15 +116,15 @@ int main() {
 
         mgr.stop(handle, 0.5f);
 
-        const audio::Voice* v = mgr.findVoice(handle);
+        const engine::audio::Voice* v = mgr.findVoice(handle);
         assert(v != nullptr);
-        assert(v->state == audio::VoiceState::Stopping);
+        assert(v->state == engine::audio::VoiceState::Stopping);
     }
 
     // --- activeVoiceCount tracks correctly ---
     {
-        audio::VoiceManager mgr(4);
-        audio::BusGraph graph;
+        engine::audio::VoiceManager mgr(4);
+        engine::audio::BusGraph graph;
         glm::vec3 listener(0.0f);
 
         assert(mgr.activeVoiceCount() == 0);
@@ -141,7 +141,7 @@ int main() {
 
     // --- Invalid handle returns nullptr ---
     {
-        audio::VoiceManager mgr(4);
+        engine::audio::VoiceManager mgr(4);
 
         engine::audio::VoiceHandle invalid(999, 0);
         assert(mgr.findVoice(invalid) == nullptr);
@@ -152,8 +152,8 @@ int main() {
 
     // --- countByEvent ---
     {
-        audio::VoiceManager mgr(8);
-        audio::BusGraph graph;
+        engine::audio::VoiceManager mgr(8);
+        engine::audio::BusGraph graph;
         glm::vec3 listener(0.0f);
 
         mgr.spawn("footstep", glm::vec3(0.0f), 1.0f, 1.0f, 128, "Footsteps", true, false, 1.0f,
@@ -170,8 +170,8 @@ int main() {
 
     // --- stopAllByEvent ---
     {
-        audio::VoiceManager mgr(8);
-        audio::BusGraph graph;
+        engine::audio::VoiceManager mgr(8);
+        engine::audio::BusGraph graph;
         glm::vec3 listener(0.0f);
 
         mgr.spawn("footstep", glm::vec3(0.0f), 1.0f, 1.0f, 128, "Footsteps", true, false, 1.0f,
@@ -192,14 +192,14 @@ int main() {
 
     // --- updatePosition changes voice position ---
     {
-        audio::VoiceManager mgr(4);
+        engine::audio::VoiceManager mgr(4);
 
         auto handle = mgr.spawn("sfx", glm::vec3(0.0f), 1.0f, 1.0f, 128, "SFX", true, false,
                                 1.0f, 50.0f, 1);
 
         mgr.updatePosition(handle, glm::vec3(10.0f, 5.0f, 3.0f));
 
-        const audio::Voice* v = mgr.findVoice(handle);
+        const engine::audio::Voice* v = mgr.findVoice(handle);
         assert(v != nullptr);
         assert(approx(v->position.x, 10.0f));
         assert(approx(v->position.y, 5.0f));
@@ -208,8 +208,8 @@ int main() {
 
     // --- Elapsed time advances ---
     {
-        audio::VoiceManager mgr(4);
-        audio::BusGraph graph;
+        engine::audio::VoiceManager mgr(4);
+        engine::audio::BusGraph graph;
         glm::vec3 listener(0.0f);
 
         auto handle = mgr.spawn("sfx", glm::vec3(0.0f), 1.0f, 1.0f, 128, "SFX", true, false,
@@ -217,7 +217,7 @@ int main() {
 
         mgr.update(listener, graph, 0.1f);
 
-        const audio::Voice* v = mgr.findVoice(handle);
+        const engine::audio::Voice* v = mgr.findVoice(handle);
         assert(v != nullptr);
         assert(approx(v->elapsedTime, 0.1f));
 

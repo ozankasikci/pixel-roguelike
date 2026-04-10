@@ -3,7 +3,7 @@
 #include <string>
 #include <unordered_map>
 
-namespace audio {
+namespace engine::audio {
 
 class BusGraph {
 public:
@@ -44,4 +44,4 @@ private:
     std::unordered_map<std::string, Bus> buses_;
 };
 
-} // namespace audio
+} // namespace engine::audio

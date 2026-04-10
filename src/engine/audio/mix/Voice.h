@@ -7,14 +7,14 @@
 
 #include "engine/audio/VoiceHandle.h"
 
-namespace audio {
+namespace engine::audio {
 
 class BusGraph; // forward declaration
 
 enum class VoiceState { Playing, Virtual, Stopping, Stopped };
 
 struct Voice {
-    engine::audio::VoiceHandle handle;
+    VoiceHandle handle;
     std::string eventName;
     glm::vec3 position{0.0f};
     float volume = 1.0f;
@@ -30,6 +30,9 @@ struct Voice {
     float occlusion = 0.0f; // 0=clear, 1=blocked
     int sourceIndex = -1;   // -1 = virtual
     uint32_t bufferHandle = 0;
+    float fadeTime = 0.0f;    // total fade duration when Stopping
+    float fadeElapsed = 0.0f; // elapsed fade time when Stopping
+    float fadeVolume = 1.0f;  // current fade multiplier (1.0 = full, 0.0 = silent)
 
     /// Inverse-distance-clamped attenuation (matches AL_INVERSE_DISTANCE_CLAMPED).
     /// Returns 1.0 for 2D voices.
@@ -40,4 +43,4 @@ struct Voice {
     float computeAudibility(const glm::vec3& listenerPos, const BusGraph& graph) const;
 };
 
-} // namespace audio
+} // namespace engine::audio

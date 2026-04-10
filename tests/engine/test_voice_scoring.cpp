@@ -11,8 +11,8 @@ static bool approx(float a, float b, float eps = 0.001f) {
 int main() {
     // --- Voice at listener position: audibility = 1.0 ---
     {
-        audio::BusGraph graph;
-        audio::Voice v;
+        engine::audio::BusGraph graph;
+        engine::audio::Voice v;
         v.volume = 1.0f;
         v.priority = 128;
         v.busName = "SFX";
@@ -31,7 +31,7 @@ int main() {
 
     // --- Voice at distance 10, refDistance=1: attenuation = 0.1 ---
     {
-        audio::Voice v;
+        engine::audio::Voice v;
         v.is3D = true;
         v.position = glm::vec3(10.0f, 0.0f, 0.0f);
         v.refDistance = 1.0f;
@@ -44,7 +44,7 @@ int main() {
 
     // --- Voice at or beyond maxDistance: attenuation = 0 ---
     {
-        audio::Voice v;
+        engine::audio::Voice v;
         v.is3D = true;
         v.position = glm::vec3(50.0f, 0.0f, 0.0f);
         v.refDistance = 1.0f;
@@ -57,10 +57,10 @@ int main() {
 
     // --- Bus volume affects score ---
     {
-        audio::BusGraph graph;
+        engine::audio::BusGraph graph;
         graph.setVolume("SFX", 0.5f);
 
-        audio::Voice v;
+        engine::audio::Voice v;
         v.volume = 1.0f;
         v.priority = 128;
         v.busName = "SFX";
@@ -76,10 +76,10 @@ int main() {
 
     // --- Muted bus => score 0 ---
     {
-        audio::BusGraph graph;
+        engine::audio::BusGraph graph;
         graph.setMute("SFX", true);
 
-        audio::Voice v;
+        engine::audio::Voice v;
         v.volume = 1.0f;
         v.priority = 128;
         v.busName = "SFX";
@@ -95,9 +95,9 @@ int main() {
 
     // --- 2D voice ignores distance ---
     {
-        audio::BusGraph graph;
+        engine::audio::BusGraph graph;
 
-        audio::Voice v;
+        engine::audio::Voice v;
         v.volume = 1.0f;
         v.priority = 128;
         v.busName = "SFX";
@@ -116,10 +116,10 @@ int main() {
 
     // --- Higher priority boosts score ---
     {
-        audio::BusGraph graph;
+        engine::audio::BusGraph graph;
         glm::vec3 listener(0.0f, 0.0f, 0.0f);
 
-        audio::Voice low;
+        engine::audio::Voice low;
         low.volume = 1.0f;
         low.priority = 64;
         low.busName = "SFX";
@@ -128,7 +128,7 @@ int main() {
         low.refDistance = 1.0f;
         low.maxDistance = 50.0f;
 
-        audio::Voice high;
+        engine::audio::Voice high;
         high.volume = 1.0f;
         high.priority = 255;
         high.busName = "SFX";

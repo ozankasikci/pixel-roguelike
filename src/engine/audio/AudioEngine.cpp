@@ -32,10 +32,10 @@ struct AudioEngine::Impl {
     ALStreamPlayer ambientStream;
 
     // Mix layer
-    ::audio::BusGraph busGraph;
-    ::audio::VoiceManager voiceManager;
-    ::audio::OcclusionProcessor occlusionProcessor;
-    ::audio::ReverbManager reverbManager;
+    BusGraph busGraph;
+    VoiceManager voiceManager;
+    OcclusionProcessor occlusionProcessor;
+    ReverbManager reverbManager;
 
     // Events layer
     EventRegistry eventRegistry;
@@ -122,18 +122,18 @@ bool AudioEngine::init() {
     }
 
     // 6. Set up default reverb presets
-    impl_->reverbManager.addPreset("None", ::audio::ReverbParams{});
+    impl_->reverbManager.addPreset("None", ReverbParams{});
     impl_->reverbManager.setPreset("None");
 
     // Small room preset
-    ::audio::ReverbParams smallRoom;
+    ReverbParams smallRoom;
     smallRoom.decayTime = 0.8f;
     smallRoom.reflectionsGain = 0.1f;
     smallRoom.lateReverbGain = 0.6f;
     impl_->reverbManager.addPreset("SmallRoom", smallRoom);
 
     // Large hall preset
-    ::audio::ReverbParams largeHall;
+    ReverbParams largeHall;
     largeHall.decayTime = 3.2f;
     largeHall.reflectionsGain = 0.15f;
     largeHall.reflectionsDelay = 0.02f;
@@ -142,7 +142,7 @@ bool AudioEngine::init() {
     impl_->reverbManager.addPreset("LargeHall", largeHall);
 
     // Corridor preset
-    ::audio::ReverbParams corridor;
+    ReverbParams corridor;
     corridor.decayTime = 1.5f;
     corridor.diffusion = 0.6f;
     corridor.reflectionsGain = 0.2f;
@@ -361,7 +361,7 @@ void AudioEngine::setReverbPreset(const std::string& presetName, float transitio
     }
 }
 
-void AudioEngine::setRaycastFunc(::audio::RaycastFunc func) {
+void AudioEngine::setRaycastFunc(RaycastFunc func) {
     impl_->occlusionProcessor.setRaycastFunc(std::move(func));
 }
 
@@ -400,7 +400,7 @@ void AudioEngine::update(float deltaTime) {
 // Accessors
 // ---------------------------------------------------------------------------
 
-::audio::BusGraph& AudioEngine::busGraph() {
+BusGraph& AudioEngine::busGraph() {
     return impl_->busGraph;
 }
 
@@ -417,8 +417,8 @@ void AudioEngine::syncVoicesToSources() {
         if (voice.sourceIndex < 0) {
             continue;
         }
-        if (voice.state != ::audio::VoiceState::Playing &&
-            voice.state != ::audio::VoiceState::Stopping) {
+        if (voice.state != VoiceState::Playing &&
+            voice.state != VoiceState::Stopping) {
             continue;
         }
 
@@ -448,10 +448,14 @@ void AudioEngine::syncVoicesToSources() {
             alSourcei(src, AL_SOURCE_RELATIVE, AL_TRUE);
         }
 
-        // Gain = voice volume * bus effective volume * (1 - occlusion)
+        // Gain = voice volume * bus effective volume * (1 - occlusion) * fadeVolume
         float busVol = impl_->busGraph.effectiveVolume(voice.busName);
         float occlusionAtten = 1.0f - (voice.occlusion * 0.8f);
-        alSourcef(src, AL_GAIN, voice.volume * busVol * occlusionAtten);
+        float gain = voice.volume * busVol * occlusionAtten;
+        if (voice.state == VoiceState::Stopping) {
+            gain *= voice.fadeVolume;
+        }
+        alSourcef(src, AL_GAIN, gain);
 
         // Pitch
         alSourcef(src, AL_PITCH, voice.pitch);
@@ -465,10 +469,19 @@ void AudioEngine::syncVoicesToSources() {
             alSource3i(src, AL_AUXILIARY_SEND_FILTER, static_cast<ALint>(slot), 0, AL_FILTER_NULL);
         }
 
+        // Check AL source state
+        ALint alState = 0;
+        alGetSourcei(src, AL_SOURCE_STATE, &alState);
+
+        // Check if a non-looping source has finished playing (one-shot completion)
+        if (alState == AL_STOPPED && !voice.looping &&
+            voice.state == VoiceState::Playing) {
+            voice.state = VoiceState::Stopped;
+            continue;
+        }
+
         // Start playback if not already playing
-        ALint state = 0;
-        alGetSourcei(src, AL_SOURCE_STATE, &state);
-        if (state != AL_PLAYING) {
+        if (alState != AL_PLAYING) {
             alSourcePlay(src);
         }
     }

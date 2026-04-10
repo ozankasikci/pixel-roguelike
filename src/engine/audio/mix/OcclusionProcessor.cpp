@@ -7,7 +7,7 @@
 
 #include "engine/audio/mix/Voice.h"
 
-namespace audio {
+namespace engine::audio {
 
 OcclusionProcessor::OcclusionProcessor(float queryRate)
     : queryInterval_(1.0f / std::max(queryRate, 1.0f)) {
@@ -76,4 +76,4 @@ void OcclusionProcessor::update(std::vector<Voice>& voices, const glm::vec3& lis
     }
 }
 
-} // namespace audio
+} // namespace engine::audio

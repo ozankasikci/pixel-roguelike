@@ -7,7 +7,7 @@
 
 #include "engine/audio/mix/BusGraph.h"
 
-namespace audio {
+namespace engine::audio {
 
 float Voice::computeDistanceAttenuation(const glm::vec3& listenerPos) const {
     if (!is3D) {
@@ -31,4 +31,4 @@ float Voice::computeAudibility(const glm::vec3& listenerPos, const BusGraph& gra
     return volume * attenuation * bus_vol * priority_factor;
 }
 
-} // namespace audio
+} // namespace engine::audio

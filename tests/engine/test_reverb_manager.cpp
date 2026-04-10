@@ -11,7 +11,7 @@ static bool approx(float a, float b, float eps = 0.001f) {
 int main() {
     // --- All 4 default presets exist ---
     {
-        audio::ReverbManager mgr;
+        engine::audio::ReverbManager mgr;
         assert(mgr.hasPreset("None"));
         assert(mgr.hasPreset("Cell"));
         assert(mgr.hasPreset("Corridor"));
@@ -21,13 +21,13 @@ int main() {
 
     // --- Default preset is "None" ---
     {
-        audio::ReverbManager mgr;
+        engine::audio::ReverbManager mgr;
         assert(mgr.currentPreset() == "None");
     }
 
     // --- setPreset changes current ---
     {
-        audio::ReverbManager mgr;
+        engine::audio::ReverbManager mgr;
         mgr.setPreset("Cell");
         assert(mgr.currentPreset() == "Cell");
         mgr.setPreset("Corridor");
@@ -36,7 +36,7 @@ int main() {
 
     // --- setPreset with unknown name does not change current ---
     {
-        audio::ReverbManager mgr;
+        engine::audio::ReverbManager mgr;
         mgr.setPreset("Cell");
         mgr.setPreset("Bogus");
         assert(mgr.currentPreset() == "Cell");
@@ -44,11 +44,11 @@ int main() {
 
     // --- Cell decay < Corridor decay (verify preset values) ---
     {
-        audio::ReverbManager mgr;
-        audio::ReverbParams cell = mgr.presetParams("Cell");
-        audio::ReverbParams corridor = mgr.presetParams("Corridor");
-        audio::ReverbParams openArea = mgr.presetParams("OpenArea");
-        audio::ReverbParams none = mgr.presetParams("None");
+        engine::audio::ReverbManager mgr;
+        engine::audio::ReverbParams cell = mgr.presetParams("Cell");
+        engine::audio::ReverbParams corridor = mgr.presetParams("Corridor");
+        engine::audio::ReverbParams openArea = mgr.presetParams("OpenArea");
+        engine::audio::ReverbParams none = mgr.presetParams("None");
 
         assert(cell.decayTime < corridor.decayTime);
         assert(corridor.decayTime < openArea.decayTime);
@@ -59,7 +59,7 @@ int main() {
 
     // --- beginTransition + updateTransition: progress ramps from 0 to 1 ---
     {
-        audio::ReverbManager mgr;
+        engine::audio::ReverbManager mgr;
         mgr.setPreset("Cell");
         mgr.beginTransition("Corridor", 1.0f);
 
@@ -81,7 +81,7 @@ int main() {
 
     // --- After transition completes, currentPreset is the target ---
     {
-        audio::ReverbManager mgr;
+        engine::audio::ReverbManager mgr;
         mgr.setPreset("None");
         mgr.beginTransition("OpenArea", 0.5f);
 
@@ -93,15 +93,15 @@ int main() {
 
     // --- currentParams returns interpolated values during transition ---
     {
-        audio::ReverbManager mgr;
+        engine::audio::ReverbManager mgr;
         mgr.setPreset("Cell");
-        audio::ReverbParams cellParams = mgr.presetParams("Cell");
-        audio::ReverbParams corridorParams = mgr.presetParams("Corridor");
+        engine::audio::ReverbParams cellParams = mgr.presetParams("Cell");
+        engine::audio::ReverbParams corridorParams = mgr.presetParams("Corridor");
 
         mgr.beginTransition("Corridor", 1.0f);
         mgr.updateTransition(0.5f);
 
-        audio::ReverbParams blended = mgr.currentParams();
+        engine::audio::ReverbParams blended = mgr.currentParams();
         float expectedDecay = 0.5f * cellParams.decayTime + 0.5f * corridorParams.decayTime;
         assert(approx(blended.decayTime, expectedDecay));
 
@@ -111,10 +111,10 @@ int main() {
 
     // --- currentParams returns source params when not transitioning ---
     {
-        audio::ReverbManager mgr;
+        engine::audio::ReverbManager mgr;
         mgr.setPreset("Cell");
-        audio::ReverbParams params = mgr.currentParams();
-        audio::ReverbParams cellParams = mgr.presetParams("Cell");
+        engine::audio::ReverbParams params = mgr.currentParams();
+        engine::audio::ReverbParams cellParams = mgr.presetParams("Cell");
         assert(approx(params.decayTime, cellParams.decayTime));
         assert(approx(params.density, cellParams.density));
         assert(approx(params.gain, cellParams.gain));
@@ -122,8 +122,8 @@ int main() {
 
     // --- addPreset and use in transition ---
     {
-        audio::ReverbManager mgr;
-        audio::ReverbParams custom{};
+        engine::audio::ReverbManager mgr;
+        engine::audio::ReverbParams custom{};
         custom.decayTime = 5.0f;
         custom.gain = 0.8f;
         mgr.addPreset("Custom", custom);
@@ -131,13 +131,13 @@ int main() {
 
         mgr.setPreset("Custom");
         assert(mgr.currentPreset() == "Custom");
-        audio::ReverbParams p = mgr.currentParams();
+        engine::audio::ReverbParams p = mgr.currentParams();
         assert(approx(p.decayTime, 5.0f));
     }
 
     // --- Zero or negative duration in beginTransition does immediate switch ---
     {
-        audio::ReverbManager mgr;
+        engine::audio::ReverbManager mgr;
         mgr.setPreset("Cell");
         mgr.beginTransition("Corridor", 0.0f);
         assert(!mgr.isTransitioning());
@@ -146,7 +146,7 @@ int main() {
 
     // --- Overshoot transition clamps at 1.0 ---
     {
-        audio::ReverbManager mgr;
+        engine::audio::ReverbManager mgr;
         mgr.setPreset("Cell");
         mgr.beginTransition("OpenArea", 0.5f);
         mgr.updateTransition(10.0f); // way past duration

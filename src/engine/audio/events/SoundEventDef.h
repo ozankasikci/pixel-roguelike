@@ -1,5 +1,6 @@
 #pragma once
 
+#include <random>
 #include <string>
 #include <vector>
 
@@ -37,7 +38,7 @@ struct SoundEventDef {
 
         switch (pickMode) {
         case PickMode::Random:
-            picked = std::rand() % count;
+            picked = std::uniform_int_distribution<int>(0, count - 1)(rng());
             break;
 
         case PickMode::RandomNoRepeat:
@@ -45,7 +46,7 @@ struct SoundEventDef {
                 picked = 0;
             } else {
                 do {
-                    picked = std::rand() % count;
+                    picked = std::uniform_int_distribution<int>(0, count - 1)(rng());
                 } while (picked == lastPickIndex);
             }
             break;
@@ -70,7 +71,7 @@ struct SoundEventDef {
         if (pitchRange.x == pitchRange.y) {
             return pitchRange.x;
         }
-        float t = static_cast<float>(std::rand()) / static_cast<float>(RAND_MAX);
+        float t = std::uniform_real_distribution<float>(0.0f, 1.0f)(rng());
         return pitchRange.x + t * (pitchRange.y - pitchRange.x);
     }
 
@@ -79,8 +80,14 @@ struct SoundEventDef {
         if (volumeRange.x == volumeRange.y) {
             return volumeRange.x;
         }
-        float t = static_cast<float>(std::rand()) / static_cast<float>(RAND_MAX);
+        float t = std::uniform_real_distribution<float>(0.0f, 1.0f)(rng());
         return volumeRange.x + t * (volumeRange.y - volumeRange.x);
+    }
+
+private:
+    static std::mt19937& rng() {
+        static thread_local std::mt19937 instance{std::random_device{}()};
+        return instance;
     }
 };
 

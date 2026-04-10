@@ -10,7 +10,7 @@ static bool approx(float a, float b, float eps = 0.0001f) {
 int main() {
     // --- Default hierarchy exists ---
     {
-        audio::BusGraph graph;
+        engine::audio::BusGraph graph;
         assert(graph.busExists("Master"));
         assert(graph.busExists("Music"));
         assert(graph.busExists("SFX"));
@@ -23,7 +23,7 @@ int main() {
 
     // --- Default volumes are 1.0 ---
     {
-        audio::BusGraph graph;
+        engine::audio::BusGraph graph;
         assert(approx(graph.busVolume("Master"), 1.0f));
         assert(approx(graph.busVolume("Music"), 1.0f));
         assert(approx(graph.busVolume("SFX"), 1.0f));
@@ -34,7 +34,7 @@ int main() {
 
     // --- effectiveVolume walks the chain (Footsteps -> SFX -> Master) ---
     {
-        audio::BusGraph graph;
+        engine::audio::BusGraph graph;
         // All at 1.0 — effective should be 1.0
         assert(approx(graph.effectiveVolume("Footsteps"), 1.0f));
         assert(approx(graph.effectiveVolume("SFX"), 1.0f));
@@ -43,7 +43,7 @@ int main() {
 
     // --- Setting parent volume affects children's effective volume ---
     {
-        audio::BusGraph graph;
+        engine::audio::BusGraph graph;
         graph.setVolume("Master", 0.5f);
         assert(approx(graph.effectiveVolume("Master"), 0.5f));
         assert(approx(graph.effectiveVolume("Music"), 0.5f));
@@ -53,7 +53,7 @@ int main() {
 
     // --- Nested multiplication (SFX=0.8, Master=0.5 => Footsteps effective=0.4) ---
     {
-        audio::BusGraph graph;
+        engine::audio::BusGraph graph;
         graph.setVolume("SFX", 0.8f);
         graph.setVolume("Master", 0.5f);
         assert(approx(graph.effectiveVolume("Footsteps"), 0.4f));
@@ -65,7 +65,7 @@ int main() {
 
     // --- Mute propagates (muting SFX zeros Footsteps/Doors but not Music) ---
     {
-        audio::BusGraph graph;
+        engine::audio::BusGraph graph;
         graph.setMute("SFX", true);
         assert(approx(graph.effectiveVolume("SFX"), 0.0f));
         assert(approx(graph.effectiveVolume("Footsteps"), 0.0f));
@@ -78,7 +78,7 @@ int main() {
 
     // --- Volume clamping (1.5 -> 1.0, -0.5 -> 0.0) ---
     {
-        audio::BusGraph graph;
+        engine::audio::BusGraph graph;
         graph.setVolume("Master", 1.5f);
         assert(approx(graph.busVolume("Master"), 1.0f));
         graph.setVolume("Master", -0.5f);
@@ -87,7 +87,7 @@ int main() {
 
     // --- Unknown bus returns 0 ---
     {
-        audio::BusGraph graph;
+        engine::audio::BusGraph graph;
         assert(approx(graph.busVolume("NonExistent"), 0.0f));
         assert(approx(graph.effectiveVolume("NonExistent"), 0.0f));
         assert(!graph.busExists("NonExistent"));

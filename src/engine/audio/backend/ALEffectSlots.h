@@ -11,8 +11,6 @@
 
 namespace engine::audio {
 
-using ReverbParams = ::audio::ReverbParams;
-
 /// Manages OpenAL EFX auxiliary effect slots, effects, and filters.
 /// Provides reverb setup and low-pass filter creation for occlusion.
 /// Move-only, non-copyable.

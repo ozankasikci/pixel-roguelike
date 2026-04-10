@@ -5,7 +5,7 @@
 
 #include <glm/vec3.hpp>
 
-namespace audio {
+namespace engine::audio {
 
 struct Voice;
 
@@ -49,4 +49,4 @@ private:
     static constexpr float kBlendSpeed = 8.0f; // occlusion blend rate (units/sec)
 };
 
-} // namespace audio
+} // namespace engine::audio

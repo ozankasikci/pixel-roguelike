@@ -2,7 +2,7 @@
 
 #include <algorithm>
 
-namespace audio {
+namespace engine::audio {
 
 ReverbManager::ReverbManager() {
     // "None" — silence, no reverb
@@ -165,4 +165,4 @@ ReverbParams ReverbManager::lerp(const ReverbParams& a, const ReverbParams& b, f
     return result;
 }
 
-} // namespace audio
+} // namespace engine::audio

@@ -1,6 +1,6 @@
 #pragma once
 
-namespace audio {
+namespace engine::audio {
 
 /// Parameters for configuring a reverb effect (maps to EAX Reverb or standard Reverb).
 struct ReverbParams {
@@ -18,4 +18,4 @@ struct ReverbParams {
     float roomRolloff = 0.0f;
 };
 
-} // namespace audio
+} // namespace engine::audio
