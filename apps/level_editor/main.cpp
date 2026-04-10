@@ -28,6 +28,7 @@
 #include "game/level/LevelDef.h"
 #include "game/modules/checkpoint/CheckpointModule.h"
 #include "game/modules/door/DoorModule.h"
+#include "game/modules/player_control/PlayerControlModule.h"
 #include "game/rendering/MaterialDefinition.h"
 #include "game/rendering/MaterialTextureLibrary.h"
 #include "game/session/EquipmentState.h"
@@ -340,6 +341,7 @@ int main(int argc, char* argv[]) {
     content.loadDefaults();
     registerDoorModule();
     registerCheckpointModule();
+    registerPlayerControlModule();
 
     MaterialTextureLibrary materialTextures;
     renderStartupProgress(window, imgui, 0.16f, "Preparing materials", "Uploading material texture data...");

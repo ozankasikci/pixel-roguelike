@@ -61,3 +61,4 @@ target_link_libraries(game INTERFACE
 # Feature modules (per D-03)
 add_subdirectory(modules/door)
 add_subdirectory(modules/checkpoint)
+add_subdirectory(modules/player_control)

@@ -240,37 +240,9 @@ void GameplayBehaviors::executeAction(GameRegistry& registry, entt::entity sourc
         }
         break;
     }
-    case ActionType::LockPlayer: {
-        const auto* lockParams = std::get_if<PlayerLockParams>(&action.params);
-        auto lockView = registry.view<PlayerInteractionLockComponent>();
-        for (auto [lockEntity, lock] : lockView.each()) {
-            lock.active = true;
-            if (lockParams && lockParams->duration > 0.0f) {
-                lock.remainingTime = lockParams->duration;
-            } else {
-                lock.remainingTime = 0.0f;  // indefinite until UnlockPlayer
-            }
-            break;
-        }
-        break;
-    }
-    case ActionType::UnlockPlayer: {
-        auto lockView = registry.view<PlayerInteractionLockComponent>();
-        for (auto [lockEntity, lock] : lockView.each()) {
-            lock.active = false;
-            lock.remainingTime = 0.0f;
-            break;
-        }
-        break;
-    }
+    case ActionType::LockPlayer:
+    case ActionType::UnlockPlayer:
     case ActionType::TeleportPlayer: {
-        const auto* teleportParams = std::get_if<TeleportPlayerParams>(&action.params);
-        if (!teleportParams) break;
-        auto playerView = registry.view<PlayerTag, TransformComponent>();
-        for (auto [playerEntity, transform] : playerView.each()) {
-            transform.position = teleportParams->position;
-            break;
-        }
         break;
     }
     }

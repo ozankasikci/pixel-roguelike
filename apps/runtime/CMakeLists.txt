@@ -4,5 +4,6 @@ target_link_libraries(pixel-roguelike PRIVATE
     gameplay
     game_module_checkpoint
     game_module_door
+    game_module_player_control
 )
 configure_desktop_app(pixel-roguelike)

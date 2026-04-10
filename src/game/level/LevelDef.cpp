@@ -939,26 +939,6 @@ LevelDef loadLevelDef(const std::string& path) {
             continue;
         }
 
-        if (kind == "player_spawn") {
-            LevelPlayerSpawn placement;
-            if (!(stream >> placement.position.x >> placement.position.y >> placement.position.z
-                         >> placement.fallRespawnY)) {
-                throwParseError(path, lineNumber, "invalid player_spawn record");
-            }
-            const auto tokens = collectRemainingTokens(stream);
-            for (std::size_t index = 0; index < tokens.size();) {
-                if (parseNodeMetadata(path, lineNumber, tokens, index,
-                                      placement.nodeId, placement.parentNodeId)) {
-                    continue;
-                }
-                throwParseError(path, lineNumber, "invalid player_spawn metadata");
-            }
-            currentKind = CurrentEntityKind::None;
-            data.playerSpawn = placement;
-            data.hasPlayerSpawn = true;
-            continue;
-        }
-
         if (kind == "archetype_instance") {
             LevelArchetypePlacement placement;
             if (!(stream >> placement.archetypeId
@@ -1394,16 +1374,6 @@ std::string serializeLevelDef(const LevelDef& data) {
             << formatFloat(placement.intensity) << ' '
             << (placement.boxProjection ? "true" : "false");
         appendNodeMetadata(out, placement.nodeId, placement.parentNodeId);
-        out << '\n';
-    }
-
-    if (data.hasPlayerSpawn) {
-        out << "player_spawn "
-            << formatFloat(data.playerSpawn.position.x) << ' '
-            << formatFloat(data.playerSpawn.position.y) << ' '
-            << formatFloat(data.playerSpawn.position.z) << ' '
-            << formatFloat(data.playerSpawn.fallRespawnY);
-        appendNodeMetadata(out, data.playerSpawn.nodeId, data.playerSpawn.parentNodeId);
         out << '\n';
     }
 

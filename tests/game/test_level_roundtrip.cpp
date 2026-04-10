@@ -2,6 +2,7 @@
 #include "game/components/ColliderComponent.h"
 #include "game/modules/door/DoorModule.h"
 #include "game/modules/checkpoint/CheckpointModule.h"
+#include "game/modules/player_control/PlayerControlModule.h"
 #include "common/TestSupport.h"
 
 #include <cassert>
@@ -13,6 +14,7 @@ int main() {
 
     registerDoorModule();
     registerCheckpointModule();
+    registerPlayerControlModule();
 
     LevelDef level;
     level.environmentId = "cloister_daylight";

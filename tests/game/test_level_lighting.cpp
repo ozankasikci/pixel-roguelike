@@ -1,8 +1,11 @@
 #include "game/level/LevelDef.h"
+#include "game/modules/player_control/PlayerControlModule.h"
 
 #include <cassert>
 
 int main() {
+    registerPlayerControlModule();
+
     const auto data = loadLevelDef(LIGHT_RECORDS_SCENE_FILE);
 
     assert(data.environmentProfile == EnvironmentProfile::Default);

@@ -8,6 +8,8 @@
 #include "game/modules/checkpoint/CheckpointFeedbackState.h"
 #include "game/modules/checkpoint/CheckpointSystem.h"
 #include "game/modules/door/DoorComponents.h"
+#include "game/modules/player_control/PlayerControlCamera.h"
+#include "game/modules/player_control/PlayerControlMovement.h"
 #include "game/components/PlayerInteractionLockComponent.h"
 #include "game/components/PlayerMovementComponent.h"
 #include "game/components/PlayerSpawnComponent.h"
@@ -147,6 +149,7 @@ void RuntimeGameSession::rebuild(const LevelDef& level,
 
     registry_.ctx().insert_or_assign<ContentRegistry*>(&content);
     registry_.ctx().insert_or_assign<RunSession*>(&runSession_);
+    registry_.ctx().insert_or_assign<PhysicsSystem*>(&physics_);
 
     LevelBuildContext context{
         .registry = registry_,
@@ -237,12 +240,12 @@ void RuntimeGameSession::tick(float deltaTime, float aspect) {
     performanceStats_.inventoryMs = elapsedMilliseconds(t0, t1);
 
     t0 = t1;
-    updateRuntimePlayerMovement(registry_, inputSystem_, physics_, deltaTime);
+    tickPlayerMovement(registry_, inputSystem_, physics_, deltaTime);
     t1 = Clock::now();
     performanceStats_.movementMs = elapsedMilliseconds(t0, t1);
 
     t0 = t1;
-    updateRuntimeCamera(registry_, inputSystem_, aspect, deltaTime);
+    tickPlayerCamera(registry_, inputSystem_, aspect, deltaTime);
     t1 = Clock::now();
     performanceStats_.cameraMs = elapsedMilliseconds(t0, t1);
 
@@ -483,6 +486,9 @@ void RuntimeGameSession::clearEntities() {
     }
     if (ctx.contains<RunSession*>()) {
         ctx.erase<RunSession*>();
+    }
+    if (ctx.contains<PhysicsSystem*>()) {
+        ctx.erase<PhysicsSystem*>();
     }
     baselineSnapshot_.reset();
 }

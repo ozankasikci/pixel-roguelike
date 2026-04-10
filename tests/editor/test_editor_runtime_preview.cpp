@@ -11,6 +11,7 @@
 #include "game/components/PlayerTag.h"
 #include "game/components/TransformComponent.h"
 #include "game/content/ContentRegistry.h"
+#include "game/modules/player_control/PlayerControlModule.h"
 #include "game/rendering/EnvironmentDebugSync.h"
 #include "game/ui/InventoryMenuState.h"
 
@@ -39,6 +40,7 @@ int main() {
 
     ContentRegistry content;
     content.loadDefaults();
+    registerPlayerControlModule();
 
     EditorSceneDocument document;
     document.loadFromSceneFile(SILOS_CLOISTER_SCENE_FILE, content);

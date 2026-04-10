@@ -1,10 +1,13 @@
 #include "game/level/LevelDef.h"
 #include "game/components/ColliderComponent.h"
+#include "game/modules/player_control/PlayerControlModule.h"
 
 #include <algorithm>
 #include <cassert>
 
 int main() {
+    registerPlayerControlModule();
+
     const auto data = loadLevelDef(SILOS_CLOISTER_SCENE_FILE);
 
     assert(data.environmentProfile == EnvironmentProfile::Default);

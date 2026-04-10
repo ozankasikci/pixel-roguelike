@@ -7,22 +7,15 @@
 #include "game/level/LevelBuilder.h"
 #include "game/modules/checkpoint/CheckpointSpawner.h"
 #include "game/modules/door/DoorSpawner.h"
+#include "game/modules/player_control/PlayerControlSpawner.h"
 #include "game/prefabs/GameplayPrefabs.h"
 #include "game/rendering/EnvironmentProfile.h"
 #include "game/rendering/MaterialDefinition.h"
 #include "game/rendering/MeshAssetProvider.h"
 #include "game/session/RunSession.h"
-#include "game/components/CameraComponent.h"
-#include "game/components/CharacterControllerComponent.h"
-#include "game/components/ControllableTag.h"
 #include "game/components/KinematicLinkComponent.h"
 #include "game/components/MeshComponent.h"
 #include "game/components/TransformComponent.h"
-#include "game/components/PlayerInteractionLockComponent.h"
-#include "game/components/PlayerMovementComponent.h"
-#include "game/components/PlayerSpawnComponent.h"
-#include "game/components/PlayerTag.h"
-#include "game/components/PrimaryCameraTag.h"
 #include "engine/core/PathUtils.h"
 
 #include <cassert>
@@ -235,31 +228,6 @@ void LevelLoader::load(const LevelLoadRequest& request, const LevelLoadArgs& arg
         for (const auto& a : level.archetypes) linkParent(a.nodeId, a.parentNodeId);
     }
 
-    // Scene file stores ground-level spawn positions; convert to eye position
-    const glm::vec3 eyeHeightOffset(0.0f, CharacterControllerComponent{}.eyeHeight, 0.0f);
-
-    if (session.currentLevelId != request.levelId) {
-        session.currentLevelId = request.levelId;
-        if (level.hasPlayerSpawn) {
-            session.respawnPosition = level.playerSpawn.position + eyeHeightOffset;
-            session.fallRespawnY = level.playerSpawn.fallRespawnY;
-        }
-    } else if (level.hasPlayerSpawn && session.respawnPosition == glm::vec3(0.0f)) {
-        session.respawnPosition = level.playerSpawn.position + eyeHeightOffset;
-        session.fallRespawnY = level.playerSpawn.fallRespawnY;
-    }
-
-    const glm::vec3 defaultSpawn = level.hasPlayerSpawn ? level.playerSpawn.position + eyeHeightOffset : glm::vec3(0.0f, 1.6f, 5.4f);
-    const glm::vec3 spawnPosition = session.respawnPosition == glm::vec3(0.0f) ? defaultSpawn : session.respawnPosition;
-    const float fallRespawnY = level.hasPlayerSpawn ? level.playerSpawn.fallRespawnY : session.fallRespawnY;
-
-    auto player = builder.createTransformEntity(spawnPosition);
-    registry.emplace<PlayerTag>(player);
-    registry.emplace<ControllableTag>(player);
-    registry.emplace<PrimaryCameraTag>(player);
-    registry.emplace<CameraComponent>(player);
-    registry.emplace<CharacterControllerComponent>(player);
-    registry.emplace<PlayerMovementComponent>(player);
-    registry.emplace<PlayerInteractionLockComponent>(player);
-    registry.emplace<PlayerSpawnComponent>(player, PlayerSpawnComponent{session.respawnPosition, fallRespawnY});
+    syncPlayerSpawnState(level, request.levelId, session);
+    (void)spawnPlayerEntity(builder, level, session);
 }

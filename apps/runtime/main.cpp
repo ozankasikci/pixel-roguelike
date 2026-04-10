@@ -7,6 +7,7 @@
 #include "engine/ui/ImGuiLayer.h"
 #include "game/modules/checkpoint/CheckpointModule.h"
 #include "game/modules/door/DoorModule.h"
+#include "game/modules/player_control/PlayerControlModule.h"
 #include "game/systems/AudioListenerSystem.h"
 #include "game/systems/RenderSystem.h"
 #include "game/scenes/GenericFileScene.h"
@@ -81,6 +82,7 @@ int main(int argc, char* argv[]) {
 
     registerDoorModule();
     registerCheckpointModule();
+    registerPlayerControlModule();
 
     // Register systems by phase so scheduling policy lives in the engine instead of boot order.
     // Gameplay systems (interaction, checkpoints, doors, movement, camera) are handled by

@@ -1,25 +1,17 @@
 #include "game/runtime/RuntimeGameplay.h"
 
 #include "engine/input/InputSystem.h"
-#include "engine/physics/PhysicsSystem.h"
-#include "game/behavior/ActionTypes.h"
-#include "game/behavior/BehaviorComponent.h"
-#include "game/behavior/BehaviorSystem.h"
-#include "game/behavior/NodeIndex.h"
 #include "game/components/ColliderComponent.h"
-#include "game/components/MeshComponent.h"
 #include "game/components/CameraComponent.h"
-#include "game/components/CharacterControllerComponent.h"
 #include "game/components/ControllableTag.h"
 #include "game/components/InteractableComponent.h"
+#include "game/components/MeshComponent.h"
 #include "game/components/PlayerInteractionLockComponent.h"
-#include "game/components/PlayerMovementComponent.h"
-#include "game/components/PlayerSpawnComponent.h"
 #include "game/components/PlayerTag.h"
 #include "game/components/PrimaryCameraTag.h"
 #include "game/components/TransformComponent.h"
 #include "game/content/ContentRegistry.h"
-#include "game/rendering/RuntimeCameraMath.h"
+#include "game/modules/player_control/PlayerControlCamera.h"
 #include "game/session/EquipmentState.h"
 #include "game/session/RunSession.h"
 #include "game/ui/InteractionFocusState.h"
@@ -34,28 +26,6 @@
 #include <cmath>
 
 namespace {
-
-glm::vec3 moveTowardXZ(const glm::vec3& current, const glm::vec3& target, float maxDelta) {
-    glm::vec2 cur(current.x, current.z);
-    glm::vec2 tgt(target.x, target.z);
-    glm::vec2 diff = tgt - cur;
-    const float dist = glm::length(diff);
-
-    if (dist <= maxDelta || dist < 0.0001f) {
-        return glm::vec3(tgt.x, current.y, tgt.y);
-    }
-
-    const glm::vec2 result = cur + (diff / dist) * maxDelta;
-    return glm::vec3(result.x, current.y, result.y);
-}
-
-glm::vec3 cameraForwardFromAngles(float yawDeg, float pitchDeg) {
-    glm::vec3 forward;
-    forward.x = std::cos(glm::radians(yawDeg)) * std::cos(glm::radians(pitchDeg));
-    forward.y = std::sin(glm::radians(pitchDeg));
-    forward.z = std::sin(glm::radians(yawDeg)) * std::cos(glm::radians(pitchDeg));
-    return glm::normalize(forward);
-}
 
 bool inventoryTogglePressed(const InputSystem& input) {
     return input.isKeyJustPressed(GLFW_KEY_I)
@@ -155,7 +125,7 @@ void updateRuntimeInteraction(GameRegistry& registry, const InputSystem& input) 
     }
 
     focus.actor = actor;
-    const glm::vec3 actorForward = cameraForwardFromAngles(actorCamera->yaw, actorCamera->pitch);
+    const glm::vec3 actorForward = buildPlayerCameraForward(actorCamera->yaw, actorCamera->pitch);
 
     float bestScore = -1.0f;
     auto interactableView = registry.view<TransformComponent, InteractableComponent>();
@@ -258,146 +228,4 @@ void updateRuntimeInventory(GameRegistry& registry,
 
     menu.pendingAction = InventoryMenuState::PendingActionType::None;
     menu.pendingWeaponId.clear();
-}
-
-void updateRuntimePlayerMovement(GameRegistry& registry,
-                                 const InputSystem& input,
-                                 PhysicsSystem& physics,
-                                 float deltaTime) {
-    const bool inventoryOpen = registry.ctx().contains<InventoryMenuState>()
-        && registry.ctx().get<InventoryMenuState>().open;
-
-    auto view = registry.view<TransformComponent, CameraComponent, PlayerMovementComponent, CharacterControllerComponent,
-                              PlayerInteractionLockComponent, PlayerSpawnComponent, PlayerTag, ControllableTag, PrimaryCameraTag>();
-    for (auto [entity, transform, cam, movement, cc, lock, spawn] : view.each()) {
-        const bool cursorLocked = input.isCursorLocked();
-        const bool locked = lock.active;
-        const bool gameplayInputEnabled = cursorLocked && !locked && !inventoryOpen;
-
-        if (transform.position.y < spawn.fallRespawnY) {
-            physics.setCharacterVelocity(entity, glm::vec3(0.0f));
-            physics.setCharacterPosition(entity, spawn.respawnPosition - glm::vec3(0.0f, cc.eyeOffset(), 0.0f));
-            movement.velocity = glm::vec3(0.0f);
-            movement.jumpHeld = false;
-            transform.position = spawn.respawnPosition;
-            continue;
-        }
-
-        glm::vec3 inputDir(0.0f);
-        if (gameplayInputEnabled) {
-            const float yawRad = glm::radians(cam.yaw);
-            glm::vec3 forward(std::cos(yawRad), 0.0f, std::sin(yawRad));
-            forward = glm::normalize(forward);
-            const glm::vec3 right = glm::normalize(glm::cross(forward, glm::vec3(0.0f, 1.0f, 0.0f)));
-
-            if (input.isKeyPressed(GLFW_KEY_W)) inputDir += forward;
-            if (input.isKeyPressed(GLFW_KEY_S)) inputDir -= forward;
-            if (input.isKeyPressed(GLFW_KEY_D)) inputDir += right;
-            if (input.isKeyPressed(GLFW_KEY_A)) inputDir -= right;
-
-            if (glm::length(inputDir) > 0.001f) {
-                inputDir = glm::normalize(inputDir);
-            }
-        }
-
-        const glm::vec3 desiredVelocity = inputDir * movement.maxGroundSpeed;
-        const bool hasInput = glm::length(inputDir) > 0.001f;
-        const GroundState groundState = physics.getCharacterGroundState(entity);
-        movement.grounded = (groundState == GroundState::OnGround);
-
-        float accel = movement.airAcceleration;
-        if (movement.grounded) {
-            accel = hasInput ? movement.acceleration : movement.deceleration;
-        }
-
-        movement.velocity = moveTowardXZ(movement.velocity, desiredVelocity, accel * deltaTime);
-
-        if (gameplayInputEnabled && movement.grounded && input.isKeyJustPressed(GLFW_KEY_SPACE)) {
-            movement.velocity.y = movement.jumpImpulse;
-            movement.jumpHeld = true;
-            movement.jumpHoldTimer = 0.0f;
-        }
-
-        float effectiveGravity = movement.gravity;
-        if (movement.jumpHeld && gameplayInputEnabled && input.isKeyPressed(GLFW_KEY_SPACE)
-            && movement.velocity.y > 0.0f
-            && movement.jumpHoldTimer < movement.maxJumpHoldTime) {
-            effectiveGravity = movement.gravity * movement.jumpHoldGravityScale;
-            movement.jumpHoldTimer += deltaTime;
-        } else {
-            movement.jumpHeld = false;
-        }
-
-        if (locked || inventoryOpen) {
-            movement.jumpHeld = false;
-            movement.velocity.x = 0.0f;
-            movement.velocity.z = 0.0f;
-        }
-
-        movement.velocity.y += effectiveGravity * deltaTime;
-        if (movement.grounded && movement.velocity.y < 0.0f) {
-            movement.velocity.y = 0.0f;
-        }
-
-        physics.setCharacterVelocity(entity, movement.velocity);
-        physics.updateCharacter(entity, deltaTime, glm::vec3(0.0f, movement.gravity, 0.0f));
-
-        const glm::vec3 charPos = physics.getCharacterPosition(entity);
-        transform.position = charPos + glm::vec3(0.0f, cc.eyeOffset(), 0.0f);
-        movement.grounded = (physics.getCharacterGroundState(entity) == GroundState::OnGround);
-        break;
-    }
-}
-
-void updateRuntimeCamera(GameRegistry& registry,
-                         const InputSystem& input,
-                         float aspect,
-                         float deltaTime) {
-    (void)deltaTime;
-    const bool inventoryOpen = registry.ctx().contains<InventoryMenuState>()
-        && registry.ctx().get<InventoryMenuState>().open;
-
-    auto view = registry.view<TransformComponent, CameraComponent, PlayerInteractionLockComponent, ControllableTag, PrimaryCameraTag>();
-    for (auto [entity, transform, cam, lock] : view.each()) {
-        (void)entity;
-        if (input.isCursorLocked() && !lock.active && !inventoryOpen) {
-            constexpr float sensitivity = 0.1f;
-            const glm::vec2 delta = input.mouseDelta();
-            cam.yaw += delta.x * sensitivity;
-            cam.pitch -= delta.y * sensitivity;
-        }
-
-        cam.pitch = std::clamp(cam.pitch, -89.0f, 89.0f);
-        updateRuntimeCameraComponent(transform, cam, aspect);
-        break;
-    }
-}
-
-void updateRuntimeBehaviors(GameRegistry& registry) {
-    auto& ctx = registry.ctx();
-    if (!ctx.contains<InteractionFocusState>()) return;
-    auto& focus = ctx.get<InteractionFocusState>();
-    if (!focus.activationRequested || focus.activationConsumed || focus.focused == entt::null) return;
-
-    auto* behavior = registry.try_get<BehaviorComponent>(focus.focused);
-    if (!behavior || !behavior->enabled) return;
-
-    for (auto& action : behavior->onActivate) {
-        if (action.fireOnce && action.fired) continue;
-
-        entt::entity target = focus.focused;
-        if (!action.targetNodeId.empty() && action.targetNodeId != "self") {
-            if (ctx.contains<NodeIndex>()) {
-                target = ctx.get<NodeIndex>().resolve(action.targetNodeId, focus.focused);
-            }
-        }
-
-        auto* handler = findBehaviorActionHandler(action.type);
-        if (handler) {
-            (*handler)(registry, focus.focused, target, action);
-        }
-
-        if (action.fireOnce) action.fired = true;
-    }
-    focus.activationConsumed = true;
 }

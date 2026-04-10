@@ -10,6 +10,8 @@
 #include "game/components/ColliderComponent.h"
 #include "game/components/TransformComponent.h"
 #include "game/content/ContentRegistry.h"
+#include "game/modules/player_control/PlayerControlCamera.h"
+#include "game/modules/player_control/PlayerControlMovement.h"
 #include "game/runtime/RuntimeGameplay.h"
 #include "engine/input/InputSystem.h"
 #include "game/session/RunSession.h"
@@ -61,8 +63,8 @@ int main() {
 
         physics.update(registry, 1.0f / 60.0f);
         updateRuntimeInventory(registry, input, session, content);
-        updateRuntimePlayerMovement(registry, input, physics, 1.0f / 60.0f);
-        updateRuntimeCamera(registry, input, 16.0f / 9.0f, 1.0f / 60.0f);
+        tickPlayerMovement(registry, input, physics, 1.0f / 60.0f);
+        tickPlayerCamera(registry, input, 16.0f / 9.0f, 1.0f / 60.0f);
     }
 
     const glm::vec3 movedPosition = registry.get<TransformComponent>(player).position;

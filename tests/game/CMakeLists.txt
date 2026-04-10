@@ -24,14 +24,14 @@ set(CONTENT_REGISTRY_FILE_DEFS
 
 pixel_roguelike_add_test(test_level_def
     SOURCES test_level_def.cpp
-    LIBRARIES game_content
+    LIBRARIES game_content game_module_player_control
     DEFINITIONS ${CATHEDRAL_SCENE_FILE_DEF}
     LABELS game
 )
 
 pixel_roguelike_add_test(test_level_lighting
     SOURCES test_level_lighting.cpp
-    LIBRARIES game_content
+    LIBRARIES game_content game_module_player_control
     DEFINITIONS ${LIGHT_RECORDS_SCENE_FILE_DEF}
     LABELS game
 )
@@ -64,14 +64,14 @@ pixel_roguelike_add_test(test_material_definitions
 
 pixel_roguelike_add_test(test_silos_cloister_level
     SOURCES test_silos_cloister_level.cpp
-    LIBRARIES game_content
+    LIBRARIES game_content game_module_player_control
     DEFINITIONS ${SILOS_CLOISTER_SCENE_FILE_DEF}
     LABELS game
 )
 
 pixel_roguelike_add_test(test_level_roundtrip
     SOURCES test_level_roundtrip.cpp
-    LIBRARIES game_content game_module_door game_module_checkpoint
+    LIBRARIES game_content game_module_door game_module_checkpoint game_module_player_control
     LABELS game
 )
 
@@ -101,8 +101,14 @@ pixel_roguelike_add_test(test_environment_debug_sync
 
 pixel_roguelike_add_test(test_runtime_game_session
     SOURCES test_runtime_game_session.cpp
-    LIBRARIES gameplay game_module_door
+    LIBRARIES gameplay game_module_door game_module_player_control
     DEFINITIONS ${SILOS_CLOISTER_SCENE_FILE_DEF}
+    LABELS game
+)
+
+pixel_roguelike_add_test(test_player_control_module
+    SOURCES test_player_control_module.cpp
+    LIBRARIES gameplay game_module_player_control
     LABELS game
 )
 

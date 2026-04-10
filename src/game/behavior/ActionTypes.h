@@ -2,6 +2,7 @@
 
 #include "game/modules/checkpoint/CheckpointActionTypes.h"
 #include "game/modules/door/DoorActionTypes.h"
+#include "game/modules/player_control/PlayerControlActionTypes.h"
 
 #include <glm/glm.hpp>
 #include <string>
@@ -59,14 +60,6 @@ struct EntityToggleParams {
 
 struct EventActionParams {
     std::string eventName;
-};
-
-struct PlayerLockParams {
-    float duration = 0.0f;  // 0 = indefinite until UnlockPlayer
-};
-
-struct TeleportPlayerParams {
-    glm::vec3 position{0.0f};
 };
 
 using ActionParams = std::variant<

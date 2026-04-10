@@ -2,6 +2,7 @@
 #include "editor/core/EditorRuntimePreviewSession.h"
 #include "engine/core/Window.h"
 #include "game/content/ContentRegistry.h"
+#include "game/modules/player_control/PlayerControlModule.h"
 
 #include <chrono>
 #include <cstdio>
@@ -25,6 +26,7 @@ int main() {
     const auto contentStart = Clock::now();
     ContentRegistry content;
     content.loadDefaults();
+    registerPlayerControlModule();
     const auto contentEnd = Clock::now();
 
     const auto documentStart = Clock::now();
