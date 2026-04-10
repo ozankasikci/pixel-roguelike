@@ -95,7 +95,7 @@ void EditorRuntimePreviewSession::tick(float deltaTime, float aspect) {
             const float dz = camPos.z - lastCameraPos_.z;
             const float horizontalDist = std::sqrt(dx * dx + dz * dz);
             footstepAccumulator_ += horizontalDist;
-            constexpr float kStepDistance = 0.7f;
+            constexpr float kStepDistance = 2.0f;
             while (footstepAccumulator_ >= kStepDistance) {
                 footstepAccumulator_ -= kStepDistance;
                 auto h = audioEngine_->play("footstep");
