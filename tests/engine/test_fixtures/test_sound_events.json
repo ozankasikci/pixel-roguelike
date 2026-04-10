@@ -1,0 +1,30 @@
+{
+    "door_open": {
+        "sounds": ["sfx/doors/door_open_01.wav", "sfx/doors/door_open_02.wav"],
+        "pick": "random_no_repeat",
+        "pitch_range": [0.95, 1.05],
+        "volume_range": [0.9, 1.0],
+        "max_instances": 2,
+        "cooldown": 0.1,
+        "bus": "Doors",
+        "spatial": "3D",
+        "ref_distance": 1.0,
+        "max_distance": 30.0
+    },
+    "ui_click": {
+        "sounds": ["sfx/ui/click.wav"],
+        "pick": "random",
+        "bus": "UI",
+        "spatial": "2D",
+        "max_instances": 4
+    },
+    "ambient_hum": {
+        "sounds": ["ambience/electrical_hum.ogg"],
+        "pick": "sequential",
+        "volume_range": [0.6, 0.6],
+        "bus": "Environment",
+        "spatial": "3D",
+        "ref_distance": 2.0,
+        "max_distance": 15.0
+    }
+}
