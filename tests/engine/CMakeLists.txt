@@ -69,3 +69,9 @@ pixel_roguelike_add_test(test_audio_command
     LIBRARIES glm::glm
     LABELS engine audio
 )
+
+pixel_roguelike_add_test(test_voice_scoring
+    SOURCES test_voice_scoring.cpp ${CMAKE_SOURCE_DIR}/src/engine/audio/mix/Voice.cpp ${CMAKE_SOURCE_DIR}/src/engine/audio/mix/BusGraph.cpp
+    LIBRARIES glm::glm
+    LABELS engine audio
+)
