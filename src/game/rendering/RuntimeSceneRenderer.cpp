@@ -3,17 +3,13 @@
 #include "engine/core/MathUtils.h"
 #include "engine/rendering/geometry/Mesh.h"
 #include "engine/rendering/geometry/MeshLibrary.h"
-#include "game/components/CameraComponent.h"
 #include "game/components/LightComponent.h"
 #include "game/components/MeshComponent.h"
-#include "game/components/PrimaryCameraTag.h"
 #include "game/components/ReflectionProbeComponent.h"
 #include "game/components/TransformComponent.h"
 #include "game/components/ViewmodelComponent.h"
 #include "game/content/ContentRegistry.h"
 #include "game/rendering/MeshAssetProvider.h"
-#include "game/rendering/RuntimeCameraMath.h"
-
 #include <GLFW/glfw3.h>
 
 #include <algorithm>
@@ -98,19 +94,6 @@ std::size_t RuntimeSceneRenderer::prewarmMaterialResources(GameRegistry& registr
     return warmedMaterials.size();
 }
 
-RuntimeSceneRenderer::CameraState RuntimeSceneRenderer::captureCamera(GameRegistry& registry, float aspect) const {
-    const RuntimeCameraState captured = capturePrimaryRuntimeCamera(registry, aspect);
-    return CameraState{
-        captured.position,
-        captured.viewMatrix,
-        captured.projectionMatrix,
-        captured.direction,
-        captured.nearPlane,
-        captured.farPlane,
-        captured.moveSpeed,
-    };
-}
-
 void RuntimeSceneRenderer::collectSceneObjects(GameRegistry& registry,
                                                std::vector<RenderObject>& out) const {
     out.clear();
@@ -180,16 +163,13 @@ void RuntimeSceneRenderer::collectViewmodelObjects(GameRegistry& registry,
 }
 
 void RuntimeSceneRenderer::collectLights(GameRegistry& registry,
+                                          const CameraState& camera,
                                           const DebugParams& params,
                                           std::vector<RenderLight>& out) const {
     std::vector<RenderLight>& lights = out;
     lights.clear();
 
-    auto cameraView = registry.view<TransformComponent, CameraComponent, PrimaryCameraTag>();
-    for (auto [entity, transform, camera] : cameraView.each()) {
-        if (!params.lighting.torch.enabled) {
-            break;
-        }
+    if (params.lighting.torch.enabled) {
         const PlayerTorchOverride& torch = params.lighting.torch;
         const float timeSeconds = static_cast<float>(glfwGetTime());
         const float visualFlicker = playerTorchVisualFlicker(timeSeconds);
@@ -199,14 +179,14 @@ void RuntimeSceneRenderer::collectLights(GameRegistry& registry,
             camera.forward * 0.14f + camera.right * 0.03f + cameraUp * -0.48f,
             glm::vec3(0.0f, 0.0f, -1.0f)
         );
-        glm::vec3 flamePosition = transform.position
+        glm::vec3 flamePosition = camera.position
             + camera.forward * kPlayerTorchForwardOffset
             + camera.right * kPlayerTorchRightOffset
             + cameraUp * -kPlayerTorchDownOffset;
         flamePosition += camera.right * (std::sin(timeSeconds * 6.3f) * 0.010f)
             + cameraUp * (std::sin(timeSeconds * 8.7f + 0.8f) * 0.012f);
 
-        glm::vec3 spillPosition = transform.position
+        glm::vec3 spillPosition = camera.position
             + camera.right * kPlayerTorchSpillOffset.x
             + cameraUp * kPlayerTorchSpillOffset.y
             + camera.forward * kPlayerTorchSpillOffset.z;
@@ -221,7 +201,7 @@ void RuntimeSceneRenderer::collectLights(GameRegistry& registry,
 
         RenderLight torchHalo;
         torchHalo.type = LightType::Point;
-        torchHalo.position = transform.position + cameraUp * -0.22f;
+        torchHalo.position = camera.position + cameraUp * -0.22f;
         torchHalo.color = torch.haloColor * (0.92f + visualFlicker * 0.10f);
         torchHalo.radius = torch.haloRadius * (0.97f + visualFlicker * 0.05f);
         torchHalo.intensity = torch.haloIntensity * torch.masterIntensity * (0.92f + visualFlicker * 0.12f);
@@ -239,7 +219,7 @@ void RuntimeSceneRenderer::collectLights(GameRegistry& registry,
         torchLight.castsShadows = true;
         lights.push_back(torchLight);
 
-        glm::vec3 handGlowPosition = transform.position
+        glm::vec3 handGlowPosition = camera.position
             + camera.forward * kPlayerHandGlowForwardOffset
             + camera.right * kPlayerHandGlowRightOffset
             + glm::vec3(0.0f, -kPlayerHandGlowDownOffset, 0.0f);
@@ -250,7 +230,6 @@ void RuntimeSceneRenderer::collectLights(GameRegistry& registry,
         handGlow.radius = torch.handGlowRadius * (0.99f + lightFlicker * 0.03f);
         handGlow.intensity = torch.handGlowIntensity * torch.masterIntensity * (0.96f + lightFlicker * 0.05f);
         lights.push_back(handGlow);
-        break;
     }
 
     appendDirectionalLight(lights, params.lighting.sunDirectional, glm::vec3(0.0f, -1.0f, 0.0f));
@@ -302,15 +281,16 @@ void RuntimeSceneRenderer::updateDebugParams(DebugParams& params,
                                              float deltaTime,
                                              std::size_t drawCalls) const {
     params.camera.position = camera.position;
-    params.camera.direction = camera.direction;
+    params.camera.direction = camera.forward;
     params.camera.fov = glm::degrees(2.0f * std::atan(1.0f / camera.projectionMatrix[1][1]));
-    params.camera.moveSpeed = camera.moveSpeed;
+    params.camera.moveSpeed = 3.0f; // Player movement speed; not a camera property
     params.fps = deltaTime > 0.0f ? (1.0f / deltaTime) : 0.0f;
     params.frameTimeMs = deltaTime * 1000.0f;
     params.drawCalls = static_cast<int>(drawCalls);
 }
 
 void RuntimeSceneRenderer::render(GameRegistry& registry,
+                                  const CameraState& camera,
                                   DebugParams& params,
                                   float deltaTime,
                                   int internalWidth,
@@ -323,11 +303,9 @@ void RuntimeSceneRenderer::render(GameRegistry& registry,
                                   RuntimeSceneRenderOutput* output) {
     syncEnvironmentFromRegistry(registry, params, environmentState, preserveEnvironmentOverrides);
 
-    const float aspect = static_cast<float>(std::max(internalWidth, 1)) / static_cast<float>(std::max(internalHeight, 1));
-    const CameraState camera = captureCamera(registry, aspect);
     collectSceneObjects(registry, scene_objects_);
     collectViewmodelObjects(registry, camera, deltaTime, viewmodel_objects_);
-    collectLights(registry, params, lights_);
+    collectLights(registry, camera, params, lights_);
     collectReflectionProbes(registry, reflection_probes_);
 
     // Build SceneRenderInput from ECS-collected data

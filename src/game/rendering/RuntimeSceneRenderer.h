@@ -1,5 +1,6 @@
 #pragma once
 
+#include "engine/camera/CameraState.h"
 #include "engine/ecs/GameRegistry.h"
 #include "engine/rendering/SceneRenderPipeline.h"
 #include "engine/ui/ImGuiLayer.h"
@@ -23,6 +24,7 @@ public:
     std::size_t prewarmMaterialResources(GameRegistry& registry);
 
     void render(GameRegistry& registry,
+                const CameraState& camera,
                 DebugParams& params,
                 float deltaTime,
                 int internalWidth,
@@ -39,17 +41,6 @@ public:
     const SceneRenderPipelineStats& pipelineStats() const { return pipeline_.lastStats(); }
 
 private:
-    struct CameraState {
-        glm::vec3 position{0.0f};
-        glm::mat4 viewMatrix{1.0f};
-        glm::mat4 projectionMatrix{1.0f};
-        glm::vec3 direction{0.0f, 0.0f, -1.0f};
-        float nearPlane = 0.1f;
-        float farPlane = 100.0f;
-        float moveSpeed = 3.0f;
-    };
-
-    CameraState captureCamera(GameRegistry& registry, float aspect) const;
     void collectSceneObjects(GameRegistry& registry,
                              std::vector<RenderObject>& out) const;
     void collectViewmodelObjects(GameRegistry& registry,
@@ -57,6 +48,7 @@ private:
                                  float deltaTime,
                                  std::vector<RenderObject>& out) const;
     void collectLights(GameRegistry& registry,
+                       const CameraState& camera,
                        const DebugParams& params,
                        std::vector<RenderLight>& out) const;
     void collectReflectionProbes(GameRegistry& registry,

@@ -1,5 +1,7 @@
 #include "game/systems/RenderSystem.h"
 
+#include "engine/camera/CameraManager.h"
+#include "engine/camera/CameraState.h"
 #include "engine/core/Application.h"
 #include "game/runtime/RuntimeGameSession.h"
 #include "engine/core/Window.h"
@@ -133,7 +135,12 @@ void RenderSystem::update(Application& app, float deltaTime) {
                                          static_cast<int>(kRenderResolutionPresets.size()) - 1);
     const RenderResolutionPreset& preset = kRenderResolutionPresets[static_cast<std::size_t>(internalIndex)];
     RuntimeSceneRenderOutput frameOutput;
+    const CameraState fallbackCamera;
+    const CameraState& cameraState = registry.ctx().contains<CameraManager*>()
+        ? registry.ctx().get<CameraManager*>()->getState()
+        : fallbackCamera;
     runtimeRenderer_.render(registry,
+                            cameraState,
                             debugParams_,
                             deltaTime,
                             preset.width,
