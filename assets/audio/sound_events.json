@@ -25,15 +25,11 @@
     },
     "footstep": {
         "sounds": [
-            "sfx/footsteps/concrete_step_01.ogg",
-            "sfx/footsteps/concrete_step_02.ogg",
-            "sfx/footsteps/concrete_step_03.ogg",
-            "sfx/footsteps/concrete_step_04.ogg",
-            "sfx/footsteps/concrete_step_05.ogg",
-            "sfx/footsteps/concrete_step_06.ogg"
+            "sfx/footsteps/step_left.ogg",
+            "sfx/footsteps/step_right.ogg"
         ],
-        "pick": "random_no_repeat",
-        "pitch_range": [0.9, 1.1],
+        "pick": "round_robin",
+        "pitch_range": [0.97, 1.03],
         "volume_range": [0.15, 0.25],
         "max_instances": 2,
         "cooldown": 0.3,
