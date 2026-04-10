@@ -14,7 +14,6 @@ target_link_libraries(game_content PUBLIC
 add_library(game_rendering STATIC
     rendering/EnvironmentDebugSync.cpp
     rendering/MaterialTextureLibrary.cpp
-    rendering/RuntimeCameraMath.cpp
     rendering/RuntimeSceneRenderer.cpp
 )
 target_include_directories(game_rendering PUBLIC ${CMAKE_SOURCE_DIR}/src)
