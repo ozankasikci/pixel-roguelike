@@ -64,6 +64,13 @@ void VoiceManager::stopAllByEvent(const std::string& eventName) {
     }
 }
 
+void VoiceManager::stopAll() {
+    for (auto& v : voices_) {
+        v.state = VoiceState::Stopped;
+    }
+    voices_.clear();
+}
+
 void VoiceManager::updatePosition(VoiceHandle handle, const glm::vec3& position) {
     Voice* v = findVoice(handle);
     if (v) {

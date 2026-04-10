@@ -2,6 +2,8 @@
 
 #include "engine/audio/AudioEngine.h"
 #include "game/modules/door/DoorComponents.h"
+
+#include <spdlog/spdlog.h>
 #include "game/behavior/ActionTypes.h"
 #include "game/components/InteractableComponent.h"
 #include "game/components/PlayerInteractionLockComponent.h"
@@ -11,9 +13,14 @@ namespace {
 
 void playDoorSound(GameRegistry& registry, entt::entity target, const std::string& eventName) {
     auto* audioPtr = registry.ctx().find<engine::audio::AudioEngine*>();
-    if (!audioPtr) return;
+    if (!audioPtr) {
+        spdlog::warn("[DoorAudio] AudioEngine not found in registry context");
+        return;
+    }
     auto* transform = registry.try_get<TransformComponent>(target);
     if (!transform) return;
+    spdlog::info("[DoorAudio] Playing '{}' at ({:.1f}, {:.1f}, {:.1f})",
+                 eventName, transform->position.x, transform->position.y, transform->position.z);
     (*audioPtr)->play(eventName, transform->position);
 }
 

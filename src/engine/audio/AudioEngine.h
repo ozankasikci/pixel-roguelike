@@ -81,6 +81,9 @@ public:
     /// Install a raycast callback for occlusion processing.
     void setRaycastFunc(RaycastFunc func);
 
+    /// Stop all active voices immediately (for session reset).
+    void stopAll();
+
     /// Per-frame update: voice scoring/virtualization, occlusion, reverb transitions,
     /// sync voices to AL sources, update streams.
     void update(float deltaTime);

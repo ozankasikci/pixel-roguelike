@@ -33,6 +33,9 @@ public:
     /// Stop all voices matching an event name.
     void stopAllByEvent(const std::string& eventName);
 
+    /// Stop all voices immediately.
+    void stopAll();
+
     /// Update the 3D position of a voice.
     void updatePosition(VoiceHandle handle, const glm::vec3& position);
 

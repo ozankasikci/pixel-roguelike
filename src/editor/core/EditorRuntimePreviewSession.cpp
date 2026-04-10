@@ -51,6 +51,9 @@ void EditorRuntimePreviewSession::syncMaterials(const EditorSceneDocument& docum
 }
 
 void EditorRuntimePreviewSession::resetForPlay() {
+    if (audioEngine_) {
+        audioEngine_->stopAll();
+    }
     session_.resetForPlay();
     if (audioEngine_) {
         engine::audio::AudioEngine* ptr = audioEngine_;

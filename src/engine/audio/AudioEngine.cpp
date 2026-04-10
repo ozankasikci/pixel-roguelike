@@ -180,6 +180,14 @@ void AudioEngine::shutdown() {
     spdlog::info("[AudioEngine] Shutdown complete");
 }
 
+void AudioEngine::stopAll() {
+    if (!impl_->initialized) return;
+    impl_->voiceManager.stopAll();
+    for (uint32_t i = 0; i < impl_->sourcePool.size(); ++i) {
+        impl_->sourcePool.resetSource(i);
+    }
+}
+
 // ---------------------------------------------------------------------------
 // Play / Stop
 // ---------------------------------------------------------------------------
@@ -197,7 +205,10 @@ VoiceHandle AudioEngine::play(const std::string& eventName, const glm::vec3& pos
     }
 
     // Check concurrency limit
-    if (impl_->voiceManager.countByEvent(eventName) >= def->maxInstances) {
+    int activeCount = impl_->voiceManager.countByEvent(eventName);
+    if (activeCount >= def->maxInstances) {
+        spdlog::warn("[AudioEngine] Concurrency limit reached for '{}' ({}/{})",
+                     eventName, activeCount, def->maxInstances);
         return VoiceHandle{};
     }
 
