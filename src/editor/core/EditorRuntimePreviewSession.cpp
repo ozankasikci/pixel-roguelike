@@ -94,13 +94,14 @@ void EditorRuntimePreviewSession::tick(float deltaTime, float aspect) {
             const float dx = camPos.x - lastCameraPos_.x;
             const float dz = camPos.z - lastCameraPos_.z;
             const float horizontalDist = std::sqrt(dx * dx + dz * dz);
-            footstepAccumulator_ += horizontalDist;
-            constexpr float kStepDistance = 3.5f;
-            while (footstepAccumulator_ >= kStepDistance) {
-                footstepAccumulator_ -= kStepDistance;
-                auto h = audioEngine_->play("footstep");
-                fprintf(stderr, "[EditorFootstep] play id=%u dist=%.2f\n", h.id, horizontalDist);
-                fflush(stderr);
+            // Ignore large jumps (teleport, scene reset)
+            if (horizontalDist < 1.0f) {
+                footstepAccumulator_ += horizontalDist;
+            }
+            constexpr float kStepDistance = 2.5f;
+            if (footstepAccumulator_ >= kStepDistance) {
+                footstepAccumulator_ = 0.0f;
+                audioEngine_->play("footstep");
             }
         }
         lastCameraPos_ = camPos;
