@@ -44,3 +44,15 @@ pixel_roguelike_add_test(test_render_quality_settings
     SOURCES test_render_quality_settings.cpp
     LABELS engine
 )
+
+pixel_roguelike_add_test(test_voice_handle
+    SOURCES test_voice_handle.cpp
+    LIBRARIES glm::glm
+    LABELS engine audio
+)
+
+pixel_roguelike_add_test(test_bus_graph
+    SOURCES test_bus_graph.cpp ${CMAKE_SOURCE_DIR}/src/engine/audio/mix/BusGraph.cpp
+    LIBRARIES glm::glm
+    LABELS engine audio
+)
