@@ -2,9 +2,7 @@
 
 #include "editor/core/EditorRuntimePreviewSession.h"
 #include "editor/viewport/EditorViewportController.h"
-#include "game/components/CameraComponent.h"
-#include "game/components/PrimaryCameraTag.h"
-#include "game/components/TransformComponent.h"
+#include "engine/camera/CameraManager.h"
 
 #include <GLFW/glfw3.h>
 #include <ImGuizmo.h>
@@ -181,46 +179,40 @@ nlohmann::json EditorCommander::setRuntimeCamera(const nlohmann::json& args) {
         return {{"ok", false}, {"error", "Runtime preview session is not available"}};
     }
 
-    auto view = runtimePreviewSession_->registry().view<TransformComponent, CameraComponent, PrimaryCameraTag>();
-    for (auto [entity, transform, camera] : view.each()) {
-        const glm::vec3 requestedPosition(
-            args.value("x", transform.position.x),
-            args.value("y", transform.position.y),
-            args.value("z", transform.position.z));
-        const float requestedYaw = args.value("yaw", camera.yaw);
-        const float requestedPitch = args.value("pitch", camera.pitch);
-        const bool hasFov = args.contains("fov");
-        const std::optional<float> requestedFov = hasFov
-            ? std::optional<float>(args["fov"].get<float>())
-            : std::nullopt;
-
-        if (!args.contains("x") && !args.contains("y") && !args.contains("z")
-            && !args.contains("yaw") && !args.contains("pitch") && !args.contains("fov")) {
-            return {{"ok", false}, {"error", "No runtime camera fields provided"}};
-        }
-
-        runtimePreviewSession_->setPrimaryCameraView(requestedPosition,
-                                                     requestedYaw,
-                                                     requestedPitch,
-                                                     requestedFov);
-
-        const auto& updatedTransform = runtimePreviewSession_->registry().get<TransformComponent>(entity);
-        const auto& updatedCamera = runtimePreviewSession_->registry().get<CameraComponent>(entity);
-
-        if (window_) {
-            glfwPostEmptyEvent();
-        }
-
-        return {{"ok", true}, {"data", {
-            {"entity", static_cast<std::uint32_t>(entity)},
-            {"position", {{"x", updatedTransform.position.x}, {"y", updatedTransform.position.y}, {"z", updatedTransform.position.z}}},
-            {"yaw", updatedCamera.yaw},
-            {"pitch", updatedCamera.pitch},
-            {"fov", updatedCamera.fov}
-        }}};
+    if (!args.contains("x") && !args.contains("y") && !args.contains("z")
+        && !args.contains("yaw") && !args.contains("pitch") && !args.contains("fov")) {
+        return {{"ok", false}, {"error", "No runtime camera fields provided"}};
     }
 
-    return {{"ok", false}, {"error", "Primary runtime camera not found"}};
+    const CameraState& base = runtimePreviewSession_->cameraManager().getBaseState();
+    const glm::vec3 requestedPosition(
+        args.value("x", base.position.x),
+        args.value("y", base.position.y),
+        args.value("z", base.position.z));
+    const float requestedYaw = args.value("yaw", base.yaw);
+    const float requestedPitch = args.value("pitch", base.pitch);
+    const bool hasFov = args.contains("fov");
+    const std::optional<float> requestedFov = hasFov
+        ? std::optional<float>(args["fov"].get<float>())
+        : std::nullopt;
+
+    runtimePreviewSession_->setPrimaryCameraView(requestedPosition,
+                                                 requestedYaw,
+                                                 requestedPitch,
+                                                 requestedFov);
+
+    const CameraState& updated = runtimePreviewSession_->cameraManager().getBaseState();
+
+    if (window_) {
+        glfwPostEmptyEvent();
+    }
+
+    return {{"ok", true}, {"data", {
+        {"position", {{"x", updated.position.x}, {"y", updated.position.y}, {"z", updated.position.z}}},
+        {"yaw", updated.yaw},
+        {"pitch", updated.pitch},
+        {"fov", updated.fov}
+    }}};
 }
 
 nlohmann::json EditorCommander::captureScreenshot(const nlohmann::json& args) {

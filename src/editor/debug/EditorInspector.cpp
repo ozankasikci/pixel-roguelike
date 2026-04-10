@@ -2,9 +2,7 @@
 
 #include "editor/core/EditorRuntimePreviewSession.h"
 #include "editor/viewport/EditorViewportController.h"
-#include "game/components/CameraComponent.h"
-#include "game/components/PrimaryCameraTag.h"
-#include "game/components/TransformComponent.h"
+#include "engine/camera/CameraManager.h"
 
 #include <ImGuizmo.h>
 #include <glm/glm.hpp>
@@ -259,19 +257,14 @@ nlohmann::json EditorInspector::runtimeCamera() const {
         return {{"ok", false}, {"error", "Runtime preview session is not available"}};
     }
 
-    auto view = runtimePreviewSession_->registry().view<TransformComponent, CameraComponent, PrimaryCameraTag>();
-    for (auto [entity, transform, camera] : view.each()) {
-        return {{"ok", true}, {"data", {
-            {"entity", static_cast<std::uint32_t>(entity)},
-            {"position", {{"x", transform.position.x}, {"y", transform.position.y}, {"z", transform.position.z}}},
-            {"yaw", camera.yaw},
-            {"pitch", camera.pitch},
-            {"fov", camera.fov},
-            {"near_plane", camera.nearPlane},
-            {"far_plane", camera.farPlane},
-            {"forward", {{"x", camera.forward.x}, {"y", camera.forward.y}, {"z", camera.forward.z}}}
-        }}};
-    }
-
-    return {{"ok", false}, {"error", "Primary runtime camera not found"}};
+    const CameraState& state = runtimePreviewSession_->cameraManager().getState();
+    return {{"ok", true}, {"data", {
+        {"position", {{"x", state.position.x}, {"y", state.position.y}, {"z", state.position.z}}},
+        {"yaw", state.yaw},
+        {"pitch", state.pitch},
+        {"fov", state.fov},
+        {"near_plane", state.nearPlane},
+        {"far_plane", state.farPlane},
+        {"forward", {{"x", state.forward.x}, {"y", state.forward.y}, {"z", state.forward.z}}}
+    }}};
 }

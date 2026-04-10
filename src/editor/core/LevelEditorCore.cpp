@@ -3,7 +3,7 @@
 #include "engine/core/PathUtils.h"
 #include "editor/core/EditorCommand.h"
 #include "editor/viewport/EditorViewportController.h"
-#include "game/components/CameraComponent.h"
+#include "engine/camera/CameraState.h"
 #include "game/content/ContentRegistry.h"
 #include "game/rendering/EnvironmentDefinition.h"
 
@@ -93,13 +93,12 @@ void buildDefaultEditorDockLayout(ImGuiID dockspaceId,
 }
 
 void resetEditorCameraToRuntimeDefaults(EditorCamera& camera) {
-    const CameraComponent runtimeDefaults;
-    camera.yawDegrees = runtimeDefaults.yaw;
-    camera.pitchDegrees = runtimeDefaults.pitch;
-    camera.fovDegrees = runtimeDefaults.fov;
-    camera.moveSpeed = runtimeDefaults.moveSpeed;
-    camera.nearPlane = runtimeDefaults.nearPlane;
-    camera.farPlane = runtimeDefaults.farPlane;
+    const CameraState defaults;
+    camera.yawDegrees = defaults.yaw;
+    camera.pitchDegrees = defaults.pitch;
+    camera.fovDegrees = defaults.fov;
+    camera.nearPlane = defaults.nearPlane;
+    camera.farPlane = defaults.farPlane;
 }
 
 bool syncEditorCameraToRuntimeStart(const EditorSceneDocument& document, EditorCamera& camera) {
