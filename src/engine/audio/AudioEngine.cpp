@@ -205,10 +205,7 @@ VoiceHandle AudioEngine::play(const std::string& eventName, const glm::vec3& pos
     }
 
     // Check concurrency limit
-    int activeCount = impl_->voiceManager.countByEvent(eventName);
-    if (activeCount >= def->maxInstances) {
-        spdlog::warn("[AudioEngine] Concurrency limit reached for '{}' ({}/{})",
-                     eventName, activeCount, def->maxInstances);
+    if (impl_->voiceManager.countByEvent(eventName) >= def->maxInstances) {
         return VoiceHandle{};
     }
 
@@ -486,7 +483,7 @@ void AudioEngine::syncVoicesToSources() {
 
         // Check if a non-looping source has finished playing (one-shot completion)
         if (alState == AL_STOPPED && !voice.looping &&
-            voice.state == VoiceState::Playing) {
+            voice.state == VoiceState::Playing && voice.elapsedTime > 0.05f) {
             voice.state = VoiceState::Stopped;
             continue;
         }
