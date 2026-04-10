@@ -96,46 +96,9 @@ void EditorRuntimePreviewSession::clear() {
 
 void EditorRuntimePreviewSession::tick(float deltaTime, float aspect) {
     session_.tick(deltaTime, aspect);
-    if (!audioEngine_) return;
-
-    // Always update audio (voice cleanup, streams)
-    audioEngine_->update(deltaTime);
-
-    // Footsteps only during play preview
-    if (!captured_) {
-        hasLastCameraPos_ = false;
-        return;
+    if (audioEngine_) {
+        audioEngine_->update(deltaTime);
     }
-
-    const auto& camState = session_.cameraManager().getState();
-    const glm::vec3 camPos = camState.position;
-
-    if (hasLastCameraPos_) {
-        const float dx = camPos.x - lastCameraPos_.x;
-        const float dz = camPos.z - lastCameraPos_.z;
-        const float horizontalDist = std::sqrt(dx * dx + dz * dz);
-
-        float stepInterval = 0.5f;
-        float stepVolume = 0.4f;
-        if (auto* gs = session_.registry().ctx().find<GameSettings>()) {
-            stepInterval = gs->audio.footstepInterval;
-            stepVolume = gs->audio.footstepVolume;
-        }
-
-        const bool isMoving = horizontalDist > 0.01f && horizontalDist < 1.0f;
-        if (isMoving) {
-            using Clock = std::chrono::steady_clock;
-            static auto lastStepTime = Clock::now();
-            auto now = Clock::now();
-            float elapsed = std::chrono::duration<float>(now - lastStepTime).count();
-            if (elapsed >= stepInterval) {
-                lastStepTime = now;
-                audioEngine_->play("footstep");
-            }
-        }
-    }
-    lastCameraPos_ = camPos;
-    hasLastCameraPos_ = true;
 }
 
 void EditorRuntimePreviewSession::prewarmRenderer(ContentRegistry& content) {

@@ -2,6 +2,7 @@
 
 #include "engine/audio/AudioEngine.h"
 #include "engine/camera/CameraManager.h"
+#include "game/settings/GameSettings.h"
 #include "engine/input/InputSystem.h"
 #include "engine/physics/PhysicsSystem.h"
 #include "game/components/CharacterControllerComponent.h"
@@ -131,21 +132,24 @@ void tickPlayerMovement(GameRegistry& registry,
         transform.position = characterPosition + glm::vec3(0.0f, controller.eyeOffset(), 0.0f);
         movement.grounded = (physics.getCharacterGroundState(entity) == GroundState::OnGround);
 
-        // Footstep audio: accumulate horizontal distance while grounded and moving
-        constexpr float kStepDistance = 0.7f;
-        if (movement.grounded && hasInput) {
-            const float horizontalSpeed =
-                glm::length(glm::vec2(movement.velocity.x, movement.velocity.z));
-            movement.stepAccumulator += horizontalSpeed * deltaTime;
-            if (movement.stepAccumulator >= kStepDistance) {
-                movement.stepAccumulator -= kStepDistance;
-                auto* audioPtr = registry.ctx().find<engine::audio::AudioEngine*>();
-                if (audioPtr) {
-                    (*audioPtr)->play("footstep");
-                }
+        // Footstep audio: time-based while grounded and moving
+        {
+            float stepInterval = 0.5f;
+            if (auto* gs = registry.ctx().find<GameSettings>()) {
+                stepInterval = gs->audio.footstepInterval;
             }
-        } else {
-            movement.stepAccumulator = 0.0f;
+            if (movement.grounded && hasInput) {
+                movement.stepAccumulator += deltaTime;
+                if (movement.stepAccumulator >= stepInterval) {
+                    movement.stepAccumulator = 0.0f;
+                    auto* audioPtr = registry.ctx().find<engine::audio::AudioEngine*>();
+                    if (audioPtr) {
+                        (*audioPtr)->play("footstep");
+                    }
+                }
+            } else {
+                movement.stepAccumulator = 0.0f;
+            }
         }
 
         break;
