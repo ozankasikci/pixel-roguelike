@@ -122,14 +122,17 @@ void EditorRuntimePreviewSession::tick(float deltaTime, float aspect) {
             stepVolume = gs->audio.footstepVolume;
         }
 
-        if (horizontalDist > 0.001f && horizontalDist < 1.0f) {
+        // Only count movement above noise threshold (0.01 units/frame)
+        const bool isMoving = horizontalDist > 0.01f && horizontalDist < 1.0f;
+        if (isMoving) {
             footstepTimer_ += deltaTime;
             if (footstepTimer_ >= stepInterval) {
                 footstepTimer_ = 0.0f;
                 audioEngine_->play("footstep");
             }
         } else {
-            footstepTimer_ = stepInterval * 0.5f;
+            // Reset timer so first step plays after a short delay
+            footstepTimer_ = 0.0f;
         }
     }
     lastCameraPos_ = camPos;
