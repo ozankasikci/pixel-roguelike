@@ -52,6 +52,10 @@ void EditorRuntimePreviewSession::syncMaterials(const EditorSceneDocument& docum
 
 void EditorRuntimePreviewSession::resetForPlay() {
     session_.resetForPlay();
+    if (audioEngine_) {
+        engine::audio::AudioEngine* ptr = audioEngine_;
+        session_.registry().ctx().insert_or_assign<engine::audio::AudioEngine*>(std::move(ptr));
+    }
 }
 
 void EditorRuntimePreviewSession::syncEnvironment(const EditorSceneDocument& document) {
