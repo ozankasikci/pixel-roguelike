@@ -25,12 +25,12 @@
     },
     "footstep": {
         "sounds": [
-            "sfx/footsteps/Fantozzi-StoneL1.ogg",
-            "sfx/footsteps/Fantozzi-StoneL2.ogg",
-            "sfx/footsteps/Fantozzi-StoneL3.ogg",
-            "sfx/footsteps/Fantozzi-StoneR1.ogg",
-            "sfx/footsteps/Fantozzi-StoneR2.ogg",
-            "sfx/footsteps/Fantozzi-StoneR3.ogg"
+            "sfx/footsteps/footstep_StoneL1.ogg",
+            "sfx/footsteps/footstep_StoneL2.ogg",
+            "sfx/footsteps/footstep_StoneL3.ogg",
+            "sfx/footsteps/footstep_StoneR1.ogg",
+            "sfx/footsteps/footstep_StoneR2.ogg",
+            "sfx/footsteps/footstep_StoneR3.ogg"
         ],
         "pick": "random_no_repeat",
         "pitch_range": [0.9, 1.1],
