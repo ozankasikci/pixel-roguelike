@@ -1,9 +1,23 @@
 #include "game/modules/door/DoorActionHandler.h"
 
+#include "engine/audio/AudioEngine.h"
 #include "game/modules/door/DoorComponents.h"
 #include "game/behavior/ActionTypes.h"
 #include "game/components/InteractableComponent.h"
 #include "game/components/PlayerInteractionLockComponent.h"
+#include "game/components/TransformComponent.h"
+
+namespace {
+
+void playDoorSound(GameRegistry& registry, entt::entity target, const std::string& eventName) {
+    auto* audioPtr = registry.ctx().find<engine::audio::AudioEngine*>();
+    if (!audioPtr) return;
+    auto* transform = registry.try_get<TransformComponent>(target);
+    if (!transform) return;
+    (*audioPtr)->play(eventName, transform->position);
+}
+
+} // namespace
 
 void handleDoorAction(GameRegistry& registry,
                       entt::entity /*source*/,
@@ -33,6 +47,7 @@ void handleDoorAction(GameRegistry& registry,
                 }
                 break;
             }
+            playDoorSound(registry, target, "door_open");
         }
         break;
     }
@@ -46,6 +61,7 @@ void handleDoorAction(GameRegistry& registry,
             interactable->busy = false;
             interactable->enabled = true;
         }
+        playDoorSound(registry, target, "door_close");
         break;
     }
     case ActionType::ToggleDoor: {
@@ -61,6 +77,7 @@ void handleDoorAction(GameRegistry& registry,
                 interactable->busy = false;
                 interactable->enabled = true;
             }
+            playDoorSound(registry, target, "door_close");
         } else {
             // Open it
             state->targetState = DoorTargetState::Open;
@@ -79,6 +96,7 @@ void handleDoorAction(GameRegistry& registry,
                 }
                 break;
             }
+            playDoorSound(registry, target, "door_open");
         }
         break;
     }

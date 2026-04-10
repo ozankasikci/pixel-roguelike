@@ -1,5 +1,6 @@
 #include "game/modules/player_control/PlayerControlMovement.h"
 
+#include "engine/audio/AudioEngine.h"
 #include "engine/input/InputSystem.h"
 #include "engine/physics/PhysicsSystem.h"
 #include "game/components/CameraComponent.h"
@@ -131,6 +132,24 @@ void tickPlayerMovement(GameRegistry& registry,
         const glm::vec3 characterPosition = physics.getCharacterPosition(entity);
         transform.position = characterPosition + glm::vec3(0.0f, controller.eyeOffset(), 0.0f);
         movement.grounded = (physics.getCharacterGroundState(entity) == GroundState::OnGround);
+
+        // Footstep audio: accumulate horizontal distance while grounded and moving
+        constexpr float kStepDistance = 1.8f;
+        if (movement.grounded && hasInput) {
+            const float horizontalSpeed =
+                glm::length(glm::vec2(movement.velocity.x, movement.velocity.z));
+            movement.stepAccumulator += horizontalSpeed * deltaTime;
+            if (movement.stepAccumulator >= kStepDistance) {
+                movement.stepAccumulator -= kStepDistance;
+                auto* audioPtr = registry.ctx().find<engine::audio::AudioEngine*>();
+                if (audioPtr) {
+                    (*audioPtr)->play("footstep", transform.position);
+                }
+            }
+        } else {
+            movement.stepAccumulator = 0.0f;
+        }
+
         break;
     }
 }

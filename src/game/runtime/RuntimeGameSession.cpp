@@ -1,5 +1,6 @@
 #include "game/runtime/RuntimeGameSession.h"
 
+#include "engine/audio/AudioEngine.h"
 #include "engine/core/PathUtils.h"
 #include "engine/rendering/assets/ModelLoader.h"
 #include "game/components/CameraComponent.h"
@@ -469,6 +470,9 @@ void RuntimeGameSession::clearEntities() {
     }
     if (ctx.contains<PhysicsSystem*>()) {
         ctx.erase<PhysicsSystem*>();
+    }
+    if (ctx.contains<engine::audio::AudioEngine*>()) {
+        ctx.erase<engine::audio::AudioEngine*>();
     }
     baselineSnapshot_.reset();
 }
