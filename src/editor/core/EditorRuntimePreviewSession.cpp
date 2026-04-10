@@ -73,7 +73,7 @@ void EditorRuntimePreviewSession::clear() {
 
 void EditorRuntimePreviewSession::tick(float deltaTime, float aspect) {
     session_.tick(deltaTime, aspect);
-    if (audioEngine_) {
+    if (audioEngine_ && captured_) {
         audioEngine_->update(deltaTime);
     }
 }
