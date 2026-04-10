@@ -207,6 +207,10 @@ EnvironmentDefinition loadEnvironmentDefinitionAsset(const std::string& path) {
             definition.post.enableSharpen = parseBoolRecord(tokens, path, lineNumber, key);
             continue;
         }
+        if (key == "enable_fxaa") {
+            definition.post.enableFxaa = parseBoolRecord(tokens, path, lineNumber, key);
+            continue;
+        }
         if (key == "tone_map_mode") {
             definition.post.toneMapMode = parseIntRecord(tokens, path, lineNumber, key);
             continue;
@@ -615,6 +619,7 @@ std::string serializeEnvironmentDefinitionAsset(const EnvironmentDefinition& def
     writeBool(out, "enable_grain", definition.post.enableGrain);
     writeBool(out, "enable_scanlines", definition.post.enableScanlines);
     writeBool(out, "enable_sharpen", definition.post.enableSharpen);
+    writeBool(out, "enable_fxaa", definition.post.enableFxaa);
     writeInt(out, "tone_map_mode", definition.post.toneMapMode);
     writeFloat(out, "edge_threshold", definition.post.edgeThreshold);
     writeFloat(out, "fog_density", definition.post.fogDensity);

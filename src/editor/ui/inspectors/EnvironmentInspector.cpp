@@ -31,6 +31,7 @@ bool renderEnvironmentDraftFields(EnvironmentDefinition& environment) {
         dirty |= renderInspectorPropertyRow("Enable Grain", [&]() { return ImGui::Checkbox("##value", &environment.post.enableGrain); });
         dirty |= renderInspectorPropertyRow("Enable Scanlines", [&]() { return ImGui::Checkbox("##value", &environment.post.enableScanlines); });
         dirty |= renderInspectorPropertyRow("Enable Sharpen", [&]() { return ImGui::Checkbox("##value", &environment.post.enableSharpen); });
+        dirty |= renderInspectorPropertyRow("Enable FXAA", [&]() { return ImGui::Checkbox("##value", &environment.post.enableFxaa); });
         dirty |= renderInspectorPropertyRow("Tone Mapper", [&]() { return ImGui::Combo("##value", &environment.post.toneMapMode, kToneMapModes, 2); },
                                             EditorInspectorFieldKind::Enum);
         dirty |= renderInspectorPropertyRow("Edge Threshold", [&]() { return ImGui::DragFloat("##value", &environment.post.edgeThreshold, 0.005f, 0.0f, 1.0f, "%.3f"); });

@@ -284,6 +284,8 @@ bool renderEnvironmentPanel(EditorSceneDocument& document,
             beforeState = document.captureState();
             trackEnvItem(beforeState, "Adjust Sharpen Amount", renderInspectorPropertyRow("Sharpen Amount", [&]() { return ImGui::DragFloat("##value", &environment.post.sharpenAmount, 0.01f, 0.0f, 1.0f, "%.2f"); }));
         }
+        beforeState = document.captureState();
+        trackEnvItem(beforeState, "Toggle FXAA", renderInspectorPropertyRow("Enable FXAA", [&]() { return ImGui::Checkbox("##value", &environment.post.enableFxaa); }));
 
         endInspectorPropertyTable();
     }

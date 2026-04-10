@@ -14,6 +14,7 @@ struct PostProcessParams {
     bool enableGrain     = true;
     bool enableScanlines = false;
     bool enableSharpen   = false;
+    bool enableFxaa      = true;
     int  debugViewMode   = 0;      // 0=final, 1=scene color, 2=normals, 3=depth, 4=sky, 5=sun direct, 6=sun shadow, 7=csm uv, 8=cascade index
     int  toneMapMode     = 1;      // 0=linear, 1=aces fitted
     float edgeThreshold   = 0.17f;
