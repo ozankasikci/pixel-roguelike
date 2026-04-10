@@ -2,8 +2,13 @@
 
 #include <AL/al.h>
 
+// stb_vorbis declarations only (implementation compiled separately by CMake)
+#define STB_VORBIS_HEADER_ONLY
+#include "stb_vorbis.c"
+
 #include <spdlog/spdlog.h>
 
+#include <algorithm>
 #include <cstring>
 #include <fstream>
 #include <utility>
@@ -46,7 +51,22 @@ ALuint ALBufferCache::getOrLoad(const std::string& path) {
         return it->second;
     }
 
-    ALuint buf = loadWav(path);
+    // Dispatch based on file extension
+    ALuint buf = 0;
+    auto dot = path.rfind('.');
+    if (dot != std::string::npos) {
+        std::string ext = path.substr(dot);
+        std::transform(ext.begin(), ext.end(), ext.begin(),
+                       [](unsigned char c) { return std::tolower(c); });
+        if (ext == ".ogg") {
+            buf = loadOgg(path);
+        } else {
+            buf = loadWav(path);
+        }
+    } else {
+        buf = loadWav(path);
+    }
+
     if (buf != 0) {
         cache_[path] = buf;
     }
@@ -180,6 +200,72 @@ ALuint ALBufferCache::loadWav(const std::string& path) {
 
     spdlog::debug("[ALBufferCache] Loaded '{}' ({} ch, {} Hz, {} bit, {} bytes)",
                   path, channels, sampleRate, bitsPerSample, dataSize);
+
+    return buf;
+}
+
+ALuint ALBufferCache::loadOgg(const std::string& path) {
+    int vorbisError = 0;
+    stb_vorbis* vorbis = stb_vorbis_open_filename(path.c_str(), &vorbisError, nullptr);
+    if (!vorbis) {
+        spdlog::warn("[ALBufferCache] Cannot open OGG file '{}' (error {})", path, vorbisError);
+        return 0;
+    }
+
+    stb_vorbis_info info = stb_vorbis_get_info(vorbis);
+    unsigned int totalSamples = stb_vorbis_stream_length_in_samples(vorbis);
+
+    if (totalSamples == 0) {
+        spdlog::warn("[ALBufferCache] OGG file '{}' has zero samples", path);
+        stb_vorbis_close(vorbis);
+        return 0;
+    }
+
+    int channels = info.channels;
+    int sampleRate = static_cast<int>(info.sample_rate);
+
+    // Determine AL format (stb_vorbis decodes to 16-bit signed PCM)
+    ALenum fmt = 0;
+    if (channels == 1) {
+        fmt = AL_FORMAT_MONO16;
+    } else if (channels == 2) {
+        fmt = AL_FORMAT_STEREO16;
+    } else {
+        spdlog::warn("[ALBufferCache] OGG '{}' has unsupported channel count ({})", path, channels);
+        stb_vorbis_close(vorbis);
+        return 0;
+    }
+
+    // Decode entire file into interleaved 16-bit PCM
+    std::size_t totalShorts = static_cast<std::size_t>(totalSamples) * channels;
+    std::vector<short> pcm(totalShorts);
+
+    int samplesDecoded = stb_vorbis_get_samples_short_interleaved(
+        vorbis, channels, pcm.data(), static_cast<int>(totalShorts));
+
+    stb_vorbis_close(vorbis);
+
+    if (samplesDecoded <= 0) {
+        spdlog::warn("[ALBufferCache] Failed to decode OGG '{}'", path);
+        return 0;
+    }
+
+    ALsizei dataSize = static_cast<ALsizei>(samplesDecoded * channels * sizeof(short));
+
+    // Upload to OpenAL
+    ALuint buf = 0;
+    alGenBuffers(1, &buf);
+    alBufferData(buf, fmt, pcm.data(), dataSize, static_cast<ALsizei>(sampleRate));
+
+    ALenum err = alGetError();
+    if (err != AL_NO_ERROR) {
+        spdlog::warn("[ALBufferCache] alBufferData failed for '{}' (error 0x{:04X})", path, err);
+        alDeleteBuffers(1, &buf);
+        return 0;
+    }
+
+    spdlog::debug("[ALBufferCache] Loaded OGG '{}' ({} ch, {} Hz, {} samples)",
+                  path, channels, sampleRate, samplesDecoded);
 
     return buf;
 }
