@@ -63,3 +63,9 @@ pixel_roguelike_add_test(test_event_registry
     DEFINITIONS TEST_SOUND_EVENTS_PATH="${CMAKE_SOURCE_DIR}/tests/engine/test_fixtures/test_sound_events.json"
     LABELS engine audio
 )
+
+pixel_roguelike_add_test(test_audio_command
+    SOURCES test_audio_command.cpp
+    LIBRARIES glm::glm
+    LABELS engine audio
+)
