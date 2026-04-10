@@ -38,7 +38,7 @@
         "max_instances": 3,
         "cooldown": 0.15,
         "bus": "Footsteps",
-        "spatial": "3D",
+        "spatial": "2D",
         "ref_distance": 1.0,
         "max_distance": 15.0
     }

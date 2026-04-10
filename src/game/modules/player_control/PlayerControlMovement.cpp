@@ -141,7 +141,7 @@ void tickPlayerMovement(GameRegistry& registry,
                 movement.stepAccumulator -= kStepDistance;
                 auto* audioPtr = registry.ctx().find<engine::audio::AudioEngine*>();
                 if (audioPtr) {
-                    (*audioPtr)->play("footstep", transform.position);
+                    (*audioPtr)->play("footstep");
                 }
             }
         } else {
