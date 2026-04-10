@@ -81,3 +81,9 @@ pixel_roguelike_add_test(test_voice_manager
     LIBRARIES glm::glm
     LABELS engine audio
 )
+
+pixel_roguelike_add_test(test_reverb_manager
+    SOURCES test_reverb_manager.cpp ${CMAKE_SOURCE_DIR}/src/engine/audio/mix/ReverbManager.cpp
+    LIBRARIES glm::glm
+    LABELS engine audio
+)
