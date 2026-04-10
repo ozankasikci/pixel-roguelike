@@ -47,6 +47,7 @@ public:
 
     bool isTransitioning() const;
     bool hasActiveEffects() const;
+    float currentTrauma() const;
 
 private:
     CameraState baseState_;

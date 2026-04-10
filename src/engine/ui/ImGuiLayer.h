@@ -35,11 +35,35 @@ enum class ImGuiThemePreset {
 
 const char* imguiThemePresetLabel(ImGuiThemePreset preset);
 
+struct CameraDebugControl {
+    // Shake
+    float shakeTrauma = 0.5f;
+    bool triggerShake = false;
+
+    // FOV Punch
+    float fovDelta = 8.0f;
+    float fovDuration = 0.4f;
+    bool triggerFOV = false;
+
+    // Transition
+    float targetPosition[3] = {0.0f, 2.0f, 0.0f};
+    float targetYaw = -90.0f;
+    float targetPitch = 0.0f;
+    float transitionDuration = 1.5f;
+    bool triggerTransition = false;
+    bool triggerReturn = false;
+
+    // Read-only state (populated by game code)
+    float currentTrauma = 0.0f;
+    bool isTransitioning = false;
+};
+
 struct DebugParams {
     // Post-processing parameters
     PostProcessParams post;
 
     CameraDebugInfo camera;               // was cameraPos/Dir/Fov/Speed
+    CameraDebugControl cameraControl;
     RuntimeLightingOverride lighting;     // was shadow*/hemisphere*/directional*
 
     int   internalResIndex  = kDefaultInternalResolutionIndex;

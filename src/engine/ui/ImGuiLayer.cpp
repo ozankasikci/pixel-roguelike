@@ -890,6 +890,42 @@ void ImGuiLayer::renderOverlay(DebugParams& params, std::vector<RenderLight>& li
                     params.camera.direction.x, params.camera.direction.y, params.camera.direction.z);
         ImGui::SliderFloat("FOV", &params.camera.fov, 45.0f, 120.0f);
         ImGui::SliderFloat("Speed", &params.camera.moveSpeed, 0.5f, 10.0f);
+
+        auto& ctrl = params.cameraControl;
+
+        if (ImGui::TreeNodeEx("Shake", ImGuiTreeNodeFlags_DefaultOpen)) {
+            ImGui::SliderFloat("Trauma", &ctrl.shakeTrauma, 0.0f, 1.0f, "%.2f");
+            if (ImGui::Button("Trigger Shake")) {
+                ctrl.triggerShake = true;
+            }
+            ImGui::Text("Current trauma: %.2f", ctrl.currentTrauma);
+            ImGui::TreePop();
+        }
+
+        if (ImGui::TreeNodeEx("FOV Punch")) {
+            ImGui::SliderFloat("Delta FOV", &ctrl.fovDelta, -20.0f, 20.0f, "%.1f");
+            ImGui::SliderFloat("Duration##fov", &ctrl.fovDuration, 0.1f, 3.0f, "%.2f");
+            if (ImGui::Button("Punch FOV")) {
+                ctrl.triggerFOV = true;
+            }
+            ImGui::TreePop();
+        }
+
+        if (ImGui::TreeNodeEx("Transition")) {
+            ImGui::DragFloat3("Target Pos", ctrl.targetPosition, 0.1f);
+            ImGui::SliderFloat("Target Yaw", &ctrl.targetYaw, -180.0f, 180.0f, "%.1f");
+            ImGui::SliderFloat("Target Pitch", &ctrl.targetPitch, -89.0f, 89.0f, "%.1f");
+            ImGui::SliderFloat("Duration##trans", &ctrl.transitionDuration, 0.1f, 5.0f, "%.2f");
+            if (ImGui::Button("Transition To")) {
+                ctrl.triggerTransition = true;
+            }
+            ImGui::SameLine();
+            if (ImGui::Button("Return To Player")) {
+                ctrl.triggerReturn = true;
+            }
+            ImGui::Text("Status: %s", ctrl.isTransitioning ? "Transitioning" : "Idle");
+            ImGui::TreePop();
+        }
     }
 
     // ------------------------------------------------------------------

@@ -249,7 +249,33 @@ void RuntimeGameSession::tick(float deltaTime, float aspect) {
 
     t0 = t1;
     tickPlayerCamera(registry_, inputSystem_, cameraManager_, aspect, deltaTime);
+
+    auto& ctrl = debugParams_.cameraControl;
+    if (ctrl.triggerShake) {
+        cameraManager_.shake(ctrl.shakeTrauma);
+        ctrl.triggerShake = false;
+    }
+    if (ctrl.triggerFOV) {
+        cameraManager_.punchFOV(ctrl.fovDelta, ctrl.fovDuration);
+        ctrl.triggerFOV = false;
+    }
+    if (ctrl.triggerTransition) {
+        const glm::vec3 target(ctrl.targetPosition[0], ctrl.targetPosition[1], ctrl.targetPosition[2]);
+        cameraManager_.transitionTo(target, ctrl.targetYaw, ctrl.targetPitch,
+                                    ctrl.transitionDuration);
+        ctrl.triggerTransition = false;
+    }
+    if (ctrl.triggerReturn) {
+        const auto& base = cameraManager_.getBaseState();
+        cameraManager_.transitionTo(base.position, base.yaw, base.pitch, ctrl.transitionDuration);
+        ctrl.triggerReturn = false;
+    }
+
     cameraManager_.update(deltaTime);
+
+    ctrl.isTransitioning = cameraManager_.isTransitioning();
+    ctrl.currentTrauma = cameraManager_.currentTrauma();
+
     t1 = Clock::now();
     performanceStats_.cameraMs = elapsedMilliseconds(t0, t1);
 

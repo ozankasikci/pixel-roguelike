@@ -105,6 +105,15 @@ bool CameraManager::hasActiveEffects() const {
     return !effects_.empty();
 }
 
+float CameraManager::currentTrauma() const {
+    for (const auto& effect : effects_) {
+        if (const auto* shakeEffect = dynamic_cast<const ShakeEffect*>(effect.get())) {
+            return shakeEffect->getTrauma();
+        }
+    }
+    return 0.0f;
+}
+
 void CameraManager::pruneFinishedEffects() {
     effects_.erase(
         std::remove_if(effects_.begin(), effects_.end(),
