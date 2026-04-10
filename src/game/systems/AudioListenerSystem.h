@@ -11,8 +11,9 @@ class AudioSystem;
 // Matches existing pattern: game systems access engine subsystems via free functions.
 AudioSystem& audioSystem(Application& app);
 
-// Free-function to sync audio listener position from PrimaryCameraTag entity (per D-15).
-void updateAudioListener(GameRegistry& registry, AudioSystem& audio);
+// Free-function to sync audio listener position from CameraManager (per D-15).
+class CameraManager;
+void updateAudioListener(const CameraManager& cameraManager, AudioSystem& audio);
 
 // System wrapper for registration via addSystem (matches PlayerMovementSystem/CameraSystem pattern).
 // Holds a reference to AudioSystem obtained from Application's system lifecycle.

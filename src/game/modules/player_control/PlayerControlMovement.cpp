@@ -1,15 +1,14 @@
 #include "game/modules/player_control/PlayerControlMovement.h"
 
+#include "engine/camera/CameraManager.h"
 #include "engine/input/InputSystem.h"
 #include "engine/physics/PhysicsSystem.h"
-#include "game/components/CameraComponent.h"
 #include "game/components/CharacterControllerComponent.h"
 #include "game/components/ControllableTag.h"
 #include "game/components/PlayerInteractionLockComponent.h"
 #include "game/components/PlayerMovementComponent.h"
 #include "game/components/PlayerSpawnComponent.h"
 #include "game/components/PlayerTag.h"
-#include "game/components/PrimaryCameraTag.h"
 #include "game/components/TransformComponent.h"
 #include "game/ui/InventoryMenuState.h"
 
@@ -38,21 +37,20 @@ glm::vec3 moveTowardXZ(const glm::vec3& current, const glm::vec3& target, float 
 
 void tickPlayerMovement(GameRegistry& registry,
                         const InputSystem& input,
+                        const CameraManager& cameraManager,
                         PhysicsSystem& physics,
                         float deltaTime) {
     const bool inventoryOpen = registry.ctx().contains<InventoryMenuState>()
         && registry.ctx().get<InventoryMenuState>().open;
 
     auto view = registry.view<TransformComponent,
-                              CameraComponent,
                               PlayerMovementComponent,
                               CharacterControllerComponent,
                               PlayerInteractionLockComponent,
                               PlayerSpawnComponent,
                               PlayerTag,
-                              ControllableTag,
-                              PrimaryCameraTag>();
-    for (auto [entity, transform, camera, movement, controller, lock, spawn] : view.each()) {
+                              ControllableTag>();
+    for (auto [entity, transform, movement, controller, lock, spawn] : view.each()) {
         const bool cursorLocked = input.isCursorLocked();
         const bool locked = lock.active;
         const bool gameplayInputEnabled = cursorLocked && !locked && !inventoryOpen;
@@ -69,7 +67,7 @@ void tickPlayerMovement(GameRegistry& registry,
 
         glm::vec3 inputDirection(0.0f);
         if (gameplayInputEnabled) {
-            const float yawRadians = glm::radians(camera.yaw);
+            const float yawRadians = glm::radians(cameraManager.getBaseState().yaw);
             glm::vec3 forward(std::cos(yawRadians), 0.0f, std::sin(yawRadians));
             forward = glm::normalize(forward);
             const glm::vec3 right = glm::normalize(glm::cross(forward, glm::vec3(0.0f, 1.0f, 0.0f)));

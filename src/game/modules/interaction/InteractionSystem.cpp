@@ -1,11 +1,11 @@
 #include "game/modules/interaction/InteractionSystem.h"
 
+#include "engine/camera/CameraManager.h"
 #include "engine/input/InputSystem.h"
-#include "game/components/CameraComponent.h"
 #include "game/components/ControllableTag.h"
 #include "game/components/InteractableComponent.h"
 #include "game/components/PlayerInteractionLockComponent.h"
-#include "game/components/PrimaryCameraTag.h"
+#include "game/components/PlayerTag.h"
 #include "game/components/TransformComponent.h"
 #include "game/modules/interaction/InteractionFocusState.h"
 #include "game/modules/interaction/InteractionPromptState.h"
@@ -34,36 +34,20 @@ InteractionFocusState& ensureFocusState(GameRegistry& registry) {
     return ctx.get<InteractionFocusState>();
 }
 
-glm::vec3 buildInteractionForward(float yawDegrees, float pitchDegrees) {
-    glm::vec3 forward;
-    forward.x = std::cos(glm::radians(yawDegrees)) * std::cos(glm::radians(pitchDegrees));
-    forward.y = std::sin(glm::radians(pitchDegrees));
-    forward.z = std::sin(glm::radians(yawDegrees)) * std::cos(glm::radians(pitchDegrees));
-
-    if (glm::dot(forward, forward) <= 0.0001f) {
-        return glm::vec3(0.0f, 0.0f, -1.0f);
-    }
-
-    return glm::normalize(forward);
-}
-
 struct InteractionActorContext {
     entt::entity entity = entt::null;
     TransformComponent* transform = nullptr;
-    CameraComponent* camera = nullptr;
     PlayerInteractionLockComponent* lock = nullptr;
 };
 
 InteractionActorContext resolveInteractionActor(GameRegistry& registry) {
     auto view = registry.view<TransformComponent,
-                              CameraComponent,
                               ControllableTag,
-                              PrimaryCameraTag>();
+                              PlayerTag>();
     for (auto entity : view) {
         return InteractionActorContext{
             .entity = entity,
             .transform = &view.get<TransformComponent>(entity),
-            .camera = &view.get<CameraComponent>(entity),
             .lock = registry.try_get<PlayerInteractionLockComponent>(entity),
         };
     }
@@ -96,7 +80,8 @@ InteractionPromptState& ensureInteractionPromptState(GameRegistry& registry) {
     return ensurePromptState(registry);
 }
 
-void updateRuntimeInteraction(GameRegistry& registry, const InputSystem& input) {
+void updateRuntimeInteraction(GameRegistry& registry, const InputSystem& input,
+                              const CameraManager& cameraManager) {
     auto& ctx = registry.ctx();
     auto& prompt = ensurePromptState(registry);
     auto& focus = ensureFocusState(registry);
@@ -110,12 +95,12 @@ void updateRuntimeInteraction(GameRegistry& registry, const InputSystem& input) 
     }
 
     const InteractionActorContext actor = resolveInteractionActor(registry);
-    if (actor.entity == entt::null || actor.transform == nullptr || actor.camera == nullptr) {
+    if (actor.entity == entt::null || actor.transform == nullptr) {
         return;
     }
 
     focus.actor = actor.entity;
-    const glm::vec3 actorForward = buildInteractionForward(actor.camera->yaw, actor.camera->pitch);
+    const glm::vec3 actorForward = cameraManager.getState().forward;
 
     float bestScore = -1.0f;
     auto interactableView = registry.view<TransformComponent, InteractableComponent>();
