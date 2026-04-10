@@ -44,3 +44,33 @@ pixel_roguelike_add_test(test_render_quality_settings
     SOURCES test_render_quality_settings.cpp
     LABELS engine
 )
+
+pixel_roguelike_add_test(test_camera_math
+    SOURCES test_camera_math.cpp
+    LIBRARIES engine_camera
+    LABELS engine
+)
+
+pixel_roguelike_add_test(test_camera_manager
+    SOURCES test_camera_manager.cpp
+    LIBRARIES engine_camera
+    LABELS engine
+)
+
+pixel_roguelike_add_test(test_transition_effect
+    SOURCES test_transition_effect.cpp
+    LIBRARIES engine_camera
+    LABELS engine
+)
+
+pixel_roguelike_add_test(test_shake_effect
+    SOURCES test_shake_effect.cpp
+    LIBRARIES engine_camera
+    LABELS engine
+)
+
+pixel_roguelike_add_test(test_fov_effect
+    SOURCES test_fov_effect.cpp
+    LIBRARIES engine_camera
+    LABELS engine
+)

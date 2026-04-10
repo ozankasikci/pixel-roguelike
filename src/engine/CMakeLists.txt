@@ -76,3 +76,13 @@ target_include_directories(engine_audio PRIVATE ${CMAKE_SOURCE_DIR}/external)
 target_link_libraries(engine_audio PUBLIC engine_core glm::glm)
 target_link_libraries(engine_audio PRIVATE OpenAL::OpenAL)
 set_source_files_properties(${CMAKE_SOURCE_DIR}/external/stb_vorbis.c PROPERTIES LANGUAGE C)
+
+add_library(engine_camera STATIC
+    camera/CameraMath.cpp
+    camera/CameraManager.cpp
+    camera/effects/TransitionEffect.cpp
+    camera/effects/ShakeEffect.cpp
+    camera/effects/FOVEffect.cpp
+)
+target_include_directories(engine_camera PUBLIC ${CMAKE_SOURCE_DIR}/src)
+target_link_libraries(engine_camera PUBLIC engine_core glm::glm)
