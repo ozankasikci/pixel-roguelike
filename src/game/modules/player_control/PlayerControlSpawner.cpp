@@ -1,13 +1,11 @@
 #include "game/modules/player_control/PlayerControlSpawner.h"
 
-#include "game/components/CameraComponent.h"
 #include "game/components/CharacterControllerComponent.h"
 #include "game/components/ControllableTag.h"
 #include "game/components/PlayerInteractionLockComponent.h"
 #include "game/components/PlayerMovementComponent.h"
 #include "game/components/PlayerSpawnComponent.h"
 #include "game/components/PlayerTag.h"
-#include "game/components/PrimaryCameraTag.h"
 #include "game/level/LevelBuilder.h"
 #include "game/level/LevelDef.h"
 #include "game/session/RunSession.h"
@@ -58,8 +56,6 @@ entt::entity spawnPlayerEntity(LevelBuilder& builder,
     const entt::entity player = builder.createTransformEntity(spawnPosition);
     registry.emplace<PlayerTag>(player);
     registry.emplace<ControllableTag>(player);
-    registry.emplace<PrimaryCameraTag>(player);
-    registry.emplace<CameraComponent>(player);
     registry.emplace<CharacterControllerComponent>(player);
     registry.emplace<PlayerMovementComponent>(player);
     registry.emplace<PlayerInteractionLockComponent>(player);

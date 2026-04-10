@@ -108,7 +108,7 @@ pixel_roguelike_add_test(test_runtime_game_session
 
 pixel_roguelike_add_test(test_interaction_module
     SOURCES test_interaction_module.cpp
-    LIBRARIES game_module_interaction
+    LIBRARIES game_module_interaction engine_camera
     LABELS game
 )
 

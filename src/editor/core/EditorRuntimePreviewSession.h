@@ -51,6 +51,8 @@ public:
     const RunSession& runSession() const { return session_.runSession(); }
     const RuntimeSessionPerformanceStats& performanceStats() const { return session_.performanceStats(); }
     const SceneRenderPipelineStats& pipelineStats() const { return session_.pipelineStats(); }
+    CameraManager& cameraManager() { return session_.cameraManager(); }
+    const CameraManager& cameraManager() const { return session_.cameraManager(); }
 
 private:
     RuntimeGameSession session_;

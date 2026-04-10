@@ -1,12 +1,11 @@
+#include "engine/camera/CameraManager.h"
 #include "engine/physics/PhysicsSystem.h"
-#include "game/components/CameraComponent.h"
 #include "game/components/CharacterControllerComponent.h"
 #include "game/components/ControllableTag.h"
 #include "game/components/PlayerInteractionLockComponent.h"
 #include "game/components/PlayerMovementComponent.h"
 #include "game/components/PlayerSpawnComponent.h"
 #include "game/components/PlayerTag.h"
-#include "game/components/PrimaryCameraTag.h"
 #include "game/components/ColliderComponent.h"
 #include "game/components/TransformComponent.h"
 #include "game/content/ContentRegistry.h"
@@ -36,14 +35,15 @@ int main() {
 
     auto player = registry.create();
     registry.emplace<TransformComponent>(player, TransformComponent{glm::vec3(0.0f, 1.6f, 0.0f)});
-    registry.emplace<CameraComponent>(player);
     registry.emplace<PlayerMovementComponent>(player);
     registry.emplace<CharacterControllerComponent>(player);
     registry.emplace<PlayerInteractionLockComponent>(player);
     registry.emplace<PlayerSpawnComponent>(player, PlayerSpawnComponent{glm::vec3(0.0f, 1.6f, 0.0f), -6.0f});
     registry.emplace<PlayerTag>(player);
     registry.emplace<ControllableTag>(player);
-    registry.emplace<PrimaryCameraTag>(player);
+
+    CameraManager cameraManager;
+    registry.ctx().insert_or_assign<CameraManager*>(&cameraManager);
 
     PhysicsSystem physics;
     physics.init(registry);
@@ -63,8 +63,8 @@ int main() {
 
         physics.update(registry, 1.0f / 60.0f);
         updateRuntimeInventory(registry, input, session, content);
-        tickPlayerMovement(registry, input, physics, 1.0f / 60.0f);
-        tickPlayerCamera(registry, input, 16.0f / 9.0f, 1.0f / 60.0f);
+        tickPlayerMovement(registry, input, cameraManager, physics, 1.0f / 60.0f);
+        tickPlayerCamera(registry, input, cameraManager, 16.0f / 9.0f, 1.0f / 60.0f);
     }
 
     const glm::vec3 movedPosition = registry.get<TransformComponent>(player).position;

@@ -1,6 +1,5 @@
 #include "engine/physics/PhysicsSystem.h"
 #include "game/behavior/ActionTypes.h"
-#include "game/components/CameraComponent.h"
 #include "game/components/CharacterControllerComponent.h"
 #include "game/components/ColliderComponent.h"
 #include "game/components/ControllableTag.h"
@@ -8,7 +7,6 @@
 #include "game/components/PlayerMovementComponent.h"
 #include "game/components/PlayerSpawnComponent.h"
 #include "game/components/PlayerTag.h"
-#include "game/components/PrimaryCameraTag.h"
 #include "game/components/TransformComponent.h"
 #include "game/level/LevelBuildContext.h"
 #include "game/level/LevelBuilder.h"
@@ -47,14 +45,12 @@ int main() {
     const entt::entity player = spawnPlayerEntity(builder, level, session);
     assert(player != entt::null);
     const bool hasPlayerComponents = registry.all_of<TransformComponent,
-                                                     CameraComponent,
                                                      CharacterControllerComponent,
                                                      PlayerMovementComponent,
                                                      PlayerInteractionLockComponent,
                                                      PlayerSpawnComponent,
                                                      PlayerTag,
-                                                     ControllableTag,
-                                                     PrimaryCameraTag>(player);
+                                                     ControllableTag>(player);
     assert(hasPlayerComponents);
     assert(registry.get<TransformComponent>(player).position == session.respawnPosition);
     assert(registry.get<PlayerSpawnComponent>(player).fallRespawnY == -12.0f);

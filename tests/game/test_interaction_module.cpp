@@ -1,9 +1,9 @@
+#include "engine/camera/CameraManager.h"
 #include "engine/input/InputSystem.h"
-#include "game/components/CameraComponent.h"
 #include "game/components/ControllableTag.h"
 #include "game/components/InteractableComponent.h"
 #include "game/components/PlayerInteractionLockComponent.h"
-#include "game/components/PrimaryCameraTag.h"
+#include "game/components/PlayerTag.h"
 #include "game/components/TransformComponent.h"
 #include "game/modules/interaction/InteractionFocusState.h"
 #include "game/modules/interaction/InteractionPromptState.h"
@@ -22,14 +22,16 @@ int main() {
     assert(registry.ctx().contains<InteractionFocusState>());
 
     const entt::entity player = registry.create();
-    CameraComponent camera;
-    camera.yaw = 0.0f;
-    camera.pitch = 0.0f;
     registry.emplace<TransformComponent>(player, TransformComponent{glm::vec3(0.0f, 1.6f, 0.0f)});
-    registry.emplace<CameraComponent>(player, camera);
     registry.emplace<ControllableTag>(player);
-    registry.emplace<PrimaryCameraTag>(player);
+    registry.emplace<PlayerTag>(player);
     registry.emplace<PlayerInteractionLockComponent>(player);
+
+    // CameraManager: yaw=0 -> looking down +X axis
+    CameraManager cameraManager;
+    cameraManager.setBaseState(glm::vec3(0.0f, 1.6f, 0.0f), 0.0f, 0.0f);
+    cameraManager.setProjection(70.0f, 16.0f / 9.0f, 0.1f, 100.0f);
+    cameraManager.update(0.016f);
 
     const entt::entity frontTarget = registry.create();
     registry.emplace<TransformComponent>(frontTarget, TransformComponent{glm::vec3(2.0f, 1.6f, 0.0f)});
@@ -59,7 +61,7 @@ int main() {
     input.setCursorLocked(true);
     input.setKeyPressed(GLFW_KEY_E, true);
 
-    updateRuntimeInteraction(registry, input);
+    updateRuntimeInteraction(registry, input, cameraManager);
 
     const auto& prompt = registry.ctx().get<InteractionPromptState>();
     const auto& focus = registry.ctx().get<InteractionFocusState>();
@@ -72,13 +74,13 @@ int main() {
     assert(!focus.activationConsumed);
 
     registry.ctx().insert_or_assign<InventoryMenuState>(InventoryMenuState{.open = true});
-    updateRuntimeInteraction(registry, input);
+    updateRuntimeInteraction(registry, input, cameraManager);
     assert(!registry.ctx().get<InteractionPromptState>().visible);
     assert(registry.ctx().get<InteractionFocusState>().focused == entt::null);
 
     registry.ctx().get<InventoryMenuState>().open = false;
     registry.get<PlayerInteractionLockComponent>(player).active = true;
-    updateRuntimeInteraction(registry, input);
+    updateRuntimeInteraction(registry, input, cameraManager);
     assert(registry.ctx().get<InteractionPromptState>().visible);
     assert(!registry.ctx().get<InteractionFocusState>().activationRequested);
 

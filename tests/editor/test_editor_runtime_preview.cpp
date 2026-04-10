@@ -1,8 +1,8 @@
 #include "editor/core/EditorRuntimePreviewSession.h"
 #include "editor/scene/EditorSceneDocument.h"
+#include "engine/camera/CameraManager.h"
 #include "engine/core/Window.h"
 #include "game/behavior/NodeIdComponent.h"
-#include "game/components/CameraComponent.h"
 #include "game/components/CheckpointComponent.h"
 #include "game/components/MeshComponent.h"
 #include "game/components/PlayerInteractionLockComponent.h"
@@ -107,8 +107,8 @@ int main() {
     assert(rebuiltMesh.useModelOverride);
     assert(nearlyEqualVec3(glm::vec3(rebuiltMesh.modelOverride[3]), updatedMeshPosition));
 
+    // Find the player entity (no longer requires CameraComponent)
     auto playerView = preview.registry().view<TransformComponent,
-                                              CameraComponent,
                                               PlayerMovementComponent,
                                               PlayerInteractionLockComponent,
                                               PlayerSpawnComponent,
@@ -117,11 +117,15 @@ int main() {
     const entt::entity player = *playerView.begin();
 
     const TransformComponent baselineTransform = playerView.get<TransformComponent>(player);
-    const CameraComponent baselineCamera = playerView.get<CameraComponent>(player);
     const PlayerMovementComponent baselineMovement = playerView.get<PlayerMovementComponent>(player);
     const PlayerInteractionLockComponent baselineLock = playerView.get<PlayerInteractionLockComponent>(player);
     const PlayerSpawnComponent baselineSpawn = playerView.get<PlayerSpawnComponent>(player);
     const RunSession baselineSession = preview.runSession();
+
+    // Capture baseline camera state from CameraManager
+    const float baselineCameraYaw = preview.cameraManager().getBaseState().yaw;
+    const float baselineCameraPitch = preview.cameraManager().getBaseState().pitch;
+    const float baselineCameraFov = preview.cameraManager().getBaseState().fov;
 
     auto checkpointView = preview.registry().view<CheckpointComponent>();
     const bool hasCheckpoint = checkpointView.begin() != checkpointView.end();
@@ -133,17 +137,16 @@ int main() {
     }
 
     const glm::vec3 debugViewPosition = baselineTransform.position + glm::vec3(0.75f, 0.0f, -1.25f);
-    const float debugViewYaw = baselineCamera.yaw + 18.0f;
-    const float debugViewPitch = baselineCamera.pitch - 7.0f;
-    const float debugViewFov = baselineCamera.fov - 5.0f;
+    const float debugViewYaw = baselineCameraYaw + 18.0f;
+    const float debugViewPitch = baselineCameraPitch - 7.0f;
+    const float debugViewFov = baselineCameraFov - 5.0f;
     assert(preview.setPrimaryCameraView(debugViewPosition, debugViewYaw, debugViewPitch, debugViewFov));
 
     const auto& movedTransform = preview.registry().get<TransformComponent>(player);
-    const auto& movedCamera = preview.registry().get<CameraComponent>(player);
     assert(glm::length(movedTransform.position - debugViewPosition) <= kEpsilon);
-    assert(nearlyEqual(movedCamera.yaw, debugViewYaw));
-    assert(nearlyEqual(movedCamera.pitch, debugViewPitch));
-    assert(nearlyEqual(movedCamera.fov, debugViewFov));
+    assert(nearlyEqual(preview.cameraManager().getBaseState().yaw, debugViewYaw));
+    assert(nearlyEqual(preview.cameraManager().getBaseState().pitch, debugViewPitch));
+    assert(nearlyEqual(preview.cameraManager().getBaseState().fov, debugViewFov));
 
     document.environment().post.fogDensity += 0.013f;
     document.environment().sky.sunGlow = 0.27f;
@@ -155,9 +158,12 @@ int main() {
     assert(nearlyEqual(environmentOverride.post.fogDensity, document.environment().post.fogDensity));
     assert(nearlyEqual(environmentOverride.sky.sunGlow, document.environment().sky.sunGlow));
 
+    // Mutate player state to verify reset restores it
     preview.registry().get<TransformComponent>(player).position += glm::vec3(2.0f, 0.0f, -1.0f);
-    preview.registry().get<CameraComponent>(player).yaw += 21.0f;
-    preview.registry().get<CameraComponent>(player).pitch -= 9.0f;
+    preview.cameraManager().setBaseState(
+        preview.registry().get<TransformComponent>(player).position,
+        preview.cameraManager().getBaseState().yaw + 21.0f,
+        preview.cameraManager().getBaseState().pitch - 9.0f);
     preview.registry().get<PlayerMovementComponent>(player).velocity = glm::vec3(3.0f, -1.0f, 2.0f);
     preview.registry().get<PlayerInteractionLockComponent>(player).active = true;
     preview.registry().get<PlayerInteractionLockComponent>(player).remainingTime = 1.25f;
@@ -177,14 +183,13 @@ int main() {
     assert(resetStats.resetForPlayMs > 0.0);
 
     const auto& resetTransform = preview.registry().get<TransformComponent>(player);
-    const auto& resetCamera = preview.registry().get<CameraComponent>(player);
     const auto& resetMovement = preview.registry().get<PlayerMovementComponent>(player);
     const auto& resetLock = preview.registry().get<PlayerInteractionLockComponent>(player);
     const auto& resetSpawn = preview.registry().get<PlayerSpawnComponent>(player);
 
     assert(glm::length(resetTransform.position - baselineTransform.position) <= kEpsilon);
-    assert(nearlyEqual(resetCamera.yaw, baselineCamera.yaw));
-    assert(nearlyEqual(resetCamera.pitch, baselineCamera.pitch));
+    assert(nearlyEqual(preview.cameraManager().getBaseState().yaw, baselineCameraYaw));
+    assert(nearlyEqual(preview.cameraManager().getBaseState().pitch, baselineCameraPitch));
     assert(glm::length(resetMovement.velocity - baselineMovement.velocity) <= kEpsilon);
     assert(resetLock.active == baselineLock.active);
     assert(nearlyEqual(resetLock.remainingTime, baselineLock.remainingTime));
