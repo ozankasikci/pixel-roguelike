@@ -15,6 +15,7 @@ int main() {
     assert(settings.lighting.sun.intensity > settings.lighting.fill.intensity);
     assert(settings.post.toneMapMode == 1);
     assert(!settings.post.enableEdges);
+    assert(settings.post.enableFxaa);
     assert(!settings.post.enableGrain);
     assert(!settings.post.ssaoHalfResolution);
     assert(settings.post.exposure >= 0.95f);

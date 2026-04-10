@@ -75,6 +75,7 @@ void StylizePass::apply(GLuint compositeColorTex,
     shader_->setInt("sceneNormal", 3);
 
     shader_->setInt("uEnableEdges", params.enableEdges ? 1 : 0);
+    shader_->setInt("uEnableFxaa", params.enableFxaa ? 1 : 0);
     shader_->setInt("uDebugViewMode", params.debugViewMode);
     shader_->setFloat("uEdgeThreshold", params.edgeThreshold);
     shader_->setFloat("uDepthViewScale", params.depthViewScale);

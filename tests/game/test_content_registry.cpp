@@ -99,6 +99,7 @@ int main() {
     assert(defaultEnvironment != nullptr);
     assert(defaultEnvironment->id == "default");
     assert(defaultEnvironment->post.enableSky);
+    assert(defaultEnvironment->post.enableFxaa);
     assert(defaultEnvironment->lighting.sun.enabled);
     assert(!defaultEnvironment->post.ssaoHalfResolution);
     assert(test_support::nearlyEqual(defaultEnvironment->post.exposure, 1.0f));
@@ -113,6 +114,7 @@ int main() {
 
     EnvironmentDefinition roundtrip;
     roundtrip.id = "editor_roundtrip_test";
+    roundtrip.post.enableFxaa = false;
     roundtrip.post.toneMapMode = 0;
     roundtrip.post.edgeThreshold = 0.27f;
     roundtrip.post.ssaoHalfResolution = false;
@@ -144,6 +146,7 @@ int main() {
     std::filesystem::remove(roundtripPath);
 
     assert(loadedRoundtrip.id == roundtrip.id);
+    assert(!loadedRoundtrip.post.enableFxaa);
     assert(loadedRoundtrip.post.toneMapMode == 0);
     assert(test_support::nearlyEqual(loadedRoundtrip.post.edgeThreshold, 0.27f));
     assert(!loadedRoundtrip.post.ssaoHalfResolution);

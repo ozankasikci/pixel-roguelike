@@ -8,6 +8,7 @@ enable_vignette true
 enable_grain false
 enable_scanlines false
 enable_sharpen false
+enable_fxaa true
 tone_map_mode 1
 edge_threshold 0.17
 fog_density 0.005

@@ -6,6 +6,7 @@ uniform sampler2D sceneDepth;
 uniform sampler2D sceneNormal;
 
 uniform int uEnableEdges;
+uniform int uEnableFxaa;
 uniform int uDebugViewMode;
 uniform float uEdgeThreshold;
 uniform float uDepthViewScale;
@@ -51,10 +52,56 @@ float sobelNormal(vec2 uv, vec2 texelSize) {
     return length(gx) + length(gy);
 }
 
+vec3 sampleFxaa(vec2 uv, vec2 texelSize) {
+    vec3 rgbM  = texture(compositeColor, uv).rgb;
+    vec3 rgbNW = texture(compositeColor, uv + vec2(-1.0, -1.0) * texelSize).rgb;
+    vec3 rgbNE = texture(compositeColor, uv + vec2( 1.0, -1.0) * texelSize).rgb;
+    vec3 rgbSW = texture(compositeColor, uv + vec2(-1.0,  1.0) * texelSize).rgb;
+    vec3 rgbSE = texture(compositeColor, uv + vec2( 1.0,  1.0) * texelSize).rgb;
+
+    const vec3 lumaWeights = vec3(0.299, 0.587, 0.114);
+    float lumaM  = dot(rgbM,  lumaWeights);
+    float lumaNW = dot(rgbNW, lumaWeights);
+    float lumaNE = dot(rgbNE, lumaWeights);
+    float lumaSW = dot(rgbSW, lumaWeights);
+    float lumaSE = dot(rgbSE, lumaWeights);
+
+    float lumaMin = min(lumaM, min(min(lumaNW, lumaNE), min(lumaSW, lumaSE)));
+    float lumaMax = max(lumaM, max(max(lumaNW, lumaNE), max(lumaSW, lumaSE)));
+    float lumaRange = lumaMax - lumaMin;
+    if (lumaRange < max(0.0312, lumaMax * 0.125)) {
+        return rgbM;
+    }
+
+    vec2 dir;
+    dir.x = -((lumaNW + lumaNE) - (lumaSW + lumaSE));
+    dir.y =  ((lumaNW + lumaSW) - (lumaNE + lumaSE));
+
+    float dirReduce = max((lumaNW + lumaNE + lumaSW + lumaSE) * (0.25 * 0.125), 0.0078125);
+    float rcpDirMin = 1.0 / (min(abs(dir.x), abs(dir.y)) + dirReduce);
+    dir = clamp(dir * rcpDirMin, vec2(-8.0), vec2(8.0)) * texelSize;
+
+    vec3 rgbA = 0.5 * (
+        texture(compositeColor, uv + dir * (1.0 / 3.0 - 0.5)).rgb +
+        texture(compositeColor, uv + dir * (2.0 / 3.0 - 0.5)).rgb
+    );
+    vec3 rgbB = rgbA * 0.5 + 0.25 * (
+        texture(compositeColor, uv + dir * -0.5).rgb +
+        texture(compositeColor, uv + dir * 0.5).rgb
+    );
+
+    float lumaB = dot(rgbB, lumaWeights);
+    if (lumaB < lumaMin || lumaB > lumaMax) {
+        return rgbA;
+    }
+    return rgbB;
+}
+
 void main() {
     vec2 texSize = vec2(textureSize(compositeColor, 0));
     vec2 texelSize = 1.0 / texSize;
-    vec3 gradedColor = texture(compositeColor, vTexCoord).rgb;
+    vec3 gradedColor = (uEnableFxaa != 0) ? sampleFxaa(vTexCoord, texelSize)
+                                          : texture(compositeColor, vTexCoord).rgb;
     vec4 normalSample = texture(sceneNormal, vTexCoord);
     float rawDepth = texture(sceneDepth, vTexCoord).r;
     float linDepth = linearizeDepth(rawDepth);

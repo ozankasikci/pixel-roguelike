@@ -708,6 +708,7 @@ void ImGuiLayer::renderOverlay(DebugParams& params, std::vector<RenderLight>& li
         ImGui::Checkbox("Enable Grain", &params.post.enableGrain);
         ImGui::Checkbox("Enable Scanlines", &params.post.enableScanlines);
         ImGui::Checkbox("Enable Sharpen", &params.post.enableSharpen);
+        ImGui::Checkbox("Enable FXAA", &params.post.enableFxaa);
         ImGui::Combo("Tone Mapper", &params.post.toneMapMode, toneMapModes, 2);
     }
 

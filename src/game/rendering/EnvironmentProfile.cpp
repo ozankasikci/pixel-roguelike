@@ -89,6 +89,7 @@ EnvironmentRenderSettings makeDefaultEnvironmentRenderSettings() {
     settings.post.enableGrain = false;
     settings.post.enableScanlines = false;
     settings.post.enableSharpen = false;
+    settings.post.enableFxaa = true;
     settings.post.toneMapMode = 1;
     settings.post.fogDensity = 0.018f;
     settings.post.fogStart = 26.0f;
