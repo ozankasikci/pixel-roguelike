@@ -68,7 +68,6 @@ target_link_libraries(engine_physics PUBLIC engine_core glm::glm)
 target_link_libraries(engine_physics PRIVATE Jolt)
 
 add_library(engine_audio STATIC
-    audio/AudioSystem.cpp
     audio/AudioEngine.cpp
     audio/backend/ALDevice.cpp
     audio/backend/ALSourcePool.cpp
