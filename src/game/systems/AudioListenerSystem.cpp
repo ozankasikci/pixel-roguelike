@@ -1,7 +1,8 @@
 #include "game/systems/AudioListenerSystem.h"
 
-#include "engine/audio/AudioSystem.h"
+#include "engine/audio/AudioEngine.h"
 #include "engine/core/Application.h"
+#include "game/components/AudioSourceComponent.h"
 #include "game/components/PrimaryCameraTag.h"
 #include "game/components/TransformComponent.h"
 
@@ -10,13 +11,10 @@
 #include <glm/trigonometric.hpp>
 #include <cmath>
 
-AudioSystem& audioSystem(Application& app) {
-    return *app.getService<AudioSystem*>();
-}
-
-void updateAudioListener(GameRegistry& registry, AudioSystem& audio) {
-    auto view = registry.view<PrimaryCameraTag, TransformComponent>();
-    for (auto [entity, transform] : view.each()) {
+void updateAudioListener(GameRegistry& registry, engine::audio::AudioEngine& audio) {
+    // --- Sync listener transform from primary camera ---
+    auto camera_view = registry.view<PrimaryCameraTag, TransformComponent>();
+    for (auto [entity, transform] : camera_view.each()) {
         // Compute forward and up vectors from euler rotation (matches CameraSystem pattern)
         const float yawRad   = glm::radians(transform.rotation.y);
         const float pitchRad = glm::radians(transform.rotation.x);
@@ -29,13 +27,33 @@ void updateAudioListener(GameRegistry& registry, AudioSystem& audio) {
         audio.setListenerTransform(transform.position, forward, up);
         break; // Only one primary camera
     }
+
+    // --- Process AudioSourceComponent triggers ---
+    auto source_view = registry.view<AudioSourceComponent, TransformComponent>();
+    for (auto [entity, source, transform] : source_view.each()) {
+        if (!source.triggerPlay) continue;
+        source.triggerPlay = false;
+
+        if (source.eventName.empty()) continue;
+
+        if (source.loop) {
+            audio.playLooping(source.eventName, transform.position,
+                              source.volume, source.pitch);
+        } else if (source.is3D) {
+            audio.play(source.eventName, transform.position,
+                       source.volume, source.pitch);
+        } else {
+            audio.play(source.eventName);
+        }
+        source.playing = true;
+    }
 }
 
 // ---------------------------------------------------------------------------
 // AudioListenerSystem
 // ---------------------------------------------------------------------------
 
-AudioListenerSystem::AudioListenerSystem(AudioSystem& audio)
+AudioListenerSystem::AudioListenerSystem(engine::audio::AudioEngine& audio)
     : audio_(audio)
 {}
 
