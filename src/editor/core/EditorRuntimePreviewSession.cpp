@@ -98,7 +98,7 @@ void EditorRuntimePreviewSession::tick(float deltaTime, float aspect) {
             if (horizontalDist < 1.0f) {
                 footstepAccumulator_ += horizontalDist;
             }
-            constexpr float kStepDistance = 2.5f;
+            constexpr float kStepDistance = 5.0f;
             if (footstepAccumulator_ >= kStepDistance) {
                 footstepAccumulator_ = 0.0f;
                 audioEngine_->play("footstep");
