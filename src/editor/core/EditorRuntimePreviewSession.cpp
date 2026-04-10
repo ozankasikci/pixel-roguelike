@@ -66,6 +66,9 @@ void EditorRuntimePreviewSession::clear() {
 
 void EditorRuntimePreviewSession::tick(float deltaTime, float aspect) {
     session_.tick(deltaTime, aspect);
+    if (audioEngine_) {
+        audioEngine_->update(deltaTime);
+    }
 }
 
 void EditorRuntimePreviewSession::prewarmRenderer(ContentRegistry& content) {
