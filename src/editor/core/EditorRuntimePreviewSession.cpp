@@ -2,6 +2,7 @@
 
 #include "editor/scene/EditorSceneDocument.h"
 #include "engine/audio/AudioEngine.h"
+#include "engine/camera/CameraManager.h"
 #include "game/components/MeshComponent.h"
 #include "game/rendering/MaterialDefinition.h"
 
@@ -59,6 +60,8 @@ void EditorRuntimePreviewSession::resetForPlay() {
         engine::audio::AudioEngine* ptr = audioEngine_;
         session_.registry().ctx().insert_or_assign<engine::audio::AudioEngine*>(std::move(ptr));
     }
+    footstepAccumulator_ = 0.0f;
+    hasLastCameraPos_ = false;
 }
 
 void EditorRuntimePreviewSession::syncEnvironment(const EditorSceneDocument& document) {
@@ -75,6 +78,23 @@ void EditorRuntimePreviewSession::tick(float deltaTime, float aspect) {
     session_.tick(deltaTime, aspect);
     if (audioEngine_ && captured_) {
         audioEngine_->update(deltaTime);
+
+        // Footstep audio from camera horizontal movement
+        const auto& camState = session_.cameraManager().getState();
+        const glm::vec3 camPos = camState.position;
+        if (hasLastCameraPos_) {
+            const float dx = camPos.x - lastCameraPos_.x;
+            const float dz = camPos.z - lastCameraPos_.z;
+            const float horizontalDist = std::sqrt(dx * dx + dz * dz);
+            footstepAccumulator_ += horizontalDist;
+            constexpr float kStepDistance = 0.7f;
+            while (footstepAccumulator_ >= kStepDistance) {
+                footstepAccumulator_ -= kStepDistance;
+                audioEngine_->play("footstep");
+            }
+        }
+        lastCameraPos_ = camPos;
+        hasLastCameraPos_ = true;
     }
 }
 

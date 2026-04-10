@@ -63,4 +63,7 @@ private:
     bool captured_ = false;
     bool hasLastCursorPosition_ = false;
     glm::vec2 lastCursorPosition_{0.0f};
+    glm::vec3 lastCameraPos_{0.0f};
+    float footstepAccumulator_ = 0.0f;
+    bool hasLastCameraPos_ = false;
 };
