@@ -24,12 +24,19 @@
         "max_distance": 25.0
     },
     "footstep": {
-        "sounds": ["sfx/footsteps/footstep_01.wav"],
-        "pick": "random",
+        "sounds": [
+            "sfx/footsteps/Fantozzi-StoneL1.wav",
+            "sfx/footsteps/Fantozzi-StoneL2.wav",
+            "sfx/footsteps/Fantozzi-StoneL3.wav",
+            "sfx/footsteps/Fantozzi-StoneR1.wav",
+            "sfx/footsteps/Fantozzi-StoneR2.wav",
+            "sfx/footsteps/Fantozzi-StoneR3.wav"
+        ],
+        "pick": "random_no_repeat",
         "pitch_range": [0.9, 1.1],
         "volume_range": [0.3, 0.5],
         "max_instances": 3,
-        "cooldown": 0.2,
+        "cooldown": 0.15,
         "bus": "Footsteps",
         "spatial": "3D",
         "ref_distance": 0.5,
