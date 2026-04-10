@@ -1,3 +1,4 @@
+#include "engine/audio/AudioEngine.h"
 #include "engine/core/PathUtils.h"
 #include "engine/core/ProjectConfig.h"
 #include "engine/core/Window.h"
@@ -343,6 +344,9 @@ int main(int argc, char* argv[]) {
     registerCheckpointModule();
     registerPlayerControlModule();
 
+    static engine::audio::AudioEngine audioEngine;
+    audioEngine.init();
+
     MaterialTextureLibrary materialTextures;
     renderStartupProgress(window, imgui, 0.16f, "Preparing materials", "Uploading material texture data...");
     materialTextures.init(content);
@@ -365,6 +369,7 @@ int main(int argc, char* argv[]) {
         previewWorld.rebuild(document, content);
     }
     EditorRuntimePreviewSession runtimePreviewSession;
+    runtimePreviewSession.setAudioEngine(&audioEngine);
     if (!initialScene.empty()) {
         renderStartupProgress(window, imgui, 0.56f, "Building play preview", "Creating the runtime preview session...");
         runtimePreviewSession.rebuild(document, content);
