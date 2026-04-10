@@ -35,7 +35,7 @@
         "pick": "random_no_repeat",
         "pitch_range": [0.9, 1.1],
         "volume_range": [0.8, 1.0],
-        "max_instances": 3,
+        "max_instances": 8,
         "cooldown": 0.15,
         "bus": "Footsteps",
         "spatial": "2D",

@@ -264,8 +264,14 @@ ALuint ALBufferCache::loadOgg(const std::string& path) {
         return 0;
     }
 
-    spdlog::debug("[ALBufferCache] Loaded OGG '{}' ({} ch, {} Hz, {} samples)",
-                  path, channels, sampleRate, samplesDecoded);
+    // Check if PCM data has actual audio content
+    short maxSample = 0;
+    for (int i = 0; i < samplesDecoded * channels; ++i) {
+        short abs = pcm[i] < 0 ? -pcm[i] : pcm[i];
+        if (abs > maxSample) maxSample = abs;
+    }
+    spdlog::info("[ALBufferCache] Loaded OGG '{}' ({} ch, {} Hz, {} samples, peak={}, size={})",
+                 path, channels, sampleRate, samplesDecoded, maxSample, dataSize);
 
     return buf;
 }

@@ -3,6 +3,8 @@
 #include "editor/scene/EditorSceneDocument.h"
 #include "engine/audio/AudioEngine.h"
 #include "engine/camera/CameraManager.h"
+
+#include <spdlog/spdlog.h>
 #include "game/components/MeshComponent.h"
 #include "game/rendering/MaterialDefinition.h"
 
@@ -76,12 +78,18 @@ void EditorRuntimePreviewSession::clear() {
 
 void EditorRuntimePreviewSession::tick(float deltaTime, float aspect) {
     session_.tick(deltaTime, aspect);
-    if (audioEngine_ && captured_) {
+    if (audioEngine_) {
         audioEngine_->update(deltaTime);
 
         // Footstep audio from camera horizontal movement
         const auto& camState = session_.cameraManager().getState();
         const glm::vec3 camPos = camState.position;
+        static int dbgFrame = 0;
+        if (++dbgFrame % 60 == 1) {
+            fprintf(stderr, "[CamDbg] pos=(%.2f,%.2f,%.2f) hasLast=%d captured=%d\n",
+                    camPos.x, camPos.y, camPos.z, hasLastCameraPos_, captured_);
+            fflush(stderr);
+        }
         if (hasLastCameraPos_) {
             const float dx = camPos.x - lastCameraPos_.x;
             const float dz = camPos.z - lastCameraPos_.z;
@@ -90,7 +98,9 @@ void EditorRuntimePreviewSession::tick(float deltaTime, float aspect) {
             constexpr float kStepDistance = 0.7f;
             while (footstepAccumulator_ >= kStepDistance) {
                 footstepAccumulator_ -= kStepDistance;
-                audioEngine_->play("footstep");
+                auto h = audioEngine_->play("footstep");
+                fprintf(stderr, "[EditorFootstep] play id=%u dist=%.2f\n", h.id, horizontalDist);
+                fflush(stderr);
             }
         }
         lastCameraPos_ = camPos;
