@@ -103,6 +103,7 @@ struct EditorUiState {
     bool showViewport = true;
     bool showBuildOutput = false;
     bool showPerformance = false;
+    bool showCameraDebug = false;
     bool viewportFullscreen = false;
     bool showColliders = true;
     bool showLightHelpers = false;

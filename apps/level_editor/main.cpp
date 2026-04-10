@@ -21,6 +21,7 @@
 #include "editor/render/EditorViewportRenderer.h"
 #include "editor/ui/EditorOutlinerPanel.h"
 #include "editor/ui/EditorPanels.h"
+#include "editor/ui/EditorCameraDebugPanel.h"
 #include "editor/ui/EditorPerformancePanel.h"
 #include "editor/viewport/EditorViewportController.h"
 #include "editor/viewport/EditorViewportInteraction.h"
@@ -757,6 +758,7 @@ int main(int argc, char* argv[]) {
                     ImGui::Separator();
                     ImGui::MenuItem("Viewport Stats", nullptr, &ui.showViewportStats);
                     ImGui::MenuItem("Performance", nullptr, &ui.showPerformance);
+                    ImGui::MenuItem("Camera Debug", nullptr, &ui.showCameraDebug);
                     ImGui::EndMenu();
                 }
                 ImGui::EndMenu();
@@ -1082,6 +1084,10 @@ int main(int argc, char* argv[]) {
                 runtimePreviewSession.pipelineStats(),
                 ui.playPreview,
                 &ui.showPerformance);
+        }
+        if (ui.showCameraDebug && ui.playPreview) {
+            renderCameraDebugPanel(runtimePreviewSession.cameraManager(),
+                                   &ui.showCameraDebug);
         }
         const AssetBrowserActionResult assetBrowserActions = ui.viewportFullscreen
             ? AssetBrowserActionResult{}
