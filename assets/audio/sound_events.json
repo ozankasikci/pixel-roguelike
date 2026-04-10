@@ -30,7 +30,7 @@
         ],
         "pick": "round_robin",
         "pitch_range": [0.97, 1.03],
-        "volume_range": [0.15, 0.25],
+        "volume_range": [0.4, 0.5],
         "max_instances": 2,
         "cooldown": 0.3,
         "bus": "Footsteps",
