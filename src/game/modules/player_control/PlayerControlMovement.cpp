@@ -135,8 +135,10 @@ void tickPlayerMovement(GameRegistry& registry,
         // Footstep audio: time-based while grounded and moving
         {
             float stepInterval = 0.5f;
+            float stepVolume = 0.4f;
             if (auto* gs = registry.ctx().find<GameSettings>()) {
                 stepInterval = gs->audio.footstepInterval;
+                stepVolume = gs->audio.footstepVolume;
             }
             if (movement.grounded && hasInput) {
                 movement.stepAccumulator += deltaTime;
@@ -144,7 +146,7 @@ void tickPlayerMovement(GameRegistry& registry,
                     movement.stepAccumulator = 0.0f;
                     auto* audioPtr = registry.ctx().find<engine::audio::AudioEngine*>();
                     if (audioPtr) {
-                        (*audioPtr)->play("footstep");
+                        (*audioPtr)->play("footstep", transform.position, stepVolume);
                     }
                 }
             } else {

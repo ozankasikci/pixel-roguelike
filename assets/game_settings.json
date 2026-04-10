@@ -1,8 +1,8 @@
 {
     "audio": {
         "ambienceVolume": 1.0,
-        "footstepInterval": 1.6399999856948853,
-        "footstepVolume": 0.4000000059604645,
+        "footstepInterval": 0.38999998569488525,
+        "footstepVolume": 0.10000000149011612,
         "masterVolume": 1.0,
         "musicVolume": 1.0,
         "reverbPreset": "None",
