@@ -25,14 +25,13 @@
     },
     "footstep": {
         "sounds": [
-            "sfx/footsteps/step_left.ogg",
-            "sfx/footsteps/step_right.ogg"
+            "sfx/footsteps/step_left.ogg"
         ],
-        "pick": "round_robin",
+        "pick": "random",
         "pitch_range": [0.97, 1.03],
         "volume_range": [0.4, 0.5],
-        "max_instances": 2,
-        "cooldown": 0.3,
+        "max_instances": 1,
+        "cooldown": 0.0,
         "bus": "Footsteps",
         "spatial": "2D",
         "ref_distance": 1.0,
