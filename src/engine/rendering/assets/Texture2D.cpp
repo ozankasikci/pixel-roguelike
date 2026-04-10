@@ -1,4 +1,5 @@
 #include "engine/rendering/assets/Texture2D.h"
+#include "engine/rendering/RenderQualitySettings.h"
 
 #include <stb_image.h>
 
@@ -103,6 +104,12 @@ void Texture2D::create(int width,
                  GL_UNSIGNED_BYTE,
                  pixels.data());
     glGenerateMipmap(GL_TEXTURE_2D);
+    if (GLAD_GL_EXT_texture_filter_anisotropic) {
+        float deviceMaxAnisotropy = 1.0f;
+        glGetFloatv(GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT, &deviceMaxAnisotropy);
+        const float anisotropy = resolveTextureAnisotropyLevel(true, deviceMaxAnisotropy);
+        glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, anisotropy);
+    }
     glBindTexture(GL_TEXTURE_2D, 0);
     width_ = width;
     height_ = height;

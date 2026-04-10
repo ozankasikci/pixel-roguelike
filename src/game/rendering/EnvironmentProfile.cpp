@@ -99,8 +99,9 @@ EnvironmentRenderSettings makeDefaultEnvironmentRenderSettings() {
     settings.post.contrast = 1.05f;
     settings.post.saturation = 0.95f;
     settings.post.bloomThreshold = 0.80f;
-    settings.post.bloomIntensity = 0.06f;
+    settings.post.bloomIntensity = 0.10f;
     settings.post.bloomRadius = 1.20f;
+    settings.post.ssaoHalfResolution = false;
     settings.post.vignetteStrength = 0.08f;
     settings.post.vignetteSoftness = 0.85f;
     settings.post.splitToneStrength = 0.05f;

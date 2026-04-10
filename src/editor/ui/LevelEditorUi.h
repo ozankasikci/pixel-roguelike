@@ -54,13 +54,13 @@ inline const char* editorPreviewQualityLabel(EditorPreviewQuality quality) {
 inline EditorPreviewQualitySettings editorPreviewQualitySettings(EditorPreviewQuality quality) {
     switch (quality) {
     case EditorPreviewQuality::Fast:
-        return EditorPreviewQualitySettings{0.67f, 0};
+        return EditorPreviewQualitySettings{0.75f, 0};
     case EditorPreviewQuality::Balanced:
-        return EditorPreviewQualitySettings{0.80f, 1};
+        return EditorPreviewQualitySettings{0.90f, 1};
     case EditorPreviewQuality::High:
         return EditorPreviewQualitySettings{1.0f, 2};
     }
-    return EditorPreviewQualitySettings{0.80f, 1};
+    return EditorPreviewQualitySettings{0.90f, 1};
 }
 
 enum class EditorPlacementKind {
@@ -93,7 +93,7 @@ struct EditorInspectedAsset {
 struct EditorUiState {
     EditorTransformTool tool = EditorTransformTool::Translate;
     EditorPreviewMode previewMode = EditorPreviewMode::Final;
-    EditorPreviewQuality previewQuality = EditorPreviewQuality::Balanced;
+    EditorPreviewQuality previewQuality = EditorPreviewQuality::High;
     bool playPreview = false;
     bool playPreviewToggleRequested = false;
     bool showOutliner = true;
@@ -117,8 +117,8 @@ struct EditorUiState {
     float moveSnap = 0.5f;
     float rotateSnap = 15.0f;
     float scaleSnap = 0.1f;
-    float previewRenderScale = 0.80f;
-    int shadowResolutionIndex = 1;
+    float previewRenderScale = 1.0f;
+    int shadowResolutionIndex = 2;
     std::string selectedMeshId = "cube";
     std::string selectedMaterialId = "stone_default";
     std::string selectedArchetypeId = "checkpoint_shrine";

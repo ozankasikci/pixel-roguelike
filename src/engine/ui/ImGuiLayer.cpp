@@ -719,9 +719,15 @@ void ImGuiLayer::renderOverlay(DebugParams& params, std::vector<RenderLight>& li
             ImGui::SliderFloat("Depth View Scale", &params.post.depthViewScale, 0.01f, 0.30f, "%.3f");
         }
 
-        const char* resOptions[] = {"480p (854x480)", "540p (960x540)", "720p (1280x720)"};
         int prevIndex = params.internalResIndex;
-        ImGui::Combo("Resolution", &params.internalResIndex, resOptions, 3);
+        const char* resOptions[] = {
+            kRenderResolutionPresets[0].label,
+            kRenderResolutionPresets[1].label,
+            kRenderResolutionPresets[2].label,
+            kRenderResolutionPresets[3].label,
+            kRenderResolutionPresets[4].label,
+        };
+        ImGui::Combo("Resolution", &params.internalResIndex, resOptions, static_cast<int>(std::size(resOptions)));
         if (params.internalResIndex != prevIndex) {
             params.resolutionChanged = true;
         }

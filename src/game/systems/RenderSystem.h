@@ -1,5 +1,6 @@
 #pragma once
 #include "engine/core/System.h"
+#include "engine/rendering/RenderQualitySettings.h"
 #include "engine/ui/ImGuiLayer.h"
 #include "engine/ui/Screenshot.h"
 #include "game/rendering/EnvironmentDebugSync.h"
@@ -41,8 +42,4 @@ private:
     bool f12Pressed_ = false;
     RuntimeSceneRenderer runtimeRenderer_;
     RuntimeEnvironmentSyncState environmentSyncState_;
-
-    // Internal resolution presets (same as current main.cpp)
-    static constexpr int RES_W[] = {854, 960, 1280};
-    static constexpr int RES_H[] = {480, 540,  720};
 };

@@ -16,7 +16,9 @@ int main() {
     assert(settings.post.toneMapMode == 1);
     assert(!settings.post.enableEdges);
     assert(!settings.post.enableGrain);
-    assert(settings.post.ssaoHalfResolution);
+    assert(!settings.post.ssaoHalfResolution);
+    assert(settings.post.exposure >= 0.95f);
+    assert(settings.post.bloomIntensity < 0.15f);
     assert(settings.post.ssaoFadeEnd > settings.post.ssaoFadeStart);
     assert(settings.sky.sunSize > 0.0f);
 

@@ -21,9 +21,9 @@ int main() {
     assert(test_support::nearlyEqual(high.renderScale, 1.0f));
 
     EditorUiState ui;
-    assert(ui.previewQuality == EditorPreviewQuality::Balanced);
-    assert(test_support::nearlyEqual(ui.previewRenderScale, balanced.renderScale));
-    assert(ui.shadowResolutionIndex == balanced.shadowResolutionIndex);
+    assert(ui.previewQuality == EditorPreviewQuality::High);
+    assert(test_support::nearlyEqual(ui.previewRenderScale, high.renderScale));
+    assert(ui.shadowResolutionIndex == high.shadowResolutionIndex);
 
     applyEditorPreviewQuality(ui, EditorPreviewQuality::Fast);
     assert(ui.previewQuality == EditorPreviewQuality::Fast);

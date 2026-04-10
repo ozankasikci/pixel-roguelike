@@ -100,6 +100,9 @@ int main() {
     assert(defaultEnvironment->id == "default");
     assert(defaultEnvironment->post.enableSky);
     assert(defaultEnvironment->lighting.sun.enabled);
+    assert(!defaultEnvironment->post.ssaoHalfResolution);
+    assert(test_support::nearlyEqual(defaultEnvironment->post.exposure, 1.0f));
+    assert(defaultEnvironment->post.bloomIntensity < 0.15f);
 
     const auto* outdoorBright = registry.findEnvironment("outdoor_bright");
     assert(outdoorBright != nullptr);

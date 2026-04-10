@@ -1,5 +1,6 @@
 #pragma once
 
+#include "engine/rendering/RenderQualitySettings.h"
 #include "engine/rendering/CameraDebugInfo.h"
 #include "engine/rendering/post/PostProcessParams.h"
 #include "game/rendering/RuntimeLightingOverride.h"
@@ -41,7 +42,7 @@ struct DebugParams {
     CameraDebugInfo camera;               // was cameraPos/Dir/Fov/Speed
     RuntimeLightingOverride lighting;     // was shadow*/hemisphere*/directional*
 
-    int   internalResIndex  = 2;      // 0=480p, 1=540p, 2=720p
+    int   internalResIndex  = kDefaultInternalResolutionIndex;
     bool  resolutionChanged = false;
 
     // Performance

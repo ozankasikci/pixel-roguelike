@@ -38,10 +38,6 @@ bool installSignalHandler() {
 #endif
 } // namespace
 
-// constexpr definitions (needed in pre-C++17 out-of-line)
-constexpr int RenderSystem::RES_W[];
-constexpr int RenderSystem::RES_H[];
-
 void RenderSystem::init(Application& app) {
     runtimeRenderer_.init(app.getService<ContentRegistry>());
     imguiLayer_.init(app.window().handle());
@@ -97,8 +93,11 @@ void RenderSystem::handleResolutionChange() {
         return;
     }
 
-    const int idx = debugParams_.internalResIndex;
-    spdlog::info("Internal resolution changed to {}x{}", RES_W[idx], RES_H[idx]);
+    const int idx = std::clamp(debugParams_.internalResIndex,
+                               0,
+                               static_cast<int>(kRenderResolutionPresets.size()) - 1);
+    const RenderResolutionPreset& preset = kRenderResolutionPresets[static_cast<std::size_t>(idx)];
+    spdlog::info("Internal resolution changed to {}x{}", preset.width, preset.height);
     debugParams_.resolutionChanged = false;
 }
 
@@ -129,13 +128,16 @@ void RenderSystem::update(Application& app, float deltaTime) {
     auto& registry = (*sessionPtr)->registry();
     const bool escapeOpenedCursor = input_.isKeyJustPressed(GLFW_KEY_ESCAPE) && !input_.isCursorLocked();
 
-    const int internalIndex = std::clamp(debugParams_.internalResIndex, 0, 2);
+    const int internalIndex = std::clamp(debugParams_.internalResIndex,
+                                         0,
+                                         static_cast<int>(kRenderResolutionPresets.size()) - 1);
+    const RenderResolutionPreset& preset = kRenderResolutionPresets[static_cast<std::size_t>(internalIndex)];
     RuntimeSceneRenderOutput frameOutput;
     runtimeRenderer_.render(registry,
                             debugParams_,
                             deltaTime,
-                            RES_W[internalIndex],
-                            RES_H[internalIndex],
+                            preset.width,
+                            preset.height,
                             app.window().width(),
                             app.window().height(),
                             0,
