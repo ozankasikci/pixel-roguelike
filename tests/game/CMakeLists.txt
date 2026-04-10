@@ -101,7 +101,7 @@ pixel_roguelike_add_test(test_environment_debug_sync
 
 pixel_roguelike_add_test(test_runtime_game_session
     SOURCES test_runtime_game_session.cpp
-    LIBRARIES gameplay game_module_door game_module_interaction game_module_player_control
+    LIBRARIES gameplay game_module_door game_module_interaction game_module_inventory game_module_player_control
     DEFINITIONS ${SILOS_CLOISTER_SCENE_FILE_DEF}
     LABELS game
 )

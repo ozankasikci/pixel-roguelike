@@ -10,7 +10,7 @@
 #include "game/rendering/RuntimeSceneRenderer.h"
 #include "game/runtime/GameplayBehaviors.h"
 #include "game/runtime/GameplayEventSink.h"
-#include "game/runtime/RuntimeGameplay.h"
+#include "game/modules/inventory/InventorySystem.h"
 #include "game/session/RunSession.h"
 
 #include "engine/ecs/GameRegistry.h"

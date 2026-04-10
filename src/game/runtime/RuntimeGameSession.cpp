@@ -22,10 +22,11 @@
 #include "game/rendering/EnvironmentProfile.h"
 #include "game/rendering/MeshAssetProvider.h"
 #include "game/modules/door/DoorAnimationSystem.h"
+#include "game/modules/inventory/InventoryCaptureState.h"
+#include "game/modules/inventory/InventoryMenuState.h"
+#include "game/modules/inventory/InventorySystem.h"
 #include "game/systems/KinematicColliderSystem.h"
-#include "game/runtime/RuntimeGameplay.h"
 #include "game/session/RunSession.h"
-#include "game/ui/InventoryMenuState.h"
 
 #include <algorithm>
 #include <GLFW/glfw3.h>
@@ -431,12 +432,7 @@ void RuntimeGameSession::restoreBaselineState() {
 void RuntimeGameSession::resetTransientRuntimeState() {
     auto& ctx = registry_.ctx();
     resetRuntimeInteraction(registry_);
-    if (ctx.contains<InventoryMenuState>()) {
-        ctx.insert_or_assign<InventoryMenuState>(InventoryMenuState{});
-    }
-    if (ctx.contains<RuntimeInventoryCaptureState>()) {
-        ctx.insert_or_assign<RuntimeInventoryCaptureState>(RuntimeInventoryCaptureState{});
-    }
+    resetRuntimeInventory(registry_);
     if (ctx.contains<RuntimeCheckpointFeedbackState>()) {
         ctx.insert_or_assign<RuntimeCheckpointFeedbackState>(RuntimeCheckpointFeedbackState{});
     }
@@ -454,12 +450,7 @@ void RuntimeGameSession::clearEntities() {
     if (ctx.contains<RuntimeCheckpointFeedbackState>()) {
         ctx.erase<RuntimeCheckpointFeedbackState>();
     }
-    if (ctx.contains<RuntimeInventoryCaptureState>()) {
-        ctx.erase<RuntimeInventoryCaptureState>();
-    }
-    if (ctx.contains<InventoryMenuState>()) {
-        ctx.erase<InventoryMenuState>();
-    }
+    clearRuntimeInventory(registry_);
     clearRuntimeInteraction(registry_);
     if (ctx.contains<MeshAssetProvider>()) {
         ctx.erase<MeshAssetProvider>();
