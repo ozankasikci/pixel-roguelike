@@ -166,11 +166,11 @@ void RenderSystem::update(Application& app, float deltaTime) {
     }
 
     GLFWwindow* win = app.window().handle();
-    if (glfwGetKey(win, GLFW_KEY_F1) == GLFW_PRESS && !f1Pressed_) {
+    if (glfwGetKey(win, GLFW_KEY_SLASH) == GLFW_PRESS && !f1Pressed_) {
         f1Pressed_ = true;
         overlaysVisible_ = !overlaysVisible_;
     }
-    if (glfwGetKey(win, GLFW_KEY_F1) == GLFW_RELEASE) {
+    if (glfwGetKey(win, GLFW_KEY_SLASH) == GLFW_RELEASE) {
         f1Pressed_ = false;
     }
 
