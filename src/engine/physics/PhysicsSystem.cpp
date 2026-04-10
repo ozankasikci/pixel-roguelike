@@ -21,6 +21,9 @@
 #include <Jolt/Physics/Body/BodyCreationSettings.h>
 #include <Jolt/Physics/Body/BodyActivationListener.h>
 #include <Jolt/Physics/Character/CharacterVirtual.h>
+#include <Jolt/Physics/Collision/RayCast.h>
+#include <Jolt/Physics/Collision/CastResult.h>
+#include <Jolt/Physics/Collision/NarrowPhaseQuery.h>
 
 #include <glm/trigonometric.hpp>
 #include <spdlog/spdlog.h>
@@ -641,6 +644,18 @@ GroundState PhysicsSystem::getCharacterGroundState(entt::entity entity) const {
         default:
             return GroundState::InAir;
     }
+}
+
+bool PhysicsSystem::raycastStatic(const glm::vec3& origin, const glm::vec3& direction,
+                                  float maxDistance) const {
+    if (!impl_ || !impl_->physicsSystem) return false;
+
+    JPH::RRayCast ray(toJoltR(origin), toJolt(direction) * maxDistance);
+    JPH::RayCastResult hit;
+    return impl_->physicsSystem->GetNarrowPhaseQuery().CastRay(
+        ray, hit,
+        JPH::SpecifiedBroadPhaseLayerFilter(BroadPhaseLayers::NON_MOVING),
+        JPH::SpecifiedObjectLayerFilter(Layers::NON_MOVING));
 }
 
 void PhysicsSystem::moveKinematicBody(entt::entity entity,
