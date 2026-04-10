@@ -35,6 +35,7 @@ add_library(gameplay STATIC
     runtime/RuntimeGameSession.cpp
     scenes/GenericFileScene.cpp
     session/EquipmentState.cpp
+    settings/GameSettings.cpp
     systems/AudioEngineSystem.cpp
     systems/AudioListenerSystem.cpp
     systems/KinematicColliderSystem.cpp
@@ -50,6 +51,7 @@ target_link_libraries(gameplay PUBLIC
     engine_input
     engine_physics
     EnTT::EnTT
+    nlohmann_json::nlohmann_json
 )
 
 add_library(game INTERFACE)

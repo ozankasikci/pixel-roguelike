@@ -3,10 +3,13 @@
 #include "editor/scene/EditorSceneDocument.h"
 #include "engine/audio/AudioEngine.h"
 #include "engine/camera/CameraManager.h"
+#include "game/settings/GameSettings.h"
 
 #include <spdlog/spdlog.h>
 #include "game/components/MeshComponent.h"
 #include "game/rendering/MaterialDefinition.h"
+
+#include <optional>
 
 #include <GLFW/glfw3.h>
 #include <imgui.h>
@@ -27,6 +30,11 @@ void setCursorCapture(GLFWwindow* window, bool captured) {
 } // namespace
 
 void EditorRuntimePreviewSession::rebuild(const EditorSceneDocument& document, ContentRegistry& content, bool contentChanged) {
+    // Preserve GameSettings across rebuild (context is cleared by session_.rebuild)
+    std::optional<GameSettings> savedSettings;
+    if (auto* gs = session_.registry().ctx().find<GameSettings>()) {
+        savedSettings = *gs;
+    }
     LevelLoadRequest request;
     request.levelId = document.scenePath().empty() ? "editor_runtime_preview" : document.scenePath();
     request.levelPath = document.scenePath();
@@ -34,6 +42,9 @@ void EditorRuntimePreviewSession::rebuild(const EditorSceneDocument& document, C
     if (audioEngine_) {
         engine::audio::AudioEngine* ptr = audioEngine_;
         session_.registry().ctx().insert_or_assign<engine::audio::AudioEngine*>(std::move(ptr));
+    }
+    if (savedSettings.has_value()) {
+        session_.registry().ctx().insert_or_assign<GameSettings>(std::move(*savedSettings));
     }
     syncEnvironment(document);
 }
@@ -54,6 +65,11 @@ void EditorRuntimePreviewSession::syncMaterials(const EditorSceneDocument& docum
 }
 
 void EditorRuntimePreviewSession::resetForPlay() {
+    // Preserve GameSettings across reset (context is cleared by session_.resetForPlay)
+    std::optional<GameSettings> savedSettings;
+    if (auto* gs = session_.registry().ctx().find<GameSettings>()) {
+        savedSettings = *gs;
+    }
     if (audioEngine_) {
         audioEngine_->stopAll();
     }
@@ -62,7 +78,9 @@ void EditorRuntimePreviewSession::resetForPlay() {
         engine::audio::AudioEngine* ptr = audioEngine_;
         session_.registry().ctx().insert_or_assign<engine::audio::AudioEngine*>(std::move(ptr));
     }
-    footstepAccumulator_ = 0.0f;
+    if (savedSettings.has_value()) {
+        session_.registry().ctx().insert_or_assign<GameSettings>(std::move(*savedSettings));
+    }
     hasLastCameraPos_ = false;
 }
 
@@ -78,43 +96,44 @@ void EditorRuntimePreviewSession::clear() {
 
 void EditorRuntimePreviewSession::tick(float deltaTime, float aspect) {
     session_.tick(deltaTime, aspect);
-    if (audioEngine_) {
-        audioEngine_->update(deltaTime);
+    if (!audioEngine_) return;
 
-        // Footstep audio from camera horizontal movement
-        const auto& camState = session_.cameraManager().getState();
-        const glm::vec3 camPos = camState.position;
-        static int dbgFrame = 0;
-        if (++dbgFrame % 60 == 1) {
-            fprintf(stderr, "[CamDbg] pos=(%.2f,%.2f,%.2f) hasLast=%d captured=%d\n",
-                    camPos.x, camPos.y, camPos.z, hasLastCameraPos_, captured_);
-            fflush(stderr);
-        }
-        if (hasLastCameraPos_) {
-            const float dx = camPos.x - lastCameraPos_.x;
-            const float dz = camPos.z - lastCameraPos_.z;
-            const float horizontalDist = std::sqrt(dx * dx + dz * dz);
-            // Ignore large jumps (teleport, scene reset)
-            if (horizontalDist < 1.0f) {
-                footstepAccumulator_ += horizontalDist;
-            }
-            // Use time-based stepping instead of distance
-            // Trigger one footstep every ~0.5 seconds of movement
-            static float timeSinceLastStep = 0.0f;
-            constexpr float kStepInterval = 1.2f; // seconds between steps
-            if (horizontalDist > 0.001f) {
-                timeSinceLastStep += deltaTime;
-                if (timeSinceLastStep >= kStepInterval) {
-                    timeSinceLastStep = 0.0f;
-                    audioEngine_->play("footstep");
-                }
-            } else {
-                timeSinceLastStep = kStepInterval; // play immediately on first step
-            }
-        }
-        lastCameraPos_ = camPos;
-        hasLastCameraPos_ = true;
+    // Always update audio (voice cleanup, streams)
+    audioEngine_->update(deltaTime);
+
+    // Footsteps only during play preview
+    if (!captured_) {
+        hasLastCameraPos_ = false;
+        return;
     }
+
+    const auto& camState = session_.cameraManager().getState();
+    const glm::vec3 camPos = camState.position;
+
+    if (hasLastCameraPos_) {
+        const float dx = camPos.x - lastCameraPos_.x;
+        const float dz = camPos.z - lastCameraPos_.z;
+        const float horizontalDist = std::sqrt(dx * dx + dz * dz);
+
+        float stepInterval = 0.5f;
+        float stepVolume = 0.4f;
+        if (auto* gs = session_.registry().ctx().find<GameSettings>()) {
+            stepInterval = gs->audio.footstepInterval;
+            stepVolume = gs->audio.footstepVolume;
+        }
+
+        if (horizontalDist > 0.001f && horizontalDist < 1.0f) {
+            footstepTimer_ += deltaTime;
+            if (footstepTimer_ >= stepInterval) {
+                footstepTimer_ = 0.0f;
+                audioEngine_->play("footstep");
+            }
+        } else {
+            footstepTimer_ = stepInterval * 0.5f;
+        }
+    }
+    lastCameraPos_ = camPos;
+    hasLastCameraPos_ = true;
 }
 
 void EditorRuntimePreviewSession::prewarmRenderer(ContentRegistry& content) {

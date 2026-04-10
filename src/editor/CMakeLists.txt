@@ -24,6 +24,7 @@ add_library(editor STATIC
     ui/EditorEnvironmentPanel.cpp
     ui/EditorInspectorPanel.cpp
     ui/EditorCameraDebugPanel.cpp
+    ui/EditorGameSettingsPanel.cpp
     ui/EditorPerformancePanel.cpp
     ui/EditorOutlinerPanel.cpp
     ui/EditorPanelUtils.cpp

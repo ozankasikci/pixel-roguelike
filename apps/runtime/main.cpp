@@ -14,6 +14,7 @@
 #include "game/scenes/GenericFileScene.h"
 #include "game/content/ContentRegistry.h"
 #include "game/session/RunSession.h"
+#include "game/settings/GameSettings.h"
 
 #include <GLFW/glfw3.h>
 #include <imgui.h>
@@ -96,6 +97,17 @@ int main(int argc, char* argv[]) {
     // so occlusion raycast wiring is deferred until a session provides it.
     static engine::audio::AudioEngine audioEngine;
     audioEngine.init();
+
+    GameSettings gameSettings;
+    const std::string gameSettingsPath = resolveProjectPath("assets/game_settings.json");
+    loadGameSettings(gameSettingsPath, gameSettings);
+    audioEngine.setBusVolume("Master", gameSettings.audio.masterVolume);
+    audioEngine.setBusVolume("SFX", gameSettings.audio.sfxVolume);
+    audioEngine.setBusVolume("Music", gameSettings.audio.musicVolume);
+    audioEngine.setBusVolume("Ambient", gameSettings.audio.ambienceVolume);
+    audioEngine.setBusVolume("UI", gameSettings.audio.uiVolume);
+    audioEngine.setReverbPreset(gameSettings.audio.reverbPreset);
+
     app.emplaceService<engine::audio::AudioEngine*>(&audioEngine);
     app.addSystem<AudioEngineSystem>(Application::UpdatePhase::Gameplay, audioEngine);
     app.addSystem<AudioListenerSystem>(Application::UpdatePhase::Gameplay, audioEngine);

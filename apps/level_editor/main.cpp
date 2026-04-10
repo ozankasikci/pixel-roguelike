@@ -23,6 +23,7 @@
 #include "editor/ui/EditorOutlinerPanel.h"
 #include "editor/ui/EditorPanels.h"
 #include "editor/ui/EditorCameraDebugPanel.h"
+#include "editor/ui/EditorGameSettingsPanel.h"
 #include "editor/ui/EditorPerformancePanel.h"
 #include "editor/viewport/EditorViewportController.h"
 #include "editor/viewport/EditorViewportInteraction.h"
@@ -34,6 +35,7 @@
 #include "game/rendering/MaterialDefinition.h"
 #include "game/rendering/MaterialTextureLibrary.h"
 #include "game/session/EquipmentState.h"
+#include "game/settings/GameSettings.h"
 #include "game/ui/InteractionPromptState.h"
 #include "game/ui/InventoryMenuState.h"
 
@@ -348,6 +350,17 @@ int main(int argc, char* argv[]) {
     static engine::audio::AudioEngine audioEngine;
     audioEngine.init();
 
+    GameSettings gameSettings;
+    const std::string gameSettingsPath = resolveProjectPath("assets/game_settings.json");
+    loadGameSettings(gameSettingsPath, gameSettings);
+    audioEngine.setBusVolume("Master", gameSettings.audio.masterVolume);
+    audioEngine.setBusVolume("SFX", gameSettings.audio.sfxVolume);
+    audioEngine.setBusVolume("Music", gameSettings.audio.musicVolume);
+    audioEngine.setBusVolume("Ambient", gameSettings.audio.ambienceVolume);
+    audioEngine.setBusVolume("UI", gameSettings.audio.uiVolume);
+    audioEngine.setReverbPreset(gameSettings.audio.reverbPreset);
+    bool showGameSettings = false;
+
     MaterialTextureLibrary materialTextures;
     renderStartupProgress(window, imgui, 0.16f, "Preparing materials", "Uploading material texture data...");
     materialTextures.init(content);
@@ -371,6 +384,7 @@ int main(int argc, char* argv[]) {
     }
     EditorRuntimePreviewSession runtimePreviewSession;
     runtimePreviewSession.setAudioEngine(&audioEngine);
+    runtimePreviewSession.registry().ctx().insert_or_assign<GameSettings>(GameSettings(gameSettings));
     if (!initialScene.empty()) {
         renderStartupProgress(window, imgui, 0.56f, "Building play preview", "Creating the runtime preview session...");
         runtimePreviewSession.rebuild(document, content);
@@ -826,6 +840,7 @@ int main(int argc, char* argv[]) {
                     ImGui::MenuItem("Environment", nullptr, &ui.showEnvironment);
                     ImGui::MenuItem("Viewport", nullptr, &ui.showViewport);
                     ImGui::MenuItem("Build Output", nullptr, &ui.showBuildOutput);
+                    ImGui::MenuItem("Game Settings", nullptr, &showGameSettings);
                     ImGui::EndMenu();
                 }
                 if (ImGui::BeginMenu("Layouts")) {
@@ -1093,6 +1108,18 @@ int main(int argc, char* argv[]) {
         if (ui.showCameraDebug && ui.playPreview) {
             renderCameraDebugPanel(runtimePreviewSession.cameraManager(),
                                    &ui.showCameraDebug);
+        }
+        if (showGameSettings) {
+            if (renderGameSettingsPanel(gameSettings, &showGameSettings)) {
+                saveGameSettings(gameSettingsPath, gameSettings);
+                audioEngine.setBusVolume("Master", gameSettings.audio.masterVolume);
+                audioEngine.setBusVolume("SFX", gameSettings.audio.sfxVolume);
+                audioEngine.setBusVolume("Music", gameSettings.audio.musicVolume);
+                audioEngine.setBusVolume("Ambient", gameSettings.audio.ambienceVolume);
+                audioEngine.setBusVolume("UI", gameSettings.audio.uiVolume);
+                audioEngine.setReverbPreset(gameSettings.audio.reverbPreset);
+                runtimePreviewSession.registry().ctx().insert_or_assign<GameSettings>(GameSettings(gameSettings));
+            }
         }
         const AssetBrowserActionResult assetBrowserActions = ui.viewportFullscreen
             ? AssetBrowserActionResult{}
