@@ -1,4 +1,3 @@
-#include "engine/audio/AudioEngine.h"
 #include "engine/core/PathUtils.h"
 #include "engine/core/ProjectConfig.h"
 #include "engine/core/Window.h"
@@ -23,7 +22,6 @@
 #include "editor/ui/EditorOutlinerPanel.h"
 #include "editor/ui/EditorPanels.h"
 #include "editor/ui/EditorCameraDebugPanel.h"
-#include "editor/ui/EditorGameSettingsPanel.h"
 #include "editor/ui/EditorPerformancePanel.h"
 #include "editor/viewport/EditorViewportController.h"
 #include "editor/viewport/EditorViewportInteraction.h"
@@ -35,7 +33,6 @@
 #include "game/rendering/MaterialDefinition.h"
 #include "game/rendering/MaterialTextureLibrary.h"
 #include "game/session/EquipmentState.h"
-#include "game/settings/GameSettings.h"
 #include "game/ui/InteractionPromptState.h"
 #include "game/ui/InventoryMenuState.h"
 
@@ -347,20 +344,6 @@ int main(int argc, char* argv[]) {
     registerCheckpointModule();
     registerPlayerControlModule();
 
-    static engine::audio::AudioEngine audioEngine;
-    audioEngine.init();
-
-    GameSettings gameSettings;
-    const std::string gameSettingsPath = resolveProjectPath("assets/game_settings.json");
-    loadGameSettings(gameSettingsPath, gameSettings);
-    audioEngine.setBusVolume("Master", gameSettings.audio.masterVolume);
-    audioEngine.setBusVolume("SFX", gameSettings.audio.sfxVolume);
-    audioEngine.setBusVolume("Music", gameSettings.audio.musicVolume);
-    audioEngine.setBusVolume("Ambient", gameSettings.audio.ambienceVolume);
-    audioEngine.setBusVolume("UI", gameSettings.audio.uiVolume);
-    audioEngine.setReverbPreset(gameSettings.audio.reverbPreset);
-    bool showGameSettings = false;
-
     MaterialTextureLibrary materialTextures;
     renderStartupProgress(window, imgui, 0.16f, "Preparing materials", "Uploading material texture data...");
     materialTextures.init(content);
@@ -383,8 +366,6 @@ int main(int argc, char* argv[]) {
         previewWorld.rebuild(document, content);
     }
     EditorRuntimePreviewSession runtimePreviewSession;
-    runtimePreviewSession.setAudioEngine(&audioEngine);
-    runtimePreviewSession.registry().ctx().insert_or_assign<GameSettings>(GameSettings(gameSettings));
     if (!initialScene.empty()) {
         renderStartupProgress(window, imgui, 0.56f, "Building play preview", "Creating the runtime preview session...");
         runtimePreviewSession.rebuild(document, content);
@@ -421,6 +402,28 @@ int main(int argc, char* argv[]) {
     auto environmentIds = sortedEnvironmentIds(content);
     auto layoutPresetNames = listEditorLayoutPresetNames();
     bool dockLayoutResetRequested = false;
+
+    // Viewport dirty-flag tracking: skip re-render when camera/scene/UI unchanged
+    struct ViewportDirtyState {
+        glm::vec3 cameraPosition{0.0f};
+        float cameraYaw = 0.0f;
+        float cameraPitch = 0.0f;
+        float cameraFov = 0.0f;
+        std::uint64_t sceneRevision = 0;
+        std::uint64_t environmentRevision = 0;
+        int previewMode = -1;
+        int viewportWidth = 0;
+        int viewportHeight = 0;
+        std::size_t selectionHash = 0;
+        bool showColliders = false;
+        bool showLightHelpers = false;
+        bool showSpawnMarker = false;
+        bool showTriggers = false;
+        int shadowResolutionIndex = -1;
+    };
+    ViewportDirtyState prevViewportState;
+    std::uint64_t persistedHoveredObjectId = 0;
+    bool vsyncEnabled = true;
 
     renderStartupProgress(window, imgui, 0.92f, "Finalizing workspace", "Loading layouts, assets, and editor state...");
 
@@ -840,7 +843,6 @@ int main(int argc, char* argv[]) {
                     ImGui::MenuItem("Environment", nullptr, &ui.showEnvironment);
                     ImGui::MenuItem("Viewport", nullptr, &ui.showViewport);
                     ImGui::MenuItem("Build Output", nullptr, &ui.showBuildOutput);
-                    ImGui::MenuItem("Game Settings", nullptr, &showGameSettings);
                     ImGui::EndMenu();
                 }
                 if (ImGui::BeginMenu("Layouts")) {
@@ -1108,18 +1110,6 @@ int main(int argc, char* argv[]) {
         if (ui.showCameraDebug && ui.playPreview) {
             renderCameraDebugPanel(runtimePreviewSession.cameraManager(),
                                    &ui.showCameraDebug);
-        }
-        if (showGameSettings) {
-            if (renderGameSettingsPanel(gameSettings, &showGameSettings)) {
-                saveGameSettings(gameSettingsPath, gameSettings);
-                audioEngine.setBusVolume("Master", gameSettings.audio.masterVolume);
-                audioEngine.setBusVolume("SFX", gameSettings.audio.sfxVolume);
-                audioEngine.setBusVolume("Music", gameSettings.audio.musicVolume);
-                audioEngine.setBusVolume("Ambient", gameSettings.audio.ambienceVolume);
-                audioEngine.setBusVolume("UI", gameSettings.audio.uiVolume);
-                audioEngine.setReverbPreset(gameSettings.audio.reverbPreset);
-                runtimePreviewSession.registry().ctx().insert_or_assign<GameSettings>(GameSettings(gameSettings));
-            }
         }
         const AssetBrowserActionResult assetBrowserActions = ui.viewportFullscreen
             ? AssetBrowserActionResult{}
@@ -1640,7 +1630,38 @@ int main(int argc, char* argv[]) {
         glm::mat4 projection(1.0f);
         glm::mat4 inverseViewProjection(1.0f);
 
-        if (!ui.pendingScenePath.empty() && !ui.playPreview && !startupViewportHandoffActive) {
+        // Compute a simple hash of selectedIds for change detection
+        const std::size_t selectionHash = [&]() {
+            std::size_t h = selectedIds.size();
+            for (auto id : selectedIds)
+                h ^= std::hash<std::uint64_t>{}(id) + 0x9e3779b9 + (h << 6) + (h >> 2);
+            return h;
+        }();
+
+        const bool viewportDirty = (editCamera.position != prevViewportState.cameraPosition)
+            || (editCamera.yawDegrees != prevViewportState.cameraYaw)
+            || (editCamera.pitchDegrees != prevViewportState.cameraPitch)
+            || (editCamera.fovDegrees != prevViewportState.cameraFov)
+            || (document.sceneRevision() != prevViewportState.sceneRevision)
+            || (document.environmentRevision() != prevViewportState.environmentRevision)
+            || (static_cast<int>(ui.previewMode) != prevViewportState.previewMode)
+            || (targetW != prevViewportState.viewportWidth)
+            || (targetH != prevViewportState.viewportHeight)
+            || (selectionHash != prevViewportState.selectionHash)
+            || (ui.showColliders != prevViewportState.showColliders)
+            || (ui.showLightHelpers != prevViewportState.showLightHelpers)
+            || (ui.showSpawnMarker != prevViewportState.showSpawnMarker)
+            || (ui.showTriggers != prevViewportState.showTriggers)
+            || (ui.shadowResolutionIndex != prevViewportState.shadowResolutionIndex)
+            || cameraAnim.active
+            || editorGizmoIsHot()
+            || placementState.active()
+            || (io.MouseDelta.x != 0.0f || io.MouseDelta.y != 0.0f)
+            || (io.MouseWheel != 0.0f)
+            || (glfwGetMouseButton(window.handle(), GLFW_MOUSE_BUTTON_RIGHT) == GLFW_PRESS);
+
+        if (!ui.pendingScenePath.empty() && !ui.playPreview && !startupViewportHandoffActive
+            && viewportDirty) {
             tickCameraAnimation(editCamera, cameraAnim, deltaTime);
             if (!cameraAnim.active) {
                 updateEditorFlyCamera(editCamera, window.handle(), renderViewportState, deltaTime);
@@ -1670,7 +1691,9 @@ int main(int argc, char* argv[]) {
                 || glfwGetMouseButton(window.handle(), GLFW_MOUSE_BUTTON_MIDDLE) == GLFW_PRESS
                 || (io.KeyAlt && glfwGetMouseButton(window.handle(), GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS);
 
-            if (!suppressHover && renderViewportState.hovered) {
+            const bool mouseMovedThisFrame = (io.MouseDelta.x != 0.0f || io.MouseDelta.y != 0.0f);
+
+            if (!suppressHover && renderViewportState.hovered && mouseMovedThisFrame) {
                 const EditorRay hoverRay = buildEditorRay(
                     inverseViewProjection,
                     glm::vec2(renderViewportState.origin.x, renderViewportState.origin.y),
@@ -1679,6 +1702,12 @@ int main(int argc, char* argv[]) {
                 if (const auto hit = pickEditorObject(viewportSelectionHandles, hoverRay)) {
                     hoveredObjectId = hit->objectId;
                 }
+                persistedHoveredObjectId = hoveredObjectId;
+            } else if (!suppressHover && renderViewportState.hovered) {
+                // Mouse didn't move — reuse previous hover result
+                hoveredObjectId = persistedHoveredObjectId;
+            } else {
+                persistedHoveredObjectId = 0;
             }
             appendHoverOverlay(objects, previewWorld, materialTextures, hoveredObjectId, selectedIds);
 
@@ -1727,6 +1756,22 @@ int main(int argc, char* argv[]) {
             renderParams.shadowResolutionIndex = ui.shadowResolutionIndex;
 
             editorViewportRenderer.render(renderParams, targetW, targetH, targetW, targetH, finalFbo.framebuffer());
+
+            prevViewportState.cameraPosition = editCamera.position;
+            prevViewportState.cameraYaw = editCamera.yawDegrees;
+            prevViewportState.cameraPitch = editCamera.pitchDegrees;
+            prevViewportState.cameraFov = editCamera.fovDegrees;
+            prevViewportState.sceneRevision = document.sceneRevision();
+            prevViewportState.environmentRevision = document.environmentRevision();
+            prevViewportState.previewMode = static_cast<int>(ui.previewMode);
+            prevViewportState.viewportWidth = targetW;
+            prevViewportState.viewportHeight = targetH;
+            prevViewportState.selectionHash = selectionHash;
+            prevViewportState.showColliders = ui.showColliders;
+            prevViewportState.showLightHelpers = ui.showLightHelpers;
+            prevViewportState.showSpawnMarker = ui.showSpawnMarker;
+            prevViewportState.showTriggers = ui.showTriggers;
+            prevViewportState.shadowResolutionIndex = ui.shadowResolutionIndex;
         } else if (!ui.pendingScenePath.empty() && !startupViewportHandoffActive) {
             runtimePreviewSession.debugParams().lighting.shadowMapResolutionIndex = ui.shadowResolutionIndex;
             runtimePreviewSession.debugParams().post.debugViewMode = previewModeDebugView(ui.previewMode);
@@ -2459,10 +2504,22 @@ int main(int argc, char* argv[]) {
             || ImGui::GetIO().WantCaptureKeyboard;
 
         if (needsContinuousRendering) {
+            if (!vsyncEnabled) {
+                glfwSwapInterval(1);
+                vsyncEnabled = true;
+            }
             glfwPollEvents();
         } else if (glfwGetWindowAttrib(window.handle(), GLFW_FOCUSED) == 0) {
+            if (vsyncEnabled) {
+                glfwSwapInterval(0);
+                vsyncEnabled = false;
+            }
             glfwWaitEventsTimeout(kUnfocusedTimeoutSeconds);
         } else {
+            if (vsyncEnabled) {
+                glfwSwapInterval(0);
+                vsyncEnabled = false;
+            }
             glfwWaitEventsTimeout(kIdleTimeoutSeconds);
         }
 
