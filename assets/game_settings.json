@@ -5,7 +5,7 @@
         "footstepVolume": 0.20000000298023224,
         "masterVolume": 1.0,
         "musicVolume": 1.0,
-        "reverbPreset": "None",
+        "reverbPreset": "Corridor",
         "sfxVolume": 1.0,
         "uiVolume": 1.0
     }

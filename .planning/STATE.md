@@ -307,10 +307,11 @@ None yet.
 | 260408-uf2 | Fix door scaling in editor - 3 bugs where scale is ignored for doors | 2026-04-08 | c41d8c8 | [260408-uf2-fix-door-scaling-in-editor-3-bugs-where-](./quick/260408-uf2-fix-door-scaling-in-editor-3-bugs-where-/) |
 | 260408-v1a | Add control room behind Door A - 18x14x10m institutional operations center | 2026-04-08 | 06e9895 | [260408-v1a-add-control-room-behind-door-a-18x14x10m](./quick/260408-v1a-add-control-room-behind-door-a-18x14x10m/) |
 | 260408-x9w | Implement kinematic door colliders with KinematicColliderSystem | 2026-04-08 | e5d1eb5 | [260408-x9w-implement-kinematic-door-colliders-with-](./quick/260408-x9w-implement-kinematic-door-colliders-with-/) |
+| 260411-2k0 | Editor CPU efficiency: viewport dirty flag, conditional hover picking, adaptive VSync | 2026-04-11 | 4d254f6 | [260411-2k0-implement-three-quick-win-cpu-efficiency](./quick/260411-2k0-implement-three-quick-win-cpu-efficiency/) |
 
 ## Session Continuity
 
-Last activity: 2026-04-08 - Completed quick task 260408-x9w: Implement kinematic door colliders with KinematicColliderSystem
+Last activity: 2026-04-11 - Completed quick task 260411-2k0: Editor CPU efficiency improvements (61% → 1.5% idle CPU)
 Last session: 2026-04-08T16:40:04.187Z
 Stopped at: Completed quick/260408-r43-PLAN.md
 Resume file: None

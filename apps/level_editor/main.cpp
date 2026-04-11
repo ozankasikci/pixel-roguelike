@@ -1,3 +1,4 @@
+#include "engine/audio/AudioEngine.h"
 #include "engine/core/PathUtils.h"
 #include "engine/core/ProjectConfig.h"
 #include "engine/core/Window.h"
@@ -22,6 +23,7 @@
 #include "editor/ui/EditorOutlinerPanel.h"
 #include "editor/ui/EditorPanels.h"
 #include "editor/ui/EditorCameraDebugPanel.h"
+#include "editor/ui/EditorGameSettingsPanel.h"
 #include "editor/ui/EditorPerformancePanel.h"
 #include "editor/viewport/EditorViewportController.h"
 #include "editor/viewport/EditorViewportInteraction.h"
@@ -33,6 +35,7 @@
 #include "game/rendering/MaterialDefinition.h"
 #include "game/rendering/MaterialTextureLibrary.h"
 #include "game/session/EquipmentState.h"
+#include "game/settings/GameSettings.h"
 #include "game/ui/InteractionPromptState.h"
 #include "game/ui/InventoryMenuState.h"
 
@@ -344,6 +347,20 @@ int main(int argc, char* argv[]) {
     registerCheckpointModule();
     registerPlayerControlModule();
 
+    static engine::audio::AudioEngine audioEngine;
+    audioEngine.init();
+
+    GameSettings gameSettings;
+    const std::string gameSettingsPath = resolveProjectPath("assets/game_settings.json");
+    loadGameSettings(gameSettingsPath, gameSettings);
+    audioEngine.setBusVolume("Master", gameSettings.audio.masterVolume);
+    audioEngine.setBusVolume("SFX", gameSettings.audio.sfxVolume);
+    audioEngine.setBusVolume("Music", gameSettings.audio.musicVolume);
+    audioEngine.setBusVolume("Ambient", gameSettings.audio.ambienceVolume);
+    audioEngine.setBusVolume("UI", gameSettings.audio.uiVolume);
+    audioEngine.setReverbPreset(gameSettings.audio.reverbPreset);
+    bool showGameSettings = false;
+
     MaterialTextureLibrary materialTextures;
     renderStartupProgress(window, imgui, 0.16f, "Preparing materials", "Uploading material texture data...");
     materialTextures.init(content);
@@ -366,6 +383,8 @@ int main(int argc, char* argv[]) {
         previewWorld.rebuild(document, content);
     }
     EditorRuntimePreviewSession runtimePreviewSession;
+    runtimePreviewSession.setAudioEngine(&audioEngine);
+    runtimePreviewSession.registry().ctx().insert_or_assign<GameSettings>(GameSettings(gameSettings));
     if (!initialScene.empty()) {
         renderStartupProgress(window, imgui, 0.56f, "Building play preview", "Creating the runtime preview session...");
         runtimePreviewSession.rebuild(document, content);
@@ -843,6 +862,7 @@ int main(int argc, char* argv[]) {
                     ImGui::MenuItem("Environment", nullptr, &ui.showEnvironment);
                     ImGui::MenuItem("Viewport", nullptr, &ui.showViewport);
                     ImGui::MenuItem("Build Output", nullptr, &ui.showBuildOutput);
+                    ImGui::MenuItem("Game Settings", nullptr, &showGameSettings);
                     ImGui::EndMenu();
                 }
                 if (ImGui::BeginMenu("Layouts")) {
@@ -1110,6 +1130,18 @@ int main(int argc, char* argv[]) {
         if (ui.showCameraDebug && ui.playPreview) {
             renderCameraDebugPanel(runtimePreviewSession.cameraManager(),
                                    &ui.showCameraDebug);
+        }
+        if (showGameSettings) {
+            if (renderGameSettingsPanel(gameSettings, &showGameSettings)) {
+                saveGameSettings(gameSettingsPath, gameSettings);
+                audioEngine.setBusVolume("Master", gameSettings.audio.masterVolume);
+                audioEngine.setBusVolume("SFX", gameSettings.audio.sfxVolume);
+                audioEngine.setBusVolume("Music", gameSettings.audio.musicVolume);
+                audioEngine.setBusVolume("Ambient", gameSettings.audio.ambienceVolume);
+                audioEngine.setBusVolume("UI", gameSettings.audio.uiVolume);
+                audioEngine.setReverbPreset(gameSettings.audio.reverbPreset);
+                runtimePreviewSession.registry().ctx().insert_or_assign<GameSettings>(GameSettings(gameSettings));
+            }
         }
         const AssetBrowserActionResult assetBrowserActions = ui.viewportFullscreen
             ? AssetBrowserActionResult{}
@@ -1656,11 +1688,11 @@ int main(int argc, char* argv[]) {
             || cameraAnim.active
             || editorGizmoIsHot()
             || placementState.active()
-            || (io.MouseDelta.x != 0.0f || io.MouseDelta.y != 0.0f)
+            || (renderViewportState.hovered && (io.MouseDelta.x != 0.0f || io.MouseDelta.y != 0.0f))
             || (io.MouseWheel != 0.0f)
             || (glfwGetMouseButton(window.handle(), GLFW_MOUSE_BUTTON_RIGHT) == GLFW_PRESS);
 
-        if (!ui.pendingScenePath.empty() && !ui.playPreview && !startupViewportHandoffActive
+        if (!ui.pendingScenePath.empty() && !startupViewportHandoffActive && !ui.playPreview
             && viewportDirty) {
             tickCameraAnimation(editCamera, cameraAnim, deltaTime);
             if (!cameraAnim.active) {
@@ -1772,7 +1804,7 @@ int main(int argc, char* argv[]) {
             prevViewportState.showSpawnMarker = ui.showSpawnMarker;
             prevViewportState.showTriggers = ui.showTriggers;
             prevViewportState.shadowResolutionIndex = ui.shadowResolutionIndex;
-        } else if (!ui.pendingScenePath.empty() && !startupViewportHandoffActive) {
+        } else if (!ui.pendingScenePath.empty() && !startupViewportHandoffActive && ui.playPreview) {
             runtimePreviewSession.debugParams().lighting.shadowMapResolutionIndex = ui.shadowResolutionIndex;
             runtimePreviewSession.debugParams().post.debugViewMode = previewModeDebugView(ui.previewMode);
             runtimePreviewSession.updateInput(window.handle(), io);
@@ -2500,8 +2532,7 @@ int main(int argc, char* argv[]) {
 
     while (!window.shouldClose()) {
         const bool needsContinuousRendering = (ui.playPreview && runtimePreviewSession.captured())
-            || ImGui::GetIO().WantCaptureMouse
-            || ImGui::GetIO().WantCaptureKeyboard;
+            || cameraAnim.active;
 
         if (needsContinuousRendering) {
             if (!vsyncEnabled) {
