@@ -283,3 +283,14 @@ void emitPlacementDragSource(EditorPlacementKind kind,
     ImGui::TextUnformatted("Place in viewport");
     ImGui::EndDragDropSource();
 }
+
+void emitMaterialDragSource(const std::string& materialId) {
+    if (!ImGui::BeginDragDropSource()) {
+        return;
+    }
+    EditorMaterialDragPayload payload;
+    copyPayloadString(payload.materialId, materialId);
+    ImGui::SetDragDropPayload("EDITOR_MATERIAL", &payload, sizeof(payload));
+    ImGui::TextUnformatted(materialId.c_str());
+    ImGui::EndDragDropSource();
+}

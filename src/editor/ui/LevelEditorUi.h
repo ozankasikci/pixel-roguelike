@@ -165,6 +165,10 @@ struct EditorDragPayload {
     char secondaryId[64]{};
 };
 
+struct EditorMaterialDragPayload {
+    char materialId[64]{};
+};
+
 struct EditorPendingCommand {
     bool active = false;
     std::string label;
@@ -237,6 +241,7 @@ void beginPlacement(EditorPlacementState& state,
 void emitPlacementDragSource(EditorPlacementKind kind,
                              const std::string& primaryId = {},
                              const std::string& secondaryId = {});
+void emitMaterialDragSource(const std::string& materialId);
 bool containsString(const std::vector<std::string>& values, const std::string& value);
 std::vector<EditorSceneObject*> selectedMeshObjects(EditorSceneDocument& document,
                                                     const std::vector<std::uint64_t>& selectedIds);
