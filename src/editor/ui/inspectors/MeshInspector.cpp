@@ -58,6 +58,7 @@ void drawMeshInspector(LevelMeshPlacement& mesh,
                 if (selected) {
                     ImGui::SetItemDefaultFocus();
                 }
+                emitMaterialDragSource(materialId);
             }
             ImGui::EndCombo();
         }
