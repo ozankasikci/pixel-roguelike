@@ -92,6 +92,13 @@ uniform float uMaterialMetalness;
 uniform float uMaterialAoStrength;
 uniform float uMaterialLightTintResponse;
 uniform float uEmissiveStrength;
+uniform int uWeatheringEnabled;
+uniform float uWeatheringDirtStrength;
+uniform vec3 uWeatheringDirtColor;
+uniform float uWeatheringEdgeWearStrength;
+uniform float uWeatheringDustStrength;
+uniform float uWeatheringDampStrength;
+uniform float uWeatheringNoiseScale;
 uniform int uUnlit;
 
 const int LIGHT_POINT = 0;
@@ -356,6 +363,45 @@ vec3 applyMacroVariation(vec3 baseColor, vec3 N) {
     detail *= 0.96 + micro * 0.08;
     detail = mix(detail, detail * vec3(0.92, 0.94, 0.96), dampMask * 0.12);
     return detail;
+}
+
+// ============================================================
+// Weathering utilities — geometry-context signals
+// ============================================================
+
+// Screen-space curvature approximation via fwidth() on world normals.
+// Returns high values at hard mesh edges (convex features).
+float weatherCurvature(vec3 worldNormal) {
+    return clamp(length(fwidth(worldNormal)) * 20.0, 0.0, 1.0);
+}
+
+// Cavity mask: high in crevices/concavities, low on flat surfaces and convex edges.
+float weatherCavityMask(vec3 worldNormal) {
+    float curvature = weatherCurvature(worldNormal);
+    float underside = clamp(-worldNormal.y * 0.3, 0.0, 0.3);
+    return clamp(curvature + underside, 0.0, 1.0);
+}
+
+// Edge wear mask: high on convex edges (sharp geometry transitions).
+float weatherEdgeWearMask(vec3 worldNormal) {
+    return weatherCurvature(worldNormal);
+}
+
+// Up-facing mask: 1.0 for surfaces pointing straight up, 0.0 for vertical/downward.
+float weatherUpFacingMask(vec3 worldNormal) {
+    return clamp(worldNormal.y, 0.0, 1.0);
+}
+
+// Height gradient: 0.0 at ground level (y=0), 1.0 at y=4.0 and above.
+float weatherHeightGradient(float worldY) {
+    return clamp(worldY * 0.25, 0.0, 1.0);
+}
+
+// Multi-scale world-space noise for macro variation.
+float weatherMacroNoise(vec3 worldPos, float scale) {
+    float large = fbm(worldPos * scale * 0.3 + vec3(42.1, 7.3, 19.8));
+    float medium = fbm(worldPos * scale * 1.2 + vec3(13.7, 28.4, 5.2));
+    return large * 0.65 + medium * 0.35;
 }
 
 vec3 detailStone(vec3 baseColor, vec3 N) {
