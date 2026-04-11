@@ -31,9 +31,11 @@ void SceneRenderPipeline::init() {
     skyTextures_.initReflectionResources();
     ltcData_.init();
     ensureFramebuffers(1280, 720);
+    particleRenderer_.init();
 }
 
 void SceneRenderPipeline::shutdown() {
+    particleRenderer_.shutdown();
     renderer_.reset();
     shadowShader_.reset();
     sceneShader_.reset();
@@ -93,6 +95,8 @@ void SceneRenderPipeline::render(const SceneRenderInput& input,
     const double tSceneStart = glfwGetTime();
     renderScenePass(culledInput, lights, shadowData, internalWidth, internalHeight);
     const double tSceneEnd = glfwGetTime();
+
+    renderParticlePass(culledInput);
 
     renderPostProcess(culledInput, outputWidth, outputHeight, targetFramebuffer);
 
@@ -419,6 +423,19 @@ void SceneRenderPipeline::renderPostProcess(const SceneRenderInput& input,
                         outputHeight,
                         targetFramebuffer);
     lastStats_.compositeMs = (glfwGetTime() - tCompositeStart) * 1000.0;
+}
+
+void SceneRenderPipeline::renderParticlePass(const SceneRenderInput& input) {
+    if (!input.particleBatches || input.particleBatches->empty()) return;
+    sceneFBO_.bind();
+    glViewport(0, 0, sceneFBO_.width(), sceneFBO_.height());
+    particleRenderer_.render(*input.particleBatches,
+                              sceneFBO_.depthTexture(),
+                              input.viewMatrix, input.projectionMatrix,
+                              input.nearPlane, input.farPlane,
+                              sceneFBO_.width(), sceneFBO_.height());
+    sceneFBO_.unbind();
+    glDisable(GL_DEPTH_TEST);
 }
 
 void SceneRenderPipeline::ensureFramebuffers(int internalWidth,
