@@ -1,0 +1,3 @@
+id child_emitter
+parent base_emitter
+emission_rate 50

@@ -129,3 +129,16 @@ pixel_roguelike_add_test(test_entity_hierarchy
     LIBRARIES engine_core gameplay
     LABELS game
 )
+
+set(PARTICLE_DEF_FILE_DEFS
+    PARTICLE_DEF_FILE="${CMAKE_SOURCE_DIR}/tests/data/torch_sparks.particle"
+    PARTICLE_PARENT_FILE="${CMAKE_SOURCE_DIR}/tests/data/base_emitter.particle"
+    PARTICLE_CHILD_FILE="${CMAKE_SOURCE_DIR}/tests/data/child_emitter.particle"
+)
+
+pixel_roguelike_add_test(test_particle_definition
+    SOURCES test_particle_definition.cpp
+    LIBRARIES game_content
+    DEFINITIONS ${PARTICLE_DEF_FILE_DEFS}
+    LABELS game particles
+)

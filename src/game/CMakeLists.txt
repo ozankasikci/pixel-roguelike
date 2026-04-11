@@ -2,6 +2,7 @@ add_library(game_content STATIC
     content/ContentRegistry.cpp
     level/LevelDef.cpp
     levels/ProceduralGameAssets.cpp
+    particles/ParticleEmitterDefinition.cpp
     rendering/EnvironmentDefinition.cpp
     rendering/EnvironmentProfile.cpp
     rendering/MaterialDefinition.cpp
