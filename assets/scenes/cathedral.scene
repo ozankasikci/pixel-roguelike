@@ -198,3 +198,6 @@ collider cylinder solid 2.95 4.5 -19.7 0.42 4.5
 player_spawn 0.0 1.6 5.4 -8.0
 archetype_instance checkpoint_shrine 0.0 0.0 -35.3 0.0
 archetype_instance cathedral_double_door 0.0 0.0 -19.4 0.0
+
+particle_emitter dust_motes 0 2 -6
+particle_emitter torch_sparks 3.5 2.5 6

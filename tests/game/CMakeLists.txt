@@ -24,7 +24,7 @@ set(CONTENT_REGISTRY_FILE_DEFS
 
 pixel_roguelike_add_test(test_level_def
     SOURCES test_level_def.cpp
-    LIBRARIES game_content game_module_player_control
+    LIBRARIES game_content game_module_particles game_module_player_control
     DEFINITIONS ${CATHEDRAL_SCENE_FILE_DEF}
     LABELS game
 )
