@@ -21,7 +21,8 @@ std::string pascalToSnake(const std::string& name) {
     std::string result;
     for (std::size_t i = 0; i < name.size(); ++i) {
         const char c = name[i];
-        if (std::isupper(c) && i > 0 && name[i - 1] != '_' && std::islower(name[i - 1])) {
+        if (std::isupper(c) && i > 0 && name[i - 1] != '_'
+            && (std::islower(name[i - 1]) || std::isdigit(name[i - 1]))) {
             result += '_';
         }
         result += static_cast<char>(std::tolower(c));
@@ -120,11 +121,12 @@ std::unordered_map<std::string, fs::path> buildGuidMap(const fs::path& textureRo
 // Walk up from the .mat file until finding a directory with both Material/ and Texture/ subdirs.
 fs::path detectPackRoot(const fs::path& matFilePath) {
     fs::path dir = matFilePath.parent_path();
-    for (int i = 0; i < 5; ++i) {
-        const fs::path parent = dir.parent_path();
-        if (fs::exists(parent / "Material") && fs::exists(parent / "Texture")) {
-            return parent;
+    for (int i = 0; i < 6; ++i) {
+        if (fs::exists(dir / "Material") && fs::exists(dir / "Texture")) {
+            return dir;
         }
+        const fs::path parent = dir.parent_path();
+        if (parent == dir) break; // filesystem root
         dir = parent;
     }
     // Fallback: assume Material/ is a direct child of pack root
