@@ -382,6 +382,7 @@ void ContentRegistry::loadDefaults() {
     materials_.clear();
     environments_.clear();
     environmentPaths_.clear();
+    particleEmitters_.clear();
 
     auto oldDagger = loadWeaponDefinitionAsset(resolveProjectPath("assets/defs/weapons/old_dagger.weapon"));
     weapons_.emplace(oldDagger.id, oldDagger);
@@ -403,6 +404,8 @@ void ContentRegistry::loadDefaults() {
 
     loadMaterialsFromDirectory("assets/materials");
     validateMaterialInheritance();
+
+    loadParticleEmittersFromDirectory("assets/particles");
 
     for (const auto& path : sortedDefinitionFiles("assets/defs/environments", ".environment")) {
         auto environment = loadEnvironmentDefinitionAsset(path);
@@ -449,6 +452,27 @@ const EnvironmentDefinition* ContentRegistry::findEnvironment(const std::string&
 const std::string* ContentRegistry::findEnvironmentPath(const std::string& id) const {
     auto it = environmentPaths_.find(id);
     return it == environmentPaths_.end() ? nullptr : &it->second;
+}
+
+const ParticleEmitterDefinition* ContentRegistry::findParticleEmitter(const std::string& id) const {
+    auto it = particleEmitters_.find(id);
+    return it != particleEmitters_.end() ? &it->second : nullptr;
+}
+
+void ContentRegistry::loadParticleEmittersFromDirectory(const std::string& relativeDirectory) {
+    for (const auto& path : sortedDefinitionFiles(relativeDirectory, ".particle")) {
+        try {
+            auto def = loadParticleEmitterDefinition(path);
+            if (particleEmitters_.count(def.id)) {
+                spdlog::error("Duplicate particle emitter id '{}' in '{}' — skipped",
+                              def.id, path);
+                continue;
+            }
+            particleEmitters_.emplace(def.id, std::move(def));
+        } catch (const std::exception& e) {
+            spdlog::error("Failed to load particle emitter '{}': {}", path, e.what());
+        }
+    }
 }
 
 void ContentRegistry::loadMaterialsFromDirectory(const std::string& relativeDirectory) {

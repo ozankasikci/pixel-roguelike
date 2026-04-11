@@ -1,5 +1,6 @@
 #pragma once
 
+#include "game/particles/ParticleEmitterDefinition.h"
 #include "game/prefabs/GameplayPrefabData.h"
 #include "game/rendering/EnvironmentDefinition.h"
 #include "game/rendering/MaterialDefinition.h"
@@ -104,9 +105,12 @@ public:
     const MaterialDefinition* findMaterial(const std::string& id) const;
     const EnvironmentDefinition* findEnvironment(const std::string& id) const;
     const std::string* findEnvironmentPath(const std::string& id) const;
+    const ParticleEmitterDefinition* findParticleEmitter(const std::string& id) const;
     const std::unordered_map<std::string, GameplayArchetypeDefinition>& archetypes() const { return archetypes_; }
     const std::unordered_map<std::string, MaterialDefinition>& materials() const { return materials_; }
     const std::unordered_map<std::string, EnvironmentDefinition>& environments() const { return environments_; }
+    const std::unordered_map<std::string, ParticleEmitterDefinition>& particleEmitters() const { return particleEmitters_; }
+    void loadParticleEmittersFromDirectory(const std::string& relativeDirectory);
 
 private:
     std::unordered_map<std::string, WeaponDefinition> weapons_;
@@ -117,6 +121,7 @@ private:
     std::unordered_map<std::string, MaterialDefinition> materials_;
     std::unordered_map<std::string, EnvironmentDefinition> environments_;
     std::unordered_map<std::string, std::string> environmentPaths_;
+    std::unordered_map<std::string, ParticleEmitterDefinition> particleEmitters_;
 
     // Hot-reload state
     std::unordered_map<std::string, std::filesystem::file_time_type> materialFileTimes_;
