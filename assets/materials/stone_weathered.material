@@ -1,0 +1,9 @@
+id stone_weathered
+parent stone_default
+weathering_enabled true
+weathering_dirt_strength 0.6
+weathering_dirt_color 0.18 0.14 0.10
+weathering_edge_wear_strength 0.4
+weathering_dust_strength 0.25
+weathering_damp_strength 0.5
+weathering_noise_scale 0.35

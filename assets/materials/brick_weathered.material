@@ -1,0 +1,9 @@
+id brick_weathered
+parent brick_default
+weathering_enabled true
+weathering_dirt_strength 0.5
+weathering_dirt_color 0.20 0.15 0.10
+weathering_edge_wear_strength 0.35
+weathering_dust_strength 0.2
+weathering_damp_strength 0.45
+weathering_noise_scale 0.4
