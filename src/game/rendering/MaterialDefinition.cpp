@@ -155,6 +155,27 @@ ResolvedMaterialDefinition resolveMaterialDefinitionRecursive(
     if (definition.alphaCutoff.has_value()) {
         resolved.alphaCutoff = *definition.alphaCutoff;
     }
+    if (definition.weatheringEnabled.has_value()) {
+        resolved.weatheringEnabled = *definition.weatheringEnabled;
+    }
+    if (definition.weatheringDirtStrength.has_value()) {
+        resolved.weatheringDirtStrength = *definition.weatheringDirtStrength;
+    }
+    if (definition.weatheringDirtColor.has_value()) {
+        resolved.weatheringDirtColor = *definition.weatheringDirtColor;
+    }
+    if (definition.weatheringEdgeWearStrength.has_value()) {
+        resolved.weatheringEdgeWearStrength = *definition.weatheringEdgeWearStrength;
+    }
+    if (definition.weatheringDustStrength.has_value()) {
+        resolved.weatheringDustStrength = *definition.weatheringDustStrength;
+    }
+    if (definition.weatheringDampStrength.has_value()) {
+        resolved.weatheringDampStrength = *definition.weatheringDampStrength;
+    }
+    if (definition.weatheringNoiseScale.has_value()) {
+        resolved.weatheringNoiseScale = *definition.weatheringNoiseScale;
+    }
 
     visiting.erase(id);
     cache.emplace(id, resolved);
@@ -346,6 +367,35 @@ MaterialDefinition loadMaterialDefinitionAsset(const std::string& path) {
             continue;
         }
 
+        if (key == "weathering_enabled" && tokens.size() == 2) {
+            definition.weatheringEnabled = (tokens[1] == "true");
+            continue;
+        }
+        if (key == "weathering_dirt_strength") {
+            definition.weatheringDirtStrength = parseFloatRecord(tokens, path, lineNumber, key);
+            continue;
+        }
+        if (key == "weathering_dirt_color") {
+            definition.weatheringDirtColor = parseVec3Record(tokens, path, lineNumber, key);
+            continue;
+        }
+        if (key == "weathering_edge_wear_strength") {
+            definition.weatheringEdgeWearStrength = parseFloatRecord(tokens, path, lineNumber, key);
+            continue;
+        }
+        if (key == "weathering_dust_strength") {
+            definition.weatheringDustStrength = parseFloatRecord(tokens, path, lineNumber, key);
+            continue;
+        }
+        if (key == "weathering_damp_strength") {
+            definition.weatheringDampStrength = parseFloatRecord(tokens, path, lineNumber, key);
+            continue;
+        }
+        if (key == "weathering_noise_scale") {
+            definition.weatheringNoiseScale = parseFloatRecord(tokens, path, lineNumber, key);
+            continue;
+        }
+
         throwParseError(path, lineNumber, "invalid material definition record");
     }
 
@@ -479,6 +529,20 @@ std::string serializeMaterialDefinitionAsset(const MaterialDefinition& definitio
     if (definition.alphaCutoff.has_value()) {
         out << "alpha_cutoff " << *definition.alphaCutoff << '\n';
     }
+    if (definition.weatheringEnabled.has_value()) {
+        out << "weathering_enabled " << (*definition.weatheringEnabled ? "true" : "false") << '\n';
+    }
+    writeOptionalFloat(out, "weathering_dirt_strength", definition.weatheringDirtStrength);
+    if (definition.weatheringDirtColor.has_value()) {
+        out << "weathering_dirt_color "
+            << definition.weatheringDirtColor->x << ' '
+            << definition.weatheringDirtColor->y << ' '
+            << definition.weatheringDirtColor->z << '\n';
+    }
+    writeOptionalFloat(out, "weathering_edge_wear_strength", definition.weatheringEdgeWearStrength);
+    writeOptionalFloat(out, "weathering_dust_strength", definition.weatheringDustStrength);
+    writeOptionalFloat(out, "weathering_damp_strength", definition.weatheringDampStrength);
+    writeOptionalFloat(out, "weathering_noise_scale", definition.weatheringNoiseScale);
     return out.str();
 }
 

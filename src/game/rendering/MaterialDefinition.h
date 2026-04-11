@@ -49,6 +49,13 @@ struct MaterialDefinition {
     std::optional<bool> normalMapFlipY;
     std::optional<bool> alphaTest;
     std::optional<float> alphaCutoff;
+    std::optional<bool> weatheringEnabled;
+    std::optional<float> weatheringDirtStrength;
+    std::optional<glm::vec3> weatheringDirtColor;
+    std::optional<float> weatheringEdgeWearStrength;
+    std::optional<float> weatheringDustStrength;
+    std::optional<float> weatheringDampStrength;
+    std::optional<float> weatheringNoiseScale;
 };
 
 struct ResolvedMaterialDefinition {
@@ -79,6 +86,13 @@ struct ResolvedMaterialDefinition {
     bool alphaTest = false;
     float alphaCutoff = 0.5f;
     bool detailFloor = false;
+    bool weatheringEnabled = false;
+    float weatheringDirtStrength = 0.0f;
+    glm::vec3 weatheringDirtColor{0.2f, 0.16f, 0.12f};
+    float weatheringEdgeWearStrength = 0.0f;
+    float weatheringDustStrength = 0.0f;
+    float weatheringDampStrength = 0.0f;
+    float weatheringNoiseScale = 0.3f;
 };
 
 MaterialDefinition loadMaterialDefinitionAsset(const std::string& path);

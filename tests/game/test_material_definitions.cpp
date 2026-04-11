@@ -164,5 +164,98 @@ int main() {
         assert(resolved.detailStone == false);
     }
 
+    // Test: weathering field parsing
+    {
+        const auto path = test_support::tempPath("weathering_test.material");
+        {
+            std::ofstream f(path);
+            f << "id weathering_test\n";
+            f << "detail_stone true\n";
+            f << "weathering_enabled true\n";
+            f << "weathering_dirt_strength 0.7\n";
+            f << "weathering_dirt_color 0.18 0.14 0.10\n";
+            f << "weathering_edge_wear_strength 0.5\n";
+            f << "weathering_dust_strength 0.3\n";
+            f << "weathering_damp_strength 0.6\n";
+            f << "weathering_noise_scale 0.4\n";
+        }
+        const auto def = loadMaterialDefinitionAsset(path.string());
+        std::filesystem::remove(path);
+        assert(def.weatheringEnabled.has_value() && *def.weatheringEnabled == true);
+        assert(def.weatheringDirtStrength.has_value() && test_support::nearlyEqual(*def.weatheringDirtStrength, 0.7f));
+        assert(def.weatheringDirtColor.has_value());
+        assert(test_support::nearlyEqual(def.weatheringDirtColor->x, 0.18f));
+        assert(test_support::nearlyEqual(def.weatheringDirtColor->y, 0.14f));
+        assert(test_support::nearlyEqual(def.weatheringDirtColor->z, 0.10f));
+        assert(def.weatheringEdgeWearStrength.has_value() && test_support::nearlyEqual(*def.weatheringEdgeWearStrength, 0.5f));
+        assert(def.weatheringDustStrength.has_value() && test_support::nearlyEqual(*def.weatheringDustStrength, 0.3f));
+        assert(def.weatheringDampStrength.has_value() && test_support::nearlyEqual(*def.weatheringDampStrength, 0.6f));
+        assert(def.weatheringNoiseScale.has_value() && test_support::nearlyEqual(*def.weatheringNoiseScale, 0.4f));
+    }
+
+    // Test: weathering defaults when not specified
+    {
+        const auto path = test_support::tempPath("no_weathering_test.material");
+        {
+            std::ofstream f(path);
+            f << "id no_weathering_test\n";
+            f << "detail_stone true\n";
+        }
+        const auto def = loadMaterialDefinitionAsset(path.string());
+        std::filesystem::remove(path);
+        assert(!def.weatheringEnabled.has_value());
+        assert(!def.weatheringDirtStrength.has_value());
+    }
+
+    // Test: weathering inheritance — parent weathering propagates to child
+    {
+        std::unordered_map<std::string, MaterialDefinition> defs;
+        MaterialDefinition parent;
+        parent.id = "parent_weathered";
+        parent.weatheringEnabled = true;
+        parent.weatheringDirtStrength = 0.5f;
+        parent.weatheringDirtColor = glm::vec3(0.2f, 0.16f, 0.12f);
+        defs.emplace(parent.id, parent);
+
+        MaterialDefinition child;
+        child.id = "child_weathered";
+        child.parent = "parent_weathered";
+        child.weatheringDirtStrength = 0.8f; // override one field
+        defs.emplace(child.id, child);
+
+        const auto resolved = resolveMaterialDefinition("child_weathered", defs);
+        assert(resolved.weatheringEnabled == true);
+        assert(test_support::nearlyEqual(resolved.weatheringDirtStrength, 0.8f));
+        assert(test_support::nearlyEqual(resolved.weatheringDirtColor.x, 0.2f)); // inherited
+    }
+
+    // Test: weathering roundtrip (serialize then reload)
+    {
+        MaterialDefinition roundtrip;
+        roundtrip.id = "weathering_roundtrip";
+        roundtrip.weatheringEnabled = true;
+        roundtrip.weatheringDirtStrength = 0.65f;
+        roundtrip.weatheringDirtColor = glm::vec3(0.18f, 0.14f, 0.10f);
+        roundtrip.weatheringEdgeWearStrength = 0.4f;
+        roundtrip.weatheringDustStrength = 0.25f;
+        roundtrip.weatheringDampStrength = 0.55f;
+        roundtrip.weatheringNoiseScale = 0.35f;
+
+        const auto path = test_support::tempPath("weathering_roundtrip.material");
+        saveMaterialDefinitionAsset(path.string(), roundtrip);
+        const auto loaded = loadMaterialDefinitionAsset(path.string());
+        std::filesystem::remove(path);
+
+        assert(loaded.weatheringEnabled.has_value() && *loaded.weatheringEnabled == true);
+        assert(test_support::nearlyEqual(*loaded.weatheringDirtStrength, 0.65f));
+        assert(test_support::nearlyEqual(loaded.weatheringDirtColor->x, 0.18f));
+        assert(test_support::nearlyEqual(loaded.weatheringDirtColor->y, 0.14f));
+        assert(test_support::nearlyEqual(loaded.weatheringDirtColor->z, 0.10f));
+        assert(test_support::nearlyEqual(*loaded.weatheringEdgeWearStrength, 0.4f));
+        assert(test_support::nearlyEqual(*loaded.weatheringDustStrength, 0.25f));
+        assert(test_support::nearlyEqual(*loaded.weatheringDampStrength, 0.55f));
+        assert(test_support::nearlyEqual(*loaded.weatheringNoiseScale, 0.35f));
+    }
+
     return 0;
 }
