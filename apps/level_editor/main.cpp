@@ -1692,8 +1692,9 @@ int main(int argc, char* argv[]) {
             || (io.MouseWheel != 0.0f)
             || (glfwGetMouseButton(window.handle(), GLFW_MOUSE_BUTTON_RIGHT) == GLFW_PRESS);
 
-        if (!ui.pendingScenePath.empty() && !startupViewportHandoffActive && !ui.playPreview
-            && viewportDirty) {
+        // Always compute camera matrices so gizmos render correctly even when
+        // the viewport is not dirty (cached FBO frame is reused).
+        if (!ui.pendingScenePath.empty() && !startupViewportHandoffActive && !ui.playPreview) {
             tickCameraAnimation(editCamera, cameraAnim, deltaTime);
             if (!cameraAnim.active) {
                 updateEditorFlyCamera(editCamera, window.handle(), renderViewportState, deltaTime);
@@ -1708,7 +1709,10 @@ int main(int argc, char* argv[]) {
             view = editorCameraView(editCamera);
             projection = editorCameraProjection(editCamera, static_cast<float>(targetW) / static_cast<float>(targetH));
             inverseViewProjection = glm::inverse(projection * view);
+        }
 
+        if (!ui.pendingScenePath.empty() && !startupViewportHandoffActive && !ui.playPreview
+            && viewportDirty) {
             std::vector<RenderObject> objects = collectRenderObjects(previewWorld, materialTextures, selectedIds);
             appendHelperObjects(objects, previewWorld, document, materialTextures, selectedIds,
                                 ui.showColliders, ui.showLightHelpers, ui.showSpawnMarker, ui.showTriggers);
