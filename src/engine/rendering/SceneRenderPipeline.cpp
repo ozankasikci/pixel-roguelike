@@ -36,6 +36,7 @@ void SceneRenderPipeline::init() {
 
 void SceneRenderPipeline::shutdown() {
     particleRenderer_.shutdown();
+    if (particleDepthCopy_) { glDeleteTextures(1, &particleDepthCopy_); particleDepthCopy_ = 0; }
     renderer_.reset();
     shadowShader_.reset();
     sceneShader_.reset();
@@ -427,13 +428,63 @@ void SceneRenderPipeline::renderPostProcess(const SceneRenderInput& input,
 
 void SceneRenderPipeline::renderParticlePass(const SceneRenderInput& input) {
     if (!input.particleBatches || input.particleBatches->empty()) return;
+
+    const int w = sceneFBO_.width();
+    const int h = sceneFBO_.height();
+
+    // Ensure depth copy texture exists and matches scene FBO size.
+    if (particleDepthCopy_ == 0) {
+        glGenTextures(1, &particleDepthCopy_);
+        glBindTexture(GL_TEXTURE_2D, particleDepthCopy_);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT24, w, h, 0,
+                     GL_DEPTH_COMPONENT, GL_FLOAT, nullptr);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+        glBindTexture(GL_TEXTURE_2D, 0);
+        particleDepthCopyW_ = w;
+        particleDepthCopyH_ = h;
+    } else if (particleDepthCopyW_ != w || particleDepthCopyH_ != h) {
+        glBindTexture(GL_TEXTURE_2D, particleDepthCopy_);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT24, w, h, 0,
+                     GL_DEPTH_COMPONENT, GL_FLOAT, nullptr);
+        glBindTexture(GL_TEXTURE_2D, 0);
+        particleDepthCopyW_ = w;
+        particleDepthCopyH_ = h;
+    }
+
+    // Copy scene depth to the separate texture via blit so the particle
+    // shader can sample it without a read-write feedback loop on sceneFBO_.
+    // (glCopyImageSubData would be cleaner but requires GL 4.3; blit works on 4.1.)
+    GLuint blitFBO = 0;
+    glGenFramebuffers(1, &blitFBO);
+    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, blitFBO);
+    glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_DEPTH_ATTACHMENT,
+                           GL_TEXTURE_2D, particleDepthCopy_, 0);
+    glBindFramebuffer(GL_READ_FRAMEBUFFER, sceneFBO_.framebuffer());
+    glBlitFramebuffer(0, 0, w, h, 0, 0, w, h, GL_DEPTH_BUFFER_BIT, GL_NEAREST);
+    glBindFramebuffer(GL_READ_FRAMEBUFFER, 0);
+    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
+    glDeleteFramebuffers(1, &blitFBO);
+
+    // Restrict draw buffers to color-only so particles don't corrupt
+    // the normal/geomNormal MRT attachments via blending.
     sceneFBO_.bind();
-    glViewport(0, 0, sceneFBO_.width(), sceneFBO_.height());
+    GLenum colorOnly = GL_COLOR_ATTACHMENT0;
+    glDrawBuffers(1, &colorOnly);
+    glViewport(0, 0, w, h);
+
     particleRenderer_.render(*input.particleBatches,
-                              sceneFBO_.depthTexture(),
+                              particleDepthCopy_,
                               input.viewMatrix, input.projectionMatrix,
                               input.nearPlane, input.farPlane,
-                              sceneFBO_.width(), sceneFBO_.height());
+                              w, h);
+
+    // Restore all 3 MRT draw buffers for subsequent passes.
+    GLenum drawBufs[3] = {GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2};
+    glDrawBuffers(3, drawBufs);
+
     sceneFBO_.unbind();
     glDisable(GL_DEPTH_TEST);
 }

@@ -128,5 +128,8 @@ private:
     LtcData ltcData_;
     std::array<ShadowMap, kMaxShadowedSpotLights> shadowMaps_{};
     CascadedShadowMap csmShadowMap_;
+    GLuint particleDepthCopy_ = 0; // Copy of scene depth for soft particle sampling
+    int particleDepthCopyW_ = 0;
+    int particleDepthCopyH_ = 0;
     particles::ParticleRenderer particleRenderer_;
 };
