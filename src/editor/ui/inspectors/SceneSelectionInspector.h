@@ -13,7 +13,7 @@ class ContentRegistry;
 // provides the parent picker for supported object kinds.
 void renderSceneSelectionInspector(EditorSceneDocument& document,
                                    const std::vector<std::uint64_t>& selectedIds,
-                                   const ContentRegistry& content,
+                                   ContentRegistry& content,
                                    const std::vector<std::string>& meshIds,
                                    const std::vector<std::string>& materialIds,
                                    const std::vector<std::string>& archetypeIds,

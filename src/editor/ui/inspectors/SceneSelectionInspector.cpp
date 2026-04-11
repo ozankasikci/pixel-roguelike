@@ -18,7 +18,7 @@
 
 void renderSceneSelectionInspector(EditorSceneDocument& document,
                                    const std::vector<std::uint64_t>& selectedIds,
-                                   const ContentRegistry& content,
+                                   ContentRegistry& content,
                                    const std::vector<std::string>& meshIds,
                                    const std::vector<std::string>& materialIds,
                                    const std::vector<std::string>& archetypeIds,
@@ -168,7 +168,7 @@ void renderSceneSelectionInspector(EditorSceneDocument& document,
         return;
     case EditorSceneObjectKind::ParticleEmitter:
         drawParticleEmitterInspector(std::get<LevelParticleEmitterPlacement>(object->payload), document,
-                                     commandStack, pendingCommand, beforeState);
+                                     content, commandStack, pendingCommand, beforeState);
         return;
     }
 }
