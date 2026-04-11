@@ -24,4 +24,5 @@ private:
     const ContentRegistry* content_ = nullptr;
     std::unordered_map<entt::entity, std::unique_ptr<particles::ParticleEmitter>> emitters_;
     std::vector<particles::ParticleRenderBatch> renderBatches_;
+    int lastDefinitionGeneration_ = 0;
 };

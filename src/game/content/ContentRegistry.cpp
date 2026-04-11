@@ -383,6 +383,8 @@ void ContentRegistry::loadDefaults() {
     environments_.clear();
     environmentPaths_.clear();
     particleEmitters_.clear();
+    particleEmitterFileTimes_.clear();
+    particleEmitterFilePathById_.clear();
 
     auto oldDagger = loadWeaponDefinitionAsset(resolveProjectPath("assets/defs/weapons/old_dagger.weapon"));
     weapons_.emplace(oldDagger.id, oldDagger);
@@ -460,17 +462,24 @@ const ParticleEmitterDefinition* ContentRegistry::findParticleEmitter(const std:
 }
 
 void ContentRegistry::loadParticleEmittersFromDirectory(const std::string& relativeDirectory) {
-    for (const auto& path : sortedDefinitionFiles(relativeDirectory, ".particle")) {
+    namespace fs = std::filesystem;
+    const fs::path directory = resolveProjectPath(relativeDirectory);
+    if (!fs::exists(directory)) return;
+    for (const auto& entry : fs::recursive_directory_iterator(directory,
+            fs::directory_options::skip_permission_denied)) {
+        if (!entry.is_regular_file() || entry.path().extension() != ".particle") continue;
         try {
-            auto def = loadParticleEmitterDefinition(path);
+            auto def = loadParticleEmitterDefinition(entry.path().string());
             if (particleEmitters_.count(def.id)) {
                 spdlog::error("Duplicate particle emitter id '{}' in '{}' — skipped",
-                              def.id, path);
+                              def.id, entry.path().string());
                 continue;
             }
+            particleEmitterFilePathById_[def.id] = entry.path().string();
+            particleEmitterFileTimes_[entry.path().string()] = fs::last_write_time(entry.path());
             particleEmitters_.emplace(def.id, std::move(def));
         } catch (const std::exception& e) {
-            spdlog::error("Failed to load particle emitter '{}': {}", path, e.what());
+            spdlog::error("Failed to load particle emitter '{}': {}", entry.path().string(), e.what());
         }
     }
 }
@@ -602,4 +611,38 @@ void ContentRegistry::removeMaterial(const std::string& id) {
     }
     materials_.erase(id);
     spdlog::info("Removed material '{}'", id);
+}
+
+void ContentRegistry::pollParticleHotReload() {
+    auto now = std::chrono::steady_clock::now();
+    auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(now - lastParticlePoll_);
+    if (elapsed.count() < kMaterialPollIntervalMs) return;
+    lastParticlePoll_ = now;
+
+    namespace fs = std::filesystem;
+    for (auto& [path, knownTime] : particleEmitterFileTimes_) {
+        try {
+            if (!fs::exists(path)) continue;
+            auto currentTime = fs::last_write_time(path);
+            if (currentTime == knownTime) continue;
+            knownTime = currentTime;
+
+            spdlog::info("Hot-reloading particle emitter: {}", path);
+            auto updated = loadParticleEmitterDefinition(path);
+            particleEmitters_[updated.id] = std::move(updated);
+            ++particleDefinitionGeneration_;
+        } catch (const std::exception& e) {
+            spdlog::error("Hot-reload error for '{}': {}", path, e.what());
+        }
+    }
+}
+
+ParticleEmitterDefinition* ContentRegistry::findMutableParticleEmitter(const std::string& id) {
+    auto it = particleEmitters_.find(id);
+    return it != particleEmitters_.end() ? &it->second : nullptr;
+}
+
+const std::string* ContentRegistry::findParticleEmitterPath(const std::string& id) const {
+    auto it = particleEmitterFilePathById_.find(id);
+    return it != particleEmitterFilePathById_.end() ? &it->second : nullptr;
 }

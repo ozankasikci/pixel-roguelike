@@ -89,6 +89,8 @@ public:
 
     // Hot-reload polling (called per-frame in editor)
     void pollMaterialHotReload(MaterialTextureLibrary& texLibrary);
+    void pollParticleHotReload();
+    int particleDefinitionGeneration() const { return particleDefinitionGeneration_; }
 
     // Validation
     bool validateMaterialDefinition(const MaterialDefinition& def, std::string& errorOut) const;
@@ -106,6 +108,8 @@ public:
     const EnvironmentDefinition* findEnvironment(const std::string& id) const;
     const std::string* findEnvironmentPath(const std::string& id) const;
     const ParticleEmitterDefinition* findParticleEmitter(const std::string& id) const;
+    ParticleEmitterDefinition* findMutableParticleEmitter(const std::string& id);
+    const std::string* findParticleEmitterPath(const std::string& id) const;
     const std::unordered_map<std::string, GameplayArchetypeDefinition>& archetypes() const { return archetypes_; }
     const std::unordered_map<std::string, MaterialDefinition>& materials() const { return materials_; }
     const std::unordered_map<std::string, EnvironmentDefinition>& environments() const { return environments_; }
@@ -123,9 +127,15 @@ private:
     std::unordered_map<std::string, std::string> environmentPaths_;
     std::unordered_map<std::string, ParticleEmitterDefinition> particleEmitters_;
 
-    // Hot-reload state
+    // Hot-reload state (materials)
     std::unordered_map<std::string, std::filesystem::file_time_type> materialFileTimes_;
     std::unordered_map<std::string, std::string> materialFilePathById_;
     std::chrono::steady_clock::time_point lastMaterialPoll_ = std::chrono::steady_clock::now();
     static constexpr int kMaterialPollIntervalMs = 500;
+
+    // Hot-reload state (particles)
+    std::unordered_map<std::string, std::filesystem::file_time_type> particleEmitterFileTimes_;
+    std::unordered_map<std::string, std::string> particleEmitterFilePathById_;
+    std::chrono::steady_clock::time_point lastParticlePoll_ = std::chrono::steady_clock::now();
+    int particleDefinitionGeneration_ = 0;
 };

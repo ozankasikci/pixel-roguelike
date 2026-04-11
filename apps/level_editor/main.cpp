@@ -549,6 +549,7 @@ int main(int argc, char* argv[]) {
         // Poll for .material file changes and hot-reload modified materials.
         // Runs in editor only (not in the runtime game). Cheap: timestamp check every 500ms.
         content.pollMaterialHotReload(materialTextures);
+        content.pollParticleHotReload();
         debugHarness.poll();
 
         if (ui.playPreview && runtimePreviewSession.captured() && glfwGetWindowAttrib(window.handle(), GLFW_FOCUSED) == 0) {

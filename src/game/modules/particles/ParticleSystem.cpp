@@ -95,6 +95,14 @@ void ParticleUpdateSystem::ensureEmitter(entt::entity entity,
 void ParticleUpdateSystem::update(GameRegistry& registry,
                                    float deltaTime,
                                    const glm::vec3& cameraPos) {
+    if (content_) {
+        int currentGen = content_->particleDefinitionGeneration();
+        if (currentGen != lastDefinitionGeneration_) {
+            lastDefinitionGeneration_ = currentGen;
+            emitters_.clear();
+        }
+    }
+
     renderBatches_.clear();
 
     auto view = registry.view<ParticleEmitterComponent, TransformComponent>();
