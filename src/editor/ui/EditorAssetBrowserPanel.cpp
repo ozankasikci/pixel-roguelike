@@ -1,6 +1,7 @@
 #include "editor/ui/EditorPanels.h"
 
 #include "editor/assets/EditorAssetBrowser.h"
+#include "editor/assets/EditorMaterialImporter.h"
 #include "engine/core/PathUtils.h"
 #include "engine/core/ProjectConfig.h"
 #include "game/content/ContentRegistry.h"
@@ -602,6 +603,20 @@ AssetBrowserActionResult renderAssetBrowser(EditorUiState& ui,
                 }
                 break;
             default:
+                if (canImportUnityMaterial(node.absolutePath)) {
+                    if (ImGui::MenuItem("Import Material to Project")) {
+                        const auto importResult = importUnityMaterial(
+                            node.absolutePath,
+                            resolveProjectPath("assets"));
+                        if (importResult.success) {
+                            result.newMaterialId = importResult.materialId;
+                            result.assetCatalogChanged = true;
+                            refreshAssetTree = true;
+                        } else {
+                            spdlog::error("Material import failed: {}", importResult.errorMessage);
+                        }
+                    }
+                }
                 break;
             }
             ImGui::Separator();
