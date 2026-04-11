@@ -2053,8 +2053,8 @@ int main(int argc, char* argv[]) {
                             previewDirty = true;
                         }
                     }
-                    if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("EDITOR_MATERIAL")) {
-                        if (payload->DataSize == sizeof(EditorMaterialDragPayload)) {
+                    if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("EDITOR_MATERIAL", ImGuiDragDropFlags_AcceptBeforeDelivery)) {
+                        if (payload->Delivery && payload->DataSize == sizeof(EditorMaterialDragPayload)) {
                             const auto& matPayload = *static_cast<const EditorMaterialDragPayload*>(payload->Data);
                             const std::string droppedMaterialId = matPayload.materialId;
                             const EditorRay ray = buildEditorRay(

@@ -285,7 +285,7 @@ void emitPlacementDragSource(EditorPlacementKind kind,
 }
 
 void emitMaterialDragSource(const std::string& materialId) {
-    if (!ImGui::BeginDragDropSource()) {
+    if (!ImGui::BeginDragDropSource(ImGuiDragDropFlags_SourceNoHoldToOpenOthers)) {
         return;
     }
     EditorMaterialDragPayload payload;

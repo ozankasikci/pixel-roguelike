@@ -7,7 +7,7 @@
 
 #include <array>
 #include <cstdint>
-#include <string_view>
+#include <string>
 #include <vector>
 
 class Shader;
@@ -24,7 +24,7 @@ std::vector<RenderLight> collectLights(const GameRegistry& registry,
 
 struct MaterialDragPreview {
     std::uint64_t objectId = 0;
-    std::string_view materialId;
+    std::string materialId;
 };
 
 std::vector<RenderObject> collectRenderObjects(const EditorPreviewWorld& world,
