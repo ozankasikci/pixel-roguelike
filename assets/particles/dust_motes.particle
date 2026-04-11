@@ -1,0 +1,23 @@
+id dust_motes
+max_particles 209
+emission_rate 9.500
+looping true
+duration 0.000
+simulation_space world
+blend_mode alpha
+warm_up false
+soft_particle_fade 0.300
+emissive_strength 1.000
+lifetime 4.000 8.000
+initial_speed 0.050 0.150
+rotation_speed -0.500 0.500
+shape sphere 7.000
+force gravity 0.000 0.020 0.000
+force drag 0.300
+color_over_lifetime 0.000 0.900 0.850 0.800 0.000
+color_over_lifetime 0.200 0.900 0.850 0.800 0.400
+color_over_lifetime 0.800 0.900 0.850 0.800 0.400
+color_over_lifetime 1.000 0.900 0.850 0.800 0.000
+size_over_lifetime 0.000 0.010
+size_over_lifetime 0.500 0.020
+size_over_lifetime 1.000 0.010

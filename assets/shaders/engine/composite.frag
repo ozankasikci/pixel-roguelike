@@ -257,7 +257,17 @@ void main() {
     }
 
     if (isSkyPixel) {
-        fragColor = vec4(clamp(skyColor, 0.0, 1.0), 1.0);
+        // Particles render into the scene FBO but don't write depth, so sky
+        // pixels still read depth ~1.0.  Additively blended particles leave
+        // non-zero color on the otherwise-black clear; composite them over
+        // the sky so they remain visible against cubemap / procedural sky.
+        vec3 sceneAtPixel = color;
+        float particleLuma = dot(sceneAtPixel, vec3(0.2126, 0.7152, 0.0722));
+        vec3 finalSky = clamp(skyColor, 0.0, 1.0);
+        if (particleLuma > 0.001) {
+            finalSky = finalSky + sceneAtPixel;  // additive composite
+        }
+        fragColor = vec4(finalSky, 1.0);
         return;
     }
 

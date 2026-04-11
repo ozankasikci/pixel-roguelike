@@ -73,6 +73,7 @@ enum class EditorPlacementKind {
     PlayerSpawn,
     Checkpoint,
     Archetype,
+    ParticleEmitter,
 };
 
 enum class EditorInspectorContext {

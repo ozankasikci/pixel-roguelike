@@ -272,6 +272,9 @@ void renderAssetBrowserCreateContextMenu(EditorPlacementState& placementState) {
     if (ImGui::MenuItem("Place Checkpoint")) {
         beginPlacement(placementState, EditorPlacementKind::Checkpoint);
     }
+    if (ImGui::MenuItem("Place Particle Emitter")) {
+        beginPlacement(placementState, EditorPlacementKind::ParticleEmitter);
+    }
 }
 
 } // namespace

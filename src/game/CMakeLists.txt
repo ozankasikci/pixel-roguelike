@@ -2,6 +2,7 @@ add_library(game_content STATIC
     content/ContentRegistry.cpp
     level/LevelDef.cpp
     levels/ProceduralGameAssets.cpp
+    particles/ParticleEmitterDefinition.cpp
     rendering/EnvironmentDefinition.cpp
     rendering/EnvironmentProfile.cpp
     rendering/MaterialDefinition.cpp
@@ -68,3 +69,4 @@ add_subdirectory(modules/checkpoint)
 add_subdirectory(modules/player_control)
 add_subdirectory(modules/interaction)
 add_subdirectory(modules/inventory)
+add_subdirectory(modules/particles)

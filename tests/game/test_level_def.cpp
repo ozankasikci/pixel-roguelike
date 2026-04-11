@@ -1,11 +1,13 @@
 #include "game/level/LevelDef.h"
 #include "game/components/ColliderComponent.h"
+#include "game/modules/particles/ParticleModule.h"
 #include "game/modules/player_control/PlayerControlModule.h"
 
 #include <algorithm>
 #include <cassert>
 
 int main() {
+    registerParticleModule();
     registerPlayerControlModule();
 
     const auto data = loadLevelDef(CATHEDRAL_SCENE_FILE);

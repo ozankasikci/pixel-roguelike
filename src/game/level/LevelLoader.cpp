@@ -7,6 +7,7 @@
 #include "game/level/LevelBuilder.h"
 #include "game/modules/checkpoint/CheckpointSpawner.h"
 #include "game/modules/door/DoorSpawner.h"
+#include "game/modules/particles/ParticleSpawner.h"
 #include "game/modules/player_control/PlayerControlSpawner.h"
 #include "game/prefabs/GameplayPrefabs.h"
 #include "game/rendering/EnvironmentProfile.h"
@@ -158,6 +159,10 @@ void LevelLoader::load(const LevelLoadRequest& request, const LevelLoadArgs& arg
         (void)spawnGameplayPrefab(builder, instantiateGameplayArchetype(*archetype, placement.position, placement.yawDegrees));
     }
 
+    for (const auto& p : level.particleEmitters) {
+        spawnParticleEmitter(builder, p.emitterId, p.position, p.nodeId, p.parentNodeId);
+    }
+
     // Build NodeIndex from all entities that received a NodeIdComponent
     // This must happen AFTER all placement loops (including scripted geometry)
     {
@@ -226,6 +231,7 @@ void LevelLoader::load(const LevelLoadRequest& request, const LevelLoadArgs& arg
         for (const auto& r : level.reflectionProbes) linkParent(r.nodeId, r.parentNodeId);
         for (const auto& checkpoint : level.checkpoints) linkParent(checkpoint.nodeId, checkpoint.parentNodeId);
         for (const auto& a : level.archetypes) linkParent(a.nodeId, a.parentNodeId);
+        for (const auto& p : level.particleEmitters) linkParent(p.nodeId, p.parentNodeId);
     }
 
     syncPlayerSpawnState(level, request.levelId, session);

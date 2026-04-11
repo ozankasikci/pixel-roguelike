@@ -12,6 +12,7 @@
 #include "game/runtime/GameplayBehaviors.h"
 #include "game/runtime/GameplayEventSink.h"
 #include "game/modules/inventory/InventorySystem.h"
+#include "game/modules/particles/ParticleSystem.h"
 #include "game/session/RunSession.h"
 
 #include "engine/ecs/GameRegistry.h"
@@ -109,6 +110,7 @@ private:
     GameplayBehaviors behaviors_;
     GameplayEventSink eventSink_;
     ContentRegistry* content_ = nullptr;
+    ParticleUpdateSystem particleSystem_;
     CameraManager cameraManager_;
     float elapsedTime_ = 0.0f;
     bool physicsInitialized_ = false;

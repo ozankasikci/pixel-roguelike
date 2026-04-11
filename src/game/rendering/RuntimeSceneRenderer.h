@@ -2,6 +2,7 @@
 
 #include "engine/camera/CameraState.h"
 #include "engine/ecs/GameRegistry.h"
+#include "engine/particles/ParticleTypes.h"
 #include "engine/rendering/SceneRenderPipeline.h"
 #include "engine/ui/ImGuiLayer.h"
 #include "game/rendering/EnvironmentDebugSync.h"
@@ -68,4 +69,5 @@ private:
     mutable std::vector<RenderLight> lights_;
     mutable std::vector<RenderReflectionProbeInput> reflection_probes_;
     mutable RenderReflectionProbeState active_reflection_probe_;
+    mutable std::vector<particles::ParticleRenderBatch> particle_batches_;
 };

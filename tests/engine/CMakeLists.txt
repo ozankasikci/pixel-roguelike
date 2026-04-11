@@ -124,3 +124,33 @@ pixel_roguelike_add_test(test_audio_engine_integration
     DEFINITIONS TEST_AUDIO_BASE_PATH="${CMAKE_SOURCE_DIR}/assets/audio"
     LABELS engine audio integration
 )
+
+pixel_roguelike_add_test(test_value_animator
+    SOURCES test_value_animator.cpp
+    LIBRARIES glm::glm
+    LABELS engine particles
+)
+
+pixel_roguelike_add_test(test_emitter_shape
+    SOURCES test_emitter_shape.cpp
+    LIBRARIES glm::glm
+    LABELS engine particles
+)
+
+pixel_roguelike_add_test(test_force_function
+    SOURCES test_force_function.cpp
+    LIBRARIES glm::glm
+    LABELS engine particles
+)
+
+pixel_roguelike_add_test(test_particle_pool
+    SOURCES test_particle_pool.cpp
+    LIBRARIES engine_particles
+    LABELS engine particles
+)
+
+pixel_roguelike_add_test(test_particle_emitter
+    SOURCES test_particle_emitter.cpp
+    LIBRARIES engine_particles
+    LABELS engine particles
+)

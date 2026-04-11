@@ -1,5 +1,6 @@
 #pragma once
 
+#include "engine/particles/ParticleRenderer.h"
 #include "engine/rendering/core/Framebuffer.h"
 #include "engine/rendering/core/Shader.h"
 #include "engine/rendering/geometry/Renderer.h"
@@ -53,6 +54,7 @@ struct SceneRenderInput {
     LightingEnvironment lightingEnvironment;
     bool shadowsEnabled = true;
     int shadowResolutionIndex = 1;  // 0=512, 1=1024, 2=2048
+    const std::vector<particles::ParticleRenderBatch>* particleBatches = nullptr;
 };
 
 // SceneRenderPipeline orchestrates the full rendering pipeline:
@@ -106,6 +108,7 @@ private:
                          const ShadowRenderData& shadowData,
                          int internalWidth,
                          int internalHeight);
+    void renderParticlePass(const SceneRenderInput& input);
     void renderPostProcess(const SceneRenderInput& input,
                            int outputWidth,
                            int outputHeight,
@@ -125,4 +128,8 @@ private:
     LtcData ltcData_;
     std::array<ShadowMap, kMaxShadowedSpotLights> shadowMaps_{};
     CascadedShadowMap csmShadowMap_;
+    GLuint particleDepthCopy_ = 0; // Copy of scene depth for soft particle sampling
+    int particleDepthCopyW_ = 0;
+    int particleDepthCopyH_ = 0;
+    particles::ParticleRenderer particleRenderer_;
 };

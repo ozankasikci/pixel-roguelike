@@ -24,7 +24,7 @@ set(CONTENT_REGISTRY_FILE_DEFS
 
 pixel_roguelike_add_test(test_level_def
     SOURCES test_level_def.cpp
-    LIBRARIES game_content game_module_player_control
+    LIBRARIES game_content game_module_particles game_module_player_control
     DEFINITIONS ${CATHEDRAL_SCENE_FILE_DEF}
     LABELS game
 )
@@ -128,4 +128,17 @@ pixel_roguelike_add_test(test_entity_hierarchy
     SOURCES test_entity_hierarchy.cpp
     LIBRARIES engine_core gameplay
     LABELS game
+)
+
+set(PARTICLE_DEF_FILE_DEFS
+    PARTICLE_DEF_FILE="${CMAKE_SOURCE_DIR}/tests/data/torch_sparks.particle"
+    PARTICLE_PARENT_FILE="${CMAKE_SOURCE_DIR}/tests/data/base_emitter.particle"
+    PARTICLE_CHILD_FILE="${CMAKE_SOURCE_DIR}/tests/data/child_emitter.particle"
+)
+
+pixel_roguelike_add_test(test_particle_definition
+    SOURCES test_particle_definition.cpp
+    LIBRARIES game_content
+    DEFINITIONS ${PARTICLE_DEF_FILE_DEFS}
+    LABELS game particles
 )

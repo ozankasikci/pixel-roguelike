@@ -32,9 +32,10 @@ add_library(engine_rendering STATIC
     rendering/assets/AssetCache.cpp
     rendering/SceneRenderPipeline.cpp
     rendering/FrustumCulling.cpp
+    particles/ParticleRenderer.cpp
 )
 target_include_directories(engine_rendering PUBLIC ${CMAKE_SOURCE_DIR}/src)
-target_link_libraries(engine_rendering PUBLIC engine_core glm::glm)
+target_link_libraries(engine_rendering PUBLIC engine_core engine_particles glm::glm)
 target_link_libraries(engine_rendering PRIVATE tinygltf assimp)
 
 add_library(engine_ui STATIC
@@ -97,3 +98,11 @@ add_library(engine_camera STATIC
 )
 target_include_directories(engine_camera PUBLIC ${CMAKE_SOURCE_DIR}/src)
 target_link_libraries(engine_camera PUBLIC engine_core glm::glm)
+
+add_library(engine_particles STATIC
+    particles/ParticlePool.cpp
+    particles/ParticleEmitter.cpp
+)
+target_include_directories(engine_particles PUBLIC ${CMAKE_SOURCE_DIR}/src)
+target_link_libraries(engine_particles PUBLIC engine_core glm::glm)
+target_link_libraries(engine_particles PRIVATE glad_gl)

@@ -6,6 +6,7 @@ target_link_libraries(pixel-roguelike PRIVATE
     game_module_door
     game_module_interaction
     game_module_inventory
+    game_module_particles
     game_module_player_control
 )
 configure_desktop_app(pixel-roguelike)

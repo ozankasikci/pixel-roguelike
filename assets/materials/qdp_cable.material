@@ -1,0 +1,11 @@
+id qdp_cable
+albedo_map assets/packs/QuestDoorsPack/Texture/Cable/T_Cable_BaseColor.png
+normal_map assets/packs/QuestDoorsPack/Texture/Cable/T_Cable_Normal.png
+base_color 1.000 1.000 1.000
+uv_mode mesh
+uv_scale 1.000 1.000
+normal_strength 1.000
+roughness_scale 1.000
+roughness_bias 0.000
+metalness 0.000
+ao_strength 1.000

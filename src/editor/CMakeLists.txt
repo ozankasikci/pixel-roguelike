@@ -40,6 +40,7 @@ add_library(editor STATIC
     ui/inspectors/LightInspector.cpp
     ui/inspectors/MaterialInspector.cpp
     ui/inspectors/MeshInspector.cpp
+    ui/inspectors/ParticleEmitterInspector.cpp
     ui/inspectors/PlayerSpawnInspector.cpp
     ui/inspectors/PrefabInspector.cpp
     ui/inspectors/ReflectionProbeInspector.cpp
@@ -54,4 +55,4 @@ target_include_directories(editor PUBLIC
     ${CMAKE_SOURCE_DIR}/external
     ${CMAKE_SOURCE_DIR}/external/ImGuizmo
 )
-target_link_libraries(editor PUBLIC gameplay game_module_door game_module_checkpoint game_module_interaction game_module_inventory game_module_player_control nlohmann_json::nlohmann_json)
+target_link_libraries(editor PUBLIC gameplay game_module_door game_module_checkpoint game_module_interaction game_module_inventory game_module_particles game_module_player_control nlohmann_json::nlohmann_json)

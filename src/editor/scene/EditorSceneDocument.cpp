@@ -86,6 +86,9 @@ void EditorSceneDocument::loadFromSceneFile(const std::string& scenePath, const 
     for (const auto& door : level.doors) {
         addDoorGroup(door);
     }
+    for (const auto& emitter : level.particleEmitters) {
+        addParticleEmitter(emitter);
+    }
 
     sceneDirty_ = false;
     environmentDirty_ = false;
@@ -227,6 +230,10 @@ std::uint64_t EditorSceneDocument::addGroup(const LevelGroupNode& placement) {
 
 std::uint64_t EditorSceneDocument::addDoorGroup(const LevelDoorPlacement& placement) {
     return addObject(EditorSceneObjectKind::DoorGroup, placement);
+}
+
+std::uint64_t EditorSceneDocument::addParticleEmitter(const LevelParticleEmitterPlacement& placement) {
+    return addObject(EditorSceneObjectKind::ParticleEmitter, placement);
 }
 
 
@@ -622,6 +629,9 @@ bool EditorSceneDocument::applyWorldTransform(std::uint64_t id, const glm::mat4&
             p.position = position;
             p.yawDegrees = rotation.y;
             return true;
+        } else if constexpr (std::is_same_v<T, LevelParticleEmitterPlacement>) {
+            p.position = glm::vec3(localMatrix[3]);
+            return true;
         } else {
             static_assert(sizeof(T) == 0, "Unhandled payload type in applyWorldTransform");
         }
@@ -689,6 +699,8 @@ LevelDef EditorSceneDocument::toLevelDef() const {
                 level.groups.push_back(p);
             } else if constexpr (std::is_same_v<T, LevelDoorPlacement>) {
                 level.doors.push_back(p);
+            } else if constexpr (std::is_same_v<T, LevelParticleEmitterPlacement>) {
+                level.particleEmitters.push_back(p);
             } else {
                 static_assert(sizeof(T) == 0, "Unhandled payload type in toLevelDef");
             }
@@ -831,6 +843,8 @@ glm::mat4 EditorSceneDocument::localTransformMatrix(const EditorSceneObject& obj
             return makeTransformMatrix(p.position, p.rotation, p.scale);
         } else if constexpr (std::is_same_v<T, LevelDoorPlacement>) {
             return makeTransformMatrix(p.position, glm::vec3(0.0f, p.yawDegrees, 0.0f), glm::vec3(1.0f));
+        } else if constexpr (std::is_same_v<T, LevelParticleEmitterPlacement>) {
+            return makeTransformMatrix(p.position, glm::vec3(0.0f), glm::vec3(1.0f));
         } else {
             static_assert(sizeof(T) == 0, "Unhandled payload type in localTransformMatrix");
         }
@@ -873,6 +887,8 @@ const char* editorSceneObjectKindName(EditorSceneObjectKind kind) {
         return "Group";
     case EditorSceneObjectKind::DoorGroup:
         return "Door Group";
+    case EditorSceneObjectKind::ParticleEmitter:
+        return "Particle Emitter";
     }
     return "Object";
 }
@@ -909,6 +925,8 @@ std::string editorSceneObjectLabel(const EditorSceneObject& object) {
             label << " [" << p.name << "]";
         } else if constexpr (std::is_same_v<T, LevelCheckpointPlacement>) {
             label << " [" << p.name << "]";
+        } else if constexpr (std::is_same_v<T, LevelParticleEmitterPlacement>) {
+            label << " [" << p.emitterId << "]";
         }
         // LevelPlayerSpawn: no suffix needed
     }, object.payload);

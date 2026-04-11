@@ -33,6 +33,7 @@ bool isViewportSelectableKind(const EditorSelectionHandle& handle, const EditorU
         return true;
     case EditorSceneObjectKind::PlayerSpawn:
         return ui.showSpawnMarker;
+    case EditorSceneObjectKind::ParticleEmitter:
     case EditorSceneObjectKind::Mesh:
     case EditorSceneObjectKind::Checkpoint:
     case EditorSceneObjectKind::Archetype:
@@ -141,6 +142,7 @@ EditorPlacementState makePlacementState(const EditorDragPayload& payload) {
     case EditorPlacementKind::SpotLight:
     case EditorPlacementKind::DirectionalLight:
     case EditorPlacementKind::PlayerSpawn:
+    case EditorPlacementKind::ParticleEmitter:
     case EditorPlacementKind::None:
         state.meshId.clear();
         state.materialId.clear();
@@ -326,6 +328,11 @@ bool applyGizmoToSelectedObject(EditorSceneDocument& document,
             }
             break;
         }
+        case EditorSceneObjectKind::ParticleEmitter: {
+            const auto& emitter = std::get<LevelParticleEmitterPlacement>(object->payload);
+            model = makeModelMatrix(emitter.position, glm::vec3(0.5f));
+            break;
+        }
         case EditorSceneObjectKind::PlayerSpawn: {
             glm::mat4 world = document.worldTransformMatrix(object->id);
             world = glm::scale(world, glm::vec3(0.5f, 1.4f, 0.5f));
@@ -391,6 +398,12 @@ bool applyGizmoToSelectedObject(EditorSceneDocument& document,
             document.markSceneDirty();
             break;
         }
+        case EditorSceneObjectKind::ParticleEmitter: {
+            if (!document.applyWorldTransform(object->id, model)) {
+                return false;
+            }
+            break;
+        }
         case EditorSceneObjectKind::PlayerSpawn: {
             glm::mat4 spawnWorld = model;
             spawnWorld[0] = glm::vec4(1.0f, 0.0f, 0.0f, 0.0f);
@@ -432,6 +445,9 @@ bool applyGizmoToSelectedObject(EditorSceneDocument& document,
                 multiGizmoState.cachedLightData[id] = {light.position, light.direction};
                 break;
             }
+            case EditorSceneObjectKind::ParticleEmitter:
+                multiGizmoState.cachedTransforms[id] = document.worldTransformMatrix(id);
+                break;
             default:
                 multiGizmoState.cachedTransforms[id] = document.worldTransformMatrix(id);
                 break;
@@ -487,6 +503,13 @@ bool applyGizmoToSelectedObject(EditorSceneDocument& document,
                 light.direction = safeNormalize(localDeltaRot * it->second.direction, it->second.direction);
             }
             document.markSceneDirty();
+            break;
+        }
+        case EditorSceneObjectKind::ParticleEmitter: {
+            auto it = multiGizmoState.cachedTransforms.find(id);
+            if (it == multiGizmoState.cachedTransforms.end()) continue;
+            const glm::mat4 newWorld = before * localDelta * invBefore * it->second;
+            document.applyWorldTransform(id, newWorld);
             break;
         }
         case EditorSceneObjectKind::PlayerSpawn: {
@@ -611,6 +634,12 @@ std::optional<std::uint64_t> commitPlacement(EditorSceneDocument& document,
             .yawDegrees = 0.0f,
         });
         break;
+    case EditorPlacementKind::ParticleEmitter:
+        document.addParticleEmitter(LevelParticleEmitterPlacement{
+            .emitterId = "dust_motes",
+            .position = position,
+        });
+        break;
     case EditorPlacementKind::None:
         break;
     }
@@ -701,6 +730,16 @@ void appendPlacementGhost(std::vector<RenderObject>& objects,
                 makeModelMatrix(position, glm::vec3(1.0f)),
                 tint,
                 materials.resolve("metal_default")
+            });
+        }
+        break;
+    case EditorPlacementKind::ParticleEmitter:
+        if (cube != nullptr) {
+            objects.push_back(RenderObject{
+                cube,
+                makeModelMatrix(position, glm::vec3(0.25f)),
+                tint,
+                materials.resolve("wax_default")
             });
         }
         break;

@@ -26,4 +26,7 @@ namespace TextureUnits {
     constexpr int kAoMap          = 15;
     // Cascaded shadow map (directional sun)
     constexpr int kCsmShadowMap   = 16;
+    // Particle system
+    constexpr int kParticleTexture = 17;
+    constexpr int kParticleDepth   = 18;
 } // namespace TextureUnits
