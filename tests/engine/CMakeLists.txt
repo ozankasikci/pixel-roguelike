@@ -142,3 +142,15 @@ pixel_roguelike_add_test(test_force_function
     LIBRARIES glm::glm
     LABELS engine particles
 )
+
+pixel_roguelike_add_test(test_particle_pool
+    SOURCES test_particle_pool.cpp
+    LIBRARIES engine_particles
+    LABELS engine particles
+)
+
+pixel_roguelike_add_test(test_particle_emitter
+    SOURCES test_particle_emitter.cpp
+    LIBRARIES engine_particles
+    LABELS engine particles
+)
