@@ -140,6 +140,13 @@ struct LevelCheckpointPlacement {
     std::string parentNodeId;
 };
 
+struct LevelParticleEmitterPlacement {
+    std::string emitterId;
+    glm::vec3 position{0.0f};
+    std::string nodeId;
+    std::string parentNodeId;
+};
+
 struct LevelDef {
     std::string environmentId = "neutral";
     EnvironmentProfile environmentProfile = EnvironmentProfile::Default;
@@ -153,6 +160,7 @@ struct LevelDef {
     std::vector<LevelGroupNode> groups;
     std::vector<LevelDoorPlacement> doors;
     std::vector<LevelCheckpointPlacement> checkpoints;
+    std::vector<LevelParticleEmitterPlacement> particleEmitters;
 };
 
 LevelDef loadLevelDef(const std::string& path);

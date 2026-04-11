@@ -31,6 +31,7 @@
 #include "game/level/LevelDef.h"
 #include "game/modules/checkpoint/CheckpointModule.h"
 #include "game/modules/door/DoorModule.h"
+#include "game/modules/particles/ParticleModule.h"
 #include "game/modules/player_control/PlayerControlModule.h"
 #include "game/rendering/MaterialDefinition.h"
 #include "game/rendering/MaterialTextureLibrary.h"
@@ -345,6 +346,7 @@ int main(int argc, char* argv[]) {
     content.loadDefaults();
     registerDoorModule();
     registerCheckpointModule();
+    registerParticleModule();
     registerPlayerControlModule();
 
     static engine::audio::AudioEngine audioEngine;
