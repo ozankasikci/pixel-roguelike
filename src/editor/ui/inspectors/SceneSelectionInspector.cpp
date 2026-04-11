@@ -9,6 +9,7 @@
 #include "editor/ui/inspectors/PrefabInspector.h"
 #include "game/modules/door/editor/DoorGroupInspector.h"
 #include "game/modules/checkpoint/editor/CheckpointInspector.h"
+#include "editor/ui/inspectors/ParticleEmitterInspector.h"
 #include "editor/ui/inspectors/ReflectionProbeInspector.h"
 #include "game/content/ContentRegistry.h"
 #include "game/level/LevelDef.h"
@@ -164,6 +165,10 @@ void renderSceneSelectionInspector(EditorSceneDocument& document,
     case EditorSceneObjectKind::DoorGroup:
         drawDoorGroupInspector(std::get<LevelDoorPlacement>(object->payload), document,
                                commandStack, pendingCommand, beforeState);
+        return;
+    case EditorSceneObjectKind::ParticleEmitter:
+        drawParticleEmitterInspector(std::get<LevelParticleEmitterPlacement>(object->payload), document,
+                                     commandStack, pendingCommand, beforeState);
         return;
     }
 }

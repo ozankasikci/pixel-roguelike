@@ -40,6 +40,7 @@ add_library(editor STATIC
     ui/inspectors/LightInspector.cpp
     ui/inspectors/MaterialInspector.cpp
     ui/inspectors/MeshInspector.cpp
+    ui/inspectors/ParticleEmitterInspector.cpp
     ui/inspectors/PlayerSpawnInspector.cpp
     ui/inspectors/PrefabInspector.cpp
     ui/inspectors/ReflectionProbeInspector.cpp
