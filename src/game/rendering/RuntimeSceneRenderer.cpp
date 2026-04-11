@@ -9,6 +9,7 @@
 #include "game/components/TransformComponent.h"
 #include "game/components/ViewmodelComponent.h"
 #include "game/content/ContentRegistry.h"
+#include "game/modules/particles/ParticleSystem.h"
 #include "game/rendering/MeshAssetProvider.h"
 #include <GLFW/glfw3.h>
 
@@ -336,6 +337,15 @@ void RuntimeSceneRenderer::render(GameRegistry& registry,
     input.lightingEnvironment.enableShadows = params.lighting.shadowsEnabled;
     input.lightingEnvironment.shadowBias = params.lighting.shadowBias;
     input.lightingEnvironment.shadowNormalBias = params.lighting.shadowNormalBias;
+
+    // Collect particle batches from ParticleUpdateSystem if available
+    auto* particleSystemPtr = registry.ctx().find<ParticleUpdateSystem*>();
+    if (particleSystemPtr) {
+        particle_batches_ = (*particleSystemPtr)->renderBatches();
+    } else {
+        particle_batches_.clear();
+    }
+    input.particleBatches = &particle_batches_;
 
     const auto capturedProbeIds = reflectionProbeRenderer_.updateDirtyProbes(reflection_probes_, input, pipeline_);
     if (!capturedProbeIds.empty()) {

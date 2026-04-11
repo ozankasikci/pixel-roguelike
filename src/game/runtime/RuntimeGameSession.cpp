@@ -154,6 +154,7 @@ void RuntimeGameSession::rebuild(const LevelDef& level,
     registry_.ctx().insert_or_assign<RunSession*>(&runSession_);
     registry_.ctx().insert_or_assign<PhysicsSystem*>(&physics_);
     registry_.ctx().insert_or_assign<CameraManager*>(&cameraManager_);
+    registry_.ctx().insert_or_assign<ParticleUpdateSystem*>(&particleSystem_);
 
     LevelBuildContext context{
         .registry = registry_,
@@ -166,6 +167,8 @@ void RuntimeGameSession::rebuild(const LevelDef& level,
     resolvedRequest.levelPath = levelPath;
     LevelLoadArgs args{&content, &runSession_, &level};
     loader.load(resolvedRequest, args);
+
+    particleSystem_.init(content);
 
     initializeRuntimeInteraction(registry_);
     initializeRuntimeInventory(registry_);
@@ -231,6 +234,8 @@ void RuntimeGameSession::tick(float deltaTime, float aspect) {
     physics_.update(registry_, deltaTime);
     t1 = Clock::now();
     performanceStats_.physicsMs = elapsedMilliseconds(t0, t1);
+
+    particleSystem_.update(registry_, deltaTime, cameraManager_.getState().position);
 
     ContentRegistry* content = nullptr;
     if (registry_.ctx().contains<ContentRegistry*>()) {
@@ -515,6 +520,9 @@ void RuntimeGameSession::clearEntities() {
     }
     if (ctx.contains<CameraManager*>()) {
         ctx.erase<CameraManager*>();
+    }
+    if (ctx.contains<ParticleUpdateSystem*>()) {
+        ctx.erase<ParticleUpdateSystem*>();
     }
     if (ctx.contains<engine::audio::AudioEngine*>()) {
         ctx.erase<engine::audio::AudioEngine*>();
