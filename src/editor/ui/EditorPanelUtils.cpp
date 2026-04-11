@@ -264,6 +264,8 @@ void beginPlacement(EditorPlacementState& state,
         // primaryId encodes collider shape: "box", "cylinder", "sphere", "capsule"
         state.meshId = primaryId.empty() ? "box" : primaryId;
         break;
+    case EditorPlacementKind::ParticleEmitter:
+        break;
     default:
         break;
     }
