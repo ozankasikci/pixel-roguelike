@@ -559,6 +559,53 @@ void weatherMetal(inout vec3 albedo, inout float roughness, vec3 N, vec3 worldPo
     albedo *= 0.94 + macro * 0.12;
 }
 
+// Generic weathering for texture-mapped materials without a specific MaterialKind.
+// Works on flat geometry (walls, panels) where curvature-based signals are weak.
+// Uses world-space noise-driven stains and patches as the primary variation source.
+void weatherGeneric(inout vec3 albedo, inout float roughness, vec3 N, vec3 worldPos) {
+    float cavity = weatherCavityMask(N);
+    float edge = weatherEdgeWearMask(N);
+    float upFacing = weatherUpFacingMask(N);
+    float height = weatherHeightGradient(worldPos.y);
+    float macro = weatherMacroNoise(worldPos, uWeatheringNoiseScale);
+
+    // World-space stain patches — visible on flat surfaces regardless of curvature
+    float stainA = smoothstep(0.48, 0.78, fbm(worldPos * 0.8 + vec3(5.3, 2.1, 8.7)));
+    float stainB = smoothstep(0.52, 0.82, fbm(worldPos * 1.6 + vec3(17.4, 9.2, 3.1)));
+    float streaks = smoothstep(0.50, 0.80, fbm(vec3(worldPos.x * 0.3, worldPos.y * 2.4, worldPos.z * 0.3)));
+
+    // Dirt patches — blotchy darkening driven by noise, not curvature
+    float dirtMask = stainA * uWeatheringDirtStrength;
+    albedo = mix(albedo, albedo * uWeatheringDirtColor * 1.8, dirtMask * 0.6);
+    roughness = clamp(roughness + dirtMask * 0.12, 0.08, 0.98);
+
+    // Fine grime in micro-detail (still use cavity where it exists)
+    albedo = mix(albedo, albedo * uWeatheringDirtColor * 2.0, cavity * uWeatheringDirtStrength * 0.4);
+
+    // Edge wear where geometry exists
+    float wearMask = edge * (0.5 + macro * 0.5);
+    albedo = mix(albedo, albedo * vec3(1.10, 1.08, 1.06), wearMask * uWeatheringEdgeWearStrength * 0.35);
+    roughness = clamp(roughness - wearMask * uWeatheringEdgeWearStrength * 0.08, 0.08, 0.98);
+
+    // Dust on up-facing surfaces
+    float dustMask = upFacing * (0.5 + stainB * 0.5);
+    albedo = mix(albedo, albedo * vec3(1.06, 1.04, 1.00), dustMask * uWeatheringDustStrength * 0.5);
+    roughness = clamp(roughness + dustMask * uWeatheringDustStrength * 0.1, 0.08, 0.98);
+
+    // Damp staining on lower surfaces — stronger, height-driven
+    float dampMask = smoothstep(1.5, -0.5, worldPos.y) * smoothstep(0.35, 0.75, macro);
+    albedo = mix(albedo, albedo * vec3(0.82, 0.84, 0.88), dampMask * uWeatheringDampStrength * 0.5);
+    roughness = clamp(roughness + dampMask * uWeatheringDampStrength * 0.1, 0.08, 0.98);
+
+    // Vertical streaks (gravity-driven drip stains on walls)
+    float verticalMask = (1.0 - abs(N.y)); // strongest on vertical surfaces
+    albedo = mix(albedo, albedo * vec3(0.88, 0.86, 0.84), streaks * verticalMask * uWeatheringDampStrength * 0.35);
+
+    // Macro color variation — strong enough to break tiling
+    albedo *= 0.90 + macro * 0.20;
+    roughness = clamp(roughness + (macro - 0.5) * 0.08, 0.08, 0.98);
+}
+
 // Dispatcher — routes to the correct weathering function based on material kind
 void applyMaterialWeathering(inout vec3 albedo, inout float roughness, vec3 N, vec3 worldPos) {
     if (uWeatheringEnabled == 0) return;
@@ -568,6 +615,7 @@ void applyMaterialWeathering(inout vec3 albedo, inout float roughness, vec3 N, v
     else if (uMaterialWoodDetail != 0)   weatherWood(albedo, roughness, N, worldPos);
     else if (uMaterialFloorDetail != 0)  weatherFloor(albedo, roughness, N, worldPos);
     else if (uMaterialMetalness > 0.5)   weatherMetal(albedo, roughness, N, worldPos);
+    else                                 weatherGeneric(albedo, roughness, N, worldPos);
 }
 
 vec3 detailStone(vec3 baseColor, vec3 N) {

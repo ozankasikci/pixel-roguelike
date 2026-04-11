@@ -1,0 +1,9 @@
+id qdp_floor_weathered
+parent qdp_floor
+weathering_enabled true
+weathering_dirt_strength 0.5
+weathering_dirt_color 0.20 0.16 0.12
+weathering_edge_wear_strength 0.3
+weathering_dust_strength 0.3
+weathering_damp_strength 0.4
+weathering_noise_scale 0.3
