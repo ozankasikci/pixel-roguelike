@@ -1,5 +1,6 @@
 add_library(editor STATIC
     assets/EditorAssetBrowser.cpp
+    assets/EditorMaterialImporter.cpp
     build/EditorBuildSystem.cpp
     core/EditorCommand.cpp
     core/EditorLayoutPreset.cpp
