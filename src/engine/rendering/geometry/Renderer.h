@@ -38,6 +38,13 @@ struct RenderMaterialData {
     float aoStrength = 1.0f;
     float lightTintResponse = 0.18f;
     float emissiveStrength = 0.0f;
+    bool weatheringEnabled = false;
+    float weatheringDirtStrength = 0.0f;
+    glm::vec3 weatheringDirtColor{0.2f, 0.16f, 0.12f};
+    float weatheringEdgeWearStrength = 0.0f;
+    float weatheringDustStrength = 0.0f;
+    float weatheringDampStrength = 0.0f;
+    float weatheringNoiseScale = 0.3f;
 };
 
 struct RenderObject {

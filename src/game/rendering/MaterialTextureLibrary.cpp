@@ -235,6 +235,13 @@ const RenderMaterialData& MaterialTextureLibrary::resolve(std::string_view mater
     renderMaterial.aoStrength = resolved.aoStrength;
     renderMaterial.lightTintResponse = resolved.lightTintResponse;
     renderMaterial.emissiveStrength = resolved.emissiveStrength;
+    renderMaterial.weatheringEnabled = resolved.weatheringEnabled;
+    renderMaterial.weatheringDirtStrength = resolved.weatheringDirtStrength;
+    renderMaterial.weatheringDirtColor = resolved.weatheringDirtColor;
+    renderMaterial.weatheringEdgeWearStrength = resolved.weatheringEdgeWearStrength;
+    renderMaterial.weatheringDustStrength = resolved.weatheringDustStrength;
+    renderMaterial.weatheringDampStrength = resolved.weatheringDampStrength;
+    renderMaterial.weatheringNoiseScale = resolved.weatheringNoiseScale;
 
     auto [it, inserted] = materials_.emplace(renderMaterial.id, renderMaterial);
     (void)inserted;

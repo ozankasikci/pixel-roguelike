@@ -123,6 +123,13 @@ void Renderer::drawScene(const std::vector<RenderObject>& objects,
             shader_->setInt("uNormalMapFlipY", material.normalMapFlipY ? 1 : 0);
             shader_->setInt("uAlphaTest", material.alphaTest ? 1 : 0);
             shader_->setFloat("uAlphaCutoff", material.alphaCutoff);
+            shader_->setInt("uWeatheringEnabled", material.weatheringEnabled ? 1 : 0);
+            shader_->setFloat("uWeatheringDirtStrength", material.weatheringDirtStrength);
+            shader_->setVec3("uWeatheringDirtColor", material.weatheringDirtColor);
+            shader_->setFloat("uWeatheringEdgeWearStrength", material.weatheringEdgeWearStrength);
+            shader_->setFloat("uWeatheringDustStrength", material.weatheringDustStrength);
+            shader_->setFloat("uWeatheringDampStrength", material.weatheringDampStrength);
+            shader_->setFloat("uWeatheringNoiseScale", material.weatheringNoiseScale);
         }
 
         // Per-object uniforms: always set (model matrix, base color with tint, unlit flag)
