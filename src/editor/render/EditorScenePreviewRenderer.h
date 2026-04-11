@@ -7,6 +7,7 @@
 
 #include <array>
 #include <cstdint>
+#include <string_view>
 #include <vector>
 
 class Shader;
@@ -21,9 +22,15 @@ struct EnvironmentDefinition;
 std::vector<RenderLight> collectLights(const GameRegistry& registry,
                                        const EnvironmentDefinition& environment);
 
+struct MaterialDragPreview {
+    std::uint64_t objectId = 0;
+    std::string_view materialId;
+};
+
 std::vector<RenderObject> collectRenderObjects(const EditorPreviewWorld& world,
                                                const MaterialTextureLibrary& materials,
-                                               const std::vector<std::uint64_t>& selectedIds);
+                                               const std::vector<std::uint64_t>& selectedIds,
+                                               const MaterialDragPreview& dragPreview = {});
 
 void appendHelperObjects(std::vector<RenderObject>& objects,
                          const EditorPreviewWorld& world,

@@ -102,7 +102,8 @@ std::vector<RenderLight> collectLights(const GameRegistry& registry,
 
 std::vector<RenderObject> collectRenderObjects(const EditorPreviewWorld& world,
                                                const MaterialTextureLibrary& materials,
-                                               const std::vector<std::uint64_t>& selectedIds) {
+                                               const std::vector<std::uint64_t>& selectedIds,
+                                               const MaterialDragPreview& dragPreview) {
     std::vector<RenderObject> objects;
     auto meshView = world.registry().view<TransformComponent, MeshComponent>();
     for (auto [entity, transform, mesh] : meshView.each()) {
@@ -111,14 +112,21 @@ std::vector<RenderObject> collectRenderObjects(const EditorPreviewWorld& world,
         }
         glm::vec3 tint = mesh.tint;
         auto ownerIt = world.ownerMap().find(entity);
-        if (ownerIt != world.ownerMap().end() && isSelected(selectedIds, ownerIt->second)) {
+        const std::uint64_t ownerId = (ownerIt != world.ownerMap().end()) ? ownerIt->second : 0;
+        if (ownerId != 0 && isSelected(selectedIds, ownerId)) {
             tint = glm::min(tint * 1.20f + glm::vec3(0.08f, 0.08f, 0.02f), glm::vec3(1.4f));
         }
+        const bool useDragMaterial = (dragPreview.objectId != 0
+                                      && ownerId == dragPreview.objectId
+                                      && !dragPreview.materialId.empty());
+        const auto& material = useDragMaterial
+            ? materials.resolve(dragPreview.materialId)
+            : materials.resolve(mesh.materialId);
         objects.push_back(RenderObject{
             mesh.mesh,
             mesh.useModelOverride ? mesh.modelOverride : transform.modelMatrix(),
             tint,
-            materials.resolve(mesh.materialId)
+            material
         });
     }
     return objects;
