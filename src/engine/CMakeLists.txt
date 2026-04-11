@@ -97,3 +97,12 @@ add_library(engine_camera STATIC
 )
 target_include_directories(engine_camera PUBLIC ${CMAKE_SOURCE_DIR}/src)
 target_link_libraries(engine_camera PUBLIC engine_core glm::glm)
+
+add_library(engine_particles STATIC
+    particles/ParticlePool.cpp
+    particles/ParticleEmitter.cpp
+    particles/ParticleRenderer.cpp
+)
+target_include_directories(engine_particles PUBLIC ${CMAKE_SOURCE_DIR}/src)
+target_link_libraries(engine_particles PUBLIC engine_core glm::glm)
+target_link_libraries(engine_particles PRIVATE glad_gl)
