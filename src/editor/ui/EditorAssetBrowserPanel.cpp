@@ -510,6 +510,8 @@ AssetBrowserActionResult renderAssetBrowser(EditorUiState& ui,
             emitPlacementDragSource(EditorPlacementKind::Mesh, meshId, ui.selectedMaterialId);
         } else if (node.kind == EditorAssetBrowserKind::Prefab && archetypeKnown) {
             emitPlacementDragSource(EditorPlacementKind::Archetype, declaredId);
+        } else if (materialKnown) {
+            emitMaterialDragSource(declaredId);
         }
 
         if (ImGui::BeginPopupContextItem("AssetFileContext")) {
