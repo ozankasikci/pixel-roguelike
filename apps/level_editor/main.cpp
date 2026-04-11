@@ -1715,7 +1715,27 @@ int main(int argc, char* argv[]) {
 
         if (!ui.pendingScenePath.empty() && !startupViewportHandoffActive && !ui.playPreview
             && viewportDirty) {
-            std::vector<RenderObject> objects = collectRenderObjects(previewWorld, materialTextures, selectedIds);
+            // Detect material drag for live preview
+            MaterialDragPreview materialDragPreview;
+            if (renderViewportState.hovered) {
+                if (const ImGuiPayload* payload = ImGui::GetDragDropPayload();
+                    payload != nullptr && payload->IsDataType("EDITOR_MATERIAL") && payload->DataSize == sizeof(EditorMaterialDragPayload)) {
+                    const auto& matPayload = *static_cast<const EditorMaterialDragPayload*>(payload->Data);
+                    const EditorRay ray = buildEditorRay(
+                        inverseViewProjection,
+                        glm::vec2(renderViewportState.origin.x, renderViewportState.origin.y),
+                        glm::vec2(renderViewportState.size.x, renderViewportState.size.y),
+                        glm::vec2(io.MousePos.x, io.MousePos.y));
+                    if (const auto hit = pickEditorObject(viewportSelectionHandles, ray)) {
+                        if (hit->objectKind == EditorSceneObjectKind::Mesh) {
+                            materialDragPreview.objectId = hit->objectId;
+                            materialDragPreview.materialId = matPayload.materialId;
+                        }
+                    }
+                }
+            }
+
+            std::vector<RenderObject> objects = collectRenderObjects(previewWorld, materialTextures, selectedIds, materialDragPreview);
             appendHelperObjects(objects, previewWorld, document, materialTextures, selectedIds,
                                 ui.showColliders, ui.showLightHelpers, ui.showSpawnMarker, ui.showTriggers);
             appendSelectionOverlays(objects, previewWorld, materialTextures, selectedIds);
@@ -2031,6 +2051,35 @@ int main(int argc, char* argv[]) {
                                 ui.scrollToSelection = true;
                             }
                             previewDirty = true;
+                        }
+                    }
+                    if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("EDITOR_MATERIAL")) {
+                        if (payload->DataSize == sizeof(EditorMaterialDragPayload)) {
+                            const auto& matPayload = *static_cast<const EditorMaterialDragPayload*>(payload->Data);
+                            const std::string droppedMaterialId = matPayload.materialId;
+                            const EditorRay ray = buildEditorRay(
+                                inverseViewProjection,
+                                glm::vec2(renderViewportState.origin.x, renderViewportState.origin.y),
+                                glm::vec2(renderViewportState.size.x, renderViewportState.size.y),
+                                glm::vec2(io.MousePos.x, io.MousePos.y));
+                            if (const auto hit = pickEditorObject(viewportSelectionHandles, ray)) {
+                                if (hit->objectKind == EditorSceneObjectKind::Mesh) {
+                                    if (EditorSceneObject* object = document.findObject(hit->objectId)) {
+                                        auto& mesh = std::get<LevelMeshPlacement>(object->payload);
+                                        if (mesh.materialId != droppedMaterialId) {
+                                            const EditorSceneDocumentState beforeState = document.captureState();
+                                            mesh.materialId = droppedMaterialId;
+                                            document.markSceneDirty();
+                                            commandStack.pushDocumentStateCommand(
+                                                "Assign Material",
+                                                beforeState,
+                                                document.captureState(),
+                                                document);
+                                            previewDirty = true;
+                                        }
+                                    }
+                                }
+                            }
                         }
                     }
                     ImGui::EndDragDropTarget();
