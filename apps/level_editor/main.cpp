@@ -1689,6 +1689,7 @@ int main(int argc, char* argv[]) {
             || editorGizmoIsHot()
             || placementState.active()
             || (ImGui::GetDragDropPayload() != nullptr && ImGui::GetDragDropPayload()->IsDataType("EDITOR_PLACE"))
+            || (ImGui::GetDragDropPayload() != nullptr && ImGui::GetDragDropPayload()->IsDataType("EDITOR_MATERIAL"))
             || (renderViewportState.hovered && (io.MouseDelta.x != 0.0f || io.MouseDelta.y != 0.0f))
             || (io.MouseWheel != 0.0f)
             || (glfwGetMouseButton(window.handle(), GLFW_MOUSE_BUTTON_RIGHT) == GLFW_PRESS);
