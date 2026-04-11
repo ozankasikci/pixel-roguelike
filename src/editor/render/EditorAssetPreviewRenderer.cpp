@@ -12,6 +12,7 @@
 #include <glm/trigonometric.hpp>
 #include <imgui.h>
 #include <glad/gl.h>
+#include <spdlog/spdlog.h>
 
 #include <algorithm>
 #include <cmath>
@@ -205,9 +206,23 @@ void EditorAssetPreviewRenderer::renderPreviewMesh(Mesh* mesh,
     sceneShader_->setInt("uCsmShadowMap", TextureUnits::kCsmShadowMap);
     glActiveTexture(GL_TEXTURE0 + TextureUnits::kCsmShadowMap);
     glBindTexture(GL_TEXTURE_2D_ARRAY, 0);
+
+    // Disable environment reflections and bind null cubemaps so macOS doesn't
+    // produce GL_INVALID_OPERATION from samplerCube bound to non-cubemap textures.
+    sceneShader_->setInt("uEnvironmentReflectionsEnabled", 0);
+    sceneShader_->setInt("uEnvironmentSpecularMap", TextureUnits::kEnvironmentSpecular);
+    glActiveTexture(GL_TEXTURE0 + TextureUnits::kEnvironmentSpecular);
+    glBindTexture(GL_TEXTURE_CUBE_MAP, 0);
+    sceneShader_->setInt("uEnvironmentBrdfLut", TextureUnits::kEnvironmentBrdfLut);
+    glActiveTexture(GL_TEXTURE0 + TextureUnits::kEnvironmentBrdfLut);
+    glBindTexture(GL_TEXTURE_2D, 0);
+    sceneShader_->setInt("uReflectionProbeEnabled", 0);
+    sceneShader_->setInt("uReflectionProbeMap", TextureUnits::kReflectionProbeMap);
+    glActiveTexture(GL_TEXTURE0 + TextureUnits::kReflectionProbeMap);
+    glBindTexture(GL_TEXTURE_CUBE_MAP, 0);
     glActiveTexture(GL_TEXTURE0);
 
-    const RenderObject object{
+    RenderObject object{
         mesh,
         glm::translate(glm::mat4(1.0f), -center),
         glm::vec3(1.0f),

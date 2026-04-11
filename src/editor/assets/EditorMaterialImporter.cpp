@@ -73,9 +73,12 @@ std::string extractGuid(const std::string& line) {
 
 // --- Extract RGBA color from "_Color: {r: R, g: G, b: B, a: A}" ---
 bool parseColor(const std::string& line, float& r, float& g, float& b) {
-    const auto rPos = line.find("r: ");
-    const auto gPos = line.find("g: ");
-    const auto bPos = line.find("b: ");
+    // Search within the braces to avoid matching "r: " in "_Color: "
+    const auto bracePos = line.find('{');
+    if (bracePos == std::string::npos) return false;
+    const auto rPos = line.find("r: ", bracePos);
+    const auto gPos = line.find("g: ", bracePos);
+    const auto bPos = line.find("b: ", bracePos);
     if (rPos == std::string::npos || gPos == std::string::npos || bPos == std::string::npos)
         return false;
     try {
